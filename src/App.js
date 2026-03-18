@@ -19,13 +19,13 @@ function detectDirectives(t) {
 // ── Checklist items with detector functions ───────────────────────────────
 const CHECKLIST = [
   { id:"purpose",  label:"What does it do?",             detect: t => t.length > 40 },
-  { id:"user",     label:"Who uses it?",                 detect: t => /consumer|industrial|medical|professional|children|user|customer|patient/i.test(t) },
-  { id:"radio",    label:"Connectivity (WiFi/BT/4G…)",   detect: t => /wifi|wi-fi|bluetooth|ble|lte|4g|5g|zigbee|nfc|lora|cellular|wireless/i.test(t) },
-  { id:"power",    label:"Power source",                 detect: t => /battery|mains|230v|usb|poe|li-ion|rechargeable|hardwired/i.test(t) },
-  { id:"data",     label:"Personal data collected?",     detect: t => /personal data|user data|email|location|health|account|profile|tracking|login|password/i.test(t) },
-  { id:"cloud",    label:"Cloud / backend?",             detect: t => /cloud|server|aws|azure|backend|api|internet|online/i.test(t) },
+  { id:"user",     label:"Intended user? (consumer/ industrial / medical/ children...",                 detect: t => /consumer|industrial|medical|professional|children|user|customer|patient/i.test(t) },
+  { id:"radio",    label:"Connectivity (WiFi/BT/4G…)",   detect: t => /wifi|wi-fi|bluetooth|bt|ble|lte|4g|5g|zigbee|nfc|lora|cellular|wireless/i.test(t) },
+  { id:"power",    label:"Power source",                 detect: t => /battery|mains|230v|220V| 50hz|60hz|12v|24v|10V|5V|240V|voltage||usb|poe|li-ion|rechargeable|hardwired/i.test(t) },
+  { id:"data",     label:"Personal data collected? (account/ password/ tracking/ health...",     detect: t => /personal data|user data|email|location|health|account|profile|tracking|login|password/i.test(t) },
+  { id:"cloud",    label:"Cloud / app connectivity",             detect: t => /cloud|server|aws|azure|backend|api|internet|online/i.test(t) },
   { id:"software", label:"Firmware / OTA updates?",      detect: t => /firmware|software|ota|update|embedded/i.test(t) },
-  { id:"ai",       label:"AI or ML features?",           detect: t => /ai |machine learning| ml |neural|inference|model|llm|computer vision/i.test(t) },
+  { id:"ai",       label:"AI features?",           detect: t => /ai |machine learning| ml |neural|inference|model|llm|computer vision/i.test(t) },
 ];
 
 const DIR_META = {
