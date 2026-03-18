@@ -149,7 +149,7 @@ export default function App() {
   const [result, setResult]     = useState(null);
   const [error, setError]       = useState(null);
   const [tab, setTab]           = useState("input");
-  const [refExpanded, setRefExpanded] = useState(null);
+  
 
   const toggle = (id) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
 
