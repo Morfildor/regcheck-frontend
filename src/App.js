@@ -158,7 +158,7 @@ export default function App() {
     if (!selected.length) { alert("Select at least one directive."); return; }
     setLoading(true); setResult(null); setError(null); setTab("results");
     try {
-      const r = await fetch("https://regcheck1.netlify.app", {
+      const r = await fetch("https://regcheck-api.onrender.com/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: desc, category: "", directives: selected, depth }),
