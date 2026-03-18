@@ -184,27 +184,43 @@ export default function App() {
           marginBottom: 24,
           boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)",
         }}>
-          <div style={{ padding: "20px 24px 0" }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 10 }}>
-              Product Description
-            </label>
-            <textarea
-              rows={7}
-              value={desc}
-              onChange={e => setDesc(e.target.value)}
-              placeholder={"Describe your product in detail for accurate results:\n\n• What does it do? Who uses it?\n• Connectivity: WiFi, Bluetooth, 4G/5G, Zigbee, NFC…\n• Power: mains 230V, battery, USB-C…\n• Data: what personal data is collected? Where is it stored?\n• Software: firmware updates, mobile app, cloud backend?\n• Special features: AI/ML, camera, voice, medical sensors…"}
-              style={{
-                width: "100%",
-                background: "transparent",
-                border: "none",
-                color: "#0f172a",
-                fontSize: 14,
-                lineHeight: 1.75,
-                resize: "none",
-                fontFamily: "inherit",
-              }}
-            />
+          <div style={{ marginBottom:20 }}>
+  <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"0.18em", color:"#2a3c2e", marginBottom:7 }}>Product Description</div>
+  
+  <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+    
+    {/* Textarea */}
+    <textarea rows={9} value={desc} onChange={e => setDesc(e.target.value)}
+      placeholder="Describe your product in detail…"
+      style={{ flex:1, background:"#0b1210", border:"1px solid #111a14", color:"#c0d8c4", fontSize:12, padding:"13px 15px", borderRadius:4, resize:"vertical", lineHeight:1.8, fontFamily:"inherit", transition:"border-color 0.2s", minHeight:210 }} />
+
+    {/* Checklist sidebar */}
+    <div style={{ width:200, flexShrink:0, background:"#0b1210", border:"1px solid #111a14", borderRadius:4, padding:"11px 13px" }}>
+      <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"0.16em", color:"#2a3c2e", marginBottom:9 }}>Cover these topics</div>
+      {[
+        { key:"connectivity", label:"Connectivity", keywords:["wifi","wi-fi","bluetooth","bt ","ble","zigbee","lora","nfc","lte","4g","5g","cellular","gsm","radio","wireless"] },
+        { key:"market",       label:"Market / region", keywords:["eu ","residential","industrial","medical","retail","consumer","professional"] },
+        { key:"data",         label:"Data & cloud", keywords:["cloud","aws","azure","data","storage","analytics","local","offline"] },
+        { key:"power",        label:"Power supply", keywords:["230v","mains","battery","usb","poe","li-ion","3.7v","5v","power"] },
+        { key:"features",     label:"Features", keywords:["camera","voice","ota","update","mobile app","ai","ml","dashboard"] },
+        { key:"auth",         label:"Auth & access", keywords:["password","login","mfa","oauth","pairing","credentials","2fa"] },
+        { key:"user",         label:"Target user", keywords:["consumer","child","professional","patient","user","adult"] },
+      ].map(item => {
+        const covered = item.keywords.some(k => desc.toLowerCase().includes(k));
+        return (
+          <div key={item.key} style={{ display:"flex", alignItems:"center", gap:7, marginBottom:7, transition:"opacity 0.2s", opacity: covered ? 0.4 : 1 }}>
+            <div style={{ width:12, height:12, flexShrink:0, borderRadius:2, border:`1px solid ${covered?"#4ade80":"#1c2820"}`, background:covered?"rgba(74,222,128,0.15)":"transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s" }}>
+              {covered && <span style={{ color:"#4ade80", fontSize:9, lineHeight:1 }}>✓</span>}
+            </div>
+            <span style={{ fontSize:10, color: covered ? "#2a3c2e" : "#4a6a54", textDecoration: covered ? "line-through" : "none", transition:"all 0.2s" }}>{item.label}</span>
           </div>
+        );
+      })}
+    </div>
+
+  </div>
+  <div style={{ marginTop:5, fontSize:9, color:"#182018" }}>{desc.length} characters — aim for 100+ for best results</div>
+</div>
 
           {/* Detected directives preview */}
           {desc.length > 20 && (
