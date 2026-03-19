@@ -5,7 +5,7 @@ const API_URL =
   "https://regcheck-api.onrender.com/analyze";
 
 const SAMPLE =
-  "Smart kettle with mobile app. Bluetooth connection. Mains powered, 230V.";
+  "Smart air fryer with Wi-Fi app control, mains powered, OTA updates, cloud recipe sync, and food-contact basket coating.";
 
 const DIR_NAME = {
   LVD: "Low Voltage",
@@ -37,57 +37,52 @@ const DIR_ORDER = [
 ];
 
 const DIR = {
-  LVD: { dot: "#0d2c3b", pill: "#d8e8ef", ring: "#9fc0cf", ink: "#0d2c3b" },
-  EMC: { dot: "#13678A", pill: "#d8edf5", ring: "#8bbfd4", ink: "#0b4258" },
-  RED: { dot: "#1f3c88", pill: "#dbe5ff", ring: "#a7bbe9", ink: "#1f3c88" },
-  RED_CYBER: {
-    dot: "#533483",
-    pill: "#ece4fb",
-    ring: "#c6b5ea",
-    ink: "#41286a",
-  },
-  CRA: { dot: "#1c7c54", pill: "#daf3e5", ring: "#9ed1b5", ink: "#13533a" },
-  ROHS: { dot: "#6f7f14", pill: "#f2f5d8", ring: "#d0d78a", ink: "#55610f" },
-  REACH: { dot: "#8a5a13", pill: "#f8ecd9", ring: "#e0bf8d", ink: "#6a430d" },
-  GDPR: { dot: "#4a7c59", pill: "#e3f3e8", ring: "#b8d6bf", ink: "#33573f" },
-  AI_Act: { dot: "#6b4f9d", pill: "#ece5f8", ring: "#c5b5e4", ink: "#4b3770" },
-  ESPR: { dot: "#7d6a0f", pill: "#f6f0d1", ring: "#dbcf8b", ink: "#62530d" },
-  OTHER: { dot: "#627d8a", pill: "#e5edf1", ring: "#bfd0d8", ink: "#3f5862" },
-  SYSTEM: { dot: "#627d8a", pill: "#e5edf1", ring: "#bfd0d8", ink: "#3f5862" },
+  LVD: { dot: "#0f172a", pill: "#eef2ff", ring: "#c7d2fe", ink: "#312e81" },
+  EMC: { dot: "#0f766e", pill: "#ecfeff", ring: "#a5f3fc", ink: "#155e75" },
+  RED: { dot: "#1d4ed8", pill: "#eff6ff", ring: "#bfdbfe", ink: "#1e40af" },
+  RED_CYBER: { dot: "#6d28d9", pill: "#f5f3ff", ring: "#ddd6fe", ink: "#5b21b6" },
+  CRA: { dot: "#166534", pill: "#f0fdf4", ring: "#bbf7d0", ink: "#166534" },
+  ROHS: { dot: "#4d7c0f", pill: "#f7fee7", ring: "#d9f99d", ink: "#3f6212" },
+  REACH: { dot: "#b45309", pill: "#fff7ed", ring: "#fed7aa", ink: "#9a3412" },
+  GDPR: { dot: "#0f766e", pill: "#f0fdfa", ring: "#99f6e4", ink: "#115e59" },
+  AI_Act: { dot: "#7c3aed", pill: "#faf5ff", ring: "#e9d5ff", ink: "#6b21a8" },
+  ESPR: { dot: "#a16207", pill: "#fefce8", ring: "#fde68a", ink: "#854d0e" },
+  OTHER: { dot: "#475569", pill: "#f8fafc", ring: "#cbd5e1", ink: "#334155" },
+  SYSTEM: { dot: "#475569", pill: "#f8fafc", ring: "#cbd5e1", ink: "#334155" },
 };
 
 const STS = {
   FAIL: {
     icon: "×",
     label: "FAIL",
-    bg: "#e5eef3",
-    border: "#9bb8c7",
-    text: "#0d2c3b",
-    stripe: "#2a6782",
+    bg: "#fef2f2",
+    border: "#fecaca",
+    text: "#991b1b",
+    stripe: "#dc2626",
   },
   WARN: {
     icon: "!",
     label: "WARN",
-    bg: "#e8f3f8",
-    border: "#9dc7d8",
-    text: "#104052",
-    stripe: "#3c8ca9",
+    bg: "#fffbeb",
+    border: "#fde68a",
+    text: "#92400e",
+    stripe: "#f59e0b",
   },
   PASS: {
     icon: "✓",
     label: "PASS",
-    bg: "#e4f5ee",
-    border: "#a6d2bf",
-    text: "#134534",
-    stripe: "#35a37d",
+    bg: "#f0fdf4",
+    border: "#bbf7d0",
+    text: "#166534",
+    stripe: "#22c55e",
   },
   INFO: {
     icon: "i",
     label: "INFO",
-    bg: "#edf4f6",
-    border: "#bfd0d8",
-    text: "#32505b",
-    stripe: "#7e98a3",
+    bg: "#f8fafc",
+    border: "#cbd5e1",
+    text: "#334155",
+    stripe: "#64748b",
   },
 };
 
@@ -157,7 +152,6 @@ function inferDirectiveFromText(text = "") {
   ) {
     return "RED_CYBER";
   }
-
   if (
     /cyber resilience act|\bcra\b|secure development|vulnerability handling|sbom|software bill of materials|post-market security update|coordinated vulnerability disclosure/.test(
       t
@@ -165,7 +159,6 @@ function inferDirectiveFromText(text = "") {
   ) {
     return "CRA";
   }
-
   if (
     /rohs|2011\/65\/eu|en iec 63000|iec 63000|en 50581|hazardous substances|restricted substances|iec 62321|62321-3-1|62321-3-2|62321-3-3|62321-4|62321-5|62321-6|62321-7-1|62321-7-2|62321-8/.test(
       t
@@ -173,7 +166,6 @@ function inferDirectiveFromText(text = "") {
   ) {
     return "ROHS";
   }
-
   if (
     /\breach\b|ec 1907\/2006|regulation \(ec\) no 1907\/2006|svhc|substances of very high concern|candidate list|annex xvii|article 33/.test(
       t
@@ -181,15 +173,9 @@ function inferDirectiveFromText(text = "") {
   ) {
     return "REACH";
   }
-
-  if (
-    /60335|60730|62233|60335-1|60335-2|household|appliance safety|electrical safety/.test(
-      t
-    )
-  ) {
+  if (/60335|60730|62233|60335-1|60335-2|household|appliance safety|electrical safety/.test(t)) {
     return "LVD";
   }
-
   if (
     /55014|61000|emc|electromagnetic|cispr|harmonic|flicker|electrostatic|esd|surge|immunity|conducted emission|radiated emission/.test(
       t
@@ -197,7 +183,6 @@ function inferDirectiveFromText(text = "") {
   ) {
     return "EMC";
   }
-
   if (
     /300 328|301 489|300 220|300 330|300 440|300 086|300 113|radio spectrum|wireless|bluetooth|wifi|wi-fi|lte|5g|zigbee|matter|nfc|rf exposure|receiver category/.test(
       t
@@ -205,19 +190,15 @@ function inferDirectiveFromText(text = "") {
   ) {
     return "RED";
   }
-
   if (/gdpr|privacy|personal data|data protection/.test(t)) {
     return "GDPR";
   }
-
   if (/ai act|artificial intelligence|machine learning|model/.test(t)) {
     return "AI_Act";
   }
-
   if (/ecodesign|espr|repairability|durability|energy/.test(t)) {
     return "ESPR";
   }
-
   return "OTHER";
 }
 
@@ -237,10 +218,7 @@ function enrichDirectives(f) {
     explicit.push("RED_CYBER");
   }
 
-  if (!explicit.length) {
-    explicit = inferred ? [inferred] : ["OTHER"];
-  }
-
+  if (!explicit.length) explicit = inferred ? [inferred] : ["OTHER"];
   return unique(explicit);
 }
 
@@ -296,12 +274,11 @@ function dirCodeLabel(code) {
   return code;
 }
 
-function DirBadge({ code }) {
+function DirBadge({ code, compact = false }) {
   const d = DIR[code] || DIR.OTHER;
-
   return (
     <span
-      className="dir-badge"
+      className={`dir-badge ${compact ? "dir-badge--compact" : ""}`}
       style={{
         "--dot": d.dot,
         "--pill": d.pill,
@@ -311,7 +288,7 @@ function DirBadge({ code }) {
     >
       <span className="dir-badge__dot" />
       <span className="dir-badge__code">{dirCodeLabel(code)}</span>
-      <span className="dir-badge__name">{DIR_NAME[code] || code}</span>
+      {!compact ? <span className="dir-badge__name">{DIR_NAME[code] || code}</span> : null}
     </span>
   );
 }
@@ -335,7 +312,6 @@ function StatusPill({ status }) {
 
 function StandardCard({ item }) {
   const mainStatus = priorityStatus(item.statuses);
-
   return (
     <div
       className="std-card"
@@ -346,13 +322,16 @@ function StandardCard({ item }) {
       }}
     >
       <div className="std-card__top">
-        <div className="std-card__name">{item.name}</div>
+        <div>
+          <div className="std-card__eyebrow">STANDARD</div>
+          <div className="std-card__name">{item.name}</div>
+        </div>
         <StatusPill status={mainStatus} />
       </div>
 
       <div className="std-card__chips">
         {item.directives.map((d) => (
-          <DirBadge key={d} code={d} />
+          <DirBadge key={d} code={d} compact />
         ))}
       </div>
 
@@ -362,7 +341,7 @@ function StandardCard({ item }) {
 
       {item.actions.length > 0 ? (
         <div className="std-card__actions">
-          <div className="std-card__actions-title">Action</div>
+          <div className="std-card__actions-title">Suggested action</div>
           <ul>
             {item.actions.slice(0, 2).map((a, idx) => (
               <li key={idx}>{a}</li>
@@ -388,11 +367,12 @@ function FindingRow({ f }) {
     >
       <div className="frow__left">
         <span className="frow__icon">{s.icon}</span>
-        <span className="frow__label">{s.label}</span>
       </div>
-
       <div className="frow__body">
-        <div className="frow__art">{f.article || ""}</div>
+        <div className="frow__topline">
+          <span className="frow__art">{f.article || ""}</span>
+          <StatusPill status={f.status} />
+        </div>
         <div className="frow__text">{f.finding}</div>
         {f.action ? <div className="frow__action">{f.action}</div> : null}
       </div>
@@ -402,16 +382,42 @@ function FindingRow({ f }) {
 
 function Section({ title, helper, count, right, children }) {
   return (
-    <div className="card section">
+    <section className="card section">
       <div className="section__head">
-        <div className="section__titleWrap">
-          <div className="section__title">{title}</div>
-          {typeof count === "number" ? <span className="count-pill">{count}</span> : null}
+        <div>
+          <div className="section__titleRow">
+            <div className="section__title">{title}</div>
+            {typeof count === "number" ? <span className="count-pill">{count}</span> : null}
+          </div>
           {helper ? <div className="section__helper">{helper}</div> : null}
         </div>
         {right}
       </div>
       {children}
+    </section>
+  );
+}
+
+function EmptyState({ onLoadSample }) {
+  return (
+    <div className="card empty-state">
+      <div className="empty-state__orb" />
+      <div className="empty-state__eyebrow">Version 2</div>
+      <h2 className="empty-state__title">Start with a product description</h2>
+      <p className="empty-state__text">
+        Describe what the product is, how it is powered, whether it has radio,
+        app or cloud functions, food contact, motors, sensors, or software updates.
+      </p>
+      <div className="empty-state__tips">
+        <span className="tip-chip">mains powered</span>
+        <span className="tip-chip">Wi-Fi or Bluetooth</span>
+        <span className="tip-chip">mobile app</span>
+        <span className="tip-chip">OTA updates</span>
+        <span className="tip-chip">food-contact surfaces</span>
+      </div>
+      <button type="button" className="run-btn" onClick={onLoadSample}>
+        Load sample product
+      </button>
     </div>
   );
 }
@@ -449,7 +455,7 @@ function collectDirectiveCounts(groups = []) {
 }
 
 export default function App() {
-  const [description, setDescription] = useState(SAMPLE);
+  const [description, setDescription] = useState("");
   const [depth, setDepth] = useState("standard");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -468,7 +474,6 @@ export default function App() {
 
     setLoading(true);
     setError("");
-
     try {
       const res = await fetch(API_URL, {
         method: "POST",
@@ -613,92 +618,95 @@ export default function App() {
     <div className="page-shell">
       <Style />
 
-      <div className="nav">
-        <div className="container nav__inner">
-          <div className="nav__brand">
-            <div className="nav__logo">RC</div>
+      <div className="bg-grid" />
+      <header className="topbar">
+        <div className="container topbar__inner">
+          <div className="brand">
+            <div className="brand__mark">RC</div>
             <div>
-              <div className="nav__title">RegCheck</div>
-              <div className="nav__tag">EU product compliance scope assistant</div>
+              <div className="brand__title">RegCheck</div>
+              <div className="brand__sub">Modern compliance scoping workspace</div>
             </div>
           </div>
 
-          {result ? (
-            <div className="nav__stats">
-              <div className="nav-pill nav-pill--risk">Risk: {result.overall_risk || "-"}</div>
-              <div className="nav-pill">Standards: {summaryStats.standards}</div>
-              <div className="nav-pill">Warnings: {summaryStats.warn}</div>
-              <div className="nav-pill">Fails: {summaryStats.fail}</div>
-            </div>
-          ) : null}
+          <div className="topbar__meta">
+            <span className="meta-chip">Version 2</span>
+            {result ? <span className="meta-chip">Risk {result.overall_risk}</span> : null}
+            {result ? <span className="meta-chip">{summaryStats.standards} standards</span> : null}
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="page container">
-        <div className="hero">
-          <div>
-            <div className="eyebrow">Version upgrade</div>
-            <h1 className="hero__title">Compliance scoping with directive-grouped standards</h1>
-            <p className="hero__sub">
-              Describe the product in plain language. Add power source, radio features,
-              app/cloud details, materials, moving parts, and intended use.
+      <main className="container page">
+        <section className="hero-v2">
+          <div className="hero-v2__content">
+            <div className="hero-v2__eyebrow">CE / DoC preparation support</div>
+            <h1 className="hero-v2__title">Clean, guided EU compliance screening</h1>
+            <p className="hero-v2__text">
+              Start with a simple product description. Add only the details that matter:
+              power, connectivity, software, materials, moving parts, and intended use.
             </p>
           </div>
-        </div>
+        </section>
 
-        <div className="card input-card">
-          <div className="input-card__head">
+        <section className="card composer">
+          <div className="composer__top">
             <div>
-              <div className="section__title">Product description</div>
-              <div className="input-card__hint">
-                Include what it is, how it is powered, whether it has radio, app/cloud,
-                heating, motors, food contact, sensors, and updates.
+              <div className="composer__label">Describe the product</div>
+              <div className="composer__sub">
+                The more concrete the description, the more complete the legislation and standard scope.
               </div>
             </div>
-
-            <div className="input-card__controls">
-              <div className="depth">
-                {["quick", "standard", "deep"].map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    className={`seg-btn ${depth === d ? "seg-btn--on" : ""}`}
-                    onClick={() => setDepth(d)}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
+            <div className="depth">
+              {["quick", "standard", "deep"].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  className={`seg-btn ${depth === d ? "seg-btn--on" : ""}`}
+                  onClick={() => setDepth(d)}
+                >
+                  {d}
+                </button>
+              ))}
             </div>
           </div>
 
-          <textarea
-            className="ta"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Example: Smart air fryer with Wi-Fi app control, mains powered, OTA updates, cloud recipe sync, and food-contact basket coating."
-          />
+          <div className="composer__textareaWrap">
+            <textarea
+              className="ta ta--v2"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Example: Smart kettle with Bluetooth app control, mains powered, OTA updates, user account, and food-contact plastic water path."
+            />
+            {!description.trim() ? (
+              <div className="ghost-guide">
+                <span>What is it?</span>
+                <span>How is it powered?</span>
+                <span>Any Wi-Fi / Bluetooth / Matter?</span>
+                <span>App, cloud, OTA?</span>
+                <span>Food contact or moving parts?</span>
+              </div>
+            ) : null}
+          </div>
 
           {quickAdds.length > 0 ? (
-            <div className="quick-adds">
+            <div className="quick-adds quick-adds--v2">
               {quickAdds.map((q) => (
                 <button
                   key={q.label}
                   type="button"
-                  className="ghost-btn"
+                  className="hint-chip"
                   onClick={() => appendHint(q.value)}
                 >
-                  + {q.label}
+                  {q.label}
                 </button>
               ))}
             </div>
           ) : null}
 
-          <div className="input-card__foot">
-            <div className="input-card__meta">
-              Better input gives tighter legislation and standard mapping.
-            </div>
-            <div className="input-card__actions">
+          <div className="composer__bottom">
+            <div className="composer__helper">Start empty. Build the description step by step.</div>
+            <div className="composer__actions">
               <button type="button" className="ghost-btn" onClick={() => setDescription(SAMPLE)}>
                 Load sample
               </button>
@@ -710,31 +718,32 @@ export default function App() {
           </div>
 
           {error ? <div className="err-bar">{error}</div> : null}
-        </div>
+        </section>
+
+        {!result && !loading ? <EmptyState onLoadSample={() => setDescription(SAMPLE)} /> : null}
 
         {loading ? (
           <div className="card loading__card">
             <div className="spinner" />
             <div>
               <div className="section__title">Running analysis</div>
-              <div className="loading__text">Checking legislation, standards, gaps, and grouped output.</div>
+              <div className="loading__text">Checking legislation, standards, missing information, and grouped output.</div>
             </div>
           </div>
         ) : null}
 
         {result ? (
           <>
-            <div className="card toolbar">
+            <div className="toolbar toolbar--v2 card">
               <div className="toolbar__left">
                 <div className="search-wrap">
                   <input
                     className="search-input"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search standard, finding, or action"
+                    placeholder="Search standards, findings, actions"
                   />
                 </div>
-
                 <select className="select" value={filterDir} onChange={(e) => setFilterDir(e.target.value)}>
                   <option value="ALL">All directive groups</option>
                   {DIR_ORDER.filter((d) => directiveCounts[d]).map((d) => (
@@ -744,7 +753,6 @@ export default function App() {
                   ))}
                 </select>
               </div>
-
               <div className="toolbar__right">
                 <button
                   type="button"
@@ -767,59 +775,43 @@ export default function App() {
                 >
                   Copy JSON
                 </button>
-                <button
-                  type="button"
-                  className="ghost-btn"
-                  onClick={() => setHidePassedInfo((v) => !v)}
-                >
+                <button type="button" className="ghost-btn" onClick={() => setHidePassedInfo((v) => !v)}>
                   {hidePassedInfo ? "Show all findings" : "Hide pass/info"}
                 </button>
               </div>
             </div>
 
             <Section
-              title="Analysis summary"
-              helper="High-level result from backend output"
+              title="Summary"
+              helper="Top-level backend result"
               right={<StatusPill status={result.overall_risk === "CRITICAL" ? "FAIL" : result.overall_risk === "HIGH" || result.overall_risk === "MEDIUM" ? "WARN" : "PASS"} />}
             >
-              <div className="summary-grid">
-                <div className="summary-box">
-                  <div className="summary-box__label">Summary</div>
+              <div className="summary-grid summary-grid--v2">
+                <div className="summary-box summary-box--feature">
+                  <div className="summary-box__label">Analysis summary</div>
                   <div className="summary-box__value summary-box__value--text">{result.summary}</div>
                 </div>
-                <div className="summary-box">
-                  <div className="summary-box__label">Risk</div>
-                  <div className="summary-box__value">{result.overall_risk}</div>
-                </div>
-                <div className="summary-box">
-                  <div className="summary-box__label">Directives</div>
-                  <div className="summary-box__value">{summaryStats.directives}</div>
-                </div>
-                <div className="summary-box">
-                  <div className="summary-box__label">Standards</div>
-                  <div className="summary-box__value">{summaryStats.standards}</div>
-                </div>
-                <div className="summary-box">
-                  <div className="summary-box__label">Warnings</div>
-                  <div className="summary-box__value">{summaryStats.warn}</div>
-                </div>
-                <div className="summary-box">
-                  <div className="summary-box__label">Fails</div>
-                  <div className="summary-box__value">{summaryStats.fail}</div>
-                </div>
+                <div className="summary-box"><div className="summary-box__label">Risk</div><div className="summary-box__value">{result.overall_risk}</div></div>
+                <div className="summary-box"><div className="summary-box__label">Directive buckets</div><div className="summary-box__value">{summaryStats.directives}</div></div>
+                <div className="summary-box"><div className="summary-box__label">Standards</div><div className="summary-box__value">{summaryStats.standards}</div></div>
+                <div className="summary-box"><div className="summary-box__label">Warnings</div><div className="summary-box__value">{summaryStats.warn}</div></div>
+                <div className="summary-box"><div className="summary-box__label">Fails</div><div className="summary-box__value">{summaryStats.fail}</div></div>
               </div>
             </Section>
 
             <Section
               title="Applicable standards"
-              helper="Grouped by directive bucket. Search and filter stay applied."
+              helper="Grouped by legislation bucket"
               count={filteredStandardGroups.length}
             >
-              <div className="group-stack">
+              <div className="group-stack group-stack--v2">
                 {DIR_ORDER.filter((d) => (standardsByDirective[d] || []).length > 0).map((d) => (
-                  <div key={d} className="std-group">
-                    <div className="std-group__head">
-                      <DirBadge code={d} />
+                  <div key={d} className="std-group std-group--v2">
+                    <div className="std-group__head std-group__head--v2">
+                      <div className="std-group__titleWrap">
+                        <DirBadge code={d} />
+                        <div className="std-group__subtitle">{DIR_NAME[d] || d}</div>
+                      </div>
                       <span className="count-pill">{standardsByDirective[d].length}</span>
                     </div>
                     <div className="std-grid">
@@ -834,7 +826,7 @@ export default function App() {
 
             <Section
               title="Other findings"
-              helper="Legislation, missing information, contradictions, and non-standard findings"
+              helper="Missing information, contradictions, legislation notes, and non-standard findings"
               count={nonStdFindings.length}
             >
               <div className="list-pad">
@@ -857,7 +849,7 @@ export default function App() {
             ) : null}
           </>
         ) : null}
-      </div>
+      </main>
 
       {msg ? <div className="toast">{msg}</div> : null}
     </div>
@@ -869,386 +861,513 @@ function Style() {
     <style>{`
       * { box-sizing: border-box; }
       html, body, #root { margin: 0; min-height: 100%; }
+      :root {
+        --bg: #f8fafc;
+        --bg2: #eef2ff;
+        --card: rgba(255,255,255,0.84);
+        --line: rgba(15,23,42,0.08);
+        --ink: #0f172a;
+        --muted: #64748b;
+        --muted-2: #94a3b8;
+        --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+        --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.05);
+        --accent: #2563eb;
+      }
       body {
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-          "Segoe UI", sans-serif;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         background:
-          radial-gradient(circle at top left, #edf6fa 0%, transparent 30%),
-          linear-gradient(180deg, #f5fafc 0%, #edf4f7 100%);
-        color: #0d2c3b;
+          radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 26%),
+          radial-gradient(circle at top right, rgba(139,92,246,.10), transparent 22%),
+          linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        color: var(--ink);
       }
       button, input, textarea, select { font: inherit; }
-      button {
-        cursor: pointer;
-        border: none;
+      button { cursor: pointer; border: none; }
+
+      .bg-grid {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+        background-size: 32px 32px;
+        mask-image: linear-gradient(180deg, rgba(0,0,0,.55), transparent 80%);
       }
 
       .container {
         width: 100%;
-        max-width: 1320px;
+        max-width: 1360px;
         margin: 0 auto;
-        padding: 0 18px;
+        padding: 0 20px;
       }
+      .page-shell { min-height: 100vh; position: relative; }
 
-      .page-shell { min-height: 100vh; }
-
-      .nav {
+      .topbar {
         position: sticky;
         top: 0;
         z-index: 40;
-        backdrop-filter: blur(12px);
-        background: rgba(245, 250, 252, 0.84);
-        border-bottom: 1px solid rgba(13, 44, 59, 0.08);
+        backdrop-filter: blur(18px);
+        background: rgba(248,250,252,.72);
+        border-bottom: 1px solid var(--line);
       }
-      .nav__inner {
-        min-height: 64px;
+      .topbar__inner {
+        min-height: 74px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
       }
-      .nav__brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      .nav__logo {
-        width: 36px;
-        height: 36px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #0d2c3b, #13678A);
-        color: #fff;
+      .brand { display: flex; align-items: center; gap: 14px; }
+      .brand__mark {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #111827, #2563eb 68%, #7c3aed);
+        color: white;
         display: grid;
         place-items: center;
         font-weight: 800;
         letter-spacing: -.03em;
+        box-shadow: 0 10px 28px rgba(37,99,235,.22);
       }
-      .nav__title {
+      .brand__title { font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
+      .brand__sub { font-size: 12px; color: var(--muted); }
+      .topbar__meta { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+      .meta-chip {
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.75);
+        border: 1px solid var(--line);
+        color: #334155;
+        display: inline-flex;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .page { padding: 28px 20px 52px; position: relative; z-index: 1; }
+
+      .hero-v2 {
+        padding: 12px 0 18px;
+      }
+      .hero-v2__eyebrow {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid #dbeafe;
+        background: rgba(239,246,255,.88);
+        color: #1d4ed8;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+      }
+      .hero-v2__title {
+        margin: 14px 0 10px;
+        font-size: clamp(32px, 4vw, 52px);
+        line-height: 1.02;
+        letter-spacing: -.05em;
+        max-width: 900px;
+      }
+      .hero-v2__text {
+        margin: 0;
+        max-width: 760px;
+        color: var(--muted);
+        line-height: 1.8;
+        font-size: 15px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+        border-radius: 24px;
+        backdrop-filter: blur(18px);
+      }
+
+      .composer {
+        overflow: hidden;
+        margin-bottom: 18px;
+      }
+      .composer__top {
+        padding: 20px 22px 14px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .composer__label {
         font-size: 15px;
         font-weight: 800;
         letter-spacing: -.02em;
       }
-      .nav__tag {
-        font-size: 11px;
-        color: #64808c;
-      }
-      .nav__stats {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
-      .nav-pill {
-        min-height: 34px;
-        padding: 0 12px;
-        border-radius: 999px;
-        background: #fff;
-        border: 1px solid #c6d9e2;
-        color: #35515e;
-        display: inline-flex;
-        align-items: center;
-        font-size: 12px;
-        font-weight: 700;
-      }
-      .nav-pill--risk {
-        background: #0d2c3b;
-        color: #fff;
-        border-color: #0d2c3b;
-      }
-
-      .page {
-        padding: 24px 18px 48px;
-      }
-
-      .hero {
-        margin-bottom: 16px;
-      }
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 28px;
-        padding: 0 10px;
-        border-radius: 999px;
-        background: #e8f3f8;
-        color: #13678A;
-        border: 1px solid #b8d8e5;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-      }
-      .hero__title {
-        margin: 10px 0 8px;
-        font-size: clamp(28px, 4vw, 44px);
-        line-height: 1.04;
-        letter-spacing: -.04em;
-      }
-      .hero__sub {
-        margin: 0;
-        max-width: 860px;
-        color: #53707d;
-        line-height: 1.75;
-      }
-
-      .card {
-        background: rgba(255,255,255,.92);
-        border: 1px solid rgba(13,44,59,.08);
-        box-shadow: 0 18px 46px rgba(13,44,59,.07);
-        border-radius: 18px;
-      }
-
-      .input-card {
-        overflow: hidden;
-        margin-bottom: 14px;
-      }
-      .input-card__head {
-        padding: 16px 16px 14px;
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-        border-bottom: 1px solid #dce9ef;
-      }
-      .input-card__hint {
-        margin-top: 4px;
-        color: #577582;
+      .composer__sub {
+        margin-top: 5px;
+        color: var(--muted);
         font-size: 13px;
       }
-      .input-card__controls { display: flex; align-items: center; gap: 8px; }
 
-      .depth { display: flex; gap: 8px; }
+      .depth { display: flex; gap: 8px; flex-wrap: wrap; }
       .seg-btn {
-        padding: 7px 12px;
-        border-radius: 10px;
-        border: 1px solid #c6d9e2;
-        background: #fff;
-        color: #496673;
+        padding: 9px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,.76);
+        color: #475569;
         font-weight: 700;
         text-transform: capitalize;
+        transition: .16s ease;
       }
+      .seg-btn:hover { transform: translateY(-1px); }
       .seg-btn--on {
-        background: #e8f3f8;
-        border-color: #96bfd1;
-        color: #0f4256;
+        background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+        border-color: #bfdbfe;
+        color: #1d4ed8;
       }
 
+      .composer__textareaWrap {
+        position: relative;
+        padding: 0 22px;
+      }
       .ta {
         display: block;
         width: 100%;
-        min-height: 180px;
-        padding: 18px 20px;
         border: none;
         outline: none;
+        resize: vertical;
         background: transparent;
-        color: #0d2c3b;
-        line-height: 1.85;
+        color: var(--ink);
       }
-      .ta::placeholder { color: #8daab5; }
+      .ta--v2 {
+        min-height: 170px;
+        border-radius: 20px;
+        border: 1px solid rgba(148,163,184,.20);
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(248,250,252,.92) 100%);
+        padding: 24px 22px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+        line-height: 1.9;
+        font-size: 15px;
+      }
+      .ta--v2:focus {
+        border-color: #bfdbfe;
+        box-shadow: 0 0 0 4px rgba(59,130,246,.08), inset 0 1px 0 rgba(255,255,255,.7);
+      }
+      .ta--v2::placeholder {
+        color: #94a3b8;
+      }
 
-      .quick-adds {
-        padding: 0 16px 14px;
+      .ghost-guide {
+        position: absolute;
+        left: 40px;
+        bottom: 18px;
+        right: 40px;
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
+        pointer-events: none;
+      }
+      .ghost-guide span {
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.72);
+        border: 1px dashed rgba(148,163,184,.35);
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .quick-adds--v2 {
+        padding: 14px 22px 0;
+        display: flex;
+        gap: 10px;
         flex-wrap: wrap;
       }
+      .hint-chip {
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.84);
+        border: 1px solid rgba(148,163,184,.22);
+        color: #334155;
+        font-weight: 700;
+        transition: .16s ease;
+      }
+      .hint-chip:hover {
+        transform: translateY(-1px);
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+      }
 
-      .input-card__foot {
-        padding: 12px 16px;
+      .composer__bottom {
+        padding: 18px 22px 22px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
-        background: #f1f8fb;
-        border-top: 1px solid #dce9ef;
+        gap: 14px;
       }
-      .input-card__meta {
-        font-size: 12px;
-        color: #627d8a;
-      }
-      .input-card__actions {
+      .composer__helper { color: var(--muted); font-size: 12.5px; }
+      .composer__actions {
         display: flex;
-        gap: 8px;
+        gap: 10px;
         flex-wrap: wrap;
       }
 
       .ghost-btn {
-        padding: 8px 13px;
-        border-radius: 10px;
-        background: #fff;
-        border: 1px solid #c6d9e2;
-        color: #35515e;
+        padding: 10px 14px;
+        border-radius: 12px;
+        background: rgba(255,255,255,.82);
+        border: 1px solid rgba(148,163,184,.22);
+        color: #334155;
         font-weight: 700;
+        transition: .16s ease;
       }
       .ghost-btn:hover {
-        background: #f4fafc;
+        transform: translateY(-1px);
+        background: white;
       }
-
       .run-btn {
-        padding: 8px 16px;
-        border-radius: 10px;
+        padding: 10px 16px;
+        border-radius: 12px;
         font-weight: 800;
-        background: linear-gradient(135deg, #0d2c3b, #13678A);
+        background: linear-gradient(135deg, #111827, #2563eb 68%, #7c3aed);
         color: #fff;
-        box-shadow: 0 6px 20px rgba(19,103,138,.22);
+        box-shadow: 0 12px 30px rgba(37,99,235,.25);
       }
       .run-btn:disabled {
-        background: #c8d8df;
-        color: #7d98a4;
+        background: #cbd5e1;
+        color: #64748b;
         box-shadow: none;
         cursor: not-allowed;
       }
-
       .err-bar {
-        margin: 0 16px 16px;
+        margin: 0 22px 22px;
         padding: 12px 14px;
-        border-radius: 10px;
-        background: #edf4f6;
-        border: 1px solid #c6d9e2;
-        color: #0d2c3b;
+        border-radius: 14px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+      }
+
+      .empty-state {
+        position: relative;
+        overflow: hidden;
+        padding: 34px 24px;
+        text-align: center;
+        margin-bottom: 18px;
+      }
+      .empty-state__orb {
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(59,130,246,.16) 0%, transparent 68%);
+        left: 50%;
+        top: -70px;
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+      .empty-state__eyebrow {
+        position: relative;
+        z-index: 1;
+        color: #2563eb;
+        font-weight: 800;
+        font-size: 11px;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+      .empty-state__title {
+        position: relative;
+        z-index: 1;
+        margin: 10px 0 8px;
+        font-size: 28px;
+        letter-spacing: -.04em;
+      }
+      .empty-state__text {
+        position: relative;
+        z-index: 1;
+        max-width: 640px;
+        margin: 0 auto;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+      .empty-state__tips {
+        position: relative;
+        z-index: 1;
+        margin: 18px 0 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .tip-chip {
+        padding: 10px 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.78);
+        border: 1px solid rgba(148,163,184,.22);
+        color: #475569;
+        font-size: 12px;
+        font-weight: 700;
       }
 
       .loading__card {
-        padding: 18px 20px;
+        padding: 22px;
         display: flex;
         align-items: center;
         gap: 14px;
-      }
-      .loading__text {
-        margin-top: 4px;
-        color: #5b7885;
+        margin-bottom: 18px;
       }
       .spinner {
         width: 24px;
         height: 24px;
         border-radius: 50%;
-        border: 2.5px solid #c6d9e2;
-        border-top-color: #13678A;
-        animation: spin .7s linear infinite;
+        border: 3px solid #dbeafe;
+        border-top-color: #2563eb;
+        animation: spin .75s linear infinite;
       }
+      .loading__text { margin-top: 4px; color: var(--muted); }
       @keyframes spin { to { transform: rotate(360deg); } }
 
-      .toolbar {
-        padding: 14px 16px;
+      .toolbar--v2 {
+        padding: 16px 18px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 14px;
+        gap: 14px;
+        margin-bottom: 18px;
         flex-wrap: wrap;
       }
       .toolbar__left, .toolbar__right {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         flex-wrap: wrap;
       }
-
-      .search-wrap { min-width: 320px; }
+      .search-wrap { min-width: 340px; }
       .search-input, .select {
-        height: 40px;
-        border-radius: 10px;
-        border: 1px solid #c6d9e2;
-        background: #fff;
-        color: #0d2c3b;
-        padding: 0 12px;
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid rgba(148,163,184,.24);
+        background: rgba(255,255,255,.86);
+        color: var(--ink);
+        padding: 0 14px;
         outline: none;
       }
-      .search-input {
-        width: 100%;
-      }
+      .search-input { width: 100%; }
       .search-input:focus, .select:focus {
-        border-color: #96bfd1;
-        box-shadow: 0 0 0 3px rgba(19,103,138,.08);
+        border-color: #bfdbfe;
+        box-shadow: 0 0 0 4px rgba(59,130,246,.08);
       }
 
       .section {
         overflow: hidden;
-        margin-bottom: 14px;
+        margin-bottom: 18px;
       }
       .section__head {
-        padding: 16px 18px;
+        padding: 18px 20px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
-        border-bottom: 1px solid #dce9ef;
+        gap: 14px;
+        border-bottom: 1px solid var(--line);
       }
-      .section__titleWrap {
+      .section__titleRow {
         display: flex;
-        align-items: center;
         gap: 10px;
+        align-items: center;
       }
       .section__title {
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 800;
         letter-spacing: -.02em;
-        color: #0d2c3b;
       }
       .section__helper {
-        font-size: 12px;
-        color: #627d8a;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12.5px;
       }
-
       .count-pill {
         min-width: 28px;
-        padding: 4px 8px;
+        padding: 4px 9px;
         border-radius: 999px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: #edf4f6;
-        border: 1px solid #c6d9e2;
-        color: #2a6782;
+        background: rgba(255,255,255,.8);
+        border: 1px solid rgba(148,163,184,.22);
+        color: #334155;
         font-size: 11px;
         font-weight: 800;
       }
 
       .summary-grid {
-        padding: 16px;
+        padding: 18px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
         gap: 12px;
       }
+      .summary-grid--v2 {
+        grid-template-columns: 1.3fr repeat(5, minmax(140px, 1fr));
+      }
       .summary-box {
-        border: 1px solid #dce9ef;
-        border-radius: 12px;
-        padding: 14px;
-        background: linear-gradient(180deg, #fff 0%, #f7fbfc 100%);
+        border: 1px solid rgba(148,163,184,.18);
+        border-radius: 18px;
+        padding: 16px;
+        background: linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(248,250,252,.88) 100%);
+        box-shadow: var(--shadow-soft);
+      }
+      .summary-box--feature {
+        background: linear-gradient(135deg, rgba(239,246,255,.95) 0%, rgba(250,245,255,.95) 100%);
       }
       .summary-box__label {
         font-size: 11px;
         letter-spacing: .08em;
         text-transform: uppercase;
-        color: #64808c;
+        color: var(--muted);
         font-weight: 800;
         margin-bottom: 8px;
       }
       .summary-box__value {
-        font-size: 24px;
+        font-size: 26px;
         font-weight: 800;
-        color: #0d2c3b;
+        letter-spacing: -.04em;
       }
       .summary-box__value--text {
         font-size: 13px;
         font-weight: 600;
-        line-height: 1.7;
-        color: #32505b;
+        line-height: 1.8;
+        color: #334155;
+        letter-spacing: 0;
       }
 
-      .group-stack {
-        padding: 16px;
+      .group-stack--v2 {
+        padding: 18px;
         display: flex;
         flex-direction: column;
-        gap: 22px;
+        gap: 24px;
       }
-
-      .std-group__head {
+      .std-group--v2 {
+        padding: 0;
+      }
+      .std-group__head--v2 {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
+      }
+      .std-group__titleWrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .std-group__subtitle {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 600;
       }
 
       .dir-badge {
@@ -1259,9 +1378,10 @@ function Style() {
         border: 1px solid var(--ring);
         background: var(--pill);
         color: var(--ink);
-        padding: 7px 12px 7px 9px;
-        min-height: 34px;
+        padding: 8px 12px 8px 10px;
+        min-height: 36px;
       }
+      .dir-badge--compact { min-height: 30px; padding: 6px 10px 6px 8px; }
       .dir-badge__dot {
         width: 8px;
         height: 8px;
@@ -1270,7 +1390,7 @@ function Style() {
         flex-shrink: 0;
       }
       .dir-badge__code {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: "JetBrains Mono", monospace;
         font-size: 11px;
         font-weight: 700;
       }
@@ -1281,63 +1401,68 @@ function Style() {
 
       .std-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 14px;
       }
-
       .std-card {
         border: 1px solid var(--fborder);
-        background: linear-gradient(180deg, #fff 0%, var(--fbg) 100%);
-        border-radius: 14px;
-        padding: 14px;
+        background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, var(--fbg) 100%);
+        border-radius: 20px;
+        padding: 16px;
+        box-shadow: var(--shadow-soft);
       }
       .std-card__top {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 10px;
+        gap: 12px;
+      }
+      .std-card__eyebrow {
+        font-size: 10px;
+        letter-spacing: .12em;
+        color: var(--muted);
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 6px;
       }
       .std-card__name {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: "JetBrains Mono", monospace;
         font-size: 12px;
         line-height: 1.55;
-        font-weight: 600;
-        color: #0d2c3b;
+        font-weight: 700;
       }
       .std-card__chips {
-        margin-top: 10px;
+        margin-top: 12px;
         display: flex;
-        gap: 6px;
+        gap: 8px;
         flex-wrap: wrap;
       }
       .std-card__finding {
         margin-top: 12px;
-        color: #36515d;
+        color: #334155;
         line-height: 1.75;
-        font-size: 12.5px;
+        font-size: 13px;
       }
       .std-card__actions {
-        margin-top: 12px;
-        padding: 10px 12px;
-        border-radius: 10px;
-        background: rgba(255,255,255,.7);
-        border: 1px solid rgba(13,44,59,.09);
+        margin-top: 14px;
+        padding: 12px 13px;
+        border-radius: 14px;
+        background: rgba(255,255,255,.74);
+        border: 1px solid rgba(148,163,184,.18);
       }
       .std-card__actions-title {
         font-size: 11px;
         font-weight: 800;
         letter-spacing: .08em;
         text-transform: uppercase;
-        color: #5a7480;
-        margin-bottom: 6px;
+        color: var(--muted);
+        margin-bottom: 8px;
       }
-      .std-card__actions ul {
-        padding-left: 18px;
-      }
+      .std-card__actions ul { margin: 0; padding-left: 18px; }
       .std-card__actions li {
         font-size: 12px;
         line-height: 1.65;
-        color: #36515d;
+        color: #334155;
       }
 
       .status-pill {
@@ -1353,132 +1478,117 @@ function Style() {
         font-weight: 800;
       }
 
-      .list-pad { padding: 8px 8px 12px; }
+      .list-pad { padding: 10px 10px 14px; }
       .frow {
         display: grid;
-        grid-template-columns: 48px 1fr;
-        border-radius: 12px;
+        grid-template-columns: 46px 1fr;
+        border-radius: 18px;
         overflow: hidden;
         border: 1px solid var(--fborder);
-        background: var(--fbg);
-        margin-bottom: 8px;
+        background: linear-gradient(180deg, rgba(255,255,255,.95) 0%, var(--fbg) 100%);
+        margin-bottom: 10px;
       }
       .frow__left {
         background: var(--fstripe);
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 6px;
-        padding: 12px 0;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 16px;
       }
       .frow__icon {
-        width: 22px;
-        height: 22px;
-        border-radius: 6px;
-        background: rgba(255,255,255,.22);
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        background: rgba(255,255,255,.18);
         display: grid;
         place-items: center;
-        color: #fff;
+        color: white;
         font-weight: 800;
       }
-      .frow__label {
-        font-size: 8px;
-        color: rgba(255,255,255,.9);
-        font-weight: 800;
-        letter-spacing: .12em;
-      }
-      .frow__body {
-        padding: 12px 14px;
+      .frow__body { padding: 14px 16px; }
+      .frow__topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
       }
       .frow__art {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: "JetBrains Mono", monospace;
         font-size: 10.5px;
-        color: #64808c;
-        margin-bottom: 4px;
+        color: var(--muted);
       }
       .frow__text {
-        color: #24404d;
-        line-height: 1.75;
+        color: #1e293b;
+        line-height: 1.8;
       }
       .frow__action {
-        margin-top: 8px;
-        padding: 8px 10px;
-        border-radius: 8px;
-        background: rgba(255,255,255,.68);
-        border: 1px solid rgba(13,44,59,.08);
-        color: #35515e;
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(255,255,255,.76);
+        border: 1px solid rgba(148,163,184,.18);
+        color: #334155;
         font-size: 12px;
       }
 
       .diag-wrap {
-        padding: 16px;
+        padding: 18px;
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
       }
       .diag-pill {
-        padding: 7px 10px;
+        padding: 8px 11px;
         border-radius: 999px;
-        border: 1px solid #c6d9e2;
-        background: #f7fbfc;
-        color: #36515d;
+        border: 1px solid rgba(148,163,184,.22);
+        background: rgba(255,255,255,.8);
+        color: #334155;
         font-size: 12px;
       }
-
-      .empty {
-        padding: 16px;
-        color: #64808c;
-      }
-
+      .empty { padding: 18px; color: var(--muted); }
       .toast {
         position: fixed;
-        right: 18px;
-        bottom: 18px;
+        right: 20px;
+        bottom: 20px;
         z-index: 60;
         padding: 10px 14px;
-        border-radius: 10px;
-        background: #0d2c3b;
-        color: #fff;
-        box-shadow: 0 10px 24px rgba(13,44,59,.22);
+        border-radius: 12px;
+        background: #111827;
+        color: white;
+        box-shadow: 0 14px 30px rgba(15,23,42,.25);
         font-size: 12.5px;
         font-weight: 700;
       }
 
-      @media (max-width: 980px) {
-        .toolbar {
+      @media (max-width: 1080px) {
+        .summary-grid--v2 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+      }
+      @media (max-width: 900px) {
+        .toolbar--v2,
+        .composer__top,
+        .composer__bottom,
+        .section__head,
+        .topbar__inner {
           flex-direction: column;
           align-items: stretch;
         }
-        .toolbar__left, .toolbar__right {
-          width: 100%;
-        }
-        .search-wrap {
-          min-width: 0;
-          flex: 1;
-        }
+        .toolbar__left, .toolbar__right, .topbar__meta { width: 100%; }
+        .search-wrap { min-width: 0; flex: 1; }
       }
-
       @media (max-width: 720px) {
         .container { padding: 0 14px; }
         .page { padding: 18px 14px 40px; }
-        .input-card__head,
-        .input-card__foot {
-          flex-direction: column;
-          align-items: stretch;
+        .std-grid { grid-template-columns: 1fr; }
+        .ghost-guide {
+          position: static;
+          padding: 8px 0 0;
+          left: auto;
+          right: auto;
+          bottom: auto;
         }
-        .input-card__actions,
-        .toolbar__right,
-        .toolbar__left {
-          flex-direction: column;
-          align-items: stretch;
-        }
-        .ghost-btn, .run-btn, .select, .search-input {
-          width: 100%;
-        }
-        .nav__tag {
-          display: none;
-        }
+        .ghost-btn, .run-btn, .select, .search-input { width: 100%; }
+        .composer__actions, .toolbar__right, .toolbar__left { flex-direction: column; align-items: stretch; }
       }
     `}</style>
   );
