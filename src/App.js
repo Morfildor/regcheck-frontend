@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Analytics } from "@vercel/analytics/react"
+
 /*
   ┌──────────────────────────────────────────────┐
   │  POSEIDON PALETTE — the only colours used    │
