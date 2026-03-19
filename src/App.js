@@ -97,6 +97,13 @@ const QUESTIONS = [
   { id:"data",    label:"Does it process personal or sensitive data?",  eg:"camera, mic, account, location, health data",   ok:t=>/\b(camera|microphone|account|login|location|gps|health|heart.?rate|personal.?data|biometric)\b/i.test(t) },
 ];
 
+const handleKeyDown = useCallback((e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    if (ready && !loading) run();
+  }
+}, [ready, loading, run]);
+
 function getDirs(findings = []) {
   const s = new Set();
   findings.forEach(f =>
@@ -310,12 +317,14 @@ export default function App() {
               </div>
 
               <textarea
-                ref={taRef}
-                className="ta"
-                value={desc}
-                onChange={e => setDesc(e.target.value)}
-                placeholder={"Example:\n\n" + SAMPLE}
-              />
+  ref={taRef}
+  className="ta"
+  value={desc}
+  onChange={e => setDesc(e.target.value)}
+  onKeyDown={handleKeyDown}
+  placeholder={"Example:\n\n" + SAMPLE}
+  aria-label="Product description input"
+/>  
 
               <div className="input-foot">
                 <span className="char-count">{desc.length} chars</span>
@@ -335,6 +344,9 @@ export default function App() {
                   <button type="button" className="ghost-btn" onClick={() => setDesc(SAMPLE)}>Sample</button>
                   <button type="button" className="ghost-btn" onClick={() => setDesc("")}>Clear</button>
                   <button type="button" className="run-btn" onClick={run} disabled={!ready}>
+                  <button type="button" className="ghost-btn" onClick={() => {if (desc.length > 50 && !window.confirm("Clear your description?")) return; setDesc("");  }} >  Clear 
+                    
+                  </button>
                     Analyse →
                   </button>
                 </div>
