@@ -11,20 +11,44 @@ const DIR_NAME = {
   LVD: "Low Voltage",
   EMC: "EMC",
   RED: "RF / Radio",
-  CRA: "Cybersecurity",
+  RED_CYBER: "RED Cybersecurity",
+  CRA: "Cyber Resilience Act",
+  ROHS: "RoHS",
+  REACH: "REACH",
   GDPR: "Data / Privacy",
   AI_Act: "AI Act",
   ESPR: "ESPR",
   SYSTEM: "System",
+  OTHER: "Other",
 };
 
-const DIR_ORDER = ["LVD", "EMC", "RED", "CRA", "GDPR", "AI_Act", "ESPR", "OTHER"];
+const DIR_ORDER = [
+  "LVD",
+  "EMC",
+  "RED",
+  "RED_CYBER",
+  "CRA",
+  "ROHS",
+  "REACH",
+  "GDPR",
+  "AI_Act",
+  "ESPR",
+  "OTHER",
+];
 
 const DIR = {
   LVD: { dot: "#0d2c3b", pill: "#d8e8ef", ring: "#9fc0cf", ink: "#0d2c3b" },
   EMC: { dot: "#13678A", pill: "#d8edf5", ring: "#8bbfd4", ink: "#0b4258" },
   RED: { dot: "#1f3c88", pill: "#dbe5ff", ring: "#a7bbe9", ink: "#1f3c88" },
+  RED_CYBER: {
+    dot: "#533483",
+    pill: "#ece4fb",
+    ring: "#c6b5ea",
+    ink: "#41286a",
+  },
   CRA: { dot: "#1c7c54", pill: "#daf3e5", ring: "#9ed1b5", ink: "#13533a" },
+  ROHS: { dot: "#6f7f14", pill: "#f2f5d8", ring: "#d0d78a", ink: "#55610f" },
+  REACH: { dot: "#8a5a13", pill: "#f8ecd9", ring: "#e0bf8d", ink: "#6a430d" },
   GDPR: { dot: "#4a7c59", pill: "#e3f3e8", ring: "#b8d6bf", ink: "#33573f" },
   AI_Act: { dot: "#6b4f9d", pill: "#ece5f8", ring: "#c5b5e4", ink: "#4b3770" },
   ESPR: { dot: "#7d6a0f", pill: "#f6f0d1", ring: "#dbcf8b", ink: "#62530d" },
@@ -126,47 +150,78 @@ function splitFindings(findings = []) {
 function inferDirectiveFromText(text = "") {
   const t = text.toLowerCase();
 
+  // RED DA cybersecurity first
   if (
-    /60335|60730|62233|60335-1|60335-2|household|appliance safety|safety of household/i.test(
-      text
-    )
-  ) {
-    return "LVD";
-  }
-
-  if (
-    /55014|61000|emc|electromagnetic|cisp?r|harmonic|flicker|electrostatic|surge|immunity/i.test(
+    /en\s*18031|18031-1|18031-2|18031-3|red da|delegated act|article 3\.3\(d\)|article 3\.3\(e\)|article 3\.3\(f\)|protect network|personal data.*radio|fraud.*radio/.test(
       t
     )
   ) {
-    return "EMC";
+    return "RED_CYBER";
   }
 
+  // CRA separate
   if (
-    /300 328|301 489|300 220|300 330|300 440|300 086|300 113|radio|rf|wireless|bluetooth|wifi|wi-fi|lte|5g|zigbee|matter|nfc/i.test(
-      t
-    )
-  ) {
-    return "RED";
-  }
-
-  if (
-    /18031|cyber|cybersecurity|cra|secure update|vulnerability|authentication|software bill|sbom|access control|en 303 645/i.test(
+    /cyber resilience act|\bcra\b|secure development|vulnerability handling|sbom|software bill of materials|post-market security update|coordinated vulnerability disclosure/.test(
       t
     )
   ) {
     return "CRA";
   }
 
-  if (/gdpr|privacy|personal data|data protection/i.test(t)) {
+  // RoHS
+  if (
+    /rohs|2011\/65\/eu|en iec 63000|iec 63000|en 50581|hazardous substances|restricted substances|iec 62321|62321-3-1|62321-3-2|62321-3-3|62321-4|62321-5|62321-6|62321-7-1|62321-7-2|62321-8/.test(
+      t
+    )
+  ) {
+    return "ROHS";
+  }
+
+  // REACH
+  if (
+    /\breach\b|ec 1907\/2006|regulation \(ec\) no 1907\/2006|svhc|substances of very high concern|candidate list|annex xvii|article 33/.test(
+      t
+    )
+  ) {
+    return "REACH";
+  }
+
+  // LVD
+  if (
+    /60335|60730|62233|60335-1|60335-2|household|appliance safety|electrical safety/.test(
+      t
+    )
+  ) {
+    return "LVD";
+  }
+
+  // EMC
+  if (
+    /55014|61000|emc|electromagnetic|cispr|harmonic|flicker|electrostatic|esd|surge|immunity|conducted emission|radiated emission/.test(
+      t
+    )
+  ) {
+    return "EMC";
+  }
+
+  // RF / RED non-cyber
+  if (
+    /300 328|301 489|300 220|300 330|300 440|300 086|300 113|radio spectrum|wireless|bluetooth|wifi|wi-fi|lte|5g|zigbee|matter|nfc|rf exposure|receiver category/.test(
+      t
+    )
+  ) {
+    return "RED";
+  }
+
+  if (/gdpr|privacy|personal data|data protection/.test(t)) {
     return "GDPR";
   }
 
-  if (/ai act|artificial intelligence|machine learning|model/i.test(t)) {
+  if (/ai act|artificial intelligence|machine learning|model/.test(t)) {
     return "AI_Act";
   }
 
-  if (/ecodesign|espr|repairability|durability|energy/i.test(t)) {
+  if (/ecodesign|espr|repairability|durability|energy/.test(t)) {
     return "ESPR";
   }
 
@@ -174,14 +229,27 @@ function inferDirectiveFromText(text = "") {
 }
 
 function enrichDirectives(f) {
-  const explicit = getDirectiveListFromFinding(f).filter((d) => d !== "SYSTEM");
-  if (explicit.length) return explicit;
+  const combined = [f.article, f.finding, f.action].filter(Boolean).join(" ");
+  const inferred = inferDirectiveFromText(combined);
 
-  const inferred = inferDirectiveFromText(
-    [f.article, f.finding, f.action].filter(Boolean).join(" ")
-  );
+  let explicit = getDirectiveListFromFinding(f).filter((d) => d !== "SYSTEM");
 
-  return inferred ? [inferred] : ["OTHER"];
+  // EN 18031 must be RED_CYBER, never CRA
+  if (/en\s*18031|18031-1|18031-2|18031-3/i.test(combined.toLowerCase())) {
+    explicit = explicit.filter((d) => d !== "CRA");
+    explicit = explicit.filter((d) => d !== "RED");
+    explicit.push("RED_CYBER");
+  }
+
+  if (inferred === "RED_CYBER" && !explicit.includes("RED_CYBER")) {
+    explicit.push("RED_CYBER");
+  }
+
+  if (!explicit.length) {
+    explicit = inferred ? [inferred] : ["OTHER"];
+  }
+
+  return unique(explicit);
 }
 
 function buildStandardGroups(stds = []) {
@@ -230,8 +298,15 @@ function downloadJson(filename, data) {
   URL.revokeObjectURL(url);
 }
 
+function dirCodeLabel(code) {
+  if (code === "RED") return "RF";
+  if (code === "RED_CYBER") return "RED CYBER";
+  return code;
+}
+
 function DirBadge({ code }) {
   const d = DIR[code] || DIR.OTHER;
+
   return (
     <span
       className="dir-badge"
@@ -243,7 +318,7 @@ function DirBadge({ code }) {
       }}
     >
       <span className="dir-badge__dot" />
-      <span className="dir-badge__code">{code === "RED" ? "RF" : code}</span>
+      <span className="dir-badge__code">{dirCodeLabel(code)}</span>
       <span className="dir-badge__name">{DIR_NAME[code] || code}</span>
     </span>
   );
@@ -268,15 +343,14 @@ function StatusPill({ status }) {
 
 function StandardCard({ item }) {
   const mainStatus = priorityStatus(item.statuses);
-  const s = STS[mainStatus] || STS.INFO;
 
   return (
     <div
       className="std-card"
       style={{
-        "--fbg": s.bg,
-        "--fborder": s.border,
-        "--ftext": s.text,
+        "--fbg": (STS[mainStatus] || STS.INFO).bg,
+        "--fborder": (STS[mainStatus] || STS.INFO).border,
+        "--ftext": (STS[mainStatus] || STS.INFO).text,
       }}
     >
       <div className="std-card__top">
@@ -420,7 +494,6 @@ export default function App() {
 
   const standardsByDirective = useMemo(() => {
     const map = new Map();
-
     DIR_ORDER.forEach((d) => map.set(d, []));
 
     standardsFiltered.forEach((s) => {
@@ -458,7 +531,7 @@ export default function App() {
         if (!rows.length) return [];
         return [
           "",
-          `${dir === "RED" ? "RF" : dir} (${rows.length})`,
+          `${dirCodeLabel(dir)} (${rows.length})`,
           ...rows.map((r) => `- ${r.name}`),
         ];
       }),
@@ -548,7 +621,7 @@ export default function App() {
             <h1 className="hero__title">Standards first. Faster review.</h1>
             <p className="hero__sub">
               Describe the product and review the standards grouped by LVD, EMC,
-              RF, Cybersecurity, and the rest.
+              RF, RED Cybersecurity, CRA, RoHS, REACH, and the rest.
             </p>
           </div>
         </header>
@@ -589,10 +662,18 @@ export default function App() {
             <div className="input-card__foot">
               <div className="input-card__meta">{desc.length} chars</div>
               <div className="input-card__actions">
-                <button type="button" className="ghost-btn" onClick={() => setDesc(SAMPLE)}>
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={() => setDesc(SAMPLE)}
+                >
                   Sample
                 </button>
-                <button type="button" className="ghost-btn" onClick={() => setDesc("")}>
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={() => setDesc("")}
+                >
                   Clear
                 </button>
                 <button
@@ -645,7 +726,7 @@ export default function App() {
                   <option value="ALL">All buckets</option>
                   {availableDirs.map((d) => (
                     <option key={d} value={d}>
-                      {d === "RED" ? "RF" : d}
+                      {dirCodeLabel(d)}
                     </option>
                   ))}
                 </select>
@@ -667,7 +748,11 @@ export default function App() {
                 <button type="button" className="ghost-btn" onClick={copySummary}>
                   Copy summary
                 </button>
-                <button type="button" className="ghost-btn" onClick={copyStandards}>
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={copyStandards}
+                >
                   Copy standards
                 </button>
                 <button type="button" className="ghost-btn" onClick={exportJson}>
