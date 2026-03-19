@@ -96,6 +96,58 @@ function normalizeStdName(s = "") {
   return s.replace(/\s+/g, " ").trim();
 }
 
+function statusRank(status = "INFO") {
+  return { FAIL: 4, WARN: 3, PASS: 2, INFO: 1 }[status] || 1;
+}
+
+function standardStatusFromItem(item) {
+  if (item.item_type === "review") return "WARN";
+  return "PASS";
+}
+
+function buildGroupsFromBackendItems(standards = [], reviewItems = []) {
+  const all = [...(standards || []), ...(reviewItems || [])];
+  const map = new Map();
+
+  all.forEach((row) => {
+    const name = normalizeStdName(row.code || row.title || "Unnamed item");
+    const directive = row.directive || row.legislation_key || "OTHER";
+    const key = `${directive}::${name.toLowerCase()}`;
+    const status = standardStatusFromItem(row);
+    const findingText = row.title || "";
+    const actionText = row.reason || row.notes || "";
+
+    if (!map.has(key)) {
+      map.set(key, {
+        name,
+        directives: [directive],
+        statuses: [status],
+        findings: [
+          {
+            finding: findingText,
+            action: actionText,
+            status,
+          },
+        ],
+        actions: actionText ? [actionText] : [],
+      });
+      return;
+    }
+
+    const curr = map.get(key);
+    curr.directives = unique([...curr.directives, directive]);
+    curr.statuses = unique([...curr.statuses, status]);
+    if (actionText) curr.actions = unique([...curr.actions, actionText]);
+    curr.findings.push({
+      finding: findingText,
+      action: actionText,
+      status,
+    });
+  });
+
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function getDirectiveListFromFinding(f) {
   return (f.directive || "")
     .split(",")
@@ -105,10 +157,8 @@ function getDirectiveListFromFinding(f) {
 }
 
 function priorityStatus(statuses = []) {
-  if (statuses.includes("FAIL")) return "FAIL";
-  if (statuses.includes("WARN")) return "WARN";
-  if (statuses.includes("PASS")) return "PASS";
-  return "INFO";
+  if (!statuses.length) return "INFO";
+  return [...statuses].sort((a, b) => statusRank(b) - statusRank(a))[0];
 }
 
 function isStandardFinding(f) {
@@ -450,9 +500,8 @@ function useToast(timeout = 1800) {
 function collectDirectiveCounts(groups = []) {
   const counts = {};
   groups.forEach((g) => {
-    g.directives.forEach((d) => {
-      counts[d] = (counts[d] || 0) + 1;
-    });
+    const d = g.directives?.[0] || "OTHER";
+    counts[d] = (counts[d] || 0) + 1;
   });
   return counts;
 }
@@ -603,11 +652,10 @@ export default function App() {
   }, [description, depth]);
 
   const findingsBucket = useMemo(() => splitFindings(result?.findings || []), [result]);
-
   const standardGroups = useMemo(() => {
-    const fromFindings = buildStandardGroups(findingsBucket.stds || []);
-    return fromFindings.sort((a, b) => a.name.localeCompare(b.name));
-  }, [findingsBucket]);
+    
+    return buildGroupsFromBackendItems(result?.standards || [], result?.review_items || []);
+}, [result]);
 
   const filteredStandardGroups = useMemo(() => {
     return standardGroups.filter((g) => {
@@ -623,15 +671,14 @@ export default function App() {
   }, [standardGroups, search, filterDir]);
 
   const standardsByDirective = useMemo(() => {
-    const groups = {};
-    filteredStandardGroups.forEach((g) => {
-      g.directives.forEach((d) => {
-        if (!groups[d]) groups[d] = [];
-        groups[d].push(g);
-      });
-    });
-    return groups;
-  }, [filteredStandardGroups]);
+  const groups = {};
+  filteredStandardGroups.forEach((g) => {
+    const d = g.directives?.[0] || "OTHER";
+    if (!groups[d]) groups[d] = [];
+    groups[d].push(g);
+  });
+  return groups;
+}, [filteredStandardGroups]);
 
   const directiveCounts = useMemo(() => collectDirectiveCounts(standardGroups), [standardGroups]);
 
