@@ -149,6 +149,25 @@ function downloadJson(filename, data) {
   URL.revokeObjectURL(url);
 }
 
+// Patterns that indicate model self-instructions leaking into output
+const META_RE = /do not auto.?match|auto.?match from|product.?gated entry|strict product.?gated|generic household|generic electrical|internal note|debug|self.?instruc|do not use|not for display/i;
+
+function isMetaText(text = "") {
+  return META_RE.test(text);
+}
+
+// An action is worth showing only if it adds something the finding doesn't already say
+function isUsefulAction(action = "", finding = "") {
+  if (!action.trim()) return false;
+  if (isMetaText(action)) return false;
+  // Suppress if the action is near-duplicate of the finding (>70% word overlap)
+  const actionWords = new Set(action.toLowerCase().split(/\W+/).filter(w => w.length > 3));
+  const findingWords = new Set(finding.toLowerCase().split(/\W+/).filter(w => w.length > 3));
+  if (actionWords.size === 0) return false;
+  const overlap = [...actionWords].filter(w => findingWords.has(w)).length;
+  return overlap / actionWords.size < 0.7;
+}
+
 function dirCodeLabel(code) {
   if (code === "RED") return "RF";
   if (code === "RED_CYBER") return "RED CYBER";
@@ -180,6 +199,12 @@ function StatusPill({ status }) {
 function StandardCard({ item }) {
   const mainStatus = priorityStatus(item.statuses);
   const s = STS[mainStatus] || STS.INFO;
+
+  const rawFinding = item.findings?.[0]?.finding || "";
+  const finding = isMetaText(rawFinding) ? "" : rawFinding;
+
+  const usefulActions = item.actions.filter(a => isUsefulAction(a, finding));
+
   return (
     <div className="std-card" style={{ "--fbg": s.bg, "--fborder": s.border, "--ftext": s.text }}>
       <div className="std-card__top">
@@ -189,13 +214,13 @@ function StandardCard({ item }) {
       <div className="std-card__chips">
         {item.directives.map(d => <DirBadge key={d} code={d} compact />)}
       </div>
-      {item.findings?.[0]?.finding && (
-        <div className="std-card__finding">{item.findings[0].finding}</div>
+      {finding && (
+        <div className="std-card__finding">{finding}</div>
       )}
-      {item.actions.length > 0 && (
+      {usefulActions.length > 0 && (
         <div className="std-card__actions">
           <div className="std-card__actions-title">Required action</div>
-          <ul>{item.actions.slice(0, 2).map((a, i) => <li key={i}>{a}</li>)}</ul>
+          <ul>{usefulActions.slice(0, 2).map((a, i) => <li key={i}>{a}</li>)}</ul>
         </div>
       )}
     </div>
@@ -204,6 +229,9 @@ function StandardCard({ item }) {
 
 function FindingRow({ f }) {
   const s = STS[f.status] || STS.INFO;
+  const finding = isMetaText(f.finding || "") ? "" : f.finding;
+  const action = isUsefulAction(f.action || "", finding) ? f.action : null;
+  if (!finding && !action) return null;
   return (
     <div className="frow" style={{ "--fbg": s.bg, "--fborder": s.border, "--ftext": s.text, "--fstripe": s.stripe }}>
       <div className="frow__left">
@@ -212,8 +240,8 @@ function FindingRow({ f }) {
       </div>
       <div className="frow__body">
         <div className="frow__art">{f.article || ""}</div>
-        <div className="frow__text">{f.finding}</div>
-        {f.action && <div className="frow__action">{f.action}</div>}
+        {finding && <div className="frow__text">{finding}</div>}
+        {action && <div className="frow__action">{action}</div>}
       </div>
     </div>
   );
