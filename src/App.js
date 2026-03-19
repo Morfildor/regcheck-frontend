@@ -398,26 +398,50 @@ function Section({ title, helper, count, right, children }) {
   );
 }
 
-function EmptyState({ onLoadSample }) {
+function ProductTypePicker({ onPick }) {
+  const types = [
+    { label: "Air fryer", value: "Air fryer" },
+    { label: "Kettle", value: "Kettle" },
+    { label: "Coffee machine", value: "Coffee machine" },
+    { label: "Vacuum cleaner", value: "Vacuum cleaner" },
+    { label: "Blender", value: "Blender" },
+    { label: "Hair dryer", value: "Hair dryer" },
+    { label: "Heater", value: "Portable heater" },
+    { label: "Fan", value: "Electric fan" },
+  ];
+
   return (
-    <div className="card empty-state">
+    <div className="type-picker">
+      {types.map((item) => (
+        <button
+          key={item.label}
+          type="button"
+          className="type-chip"
+          onClick={() => onPick(item.value)}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ onLoadSample, onPickType }) {
+  return (
+    <div className="card empty-state empty-state--v3">
       <div className="empty-state__orb" />
-      <div className="empty-state__eyebrow">Version 2</div>
-      <h2 className="empty-state__title">Start with a product description</h2>
+      <div className="empty-state__eyebrow">Version 3</div>
+      <h2 className="empty-state__title">Start with the product type</h2>
       <p className="empty-state__text">
-        Describe what the product is, how it is powered, whether it has radio,
-        app or cloud functions, food contact, motors, sensors, or software updates.
+        Pick the closest product first. Then add power, connectivity, materials,
+        software, or moving-part details only when relevant.
       </p>
-      <div className="empty-state__tips">
-        <span className="tip-chip">mains powered</span>
-        <span className="tip-chip">Wi-Fi or Bluetooth</span>
-        <span className="tip-chip">mobile app</span>
-        <span className="tip-chip">OTA updates</span>
-        <span className="tip-chip">food-contact surfaces</span>
+      <ProductTypePicker onPick={onPickType} />
+      <div className="empty-state__row">
+        <button type="button" className="ghost-btn" onClick={onLoadSample}>
+          Load sample
+        </button>
       </div>
-      <button type="button" className="run-btn" onClick={onLoadSample}>
-        Load sample product
-      </button>
     </div>
   );
 }
@@ -452,6 +476,127 @@ function collectDirectiveCounts(groups = []) {
     });
   });
   return counts;
+}
+
+function detectProductType(text = "") {
+  const t = text.toLowerCase();
+  const rules = [
+    { type: "air_fryer", re: /air fryer/ },
+    { type: "kettle", re: /kettle/ },
+    { type: "coffee_machine", re: /coffee|espresso|bean to cup|filter coffee/ },
+    { type: "vacuum", re: /vacuum|robot vacuum|stick vacuum/ },
+    { type: "blender", re: /blender|mixer|food processor/ },
+    { type: "hair_dryer", re: /hair dryer|hairdryer/ },
+    { type: "heater", re: /heater|radiator/ },
+    { type: "fan", re: /fan|air circulator/ },
+  ];
+  return rules.find((r) => r.re.test(t))?.type || null;
+}
+
+function hasAny(text = "", words = []) {
+  const t = text.toLowerCase();
+  return words.some((w) => t.includes(w));
+}
+
+function buildGuidedQuickAdds(description = "") {
+  const t = description.toLowerCase().trim();
+  const productType = detectProductType(t);
+  const quick = [];
+
+  const add = (label, value, stage = "detail") => {
+    if (!t.includes(value.toLowerCase())) {
+      quick.push({ label, value, stage });
+    }
+  };
+
+  const productChoices = [
+    { label: "Air fryer", value: "Air fryer", stage: "product" },
+    { label: "Kettle", value: "Kettle", stage: "product" },
+    { label: "Coffee machine", value: "Coffee machine", stage: "product" },
+    { label: "Vacuum cleaner", value: "Vacuum cleaner", stage: "product" },
+    { label: "Blender", value: "Blender", stage: "product" },
+    { label: "Hair dryer", value: "Hair dryer", stage: "product" },
+  ];
+
+  if (!t || !productType) {
+    return {
+      productType,
+      primary: productChoices,
+      secondary: [],
+    };
+  }
+
+  if (!hasAny(t, ["mains", "battery", "usb", "230v", "220v"])) {
+    add("Mains powered", "Mains powered, 230V");
+    add("Battery powered", "Battery powered");
+    add("USB powered", "USB powered");
+  }
+
+  if (!hasAny(t, ["wifi", "wi-fi", "bluetooth", "zigbee", "thread", "matter", "nfc"])) {
+    add("Wi-Fi", "Wi-Fi connection");
+    add("Bluetooth", "Bluetooth connection");
+    add("Matter", "Matter support");
+  }
+
+  if (!hasAny(t, ["app", "cloud", "ota", "account", "login"])) {
+    add("App control", "Mobile app control");
+    add("Cloud", "Cloud connectivity");
+    add("OTA updates", "OTA software updates");
+  }
+
+  if (productType === "air_fryer") {
+    if (!hasAny(t, ["food", "basket", "coating"])) add("Food contact", "Food-contact basket and internal surfaces");
+    if (!hasAny(t, ["heating", "heater", "element"])) add("Heating element", "Contains heating element");
+    if (!hasAny(t, ["timer", "display"])) add("Display / timer", "Electronic display and timer control");
+  }
+
+  if (productType === "kettle") {
+    if (!hasAny(t, ["food", "water path", "beverage"])) add("Water contact", "Food-contact water path materials");
+    if (!hasAny(t, ["heating", "heater", "element"])) add("Heating element", "Contains heating element");
+    if (!hasAny(t, ["base", "cordless"])) add("Cordless base", "Cordless kettle with separate power base");
+  }
+
+  if (productType === "coffee_machine") {
+    if (!hasAny(t, ["water", "milk", "coffee path", "food"])) add("Food contact path", "Food-contact water, coffee, and milk path materials");
+    if (!hasAny(t, ["pump", "pressure"])) add("Pump / pressure", "Contains pump and pressurized fluid path");
+    if (!hasAny(t, ["cleaning", "descale"])) add("Cleaning cycle", "Automatic cleaning and descaling functions");
+  }
+
+  if (productType === "vacuum") {
+    if (!hasAny(t, ["motor", "suction"])) add("Motorized suction", "Motorized suction function");
+    if (!hasAny(t, ["battery", "charger", "dock"])) add("Charging system", "Battery charging dock or charger");
+    if (!hasAny(t, ["app", "mapping", "camera", "lidar"])) add("Navigation", "App-connected mapping or navigation sensors");
+  }
+
+  if (productType === "blender") {
+    if (!hasAny(t, ["food", "jar", "blade"])) add("Food contact", "Food-contact jar, lid, seals, and blade area");
+    if (!hasAny(t, ["motor", "blade"])) add("Motor and blades", "High-speed motorized blade system");
+    if (!hasAny(t, ["safety lock", "interlock"])) add("Safety interlock", "Lid or jar safety interlock");
+  }
+
+  if (productType === "hair_dryer") {
+    if (!hasAny(t, ["heating", "heater", "element"])) add("Heating element", "Contains heating element");
+    if (!hasAny(t, ["fan", "motor"])) add("Fan motor", "Contains internal fan motor");
+    if (!hasAny(t, ["ion", "ionic"])) add("Ionic function", "Ionic hair care function");
+  }
+
+  if (productType === "heater") {
+    if (!hasAny(t, ["heating", "heater", "element"])) add("Heating element", "Contains heating element");
+    if (!hasAny(t, ["thermostat", "temperature"])) add("Thermostat", "Electronic thermostat control");
+    if (!hasAny(t, ["tip-over", "overheat"])) add("Protective safety", "Tip-over and overheat protection");
+  }
+
+  if (productType === "fan") {
+    if (!hasAny(t, ["motor"])) add("Motorized", "Motorized fan function");
+    if (!hasAny(t, ["remote", "wifi", "app"])) add("Remote control", "Remote or app control");
+    if (!hasAny(t, ["oscillation", "guard"])) add("Oscillation / guard", "Oscillation function and protective guard");
+  }
+
+  return {
+    productType,
+    primary: quick.slice(0, 4),
+    secondary: quick.slice(4, 9),
+  };
 }
 
 export default function App() {
@@ -567,43 +712,7 @@ export default function App() {
     };
   }, [result, description, depth, standardGroups]);
 
-  const quickAdds = useMemo(() => {
-    const t = description.toLowerCase();
-    const options = [];
-
-    const add = (label, value) => {
-      if (!t.includes(value.toLowerCase())) options.push({ label, value });
-    };
-
-    if (!t.includes("mains") && !t.includes("battery") && !t.includes("usb")) {
-      add("Mains powered", "Mains powered, 230V");
-      add("Battery powered", "Battery powered");
-      add("USB powered", "USB powered");
-    }
-
-    if (!t.includes("bluetooth") && !t.includes("wifi") && !t.includes("zigbee") && !t.includes("thread") && !t.includes("matter")) {
-      add("Bluetooth", "Bluetooth connection");
-      add("Wi-Fi", "Wi-Fi connection");
-      add("Matter", "Matter support");
-    }
-
-    if (!t.includes("app") && !t.includes("cloud") && !t.includes("ota")) {
-      add("Mobile app", "Mobile app control");
-      add("Cloud", "Cloud connectivity");
-      add("OTA updates", "OTA software updates");
-    }
-
-    if (!t.includes("food") && !t.includes("drink") && !t.includes("beverage")) {
-      add("Food contact", "Food-contact surfaces in normal use");
-    }
-
-    if (!t.includes("heating") && !t.includes("motor") && !t.includes("compressor")) {
-      add("Heating element", "Contains heating element");
-      add("Motorized", "Motorized function");
-    }
-
-    return options.slice(0, 8);
-  }, [description]);
+  const guidedAdds = useMemo(() => buildGuidedQuickAdds(description), [description]);
 
   const appendHint = useCallback((value) => {
     setDescription((prev) => {
@@ -630,7 +739,7 @@ export default function App() {
           </div>
 
           <div className="topbar__meta">
-            <span className="meta-chip">Version 2</span>
+            <span className="meta-chip">Version 3</span>
             {result ? <span className="meta-chip">Risk {result.overall_risk}</span> : null}
             {result ? <span className="meta-chip">{summaryStats.standards} standards</span> : null}
           </div>
@@ -641,10 +750,10 @@ export default function App() {
         <section className="hero-v2">
           <div className="hero-v2__content">
             <div className="hero-v2__eyebrow">CE / DoC preparation support</div>
-            <h1 className="hero-v2__title">Clean, guided EU compliance screening</h1>
+            <h1 className="hero-v2__title">Guided EU compliance screening</h1>
             <p className="hero-v2__text">
-              Start with a simple product description. Add only the details that matter:
-              power, connectivity, software, materials, moving parts, and intended use.
+              Start with the product type first. Then add only the follow-up details that matter
+              for legislation and standard scoping.
             </p>
           </div>
         </section>
@@ -673,39 +782,61 @@ export default function App() {
 
           <div className="composer__textareaWrap">
             <textarea
-              className="ta ta--v2"
+              className="ta ta--v2 ta--v3"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Example: Smart kettle with Bluetooth app control, mains powered, OTA updates, user account, and food-contact plastic water path."
+              placeholder="Start with product type. Example: Air fryer"
             />
             {!description.trim() ? (
-              <div className="ghost-guide">
-                <span>What is it?</span>
-                <span>How is it powered?</span>
-                <span>Any Wi-Fi / Bluetooth / Matter?</span>
-                <span>App, cloud, OTA?</span>
-                <span>Food contact or moving parts?</span>
+              <div className="ghost-guide ghost-guide--v3">
+                <span>Start: Air fryer</span>
+                <span>Then: mains powered</span>
+                <span>Then: Wi-Fi or Bluetooth</span>
+                <span>Then: app / cloud / OTA</span>
               </div>
             ) : null}
           </div>
 
-          {quickAdds.length > 0 ? (
-            <div className="quick-adds quick-adds--v2">
-              {quickAdds.map((q) => (
-                <button
-                  key={q.label}
-                  type="button"
-                  className="hint-chip"
-                  onClick={() => appendHint(q.value)}
-                >
-                  {q.label}
-                </button>
-              ))}
+          <div className="assist-panel">
+            <div className="assist-panel__block">
+              <div className="assist-panel__title">
+                {guidedAdds.productType ? "Suggested next details" : "Choose product type"}
+              </div>
+              <div className="assist-panel__chips">
+                {guidedAdds.primary.map((q) => (
+                  <button
+                    key={q.label}
+                    type="button"
+                    className={`hint-chip ${q.stage === "product" ? "hint-chip--primary" : ""}`}
+                    onClick={() => appendHint(q.value)}
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : null}
+
+            {guidedAdds.secondary.length > 0 ? (
+              <div className="assist-panel__block assist-panel__block--soft">
+                <div className="assist-panel__title">More related details</div>
+                <div className="assist-panel__chips">
+                  {guidedAdds.secondary.map((q) => (
+                    <button
+                      key={q.label}
+                      type="button"
+                      className="hint-chip hint-chip--soft"
+                      onClick={() => appendHint(q.value)}
+                    >
+                      {q.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
 
           <div className="composer__bottom">
-            <div className="composer__helper">Start empty. Build the description step by step.</div>
+            <div className="composer__helper">Pick product type first, then enrich only the relevant details.</div>
             <div className="composer__actions">
               <button type="button" className="ghost-btn" onClick={() => setDescription(SAMPLE)}>
                 Load sample
@@ -720,7 +851,12 @@ export default function App() {
           {error ? <div className="err-bar">{error}</div> : null}
         </section>
 
-        {!result && !loading ? <EmptyState onLoadSample={() => setDescription(SAMPLE)} /> : null}
+        {!result && !loading ? (
+          <EmptyState
+            onLoadSample={() => setDescription(SAMPLE)}
+            onPickType={(value) => setDescription(value)}
+          />
+        ) : null}
 
         {loading ? (
           <div className="card loading__card">
@@ -1159,58 +1295,86 @@ function Style() {
         text-align: center;
         margin-bottom: 18px;
       }
-      .empty-state__orb {
-        position: absolute;
-        width: 240px;
-        height: 240px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(59,130,246,.16) 0%, transparent 68%);
-        left: 50%;
-        top: -70px;
-        transform: translateX(-50%);
-        pointer-events: none;
+      .empty-state--v3 {
+        padding: 30px 22px;
       }
-      .empty-state__eyebrow {
+      .empty-state__row {
+        margin-top: 16px;
+        display: flex;
+        justify-content: center;
+      }
+      .type-picker {
         position: relative;
         z-index: 1;
-        color: #2563eb;
-        font-weight: 800;
-        font-size: 11px;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-      }
-      .empty-state__title {
-        position: relative;
-        z-index: 1;
-        margin: 10px 0 8px;
-        font-size: 28px;
-        letter-spacing: -.04em;
-      }
-      .empty-state__text {
-        position: relative;
-        z-index: 1;
-        max-width: 640px;
-        margin: 0 auto;
-        color: var(--muted);
-        line-height: 1.8;
-      }
-      .empty-state__tips {
-        position: relative;
-        z-index: 1;
-        margin: 18px 0 20px;
+        margin: 18px auto 6px;
         display: flex;
         gap: 10px;
         justify-content: center;
         flex-wrap: wrap;
+        max-width: 760px;
       }
-      .tip-chip {
-        padding: 10px 12px;
+      .type-chip {
+        padding: 11px 14px;
         border-radius: 999px;
-        background: rgba(255,255,255,.78);
-        border: 1px solid rgba(148,163,184,.22);
-        color: #475569;
-        font-size: 12px;
+        background: rgba(255,255,255,.88);
+        border: 1px solid rgba(148,163,184,.24);
+        color: #1e293b;
         font-weight: 700;
+        transition: .16s ease;
+      }
+      .type-chip:hover {
+        transform: translateY(-1px);
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+      }
+
+      .assist-panel {
+        padding: 12px 22px 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .assist-panel__block {
+        border: 1px solid rgba(148,163,184,.16);
+        border-radius: 16px;
+        background: rgba(255,255,255,.58);
+        padding: 12px 12px 10px;
+      }
+      .assist-panel__block--soft {
+        background: rgba(248,250,252,.72);
+      }
+      .assist-panel__title {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .assist-panel__chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .hint-chip--primary {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+      }
+      .hint-chip--soft {
+        background: rgba(255,255,255,.7);
+      }
+
+      .ta--v3 {
+        min-height: 148px;
+      }
+      .ghost-guide--v3 {
+        gap: 6px;
+      }
+      .ghost-guide--v3 span {
+        font-size: 11.5px;
+        padding: 7px 9px;
       }
 
       .loading__card {
@@ -1232,11 +1396,11 @@ function Style() {
       @keyframes spin { to { transform: rotate(360deg); } }
 
       .toolbar--v2 {
-        padding: 16px 18px;
+        padding: 14px 16px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 14px;
+        gap: 12px;
         margin-bottom: 18px;
         flex-wrap: wrap;
       }
@@ -1310,7 +1474,7 @@ function Style() {
         gap: 12px;
       }
       .summary-grid--v2 {
-        grid-template-columns: 1.3fr repeat(5, minmax(140px, 1fr));
+        grid-template-columns: 1.6fr repeat(5, minmax(120px, 1fr));
       }
       .summary-box {
         border: 1px solid rgba(148,163,184,.18);
@@ -1401,14 +1565,14 @@ function Style() {
 
       .std-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
       }
       .std-card {
         border: 1px solid var(--fborder);
         background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, var(--fbg) 100%);
-        border-radius: 20px;
-        padding: 16px;
+        border-radius: 18px;
+        padding: 14px;
         box-shadow: var(--shadow-soft);
       }
       .std-card__top {
@@ -1438,10 +1602,10 @@ function Style() {
         flex-wrap: wrap;
       }
       .std-card__finding {
-        margin-top: 12px;
+        margin-top: 10px;
         color: #334155;
-        line-height: 1.75;
-        font-size: 13px;
+        line-height: 1.65;
+        font-size: 12.5px;
       }
       .std-card__actions {
         margin-top: 14px;
