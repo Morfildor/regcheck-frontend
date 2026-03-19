@@ -1,490 +1,631 @@
-import React, { useState, useEffect, useRef } from "react";
-
-// ═══════════════════════════════════════════════════════════════════
-// CONFIGURATION & CONSTANTS
-// ═══════════════════════════════════════════════════════════════════
+import { useState, useEffect, useRef } from "react";
 
 const QUESTIONS = [
   {
-    id: "what", number: "01", label: "What does your product do?",
-    example: 'e.g. "Smart thermostat" or "Industrial water sensor"',
-    detect: t => t.length > 60 && /\b(device|product|system|sensor|monitor|tracker|controller|hub|gateway|camera|speaker|display|wearable|appliance|charger|meter|lock|alarm|thermostat|reader|scanner|detector|module|unit|kit|tool|machine)\b/i.test(t),
+    id: "what",
+    label: "What does your product do?",
+    example: '"A smart thermostat that controls home heating"',
+    detect: t => t.length > 60 && /\b(device|product|system|sensor|monitor|tracker|controller|hub|gateway|camera|speaker|display|wearable|appliance|charger|meter|lock|alarm|thermostat|reader|scanner|detector|module|unit)\b/i.test(t),
   },
   {
-    id: "market", number: "02", label: "Who buys it and where is it used?",
-    example: 'e.g. "EU consumers" or "B2B factories"',
-    detect: t => /\b(consumer|residential|household|home|personal|retail|industrial|b2b|factory|medical|clinical|hospital|professional|children|kids|patient|office|commercial|business|enterprise)\b/i.test(t),
+    id: "market",
+    label: "Who uses it and where?",
+    example: '"EU consumers at home" or "B2B industrial factory"',
+    detect: t => /\b(consumer|residential|household|home|personal|retail|industrial|b2b|factory|medical|clinical|hospital|professional|children|kids|patient|office)\b/i.test(t),
   },
   {
-    id: "wireless", number: "03", label: "Does it use wireless / radio?",
-    example: 'e.g. "WiFi 802.11ac", "Bluetooth 5.0", or "No wireless"',
-    detect: t => /wifi|wi-fi|bluetooth|ble|\blte\b|4g |5g |zigbee|nfc|lora|cellular|gsm|nb-iot|wireless|radio|rf |thread|matter|z-wave|no wireless|no radio/i.test(t),
+    id: "wireless",
+    label: "Does it use wireless / radio?",
+    example: '"WiFi 802.11ac" or "Bluetooth 5.0" or "No wireless"',
+    detect: t => /wifi|wi-fi|bluetooth|ble|\blte\b|4g |5g |zigbee|nfc|lora|cellular|gsm|nb-iot|wireless|radio|rf |thread|matter|no wireless|no radio/i.test(t),
   },
   {
-    id: "power", number: "04", label: "How is it powered?",
-    example: 'e.g. "230V mains", "3.7V Li-ion", or "USB-C"',
-    detect: t => /230v|220v|110v|mains|li-ion|lithium|battery|usb.c|usb power|poe|rechargeable|hardwired|power supply|alkaline|battery powered|coin cell|aa battery/i.test(t),
+    id: "power",
+    label: "How is it powered?",
+    example: '"230V mains" or "3.7V Li-ion battery" or "USB-C 5V"',
+    detect: t => /230v|220v|110v|mains|li-ion|lithium|battery|usb.c|usb power|poe|rechargeable|hardwired|power supply|alkaline|coin cell|aa battery/i.test(t),
   },
   {
-    id: "data", number: "05", label: "Does it collect personal data?",
-    example: 'e.g. "Stores user email and GPS" or "No personal data"',
-    detect: t => /personal data|user data|email|location|gps|health|biometric|account|profile|login|password|tracking|camera|microphone|face|voice|no personal data|no user data|anonymi/i.test(t),
+    id: "data",
+    label: "Does it collect personal data?",
+    example: '"Stores user email and GPS location" or "No personal data"',
+    detect: t => /personal data|user data|email|location|gps|health|biometric|account|profile|login|password|tracking|camera|microphone|face|voice|no personal data|no user data/i.test(t),
   },
   {
-    id: "cloud", number: "06", label: "Connects to internet or cloud?",
-    example: 'e.g. "AWS cloud" or "Fully offline"',
-    detect: t => /cloud|server|aws|azure|google cloud|backend|api |internet|online|local only|no cloud|offline|standalone|no internet|self.hosted/i.test(t),
+    id: "cloud",
+    label: "Does it connect to the internet?",
+    example: '"AWS cloud in Ireland" or "Fully offline, no internet"',
+    detect: t => /cloud|server|aws|azure|google cloud|backend|api |internet|online|local only|no cloud|offline|standalone|no internet/i.test(t),
   },
   {
-    id: "software", number: "07", label: "Does it have software / firmware?",
-    example: 'e.g. "Embedded firmware with OTA" or "Purely mechanical"',
-    detect: t => /firmware|software|ota|over-the-air|embedded|mobile app|companion app|rtos|linux|update|microcontroller|android|ios app|web app|no software|purely mechanical/i.test(t),
+    id: "software",
+    label: "Does it have software or firmware?",
+    example: '"Embedded firmware with OTA updates" or "No software"',
+    detect: t => /firmware|software|ota|over-the-air|embedded|mobile app|companion app|rtos|linux|update|microcontroller|android|ios app|no software|purely mechanical/i.test(t),
   },
   {
-    id: "login", number: "08", label: "How do users log in?",
-    example: 'e.g. "OAuth2 with MFA" or "No login needed"',
-    detect: t => /password|login|credential|authentication|mfa|2fa|oauth|pairing|pin code|default password|unique password|passphrase|no login|no authentication|ble pairing/i.test(t),
+    id: "login",
+    label: "How do users log in?",
+    example: '"Unique per-device password" or "OAuth2 + MFA" or "No login"',
+    detect: t => /password|login|credential|authentication|mfa|2fa|oauth|pairing|pin code|default password|unique password|no login|no authentication/i.test(t),
   },
   {
-    id: "ai", number: "09", label: "Uses AI or machine learning?",
-    example: 'e.g. "On-device ML" or "No AI features"',
-    detect: t => /\bai\b|machine learning|\bml\b|neural|inference|llm|computer vision|voice assistant|recommendation|automated decision|deep learning|no ai|no ml|no machine learning/i.test(t),
+    id: "ai",
+    label: "Does it use AI or machine learning?",
+    example: '"On-device ML model" or "Cloud GPT" or "No AI features"',
+    detect: t => /\bai\b|machine learning|\bml\b|neural|inference|llm|computer vision|voice assistant|recommendation|automated decision|no ai|no ml/i.test(t),
   },
   {
-    id: "safety", number: "10", label: "Physical safety concerns?",
-    example: 'e.g. "Contains Li-ion", "230V mains", or "No hazards"',
-    detect: t => /high voltage|mains|li-ion|lithium|motor|heating|thermal|ip[0-9][0-9]|waterproof|fire|smoke|alarm|safety function|fail.safe|no safety|no hazard|battery cell/i.test(t),
+    id: "safety",
+    label: "Any physical safety concerns?",
+    example: '"Contains Li-ion battery" or "230V inside" or "No hazards"',
+    detect: t => /high voltage|mains|li-ion|lithium|motor|heating|thermal|ip[0-9][0-9]|waterproof|fire|smoke|safety function|fail.safe|no safety|no hazard|battery cell/i.test(t),
   },
 ];
-
-const DIR_META = {
-  RED:    { label: "RED",    full: "Radio Equipment Directive",           color: "text-blue-400", border: "border-blue-400/30", bg: "bg-blue-400/10", ref: "2014/53/EU" },
-  CRA:    { label: "CRA",    full: "Cyber Resilience Act",                color: "text-fuchsia-400", border: "border-fuchsia-400/30", bg: "bg-fuchsia-400/10", ref: "(EU) 2024/2847" },
-  GDPR:   { label: "GDPR",   full: "General Data Protection Regulation",  color: "text-emerald-400", border: "border-emerald-400/30", bg: "bg-emerald-400/10", ref: "(EU) 2016/679" },
-  AI_Act: { label: "AI Act", full: "Artificial Intelligence Act",         color: "text-violet-400", border: "border-violet-400/30", bg: "bg-violet-400/10", ref: "(EU) 2024/1689" },
-  LVD:    { label: "LVD",    full: "Low Voltage Directive",               color: "text-orange-400", border: "border-orange-400/30", bg: "bg-orange-400/10", ref: "2014/35/EU" },
-  EMC:    { label: "EMC",    full: "EMC Directive",                       color: "text-amber-400", border: "border-amber-400/30", bg: "bg-amber-400/10", ref: "2014/30/EU" },
-  ESPR:   { label: "ESPR",   full: "Ecodesign for Sustainable Products",  color: "text-green-300", border: "border-green-300/30", bg: "bg-green-300/10", ref: "(EU) 2024/1781" },
-};
-
-const STATUS_CFG = {
-  FAIL: { icon: "✕", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20" },
-  WARN: { icon: "!", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-  PASS: { icon: "✓", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-  INFO: { icon: "i", color: "text-blue-300", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-};
-
-const RISK_CFG = {
-  CRITICAL: { color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20" },
-  HIGH:     { color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20" },
-  MEDIUM:   { color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-  LOW:      { color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-};
-
-// ═══════════════════════════════════════════════════════════════════
-// HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════
 
 function detectDirectives(text) {
   const t = text.toLowerCase();
   const has = (kws) => kws.some(k => t.includes(k));
   const r = [];
-
-  if (has(["wifi","wi-fi","wlan","802.11","2.4ghz","5ghz","6ghz","bluetooth","ble"," bt5"," bt4","zigbee","z-wave","thread","matter","ieee 802.15","lora","lorawan","868mhz","915mhz","lpwan","nfc","near field","rfid","lte","4g ","5g ","nb-iot","cat-m","cellular","gsm","3gpp","radio","rf module","rf transmit","wireless transmit","sub-ghz"])) r.push("RED");
-  if (has(["software","firmware","embedded","microcontroller","microprocessor","raspberry","arduino","esp32","app ","mobile app","web app","cloud","server","api","backend","internet","online","iot","connected","ota","over-the-air","remote update","firmware update","digital","processor","mcu","network","ethernet","tcp","mqtt","http","usb","uart","i2c","spi"])) r.push("CRA");
-  if (has(["personal data","user data","email","location","gps","health","biometric","account","login","password","tracking","camera","microphone","face recognition","voice recognition","analytics","telemetry","store data","logging","third party","share data","privacy","consent","user account","photo","image capture"])) r.push("GDPR");
-  if (has(["artificial intelligence","machine learning","deep learning"," ai ","ai-powered","ai based","ai model"," ml ","ml model","neural network","llm","large language model","computer vision","image recognition","voice assistant","wake word","speech recognition","nlp","natural language","recommendation","automated decision","predictive","inference","classifier","chatbot"])) r.push("AI_Act");
-  if (has(["230v","220v","110v","120v","240v","mains","ac power","wall plug","hardwired","power supply","mains-powered","grid-powered","plug-in","li-ion","lithium ion","lipo","li-po","lithium polymer","high capacity battery","18650","21700","battery pack","bms","high voltage","motor drive","inverter","poe","power over ethernet","48v","rechargeable battery"])) r.push("LVD");
-  if (has(["electronic","electrical","pcb","circuit board","sensor","actuator","motor","relay","microcontroller","microprocessor","processor","mcu","power supply","battery","usb","230v","mains","wifi","bluetooth","radio","wireless","display","lcd","oled","led driver","pwm","oscillator"])) r.push("EMC");
-  if (has(["repair","repairable","replaceable part","spare part","right to repair","recycled","recyclable","recycling","circular","end of life","eol","take-back","sustainability","sustainable","carbon footprint","energy label","energy class","erp","ecodesign","dpp","digital product passport","durability","longevity","standby power","energy consumption"])) r.push("ESPR");
-
+  if (has(["wifi","wi-fi","wlan","802.11","bluetooth","ble","zigbee","z-wave","thread","matter","lora","lorawan","nfc","near field","rfid","lte","4g ","5g ","nb-iot","cat-m","cellular","gsm","radio","rf module","wireless transmit"])) r.push("RED");
+  if (has(["software","firmware","embedded","microcontroller","microprocessor","app ","mobile app","web app","cloud","server","api","backend","internet","online","iot","connected","ota","over-the-air","remote update","digital","processor","mcu","network","ethernet","tcp","mqtt","http","usb"])) r.push("CRA");
+  if (has(["personal data","user data","email","location","gps","health","biometric","account","login","password","tracking","camera","microphone","face recognition","voice recognition","analytics","telemetry","store data","logging","third party","privacy","consent"])) r.push("GDPR");
+  if (has(["artificial intelligence","machine learning","deep learning"," ai ","ai-powered"," ml ","neural network","llm","computer vision","voice assistant","recommendation","automated decision","predictive","inference","classifier","chatbot"])) r.push("AI_Act");
+  if (has(["230v","220v","110v","120v","mains","ac power","wall plug","hardwired","power supply","mains-powered","li-ion","lithium ion","lipo","lithium polymer","battery pack","bms","high voltage","motor drive","inverter","poe","rechargeable battery"])) r.push("LVD");
+  if (has(["electronic","electrical","pcb","circuit board","sensor","actuator","motor","relay","microcontroller","microprocessor","power supply","battery","usb","230v","mains","wifi","bluetooth","radio","wireless","display","lcd","oled","led driver"])) r.push("EMC");
+  if (has(["repair","repairable","replaceable part","spare part","right to repair","recycled","recyclable","circular","end of life","sustainability","sustainable","carbon footprint","energy label","ecodesign","digital product passport","durability","standby power","energy consumption"])) r.push("ESPR");
   if (r.length === 0 && text.trim().length > 30) { r.push("CRA"); r.push("EMC"); }
   return r;
 }
 
-// Fallback data if the free-tier Render API is sleeping/fails.
-const MOCK_FALLBACK = {
-  overall_risk: "HIGH",
-  summary: "API is unreachable (likely cold start). Displaying mock analysis. Your product indicates significant wireless and cybersecurity implications requiring regulatory action.",
-  findings: [
-    { directive: "RED", article: "Article 3.1(a) Health & Safety", finding: "Device emits RF energy. An RF exposure assessment is mandatory to ensure user safety limits are not exceeded.", status: "WARN", action: "Perform calculations per EN 62311 or EN 50665." },
-    { directive: "RED", article: "Article 3.2 Radio Spectrum", finding: "Product uses wireless transmission. It must demonstrate efficient use of the radio spectrum without harmful interference.", status: "INFO", action: "Test against relevant ETSI EN 300 series standards." },
-    { directive: "CRA", article: "Annex I - Security Requirements", finding: "Product incorporates software/firmware. It must be designed with secure-by-default configurations and vulnerability handling.", status: "FAIL", action: "Implement secure boot, encrypted storage, and establish a coordinated vulnerability disclosure policy." },
-    { directive: "CRA", article: "Article 10 - Reporting", finding: "Manufacturers must report actively exploited vulnerabilities to ENISA within 24 hours.", status: "WARN", action: "Establish an incident response plan and reporting pipeline." },
-    { directive: "GDPR", article: "Article 25 - Data Protection by Design", finding: "Product collects personal data. Data minimization and pseudonymisation should be integrated into the architecture.", status: "WARN", action: "Document a Data Protection Impact Assessment (DPIA)." }
-  ]
+const DIR_META = {
+  RED:    { label: "RED",    full: "Radio Equipment Directive",          color: "#3b82f6" },
+  CRA:    { label: "CRA",    full: "Cyber Resilience Act",               color: "#a855f7" },
+  GDPR:   { label: "GDPR",   full: "General Data Protection Regulation", color: "#10b981" },
+  AI_Act: { label: "AI Act", full: "Artificial Intelligence Act",        color: "#8b5cf6" },
+  LVD:    { label: "LVD",    full: "Low Voltage Directive",              color: "#f97316" },
+  EMC:    { label: "EMC",    full: "EMC Directive",                      color: "#eab308" },
+  ESPR:   { label: "ESPR",   full: "Ecodesign for Sustainable Products", color: "#22c55e" },
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// COMPONENTS
-// ═══════════════════════════════════════════════════════════════════
+const STATUS_CFG = {
+  FAIL: { icon: "✕", color: "#ef4444", bg: "#fef2f2", border: "#fecaca", text: "#b91c1c" },
+  WARN: { icon: "!",  color: "#f59e0b", bg: "#fffbeb", border: "#fde68a", text: "#b45309" },
+  PASS: { icon: "✓", color: "#22c55e", bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" },
+  INFO: { icon: "i",  color: "#3b82f6", bg: "#eff6ff", border: "#bfdbfe", text: "#1d4ed8" },
+};
+
+const RISK_CFG = {
+  CRITICAL: { color: "#ef4444", border: "#ef4444" },
+  HIGH:     { color: "#f97316", border: "#f97316" },
+  MEDIUM:   { color: "#f59e0b", border: "#f59e0b" },
+  LOW:      { color: "#22c55e", border: "#22c55e" },
+};
 
 export default function App() {
-  const [desc, setDesc] = useState("");
-  const [depth, setDepth] = useState("standard");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [desc,      setDesc]      = useState("");
+  const [depth,     setDepth]     = useState("standard");
+  const [loading,   setLoading]   = useState(false);
+  const [result,    setResult]    = useState(null);
+  const [error,     setError]     = useState(null);
+  const [activeTab, setActiveTab] = useState(null);
   const textareaRef = useRef(null);
 
-  const detected = detectDirectives(desc);
-  const answered = QUESTIONS.map(q => ({ ...q, done: q.detect(desc) }));
+  const detected  = detectDirectives(desc);
+  const answered  = QUESTIONS.map(q => ({ ...q, done: q.detect(desc) }));
   const doneCount = answered.filter(q => q.done).length;
-  const progress = Math.round((doneCount / QUESTIONS.length) * 100);
+  const progress  = Math.round((doneCount / QUESTIONS.length) * 100);
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.max(300, textareaRef.current.scrollHeight)}px`;
+      textareaRef.current.style.height = Math.max(280, textareaRef.current.scrollHeight) + "px";
     }
   }, [desc]);
 
-  const runAnalysis = async () => {
+  const run = async () => {
     if (desc.trim().length < 20) return;
-    setLoading(true);
-    setResult(null);
-    
+    setLoading(true); setResult(null); setError(null);
     try {
       const r = await fetch("https://regcheck-api.onrender.com/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: desc, category: "", directives: detected, depth }),
       });
-      if (!r.ok) throw new Error("Server error");
+      if (!r.ok) throw new Error("Server error " + r.status);
       const data = await r.json();
       setResult(data);
-    } catch (e) {
-      console.warn("Backend unavailable, using fallback mock data.");
-      // Render free tier often times out. Use mock data to ensure UI remains functional.
-      setTimeout(() => setResult(MOCK_FALLBACK), 800); 
-    } finally {
-      setLoading(false);
-    }
+      const g = groupFindings(data.findings);
+      setActiveTab(Object.keys(g)[0] || null);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
   };
 
+  const groupFindings = (findings) =>
+    findings.reduce((acc, f, i) => {
+      if (!acc[f.directive]) acc[f.directive] = [];
+      acc[f.directive].push({ ...f, _i: i });
+      return acc;
+    }, {});
+
+  const grouped     = result ? groupFindings(result.findings) : {};
+  const dirTabs     = Object.keys(grouped);
+  const counts      = result ? result.findings.reduce((a, f) => { a[f.status] = (a[f.status]||0)+1; return a; }, {}) : {};
+  const tabFindings = (activeTab && grouped[activeTab]) ? grouped[activeTab] : [];
+  const riskCfg     = result ? (RISK_CFG[result.overall_risk] || RISK_CFG.LOW) : null;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-300 font-sans selection:bg-sky-500/30">
-      
-      {/* ── TOP NAV ── */}
-      <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
-              R
-            </div>
-            <span className="font-bold text-lg tracking-tight text-slate-100">
-              RuleGrid<span className="text-sky-400 font-normal">.net</span>
+    <div style={{
+      minHeight: "100vh",
+      background: "#f8fafc",
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      fontSize: 14,
+      color: "#0f172a",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{background:#f8fafc}
+        textarea,button{font-family:inherit}
+        button{cursor:pointer;border:none;outline:none}
+        textarea{outline:none}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{opacity:.45}50%{opacity:.8}}
+        ::-webkit-scrollbar{width:5px}
+        ::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
+        .q-row{transition:background 0.12s}
+        .q-row:hover{background:#f8fafc !important}
+        .dir-tab{transition:all 0.15s;cursor:pointer}
+        .dir-tab:hover:not(.atab){background:#f1f5f9 !important}
+        .run-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(29,78,216,0.2)!important}
+        .run-btn{transition:all 0.18s}
+        .finding-row:hover{background:#fafafa !important}
+        .finding-row{transition:background 0.1s}
+        .depth-btn{transition:all 0.15s}
+        .depth-btn:hover{border-color:#93c5fd !important}
+        textarea:focus-visible{outline:none}
+        .textarea-wrap:focus-within{border-color:#93c5fd !important;box-shadow:0 0 0 3px rgba(147,197,253,0.2) !important}
+      `}</style>
+
+      {/* ─── NAV ─── */}
+      <nav style={{
+        background: "#fff", borderBottom: "1px solid #e2e8f0",
+        padding: "0 28px", position: "sticky", top: 0, zIndex: 100,
+      }}>
+        <div style={{ maxWidth: 1160, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 8, background: "#1e40af",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 13, fontWeight: 700, color: "#fff",
+            }}>R</div>
+            <span style={{ fontWeight: 700, fontSize: 16, color: "#0f172a", letterSpacing: "-0.02em" }}>
+              RuleGrid<span style={{ color: "#3b82f6", fontWeight: 400 }}>.net</span>
             </span>
           </div>
-          <span className="text-xs font-semibold tracking-widest text-slate-500 uppercase">
-            EU Compliance Tool
-          </span>
+          <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>EU Compliance Checker</span>
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-6 py-10">
-        {!result && !loading && (
-          <InputView 
-            desc={desc} 
-            setDesc={setDesc} 
-            textareaRef={textareaRef} 
-            depth={depth} 
-            setDepth={setDepth} 
-            runAnalysis={runAnalysis}
-            detected={detected}
-            answered={answered}
-            progress={progress}
-            doneCount={doneCount}
-          />
-        )}
+      {/* ─────────────────── INPUT VIEW ─────────────────── */}
+      {!result && !loading && (
+        <div style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 28px 80px", animation: "fadeUp 0.3s ease" }}>
 
-        {loading && <LoadingView detected={detected} />}
-
-        {result && <ResultView result={result} reset={() => setResult(null)} />}
-      </main>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SUB-COMPONENTS
-// ═══════════════════════════════════════════════════════════════════
-
-function InputView({ desc, setDesc, textareaRef, depth, setDepth, runAnalysis, detected, answered, progress, doneCount }) {
-  const isReady = desc.trim().length >= 20;
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* LEFT: Editor */}
-      <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-2">
-            Define your product architecture.
-          </h1>
-          <p className="text-slate-400 text-sm">
-            Describe your product technically. The engine will parse the description to identify applicable EU regulatory frameworks.
-          </p>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden focus-within:border-sky-500/50 focus-within:ring-1 focus-within:ring-sky-500/50 transition-all">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/50">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-              <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-              <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-              <span className="text-xs font-medium text-slate-500 ml-2">architecture_spec.txt</span>
-            </div>
-            <div className="text-xs font-mono text-slate-500">{desc.length} chars</div>
+          <div style={{ marginBottom: 28 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.02em", lineHeight: 1.3 }}>
+              Describe your product, check EU compliance
+            </h1>
+            <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.65, marginTop: 6 }}>
+              Write a description on the left. The checklist on the right guides you — each topic ticks off automatically as you cover it.
+            </p>
           </div>
 
-          <textarea
-            ref={textareaRef}
-            value={desc}
-            onChange={e => setDesc(e.target.value)}
-            placeholder={`Example input:\n\nA smart home water leak detector using WiFi 802.11n to connect to our AWS cloud server (EU-West). It runs embedded firmware with OTA update support. EU consumers use it at home. It stores device ID and alert history (no personal data). Powered by two AA batteries. No AI features. No mains voltage inside.`}
-            className="w-full bg-transparent border-none text-slate-200 text-sm leading-relaxed p-5 min-h-[300px] font-mono resize-none focus:outline-none focus:ring-0"
-            spellCheck="false"
-          />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 324px", gap: 20, alignItems: "start" }}>
 
-          <div className="px-5 py-3 border-t border-slate-800 bg-slate-900/50 flex flex-wrap gap-2 items-center min-h-[48px]">
-            {detected.length === 0 ? (
-              <span className="text-xs text-slate-500 italic">Directives will map automatically...</span>
-            ) : (
-              detected.map(id => {
-                const d = DIR_META[id];
-                return (
-                  <span key={id} className={`text-[10px] font-bold tracking-wider px-2 py-1 rounded border uppercase ${d.color} ${d.bg} ${d.border}`}>
-                    {d.label}
-                  </span>
-                );
-              })
-            )}
-          </div>
-        </div>
+            {/* ── textarea + controls ── */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex gap-2">
-            {[
-              { id: "standard", label: "Standard Assessment" },
-              { id: "deep", label: "Deep Audit" },
-            ].map(d => (
-              <button
-                key={d.id}
-                onClick={() => setDepth(d.id)}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-colors ${
-                  depth === d.id 
-                    ? "bg-sky-500/10 border-sky-500/30 text-sky-400" 
-                    : "bg-transparent border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700"
-                }`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
+              <div className="textarea-wrap" style={{
+                background: "#fff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 12,
+                overflow: "hidden",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+              }}>
+                <textarea
+                  ref={textareaRef}
+                  value={desc}
+                  onChange={e => setDesc(e.target.value)}
+                  placeholder={`Describe your product here — use the checklist on the right as your guide.
 
-          <button
-            onClick={runAnalysis}
-            disabled={!isReady}
-            className={`px-6 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
-              isReady 
-                ? "bg-sky-500 hover:bg-sky-400 text-slate-950 shadow-[0_0_15px_rgba(14,165,233,0.3)]" 
-                : "bg-slate-800 text-slate-500 cursor-not-allowed"
-            }`}
-          >
-            Run Analysis
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-          </button>
-        </div>
-      </div>
+Example:
+"A smart home water leak detector for EU consumers. It uses WiFi 802.11n to connect to our AWS cloud server in Ireland. It has embedded firmware with OTA update support. Powered by two AA batteries — no mains voltage inside. It only stores device ID and alert history, no personal data. No AI features."`}
+                  style={{
+                    width: "100%", background: "transparent", border: "none",
+                    color: "#0f172a", fontSize: 14, lineHeight: 1.8,
+                    padding: "20px 22px", minHeight: 280,
+                    fontFamily: "inherit", resize: "none", outline: "none",
+                  }}
+                />
 
-      {/* RIGHT: Checklist */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl self-start sticky top-20 flex flex-col max-h-[calc(100vh-120px)]">
-        <div className="px-5 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-          <div>
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Coverage Guide</h3>
-            <p className="text-xs text-slate-500 mt-1">{doneCount} of {QUESTIONS.length} parameters defined</p>
-          </div>
-          {/* Progress Indicator */}
-          <div className="w-10 h-2 bg-slate-800 rounded-full overflow-hidden">
-            <div 
-              className="h-full transition-all duration-500 ease-out"
-              style={{ 
-                width: `${progress}%`,
-                backgroundColor: progress === 100 ? '#10b981' : progress > 50 ? '#f59e0b' : '#38bdf8' 
-              }} 
-            />
-          </div>
-        </div>
-
-        <div className="overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-          {answered.map((q) => (
-            <div key={q.id} className={`p-3 rounded-lg flex gap-3 transition-colors ${q.done ? 'opacity-50' : 'hover:bg-slate-800/50'}`}>
-              <div className={`mt-0.5 w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 transition-colors ${
-                q.done ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'border-slate-700 text-transparent'
-              }`}>
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                </svg>
+                {/* Bottom strip: char count + detected directives */}
+                <div style={{
+                  padding: "10px 22px 14px",
+                  borderTop: "1px solid #f1f5f9",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                }}>
+                  <span style={{ fontSize: 12, color: "#cbd5e1" }}>{desc.length} chars</span>
+                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {detected.length === 0
+                      ? <span style={{ fontSize: 12, color: "#cbd5e1", fontStyle: "italic" }}>Directives appear here as you type…</span>
+                      : detected.map(id => {
+                          const d = DIR_META[id];
+                          return (
+                            <span key={id} style={{
+                              fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 5,
+                              color: "#fff", background: d.color,
+                            }}>{d.label}</span>
+                          );
+                        })
+                    }
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${q.done ? 'text-slate-500 line-through' : 'text-slate-300'}`}>
-                  {q.label}
-                </p>
-                {!q.done && (
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    {q.example}
-                  </p>
+
+              {/* Controls row */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Depth:</span>
+                {[
+                  { v: "standard", label: "Standard" },
+                  { v: "deep",     label: "Deep audit" },
+                ].map(d => (
+                  <button key={d.v} className="depth-btn" onClick={() => setDepth(d.v)} style={{
+                    fontSize: 13, fontWeight: 500, padding: "7px 14px", borderRadius: 8,
+                    border: `1.5px solid ${depth === d.v ? "#3b82f6" : "#e2e8f0"}`,
+                    background: depth === d.v ? "#eff6ff" : "#fff",
+                    color: depth === d.v ? "#1d4ed8" : "#64748b",
+                  }}>{d.label}</button>
+                ))}
+
+                <button
+                  className="run-btn"
+                  onClick={run}
+                  disabled={loading || desc.trim().length < 20}
+                  style={{
+                    marginLeft: "auto",
+                    background: desc.trim().length < 20 ? "#f1f5f9" : "#1d4ed8",
+                    color: desc.trim().length < 20 ? "#94a3b8" : "#fff",
+                    fontSize: 14, fontWeight: 600, padding: "9px 24px",
+                    borderRadius: 9,
+                    boxShadow: desc.trim().length >= 20 ? "0 4px 14px rgba(29,78,216,0.18)" : "none",
+                    display: "flex", alignItems: "center", gap: 8,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {loading
+                    ? <><div style={{ width: 13, height: 13, border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.65s linear infinite" }} />Analysing…</>
+                    : "Run analysis →"
+                  }
+                </button>
+              </div>
+
+              {error && (
+                <div style={{
+                  background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10,
+                  padding: "14px 18px", display: "flex", gap: 12, alignItems: "flex-start",
+                }}>
+                  <span style={{ color: "#ef4444", flexShrink: 0 }}>⚠</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#b91c1c", marginBottom: 4 }}>Could not reach backend</div>
+                    <div style={{ fontSize: 12, color: "#ef4444", lineHeight: 1.6, marginBottom: 8 }}>{error}</div>
+                    <code style={{ fontSize: 12, color: "#7c3aed", background: "#f5f3ff", padding: "3px 10px", borderRadius: 5 }}>
+                      uvicorn main:app --reload
+                    </code>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── CHECKLIST ── */}
+            <div style={{
+              background: "#fff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              overflow: "hidden",
+              position: "sticky",
+              top: 68,
+            }}>
+
+              {/* Header */}
+              <div style={{ padding: "16px 20px 14px", borderBottom: "1px solid #f1f5f9" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>
+                    Coverage guide
+                  </div>
+                  <div style={{
+                    fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
+                    background: progress >= 80 ? "#f0fdf4" : progress >= 50 ? "#fffbeb" : "#fef2f2",
+                    color: progress >= 80 ? "#15803d" : progress >= 50 ? "#b45309" : "#b91c1c",
+                    border: `1px solid ${progress >= 80 ? "#bbf7d0" : progress >= 50 ? "#fde68a" : "#fecaca"}`,
+                    transition: "all 0.3s",
+                  }}>
+                    {doneCount}/{QUESTIONS.length}
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ height: 6, background: "#f1f5f9", borderRadius: 10, overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%", borderRadius: 10,
+                    width: `${progress}%`,
+                    background: progress >= 80 ? "#22c55e" : progress >= 50 ? "#f59e0b" : "#ef4444",
+                    transition: "width 0.4s ease, background 0.3s",
+                  }} />
+                </div>
+              </div>
+
+              {/* Question rows */}
+              <div>
+                {answered.map((q, i) => (
+                  <div
+                    key={q.id}
+                    className="q-row"
+                    style={{
+                      padding: "13px 20px",
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "flex-start",
+                      background: "#fff",
+                      borderBottom: i < answered.length - 1 ? "1px solid #f8fafc" : "none",
+                    }}
+                  >
+                    {/* Checkbox */}
+                    <div style={{
+                      width: 22, height: 22,
+                      borderRadius: 6,
+                      flexShrink: 0,
+                      marginTop: 1,
+                      background: q.done ? "#22c55e" : "#fff",
+                      border: q.done ? "2px solid #22c55e" : "2px solid #d1d5db",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      transition: "all 0.22s ease",
+                    }}>
+                      {q.done && (
+                        <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                          <path d="M1.5 4.5L4 7L9.5 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+
+                    {/* Label + hint */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: 13.5,
+                        fontWeight: q.done ? 400 : 500,
+                        color: q.done ? "#94a3b8" : "#1e293b",
+                        textDecoration: q.done ? "line-through" : "none",
+                        lineHeight: 1.4,
+                        transition: "color 0.22s, font-weight 0.22s",
+                      }}>
+                        {q.label}
+                      </div>
+
+                      {!q.done && (
+                        <div style={{
+                          marginTop: 4,
+                          fontSize: 12,
+                          color: "#94a3b8",
+                          lineHeight: 1.55,
+                          fontStyle: "italic",
+                        }}>
+                          {q.example}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div style={{
+                padding: "12px 20px",
+                borderTop: "1px solid #f1f5f9",
+                background: "#fafafa",
+              }}>
+                {progress === 100 ? (
+                  <span style={{ fontSize: 13, color: "#15803d", fontWeight: 600 }}>
+                    ✓ All topics covered — great detail!
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 12.5, color: "#94a3b8", lineHeight: 1.6 }}>
+                    {QUESTIONS.length - doneCount} topic{QUESTIONS.length - doneCount !== 1 ? "s" : ""} remaining for best results
+                  </span>
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────── LOADING ─────────────────── */}
+      {loading && (
+        <div style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 28px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#64748b", fontSize: 13, marginBottom: 24 }}>
+            <div style={{ width: 14, height: 14, border: "2px solid #e2e8f0", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.65s linear infinite" }} />
+            Checking {detected.length} directive{detected.length !== 1 ? "s" : ""}…
+          </div>
+          {[75, 55, 85, 60].map((w, i) => (
+            <div key={i} style={{
+              background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12,
+              padding: "20px 22px", marginBottom: 12,
+              animation: `pulse 1.6s ease ${i * 0.16}s infinite`,
+            }}>
+              <div style={{ height: 12, background: "#f1f5f9", borderRadius: 4, width: `${w * 0.35}%`, marginBottom: 14 }} />
+              <div style={{ height: 10, background: "#f8fafc", borderRadius: 4, width: `${w}%`, marginBottom: 8 }} />
+              <div style={{ height: 10, background: "#f8fafc", borderRadius: 4, width: `${w * 0.65}%` }} />
+            </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
+      )}
 
-function LoadingView({ detected }) {
-  return (
-    <div className="max-w-3xl mx-auto py-12 animate-in fade-in duration-300">
-      <div className="flex items-center gap-3 text-sm text-slate-400 font-medium mb-8">
-        <svg className="animate-spin h-5 w-5 text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        Assessing against {detected.length || 'applicable'} EU directives...
-      </div>
-      
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-slate-900 border border-slate-800 p-6 rounded-xl relative overflow-hidden">
-            <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-slate-800/50 to-transparent" />
-            <div className="h-4 w-1/4 bg-slate-800 rounded mb-4" />
-            <div className="h-3 w-full bg-slate-800/50 rounded mb-2" />
-            <div className="h-3 w-5/6 bg-slate-800/50 rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+      {/* ─────────────────── RESULTS ─────────────────── */}
+      {result && (
+        <div style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 28px 80px", animation: "fadeUp 0.3s ease" }}>
 
-function ResultView({ result, reset }) {
-  const risk = RISK_CFG[result.overall_risk] || RISK_CFG.LOW;
-
-  // Group findings by directive
-  const grouped = result.findings.reduce((acc, f) => {
-    if (!acc[f.directive]) acc[f.directive] = [];
-    acc[f.directive].push(f);
-    return acc;
-  }, {});
-
-  // Tally overall statuses
-  const counts = result.findings.reduce((a, f) => { 
-    a[f.status] = (a[f.status] || 0) + 1; 
-    return a; 
-  }, {});
-
-  return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto space-y-6">
-      
-      {/* Overview Card */}
-      <div className={`border rounded-xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center ${risk.bg} ${risk.border}`}>
-        <div className="shrink-0">
-          <div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Overall Risk</div>
-          <div className={`text-4xl font-black tracking-tight ${risk.color}`}>{result.overall_risk}</div>
-        </div>
-        
-        <div className="w-px h-16 bg-slate-800 hidden md:block" />
-        
-        <div className="flex-1">
-          <p className="text-sm text-slate-300 leading-relaxed">{result.summary}</p>
-        </div>
-
-        <div className="flex gap-2 shrink-0">
-          {["FAIL", "WARN", "PASS", "INFO"].map(s => {
-            const n = counts[s];
-            if (!n) return null;
-            const sc = STATUS_CFG[s];
-            return (
-              <div key={s} className={`flex flex-col items-center justify-center w-14 h-14 rounded-lg border ${sc.bg} ${sc.border}`}>
-                <span className={`text-xl font-bold leading-none ${sc.color}`}>{n}</span>
-                <span className={`text-[9px] font-bold uppercase mt-1 opacity-70 ${sc.color}`}>{s}</span>
+          {/* Risk banner */}
+          <div style={{
+            background: "#fff", border: "1px solid #e2e8f0",
+            borderLeft: `4px solid ${riskCfg.color}`,
+            borderRadius: 12, padding: "20px 24px", marginBottom: 20,
+            display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap",
+          }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>
+                Overall risk
               </div>
-            );
-          })}
-        </div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: riskCfg.color, letterSpacing: "-0.03em", lineHeight: 1 }}>
+                {result.overall_risk}
+              </div>
+            </div>
 
-        <button 
-          onClick={reset}
-          className="shrink-0 p-2 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-lg transition-colors border border-slate-700"
-          title="Edit Description"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
-        </button>
-      </div>
+            <div style={{ width: 1, background: "#e2e8f0", alignSelf: "stretch" }} />
 
-      {/* Unified List of Directives */}
-      <div className="space-y-8 mt-10">
-        {Object.entries(grouped).map(([dirKey, findings]) => {
-          const meta = DIR_META[dirKey] || { label: dirKey, full: "Regulatory Requirement", color: "text-slate-300", border: "border-slate-700", bg: "bg-slate-800" };
-          
-          return (
-            <div key={dirKey} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-              {/* Directive Header */}
-              <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                Summary
+              </div>
+              <div style={{ fontSize: 13.5, color: "#475569", lineHeight: 1.7 }}>{result.summary}</div>
+            </div>
+
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {["FAIL", "WARN", "PASS", "INFO"].map(s => {
+                const n = counts[s] || 0;
+                if (!n) return null;
+                const sc = STATUS_CFG[s];
+                return (
+                  <div key={s} style={{
+                    background: sc.bg, border: `1px solid ${sc.border}`,
+                    borderRadius: 10, padding: "8px 14px", textAlign: "center",
+                  }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: sc.text, lineHeight: 1 }}>{n}</div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: sc.text, opacity: 0.7, letterSpacing: "0.06em", marginTop: 3 }}>{s}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button onClick={() => { setResult(null); setError(null); }} style={{
+              background: "#fff", border: "1px solid #e2e8f0", color: "#64748b",
+              fontSize: 13, fontWeight: 500, padding: "8px 16px", borderRadius: 8,
+              alignSelf: "center", transition: "all 0.15s",
+            }}>← Edit description</button>
+          </div>
+
+          {/* Directive tabs */}
+          <div style={{ display: "flex", gap: 3, overflowX: "auto" }}>
+            {dirTabs.map(dir => {
+              const dm  = DIR_META[dir] || { label: dir, color: "#3b82f6" };
+              const isA = activeTab === dir;
+              const fc  = (grouped[dir] || []).filter(f => f.status === "FAIL").length;
+              const wc  = (grouped[dir] || []).filter(f => f.status === "WARN").length;
+              return (
+                <button key={dir} className={`dir-tab${isA ? " atab" : ""}`} onClick={() => setActiveTab(dir)} style={{
+                  padding: "9px 16px",
+                  background: isA ? "#fff" : "transparent",
+                  border: `1px solid ${isA ? "#e2e8f0" : "transparent"}`,
+                  borderBottom: isA ? "1px solid #fff" : "1px solid transparent",
+                  borderRadius: "8px 8px 0 0",
+                  color: isA ? "#0f172a" : "#64748b",
+                  fontSize: 13, fontWeight: isA ? 600 : 500,
+                  whiteSpace: "nowrap",
+                  display: "flex", alignItems: "center", gap: 7,
+                  position: "relative", bottom: -1,
+                }}>
+                  {isA && <span style={{ width: 7, height: 7, borderRadius: "50%", background: dm.color, flexShrink: 0 }} />}
+                  {dm.label}
+                  {fc > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "#ef4444", padding: "1px 5px", borderRadius: 4 }}>{fc}F</span>}
+                  {fc === 0 && wc > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#b45309", background: "#fef9c3", padding: "1px 5px", borderRadius: 4 }}>{wc}W</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tab content */}
+          {activeTab && DIR_META[activeTab] && (
+            <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "0 8px 12px 12px", overflow: "hidden" }}>
+
+              {/* Panel header */}
+              <div style={{
+                padding: "16px 22px", borderBottom: "1px solid #f1f5f9",
+                display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12,
+              }}>
                 <div>
-                  <h2 className={`text-lg font-bold flex items-center gap-2 ${meta.color}`}>
-                    {meta.label} <span className="text-slate-500 font-normal text-sm">· {meta.full}</span>
-                  </h2>
-                  <div className="text-xs text-slate-500 font-mono mt-1">Ref: {meta.ref}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{DIR_META[activeTab].full}</div>
+                  <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{DIR_META[activeTab].label}</div>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["FAIL", "WARN", "PASS", "INFO"].map(s => {
+                    const n = tabFindings.filter(f => f.status === s).length;
+                    if (!n) return null;
+                    const sc = STATUS_CFG[s];
+                    return (
+                      <div key={s} style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 8, padding: "5px 11px", textAlign: "center" }}>
+                        <div style={{ fontSize: 17, fontWeight: 700, color: sc.text, lineHeight: 1 }}>{n}</div>
+                        <div style={{ fontSize: 9, fontWeight: 600, color: sc.text, opacity: 0.6, letterSpacing: "0.06em", marginTop: 2 }}>{s}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Findings */}
-              <div className="divide-y divide-slate-800/50">
-                {findings.map((f, i) => {
-                  const sc = STATUS_CFG[f.status] || STATUS_CFG.INFO;
-                  return (
-                    <div key={i} className="p-6 grid grid-cols-[auto_1fr] gap-4 hover:bg-slate-800/20 transition-colors">
-                      <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 ${sc.bg} ${sc.border} ${sc.color}`}>
-                        {sc.icon === "✕" ? (
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        ) : sc.icon === "✓" ? (
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                        ) : sc.icon === "!" ? (
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        ) : (
-                          <span className="text-sm font-bold">i</span>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <code className="text-xs font-mono font-semibold text-slate-400">{f.article}</code>
-                          <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${sc.color} ${sc.bg} ${sc.border}`}>
-                            {f.status}
-                          </span>
+              {tabFindings.map((f, idx) => {
+                const sc = STATUS_CFG[f.status] || STATUS_CFG.INFO;
+                return (
+                  <div key={f._i} className="finding-row" style={{
+                    padding: "16px 22px",
+                    borderBottom: idx < tabFindings.length - 1 ? "1px solid #f8fafc" : "none",
+                    display: "grid", gridTemplateColumns: "32px 1fr auto", gap: "0 14px",
+                    background: "#fff",
+                  }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 8,
+                      background: sc.bg, border: `1px solid ${sc.border}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 12, fontWeight: 700, color: sc.text, flexShrink: 0, marginTop: 2,
+                    }}>{sc.icon}</div>
+
+                    <div>
+                      <div style={{
+                        fontSize: 11.5, fontWeight: 600, color: "#94a3b8", marginBottom: 5, lineHeight: 1.4,
+                        fontFamily: "'SF Mono', 'Fira Code', 'Courier New', monospace",
+                      }}>{f.article}</div>
+                      <div style={{ fontSize: 13.5, color: "#374151", lineHeight: 1.72 }}>{f.finding}</div>
+                      {f.action && (
+                        <div style={{
+                          marginTop: 10, paddingLeft: 14,
+                          borderLeft: `2px solid ${sc.color}60`,
+                          fontSize: 13, color: "#6b7280", lineHeight: 1.68,
+                        }}>
+                          <span style={{ fontWeight: 600, color: sc.text }}>Action: </span>
+                          {f.action}
                         </div>
-                        <p className="text-sm text-slate-300 leading-relaxed mb-3">
-                          {f.finding}
-                        </p>
-                        
-                        {f.action && (
-                          <div className={`text-sm pl-3 border-l-2 py-0.5 ${sc.border}`}>
-                            <span className={`font-semibold ${sc.color}`}>Action Required: </span>
-                            <span className="text-slate-400">{f.action}</span>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
+
+                    <div style={{
+                      fontSize: 10, fontWeight: 700, color: sc.text,
+                      background: sc.bg, border: `1px solid ${sc.border}`,
+                      padding: "3px 8px", borderRadius: 5, alignSelf: "start", whiteSpace: "nowrap", letterSpacing: "0.06em",
+                    }}>{f.status}</div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
