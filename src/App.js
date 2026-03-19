@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Analytics } from '@vercel/analytics/react';
 
 /*
   ┌──────────────────────────────────────────────┐
@@ -503,6 +504,7 @@ export default function App() {
           <span>Informational only. Verify with a qualified consultant.</span>
         </div>
       </footer>
+      <Analytics />
     </div>
   );
 }
