@@ -4,91 +4,7 @@ const API_URL =
   process.env.REACT_APP_REGCHECK_API_URL ||
   "https://regcheck-api.onrender.com/analyze";
 
-const SAMPLE_DESCRIPTION = `A smart home water leak detector intended for EU consumers. It uses Wi-Fi 802.11n to connect to an AWS cloud backend hosted in Ireland and sends alerts through a companion mobile app. The device runs embedded firmware and supports OTA updates. It is powered by two AA batteries and contains no mains voltage inside the product. It stores device ID, event history, and optional user email for notifications. No AI features are used.`;
-
-const QUESTIONS = [
-  {
-    id: "what",
-    label: "What does your product do?",
-    example: '“A smart thermostat that controls home heating”',
-    detect: (t) =>
-      t.length > 60 &&
-      /\b(device|product|system|sensor|monitor|tracker|controller|hub|gateway|camera|speaker|display|wearable|appliance|charger|meter|lock|alarm|thermostat|reader|scanner|detector|module|unit)\b/i.test(t),
-  },
-  {
-    id: "market",
-    label: "Who uses it and where?",
-    example: '“EU consumers at home” or “B2B industrial factory”',
-    detect: (t) =>
-      /\b(consumer|residential|household|home|personal|retail|industrial|b2b|factory|medical|clinical|hospital|professional|children|kids|patient|office|eu|uk)\b/i.test(t),
-  },
-  {
-    id: "wireless",
-    label: "Does it use wireless / radio?",
-    example: '“Wi-Fi 802.11ac” or “Bluetooth 5.0” or “No wireless”',
-    detect: (t) =>
-      /wifi|wi-fi|bluetooth|ble|\blte\b|4g |5g |zigbee|nfc|lora|cellular|gsm|nb-iot|wireless|radio|rf |thread|matter|no wireless|no radio/i.test(t),
-  },
-  {
-    id: "power",
-    label: "How is it powered?",
-    example: '“230V mains” or “3.7V Li-ion battery” or “USB-C 5V”',
-    detect: (t) =>
-      /230v|220v|110v|mains|li-ion|lithium|battery|usb-c|usb power|poe|rechargeable|hardwired|power supply|alkaline|coin cell|aa battery/i.test(t),
-  },
-  {
-    id: "data",
-    label: "Does it collect personal data?",
-    example: '“Stores user email and GPS location” or “No personal data”',
-    detect: (t) =>
-      /personal data|user data|email|location|gps|health|biometric|account|profile|login|password|tracking|camera|microphone|face|voice|no personal data|no user data/i.test(t),
-  },
-  {
-    id: "cloud",
-    label: "Does it connect to the internet?",
-    example: '“AWS cloud in Ireland” or “Fully offline, no internet”',
-    detect: (t) =>
-      /cloud|server|aws|azure|google cloud|backend|api |internet|online|local only|no cloud|offline|standalone|no internet/i.test(t),
-  },
-  {
-    id: "software",
-    label: "Does it have software or firmware?",
-    example: '“Embedded firmware with OTA updates” or “No software”',
-    detect: (t) =>
-      /firmware|software|ota|over-the-air|embedded|mobile app|companion app|rtos|linux|update|microcontroller|android|ios app|no software|purely mechanical/i.test(t),
-  },
-  {
-    id: "login",
-    label: "How do users log in?",
-    example: '“Unique per-device password” or “OAuth2 + MFA” or “No login”',
-    detect: (t) =>
-      /password|login|credential|authentication|mfa|2fa|oauth|pairing|pin code|default password|unique password|no login|no authentication/i.test(t),
-  },
-  {
-    id: "ai",
-    label: "Does it use AI or machine learning?",
-    example: '“On-device ML model” or “Cloud GPT” or “No AI features”',
-    detect: (t) =>
-      /\bai\b|machine learning|\bml\b|neural|inference|llm|computer vision|voice assistant|recommendation|automated decision|no ai|no ml/i.test(t),
-  },
-  {
-    id: "safety",
-    label: "Any physical safety concerns?",
-    example: '“Contains Li-ion battery” or “230V inside” or “No hazards”',
-    detect: (t) =>
-      /high voltage|mains|li-ion|lithium|motor|heating|thermal|ip[0-9][0-9]|waterproof|fire|smoke|safety function|fail.safe|no safety|no hazard|battery cell/i.test(t),
-  },
-];
-
-const DIR_META = {
-  RED: { label: "RED", full: "Radio Equipment Directive", color: "#2563eb" },
-  CRA: { label: "CRA", full: "Cyber Resilience Act", color: "#7c3aed" },
-  GDPR: { label: "GDPR", full: "General Data Protection Regulation", color: "#059669" },
-  AI_Act: { label: "AI Act", full: "Artificial Intelligence Act", color: "#9333ea" },
-  LVD: { label: "LVD", full: "Low Voltage Directive", color: "#ea580c" },
-  EMC: { label: "EMC", full: "EMC Directive", color: "#ca8a04" },
-  ESPR: { label: "ESPR", full: "Ecodesign for Sustainable Products", color: "#16a34a" },
-};
+const SAMPLE_DESCRIPTION = `Smart kettle with mobile app to control. Bluetooth connection to the app.`;
 
 const STATUS_CFG = {
   FAIL: { icon: "✕", bg: "#fef2f2", border: "#fecaca", text: "#b91c1c" },
@@ -104,234 +20,128 @@ const RISK_CFG = {
   LOW: { color: "#16a34a", tint: "#f0fdf4", border: "#bbf7d0" },
 };
 
-function detectDirectives(text) {
-  const t = text.toLowerCase();
-  const has = (kws) => kws.some((k) => t.includes(k));
-  const results = [];
+const DIRECTIVE_COLORS = {
+  RED: "#2563eb",
+  CRA: "#7c3aed",
+  GDPR: "#059669",
+  AI_Act: "#9333ea",
+  LVD: "#ea580c",
+  EMC: "#ca8a04",
+  ESPR: "#16a34a",
+  SYSTEM: "#475569",
+};
 
-  if (
-    has([
-      "wifi",
-      "wi-fi",
-      "wlan",
-      "802.11",
-      "bluetooth",
-      "ble",
-      "zigbee",
-      "z-wave",
-      "thread",
-      "matter",
-      "lora",
-      "lorawan",
-      "nfc",
-      "near field",
-      "rfid",
-      "lte",
-      "4g ",
-      "5g ",
-      "nb-iot",
-      "cat-m",
-      "cellular",
-      "gsm",
-      "radio",
-      "rf module",
-      "wireless transmit",
-    ])
-  ) {
-    results.push("RED");
-  }
+const QUESTIONS = [
+  {
+    id: "what",
+    label: "What is the product?",
+    example: "smart kettle, robot vacuum, baby monitor",
+    detect: (t) =>
+      /\b(kettle|vacuum|camera|monitor|tracker|wearable|coffee machine|air fryer|fan|lock|gateway|hub|toy|sensor|appliance|device|product)\b/i.test(
+        t
+      ),
+  },
+  {
+    id: "wireless",
+    label: "Does it use radio/wireless?",
+    example: "Bluetooth, Wi-Fi, LTE",
+    detect: (t) =>
+      /\b(bluetooth|ble|wifi|wi-fi|802\.11|lte|4g|5g|zigbee|thread|matter|nfc|cellular|radio)\b/i.test(
+        t
+      ),
+  },
+  {
+    id: "software",
+    label: "Does it use app/software/cloud?",
+    example: "mobile app, cloud backend, OTA updates",
+    detect: (t) =>
+      /\b(app|mobile app|cloud|backend|server|internet|connected|ota|firmware|software)\b/i.test(
+        t
+      ),
+  },
+  {
+    id: "power",
+    label: "How is it powered?",
+    example: "mains, 230V, battery, rechargeable",
+    detect: (t) =>
+      /\b(mains|230v|220v|110v|120v|battery|rechargeable|usb|hardwired|power)\b/i.test(
+        t
+      ),
+  },
+  {
+    id: "data",
+    label: "Does it process sensitive/personal data?",
+    example: "camera, microphone, account, location, health",
+    detect: (t) =>
+      /\b(camera|microphone|account|login|location|gps|health|heart rate|personal data|biometric)\b/i.test(
+        t
+      ),
+  },
+];
 
-  if (
-    has([
-      "software",
-      "firmware",
-      "embedded",
-      "microcontroller",
-      "microprocessor",
-      "app ",
-      "mobile app",
-      "web app",
-      "cloud",
-      "server",
-      "api",
-      "backend",
-      "internet",
-      "online",
-      "iot",
-      "connected",
-      "ota",
-      "over-the-air",
-      "remote update",
-      "digital",
-      "processor",
-      "mcu",
-      "network",
-      "ethernet",
-      "tcp",
-      "mqtt",
-      "http",
-      "usb",
-    ])
-  ) {
-    results.push("CRA");
-  }
+const STANDARD_CODE_RE =
+  /^(EN|IEC|ISO|ETSI|EN IEC|EN ISO|IEC EN|GDPR review|AI Act review)\b/i;
 
-  if (
-    has([
-      "personal data",
-      "user data",
-      "email",
-      "location",
-      "gps",
-      "health",
-      "biometric",
-      "account",
-      "login",
-      "password",
-      "tracking",
-      "camera",
-      "microphone",
-      "face recognition",
-      "voice recognition",
-      "analytics",
-      "telemetry",
-      "store data",
-      "logging",
-      "third party",
-      "privacy",
-      "consent",
-    ])
-  ) {
-    results.push("GDPR");
-  }
-
-  if (
-    has([
-      "artificial intelligence",
-      "machine learning",
-      "deep learning",
-      " ai ",
-      "ai-powered",
-      " ml ",
-      "neural network",
-      "llm",
-      "computer vision",
-      "voice assistant",
-      "recommendation",
-      "automated decision",
-      "predictive",
-      "inference",
-      "classifier",
-      "chatbot",
-    ])
-  ) {
-    results.push("AI_Act");
-  }
-
-  if (
-    has([
-      "230v",
-      "220v",
-      "110v",
-      "120v",
-      "mains",
-      "ac power",
-      "wall plug",
-      "hardwired",
-      "power supply",
-      "mains-powered",
-      "li-ion",
-      "lithium ion",
-      "lipo",
-      "lithium polymer",
-      "battery pack",
-      "bms",
-      "high voltage",
-      "motor drive",
-      "inverter",
-      "poe",
-      "rechargeable battery",
-    ])
-  ) {
-    results.push("LVD");
-  }
-
-  if (
-    has([
-      "electronic",
-      "electrical",
-      "pcb",
-      "circuit board",
-      "sensor",
-      "actuator",
-      "motor",
-      "relay",
-      "microcontroller",
-      "microprocessor",
-      "power supply",
-      "battery",
-      "usb",
-      "230v",
-      "mains",
-      "wifi",
-      "bluetooth",
-      "radio",
-      "wireless",
-      "display",
-      "lcd",
-      "oled",
-      "led driver",
-    ])
-  ) {
-    results.push("EMC");
-  }
-
-  if (
-    has([
-      "repair",
-      "repairable",
-      "replaceable part",
-      "spare part",
-      "right to repair",
-      "recycled",
-      "recyclable",
-      "circular",
-      "end of life",
-      "sustainability",
-      "sustainable",
-      "carbon footprint",
-      "energy label",
-      "ecodesign",
-      "digital product passport",
-      "durability",
-      "standby power",
-      "energy consumption",
-    ])
-  ) {
-    results.push("ESPR");
-  }
-
-  if (results.length === 0 && text.trim().length > 30) {
-    results.push("CRA", "EMC");
-  }
-
-  return results;
+function extractDirectivesFromFindings(findings = []) {
+  const out = new Set();
+  findings.forEach((f) => {
+    const raw = (f.directive || "").split(",").map((x) => x.trim());
+    raw.forEach((d) => {
+      if (d && d !== "SYSTEM") out.add(d);
+    });
+  });
+  return [...out];
 }
 
-function groupFindings(findings = []) {
-  return findings.reduce((acc, item, index) => {
-    const key = item.directive || "OTHER";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push({ ...item, _i: index });
-    return acc;
-  }, {});
+function splitFindings(findings = []) {
+  const buckets = {
+    standards: [],
+    interpretation: [],
+    missingInfo: [],
+    contradictions: [],
+    other: [],
+  };
+
+  findings.forEach((f, index) => {
+    const item = { ...f, _i: index };
+    const article = (f.article || "").trim();
+    const directive = (f.directive || "").trim();
+
+    if (STANDARD_CODE_RE.test(article) || /review$/i.test(article)) {
+      buckets.standards.push(item);
+      return;
+    }
+
+    if (
+      directive === "SYSTEM" &&
+      /Product interpretation|Explicit signals|Inferred signals/i.test(article)
+    ) {
+      buckets.interpretation.push(item);
+      return;
+    }
+
+    if (/Missing/i.test(article)) {
+      buckets.missingInfo.push(item);
+      return;
+    }
+
+    if (/Contradiction/i.test(article)) {
+      buckets.contradictions.push(item);
+      return;
+    }
+
+    buckets.other.push(item);
+  });
+
+  return buckets;
 }
 
-function MetricCard({ label, value, tone = "slate" }) {
+function MetricCard({ label, value, tone = "slate", sub }) {
   return (
     <div className={`metric-card tone-${tone}`}>
       <div className="metric-label">{label}</div>
       <div className="metric-value">{value}</div>
+      {sub ? <div className="metric-sub">{sub}</div> : null}
     </div>
   );
 }
@@ -339,9 +149,55 @@ function MetricCard({ label, value, tone = "slate" }) {
 function StatusPill({ status, count }) {
   const cfg = STATUS_CFG[status] || STATUS_CFG.INFO;
   return (
-    <div className="status-pill" style={{ background: cfg.bg, borderColor: cfg.border, color: cfg.text }}>
+    <div
+      className="status-pill"
+      style={{ background: cfg.bg, borderColor: cfg.border, color: cfg.text }}
+    >
       <span className="status-pill__count">{count}</span>
       <span className="status-pill__label">{status}</span>
+    </div>
+  );
+}
+
+function DirectiveChip({ code }) {
+  return (
+    <span
+      className="directive-chip"
+      style={{ background: DIRECTIVE_COLORS[code] || "#334155" }}
+    >
+      {code}
+    </span>
+  );
+}
+
+function FindingRow({ item, overrideLabel, overridePrefix }) {
+  const cfg = STATUS_CFG[item.status] || STATUS_CFG.INFO;
+
+  return (
+    <div className="finding">
+      <div
+        className="finding__icon"
+        style={{ background: cfg.bg, borderColor: cfg.border, color: cfg.text }}
+      >
+        {cfg.icon}
+      </div>
+
+      <div style={{ color: cfg.text }}>
+        <div className="finding__article">{item.article || "Note"}</div>
+        <div className="finding__text">{item.finding}</div>
+        {item.action ? (
+          <div className="finding__action">
+            <strong>{overridePrefix || "Action"}:</strong> {item.action}
+          </div>
+        ) : null}
+      </div>
+
+      <div
+        className="finding__status"
+        style={{ background: cfg.bg, borderColor: cfg.border, color: cfg.text }}
+      >
+        {overrideLabel || item.status}
+      </div>
     </div>
   );
 }
@@ -352,7 +208,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState(null);
   const textareaRef = useRef(null);
   const abortRef = useRef(null);
 
@@ -363,20 +218,33 @@ export default function App() {
   useEffect(() => {
     if (!textareaRef.current) return;
     textareaRef.current.style.height = "auto";
-    textareaRef.current.style.height = `${Math.max(300, textareaRef.current.scrollHeight)}px`;
+    textareaRef.current.style.height = `${Math.max(
+      250,
+      textareaRef.current.scrollHeight
+    )}px`;
   }, [desc]);
 
-  const detected = useMemo(() => detectDirectives(desc), [desc]);
   const answered = useMemo(
     () => QUESTIONS.map((q) => ({ ...q, done: q.detect(desc) })),
     [desc]
   );
   const doneCount = answered.filter((q) => q.done).length;
   const progress = Math.round((doneCount / QUESTIONS.length) * 100);
-  const isReady = desc.trim().length >= 20;
+  const isReady = desc.trim().length >= 10;
 
-  const grouped = useMemo(() => (result ? groupFindings(result.findings) : {}), [result]);
-  const dirTabs = useMemo(() => Object.keys(grouped), [grouped]);
+  const sections = useMemo(
+    () => (result?.findings ? splitFindings(result.findings) : null),
+    [result]
+  );
+
+  const directives = useMemo(() => {
+    if (!result) return [];
+    if (Array.isArray(result.directives) && result.directives.length) {
+      return result.directives;
+    }
+    return extractDirectivesFromFindings(result.findings || []);
+  }, [result]);
+
   const counts = useMemo(() => {
     if (!result?.findings) return {};
     return result.findings.reduce((acc, finding) => {
@@ -385,8 +253,23 @@ export default function App() {
     }, {});
   }, [result]);
 
-  const tabFindings = activeTab && grouped[activeTab] ? grouped[activeTab] : [];
-  const riskCfg = result ? RISK_CFG[result.overall_risk] || RISK_CFG.LOW : null;
+  const riskCfg = result
+    ? RISK_CFG[result.overall_risk] || RISK_CFG.LOW
+    : RISK_CFG.LOW;
+
+  const standardDirectiveCounts = useMemo(() => {
+    const map = {};
+    (sections?.standards || []).forEach((s) => {
+      (s.directive || "")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .forEach((d) => {
+          map[d] = (map[d] || 0) + 1;
+        });
+    });
+    return map;
+  }, [sections]);
 
   const handleRun = useCallback(async () => {
     if (!isReady || loading) return;
@@ -407,7 +290,7 @@ export default function App() {
         body: JSON.stringify({
           description: desc,
           category: "",
-          directives: detected,
+          directives: [],
           depth,
         }),
         signal: controller.signal,
@@ -419,8 +302,6 @@ export default function App() {
 
       const data = await response.json();
       setResult(data);
-      const groupedData = groupFindings(data.findings || []);
-      setActiveTab(Object.keys(groupedData)[0] || null);
     } catch (err) {
       if (err.name === "AbortError") {
         setError("Request timed out or was cancelled.");
@@ -431,7 +312,7 @@ export default function App() {
       clearTimeout(timeout);
       setLoading(false);
     }
-  }, [depth, desc, detected, isReady, loading]);
+  }, [depth, desc, isReady, loading]);
 
   const resetAll = useCallback(() => {
     abortRef.current?.abort();
@@ -448,7 +329,6 @@ export default function App() {
         :root {
           --bg: #f6f8fc;
           --surface: rgba(255,255,255,0.88);
-          --surface-strong: #ffffff;
           --line: #e2e8f0;
           --line-soft: #edf2f7;
           --text: #0f172a;
@@ -471,14 +351,12 @@ export default function App() {
             radial-gradient(circle at top right, rgba(124,58,237,0.09), transparent 26%),
             var(--bg);
         }
+
         button, textarea { font: inherit; }
         button { cursor: pointer; }
         textarea { resize: none; }
 
-        .app-shell {
-          min-height: 100vh;
-          color: var(--text);
-        }
+        .app-shell { min-height: 100vh; }
 
         .nav {
           position: sticky;
@@ -489,9 +367,8 @@ export default function App() {
           border-bottom: 1px solid rgba(226, 232, 240, 0.85);
         }
 
-        .nav__inner,
-        .page {
-          width: min(1200px, calc(100vw - 32px));
+        .nav__inner, .page {
+          width: min(1240px, calc(100vw - 32px));
           margin: 0 auto;
         }
 
@@ -511,8 +388,8 @@ export default function App() {
         }
 
         .brand__logo {
-          width: 36px;
-          height: 36px;
+          width: 38px;
+          height: 38px;
           display: grid;
           place-items: center;
           border-radius: 12px;
@@ -536,7 +413,7 @@ export default function App() {
 
         .hero {
           display: grid;
-          grid-template-columns: 1.3fr 0.7fr;
+          grid-template-columns: 1.2fr 0.8fr;
           gap: 18px;
           margin-bottom: 22px;
         }
@@ -549,8 +426,8 @@ export default function App() {
           backdrop-filter: blur(12px);
         }
 
-        .hero-card {
-          padding: 26px;
+        .hero-card, .hero-side, .editor, .section-head, .results-card__head, .progress-shell, .sidebar-footer {
+          padding: 22px;
         }
 
         .eyebrow {
@@ -578,12 +455,12 @@ export default function App() {
           margin-top: 12px;
           color: var(--muted);
           line-height: 1.75;
-          max-width: 60ch;
+          max-width: 64ch;
         }
 
         .hero-metrics {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 12px;
           margin-top: 18px;
         }
@@ -607,16 +484,22 @@ export default function App() {
           letter-spacing: -0.04em;
         }
 
+        .metric-sub {
+          margin-top: 6px;
+          font-size: 12px;
+          color: var(--muted-2);
+          line-height: 1.5;
+        }
+
         .tone-blue .metric-value { color: #1d4ed8; }
         .tone-violet .metric-value { color: #7c3aed; }
         .tone-green .metric-value { color: #15803d; }
+        .tone-orange .metric-value { color: #ea580c; }
 
         .hero-side {
-          padding: 22px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          min-height: 100%;
         }
 
         .hero-side__title {
@@ -634,7 +517,7 @@ export default function App() {
           gap: 8px;
         }
 
-        .chip {
+        .directive-chip {
           display: inline-flex;
           align-items: center;
           gap: 8px;
@@ -662,17 +545,6 @@ export default function App() {
           align-items: start;
         }
 
-        .input-card,
-        .sidebar-card,
-        .results-card,
-        .risk-card {
-          overflow: hidden;
-        }
-
-        .section-head {
-          padding: 18px 22px 0;
-        }
-
         .section-title {
           margin: 0;
           font-size: 16px;
@@ -685,10 +557,6 @@ export default function App() {
           font-size: 13px;
           color: var(--muted);
           line-height: 1.65;
-        }
-
-        .editor {
-          padding: 16px 22px 18px;
         }
 
         .textarea-shell {
@@ -707,7 +575,7 @@ export default function App() {
         .textarea {
           display: block;
           width: 100%;
-          min-height: 300px;
+          min-height: 250px;
           padding: 18px 18px 16px;
           border: 0;
           outline: 0;
@@ -750,10 +618,7 @@ export default function App() {
           border: 1px solid var(--line);
         }
 
-        .segmented button,
-        .ghost-btn,
-        .primary-btn,
-        .tab-btn {
+        .segmented button, .ghost-btn, .primary-btn {
           border: 0;
           transition: transform .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease;
         }
@@ -800,9 +665,7 @@ export default function App() {
           cursor: not-allowed;
         }
 
-        .primary-btn:hover:not(:disabled),
-        .ghost-btn:hover,
-        .tab-btn:hover {
+        .ghost-btn:hover, .primary-btn:hover:not(:disabled) {
           transform: translateY(-1px);
         }
 
@@ -820,10 +683,10 @@ export default function App() {
         .sidebar-card {
           position: sticky;
           top: 84px;
+          overflow: hidden;
         }
 
         .progress-shell {
-          padding: 18px 18px 14px;
           border-bottom: 1px solid var(--line-soft);
         }
 
@@ -910,7 +773,6 @@ export default function App() {
         }
 
         .sidebar-footer {
-          padding: 14px 18px 18px;
           border-top: 1px solid var(--line-soft);
           color: var(--muted);
           font-size: 12px;
@@ -936,6 +798,13 @@ export default function App() {
         @keyframes shimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
+        }
+
+        .results-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 330px;
+          gap: 18px;
+          align-items: start;
         }
 
         .risk-card {
@@ -1011,43 +880,15 @@ export default function App() {
           text-transform: uppercase;
         }
 
-        .tab-bar {
-          display: flex;
-          gap: 8px;
-          margin: 0 0 10px;
-          overflow-x: auto;
-          padding-bottom: 2px;
+        .results-card {
+          overflow: hidden;
         }
 
-        .tab-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          white-space: nowrap;
-          border-radius: 12px;
-          padding: 10px 14px;
-          background: rgba(255,255,255,0.72);
-          border: 1px solid var(--line);
-          color: var(--muted);
-          font-size: 13px;
-          font-weight: 700;
-        }
-
-        .tab-btn.active {
-          background: white;
-          color: var(--text);
-          box-shadow: 0 8px 18px rgba(15,23,42,0.07);
-        }
-
-        .tab-dot {
-          width: 9px;
-          height: 9px;
-          border-radius: 999px;
-          flex: 0 0 9px;
+        .results-card + .results-card {
+          margin-top: 16px;
         }
 
         .results-card__head {
-          padding: 18px 20px;
           border-bottom: 1px solid var(--line-soft);
           display: flex;
           justify-content: space-between;
@@ -1130,8 +971,82 @@ export default function App() {
           text-transform: uppercase;
         }
 
+        .sidebar-stack {
+          display: grid;
+          gap: 16px;
+          position: sticky;
+          top: 84px;
+        }
+
+        .side-card {
+          padding: 18px;
+        }
+
+        .side-title {
+          margin: 0 0 10px 0;
+          font-size: 14px;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+        }
+
+        .side-muted {
+          font-size: 12px;
+          color: var(--muted);
+          line-height: 1.6;
+        }
+
+        .key-list {
+          display: grid;
+          gap: 10px;
+          margin-top: 12px;
+        }
+
+        .key-row {
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          justify-content: space-between;
+          border-top: 1px solid var(--line-soft);
+          padding-top: 10px;
+        }
+
+        .key-row:first-child {
+          border-top: 0;
+          padding-top: 0;
+        }
+
+        .key-k {
+          font-size: 12px;
+          color: var(--muted);
+          min-width: 110px;
+        }
+
+        .key-v {
+          font-size: 13px;
+          color: var(--text);
+          line-height: 1.6;
+          text-align: right;
+        }
+
+        .pill-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 10px;
+        }
+
+        .mini-pill {
+          font-size: 11px;
+          font-weight: 700;
+          color: #334155;
+          background: #f8fafc;
+          border: 1px solid var(--line);
+          border-radius: 999px;
+          padding: 7px 10px;
+        }
+
         .empty {
-          padding: 32px 20px;
+          padding: 26px 20px;
           text-align: center;
           color: var(--muted);
           line-height: 1.7;
@@ -1140,33 +1055,36 @@ export default function App() {
         @media (max-width: 1080px) {
           .hero,
           .layout,
+          .results-grid,
           .risk-card {
             grid-template-columns: 1fr;
           }
 
-          .sidebar-card {
+          .sidebar-card,
+          .sidebar-stack {
             position: static;
           }
 
           .hero-metrics {
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
           .primary-btn { margin-left: 0; }
         }
 
         @media (max-width: 720px) {
-          .nav__inner, .page { width: min(100vw - 20px, 1200px); }
-          .hero-card, .hero-side, .editor, .section-head, .results-card__head, .progress-shell, .sidebar-footer { padding-left: 16px; padding-right: 16px; }
+          .nav__inner, .page { width: min(100vw - 20px, 1240px); }
           .hero-metrics { grid-template-columns: 1fr; }
           .risk-card { padding: 14px; }
           .finding { grid-template-columns: 30px 1fr; }
           .finding__status { grid-column: 2; justify-self: start; margin-top: 8px; }
           .control-row { flex-direction: column; align-items: stretch; }
-          .segmented { width: 100%; justify-content: stretch; }
+          .segmented { width: 100%; }
           .segmented button { flex: 1; }
           .ghost-btn, .primary-btn { width: 100%; }
           .nav__badge { display: none; }
+          .key-row { flex-direction: column; }
+          .key-v { text-align: left; }
         }
       `}</style>
 
@@ -1174,25 +1092,33 @@ export default function App() {
         <div className="nav__inner">
           <div className="brand">
             <div className="brand__logo">R</div>
-            <div>RuleGrid.net</div>
+            <div>RuleGrid</div>
           </div>
-          <div className="nav__badge">EU compliance scope triage</div>
+          <div className="nav__badge">Appliance compliance scoping</div>
         </div>
       </div>
 
       <main className="page">
         <section className="hero">
           <div className="card hero-card">
-            <div className="eyebrow">CRA-compatible React version</div>
-            <h1>Describe the product. Surface the likely EU compliance areas.</h1>
+            <div className="eyebrow">Standards-first compliance scoping</div>
+            <h1>Describe the appliance. Get likely directives, standards, and missing information.</h1>
             <p className="hero-copy">
-              Cleaner visual hierarchy, better responsiveness, safer API calls, and improved results presentation for
-              a more production-ready front end.
+              This version prioritizes product interpretation and likely applicable standards instead of showing only a flat warnings list.
             </p>
             <div className="hero-metrics">
               <MetricCard label="Checklist topics" value={QUESTIONS.length} tone="blue" />
-              <MetricCard label="Detected now" value={detected.length} tone="violet" />
               <MetricCard label="Coverage" value={`${progress}%`} tone="green" />
+              <MetricCard
+                label="Standards found"
+                value={sections?.standards?.length || 0}
+                tone="violet"
+              />
+              <MetricCard
+                label="Missing details"
+                value={sections?.missingInfo?.length || 0}
+                tone="orange"
+              />
             </div>
           </div>
 
@@ -1200,20 +1126,18 @@ export default function App() {
             <div>
               <div className="hero-side__title">Likely directives</div>
               <div className="chip-wrap">
-                {detected.length ? (
-                  detected.map((id) => (
-                    <span key={id} className="chip" style={{ background: DIR_META[id]?.color || "#334155" }}>
-                      {DIR_META[id]?.label || id}
-                    </span>
-                  ))
+                {directives.length ? (
+                  directives.map((d) => <DirectiveChip key={d} code={d} />)
                 ) : (
-                  <span className="editor-muted">Directive hints appear as the description becomes more complete.</span>
+                  <span className="editor-muted">
+                    Directives will appear after analysis.
+                  </span>
                 )}
               </div>
             </div>
 
             <div className="hero-note">
-              For Create React App, store the backend URL in <code>.env</code> as <code>REACT_APP_REGCHECK_API_URL</code>.
+              Best results come from a short but structured description: product type, connectivity, power, app/cloud, and any camera, microphone, health, or child-use context.
             </div>
           </div>
         </section>
@@ -1224,7 +1148,7 @@ export default function App() {
               <div className="section-head">
                 <h2 className="section-title">Product description</h2>
                 <div className="section-subtitle">
-                  Write a structured product summary. The checklist updates automatically as coverage improves.
+                  Describe the appliance naturally. The checker will infer likely traits and standards from sparse text.
                 </div>
               </div>
 
@@ -1240,13 +1164,9 @@ export default function App() {
                   />
                   <div className="editor-bar">
                     <span className="editor-muted">{desc.length} characters</span>
-                    <div className="chip-wrap">
-                      {detected.map((id) => (
-                        <span key={id} className="chip" style={{ background: DIR_META[id]?.color || "#334155" }}>
-                          {DIR_META[id]?.label || id}
-                        </span>
-                      ))}
-                    </div>
+                    <span className="editor-muted">
+                      Focus on product type, radio, app/cloud, power, and data features
+                    </span>
                   </div>
                 </div>
 
@@ -1254,7 +1174,7 @@ export default function App() {
                   <div className="segmented" aria-label="Analysis depth">
                     {[
                       { value: "standard", label: "Standard" },
-                      { value: "deep", label: "Deep audit" },
+                      { value: "deep", label: "Deep" },
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -1267,24 +1187,33 @@ export default function App() {
                     ))}
                   </div>
 
-                  <button type="button" className="ghost-btn" onClick={() => setDesc(SAMPLE_DESCRIPTION)}>
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => setDesc(SAMPLE_DESCRIPTION)}
+                  >
                     Use sample
                   </button>
-                  <button type="button" className="ghost-btn" onClick={() => setDesc("")}>
+
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => setDesc("")}
+                  >
                     Clear
                   </button>
-                  <button type="button" className="primary-btn" onClick={handleRun} disabled={!isReady}>
+
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={handleRun}
+                    disabled={!isReady}
+                  >
                     Run analysis →
                   </button>
                 </div>
 
-                {error && (
-                  <div className="error-box">
-                    <strong>Backend request failed.</strong>
-                    <br />
-                    {error}
-                  </div>
-                )}
+                {error ? <div className="error-box">{error}</div> : null}
               </div>
             </div>
 
@@ -1292,10 +1221,16 @@ export default function App() {
               <div className="progress-shell">
                 <div className="progress-head">
                   <div>
-                    <div className="section-title" style={{ fontSize: 15 }}>Coverage guide</div>
-                    <div className="section-subtitle" style={{ marginTop: 4 }}>Aim to cover all ten topics.</div>
+                    <div className="section-title" style={{ fontSize: 15 }}>
+                      Input coverage
+                    </div>
+                    <div className="section-subtitle" style={{ marginTop: 4 }}>
+                      More detail improves product interpretation.
+                    </div>
                   </div>
-                  <div className="progress-badge">{doneCount}/{QUESTIONS.length}</div>
+                  <div className="progress-badge">
+                    {doneCount}/{QUESTIONS.length}
+                  </div>
                 </div>
                 <div className="progress-track">
                   <div className="progress-fill" style={{ width: `${progress}%` }} />
@@ -1305,10 +1240,16 @@ export default function App() {
               <div className="question-list">
                 {answered.map((q) => (
                   <div key={q.id} className="question-row">
-                    <div className={`check ${q.done ? "done" : ""}`}>{q.done ? "✓" : ""}</div>
+                    <div className={`check ${q.done ? "done" : ""}`}>
+                      {q.done ? "✓" : ""}
+                    </div>
                     <div>
-                      <div className={`question-label ${q.done ? "done" : ""}`}>{q.label}</div>
-                      {!q.done && <div className="question-example">{q.example}</div>}
+                      <div className={`question-label ${q.done ? "done" : ""}`}>
+                        {q.label}
+                      </div>
+                      {!q.done ? (
+                        <div className="question-example">{q.example}</div>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -1316,8 +1257,8 @@ export default function App() {
 
               <div className="sidebar-footer">
                 {progress === 100
-                  ? "All topics are covered. The description is detailed enough for a stronger first-pass analysis."
-                  : `${QUESTIONS.length - doneCount} topic${QUESTIONS.length - doneCount === 1 ? "" : "s"} still missing for best results.`}
+                  ? "Good coverage. The backend should be able to infer more accurately."
+                  : `${QUESTIONS.length - doneCount} prompt area(s) still missing.`}
               </div>
             </aside>
           </section>
@@ -1328,7 +1269,7 @@ export default function App() {
             <div className="card" style={{ padding: 18, marginBottom: 14 }}>
               <div className="section-title">Running analysis…</div>
               <div className="section-subtitle">
-                Checking {detected.length} likely directive{detected.length === 1 ? "" : "s"} against the backend.
+                Interpreting product type, traits, directives, and likely standards.
               </div>
             </div>
             <div className="loading-state">
@@ -1347,17 +1288,21 @@ export default function App() {
                 style={{ background: riskCfg.tint, border: `1px solid ${riskCfg.border}` }}
               >
                 <div className="risk-label">Overall risk</div>
-                <div className="risk-value" style={{ color: riskCfg.color }}>{result.overall_risk}</div>
+                <div className="risk-value" style={{ color: riskCfg.color }}>
+                  {result.overall_risk || "LOW"}
+                </div>
               </div>
 
               <div className="summary-box">
                 <div className="risk-label">Summary</div>
-                <p>{result.summary}</p>
+                <p>{result.summary || "No summary returned."}</p>
               </div>
 
               <div className="status-grid">
                 {["FAIL", "WARN", "PASS", "INFO"].map((status) =>
-                  counts[status] ? <StatusPill key={status} status={status} count={counts[status]} /> : null
+                  counts[status] ? (
+                    <StatusPill key={status} status={status} count={counts[status]} />
+                  ) : null
                 )}
                 <button type="button" className="ghost-btn" onClick={resetAll}>
                   ← Edit
@@ -1365,75 +1310,187 @@ export default function App() {
               </div>
             </div>
 
-            <div className="tab-bar">
-              {dirTabs.map((dir) => {
-                const meta = DIR_META[dir] || { label: dir, color: "#334155" };
-                const failCount = (grouped[dir] || []).filter((f) => f.status === "FAIL").length;
-                const warnCount = (grouped[dir] || []).filter((f) => f.status === "WARN").length;
-                return (
-                  <button
-                    key={dir}
-                    type="button"
-                    className={`tab-btn ${activeTab === dir ? "active" : ""}`}
-                    onClick={() => setActiveTab(dir)}
-                  >
-                    <span className="tab-dot" style={{ background: meta.color }} />
-                    {meta.label}
-                    {failCount > 0 && <span style={{ color: "#b91c1c" }}>· {failCount}F</span>}
-                    {failCount === 0 && warnCount > 0 && <span style={{ color: "#b45309" }}>· {warnCount}W</span>}
-                  </button>
-                );
-              })}
-            </div>
+            <div className="results-grid">
+              <div>
+                <div className="card results-card">
+                  <div className="results-card__head">
+                    <div>
+                      <div className="results-card__title">
+                        Likely applicable standards
+                      </div>
+                      <div className="results-card__subtitle">
+                        Initial standards and review items inferred from the current description
+                      </div>
+                    </div>
+                    <div className="status-grid">
+                      {directives.map((d) => (
+                        <DirectiveChip key={d} code={d} />
+                      ))}
+                    </div>
+                  </div>
 
-            <div className="card results-card">
-              <div className="results-card__head">
-                <div>
-                  <div className="results-card__title">{DIR_META[activeTab]?.full || activeTab || "Results"}</div>
-                  <div className="results-card__subtitle">{DIR_META[activeTab]?.label || "Directive findings"}</div>
+                  {sections?.standards?.length ? (
+                    <div className="findings-list">
+                      {sections.standards.map((f) => (
+                        <FindingRow
+                          key={f._i}
+                          item={f}
+                          overridePrefix="Why shown"
+                          overrideLabel={f.status}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty">
+                      No standards were identified from the current description.
+                    </div>
+                  )}
                 </div>
-                <div className="status-grid">
-                  {["FAIL", "WARN", "PASS", "INFO"].map((status) => {
-                    const count = tabFindings.filter((item) => item.status === status).length;
-                    return count ? <StatusPill key={status} status={status} count={count} /> : null;
-                  })}
-                </div>
-              </div>
 
-              {tabFindings.length ? (
-                <div className="findings-list">
-                  {tabFindings.map((f) => {
-                    const cfg = STATUS_CFG[f.status] || STATUS_CFG.INFO;
-                    return (
-                      <div key={f._i} className="finding">
-                        <div
-                          className="finding__icon"
-                          style={{ background: cfg.bg, borderColor: cfg.border, color: cfg.text }}
-                        >
-                          {cfg.icon}
+                {sections?.missingInfo?.length ? (
+                  <div className="card results-card">
+                    <div className="results-card__head">
+                      <div>
+                        <div className="results-card__title">
+                          Information needed to refine the result
                         </div>
-                        <div style={{ color: cfg.text }}>
-                          <div className="finding__article">{f.article || "Reference not provided"}</div>
-                          <div className="finding__text">{f.finding}</div>
-                          {f.action && (
-                            <div className="finding__action">
-                              <strong>Action:</strong> {f.action}
-                            </div>
-                          )}
-                        </div>
-                        <div
-                          className="finding__status"
-                          style={{ background: cfg.bg, borderColor: cfg.border, color: cfg.text }}
-                        >
-                          {f.status}
+                        <div className="results-card__subtitle">
+                          Add these details to improve standards scoping accuracy
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+
+                    <div className="findings-list">
+                      {sections.missingInfo.map((f) => (
+                        <FindingRow
+                          key={f._i}
+                          item={f}
+                          overridePrefix="Add"
+                          overrideLabel="MISSING"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {sections?.other?.length ? (
+                  <div className="card results-card">
+                    <div className="results-card__head">
+                      <div>
+                        <div className="results-card__title">Additional findings</div>
+                        <div className="results-card__subtitle">
+                          Other notes returned by the backend
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="findings-list">
+                      {sections.other.map((f) => (
+                        <FindingRow key={f._i} item={f} />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="sidebar-stack">
+                <div className="card side-card">
+                  <h3 className="side-title">Product interpretation</h3>
+                  <div className="side-muted">
+                    How the backend understood the product before mapping standards.
+                  </div>
+
+                  <div className="key-list">
+                    <div className="key-row">
+                      <div className="key-k">Product summary</div>
+                      <div className="key-v">{result.product_summary || "—"}</div>
+                    </div>
+
+                    <div className="key-row">
+                      <div className="key-k">Standards found</div>
+                      <div className="key-v">{sections?.standards?.length || 0}</div>
+                    </div>
+
+                    <div className="key-row">
+                      <div className="key-k">Missing details</div>
+                      <div className="key-v">{sections?.missingInfo?.length || 0}</div>
+                    </div>
+
+                    <div className="key-row">
+                      <div className="key-k">Contradictions</div>
+                      <div className="key-v">{sections?.contradictions?.length || 0}</div>
+                    </div>
+                  </div>
+
+                  {sections?.interpretation?.length ? (
+                    <div className="findings-list" style={{ padding: "12px 0 0 0" }}>
+                      {sections.interpretation.map((f) => (
+                        <div key={f._i} className="finding" style={{ paddingLeft: 0, paddingRight: 0 }}>
+                          <div
+                            className="finding__icon"
+                            style={{
+                              background: "#eff6ff",
+                              borderColor: "#bfdbfe",
+                              color: "#1d4ed8",
+                            }}
+                          >
+                            i
+                          </div>
+                          <div>
+                            <div className="finding__article">{f.article}</div>
+                            <div className="finding__text">{f.finding}</div>
+                            {f.action ? (
+                              <div className="finding__action">
+                                <strong>Note:</strong> {f.action}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
-              ) : (
-                <div className="empty">No findings available for this directive.</div>
-              )}
+
+                <div className="card side-card">
+                  <h3 className="side-title">Directive coverage</h3>
+                  <div className="side-muted">
+                    Directives inferred from backend findings and standards mapping.
+                  </div>
+                  <div className="pill-list">
+                    {directives.length ? (
+                      directives.map((d) => (
+                        <span key={d} className="mini-pill">
+                          {d}
+                          {standardDirectiveCounts[d]
+                            ? ` · ${standardDirectiveCounts[d]}`
+                            : ""}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="mini-pill">No directives found</span>
+                    )}
+                  </div>
+                </div>
+
+                {sections?.contradictions?.length ? (
+                  <div className="card side-card">
+                    <h3 className="side-title">Contradictions</h3>
+                    <div className="side-muted">
+                      Conflicting signals reduce confidence and should be clarified.
+                    </div>
+                    <div className="findings-list" style={{ padding: "12px 0 0 0" }}>
+                      {sections.contradictions.map((f) => (
+                        <FindingRow
+                          key={f._i}
+                          item={f}
+                          overrideLabel="CONFLICT"
+                          overridePrefix="Clarify"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </section>
         )}
