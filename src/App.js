@@ -149,18 +149,23 @@ function downloadJson(filename, data) {
   URL.revokeObjectURL(url);
 }
 
-// Patterns that indicate model self-instructions leaking into output
-const META_RE = /do not auto.?match|auto.?match from|product.?gated entry|strict product.?gated|generic household|generic electrical|internal note|debug|self.?instruc|do not use|not for display/i;
+// Sentence-level patterns that are purely model reasoning / matching logic
+const DEBUG_SENTENCE_RE = /required traits matched[:\s]|additional traits matched[:\s]|do not auto.?match|auto.?match from|product.?gated entry|strict product.?gated|internal note|self.?instruc|not for display|traits matched:/i;
 
-function isMetaText(text = "") {
-  return META_RE.test(text);
+// Strip debug sentences; return only clean, user-facing sentences (or empty string)
+function sanitizeFinding(text = "") {
+  if (!text.trim()) return "";
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const clean = sentences
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && !DEBUG_SENTENCE_RE.test(s));
+  return clean.join(" ");
 }
 
 // An action is worth showing only if it adds something the finding doesn't already say
 function isUsefulAction(action = "", finding = "") {
   if (!action.trim()) return false;
-  if (isMetaText(action)) return false;
-  // Suppress if the action is near-duplicate of the finding (>70% word overlap)
+  if (DEBUG_SENTENCE_RE.test(action)) return false;
   const actionWords = new Set(action.toLowerCase().split(/\W+/).filter(w => w.length > 3));
   const findingWords = new Set(finding.toLowerCase().split(/\W+/).filter(w => w.length > 3));
   if (actionWords.size === 0) return false;
@@ -200,8 +205,7 @@ function StandardCard({ item }) {
   const mainStatus = priorityStatus(item.statuses);
   const s = STS[mainStatus] || STS.INFO;
 
-  const rawFinding = item.findings?.[0]?.finding || "";
-  const finding = isMetaText(rawFinding) ? "" : rawFinding;
+  const finding = sanitizeFinding(item.findings?.[0]?.finding || "");
 
   const usefulActions = item.actions.filter(a => isUsefulAction(a, finding));
 
@@ -229,7 +233,7 @@ function StandardCard({ item }) {
 
 function FindingRow({ f }) {
   const s = STS[f.status] || STS.INFO;
-  const finding = isMetaText(f.finding || "") ? "" : f.finding;
+  const finding = sanitizeFinding(f.finding || "");
   const action = isUsefulAction(f.action || "", finding) ? f.action : null;
   if (!finding && !action) return null;
   return (
