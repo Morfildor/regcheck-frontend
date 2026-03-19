@@ -37,18 +37,18 @@ const DIR_ORDER = [
 ];
 
 const DIR = {
-  LVD: { dot: "#8f8a72", pill: "#f5f1e7", ring: "#ddd4c2", ink: "#6d6955" },
-  EMC: { dot: "#6f9a98", pill: "#edf5f4", ring: "#c3d8d6", ink: "#517674" },
-  RED: { dot: "#3f6f78", pill: "#edf4f5", ring: "#bfd1d5", ink: "#355861" },
-  RED_CYBER: { dot: "#b08294", pill: "#f7eef2", ring: "#e2ccd4", ink: "#8b6474" },
-  CRA: { dot: "#70866f", pill: "#eef4ee", ring: "#cad5c8", ink: "#566554" },
-  ROHS: { dot: "#caa24f", pill: "#fbf5e5", ring: "#ecdbae", ink: "#9e7d36" },
-  REACH: { dot: "#c08b7c", pill: "#fbf1ee", ring: "#ebd4cd", ink: "#946759" },
-  GDPR: { dot: "#8ca6a1", pill: "#f2f6f5", ring: "#d5e0de", ink: "#6a807c" },
-  AI_Act: { dot: "#b08294", pill: "#f7eef2", ring: "#e2ccd4", ink: "#8b6474" },
-  ESPR: { dot: "#caa24f", pill: "#fbf6e8", ring: "#ecdebb", ink: "#9e7d36" },
-  OTHER: { dot: "#9a9587", pill: "#f6f2ea", ring: "#ded8ca", ink: "#726d61" },
-  SYSTEM: { dot: "#9a9587", pill: "#f6f2ea", ring: "#ded8ca", ink: "#726d61" },
+  LVD: { dot: "#6f7566", pill: "#ece8dc", ring: "#cfc7b7", ink: "#505647" },
+  EMC: { dot: "#5f8d8b", pill: "#e6f0ef", ring: "#bbd1cf", ink: "#456a69" },
+  RED: { dot: "#2f5f69", pill: "#e3eef0", ring: "#b2c7cc", ink: "#294b53" },
+  RED_CYBER: { dot: "#9f7084", pill: "#f1e7eb", ring: "#d8c0c9", ink: "#7a5667" },
+  CRA: { dot: "#60795f", pill: "#e8efe7", ring: "#c1cec0", ink: "#4a6149" },
+  ROHS: { dot: "#b7903e", pill: "#f7efd9", ring: "#e5d3a1", ink: "#8f6e2d" },
+  REACH: { dot: "#aa7868", pill: "#f5eae6", ring: "#e3cbc2", ink: "#83584a" },
+  GDPR: { dot: "#7f9995", pill: "#edf3f2", ring: "#cad9d8", ink: "#607773" },
+  AI_Act: { dot: "#9f7084", pill: "#f1e7eb", ring: "#d8c0c9", ink: "#7a5667" },
+  ESPR: { dot: "#b7903e", pill: "#f7f0dd", ring: "#e5d7aa", ink: "#8f6e2d" },
+  OTHER: { dot: "#8d8779", pill: "#f0ece3", ring: "#d5cec0", ink: "#686356" },
+  SYSTEM: { dot: "#8d8779", pill: "#f0ece3", ring: "#d5cec0", ink: "#686356" },
 };
 
 const STS = {
@@ -58,7 +58,7 @@ const STS = {
     bg: "#f8eef1",
     border: "#e6d0d6",
     text: "#8b6474",
-    stripe: "#b08294",
+    stripe: "#9f7084",
   },
   WARN: {
     icon: "!",
@@ -66,7 +66,7 @@ const STS = {
     bg: "#fbf5e8",
     border: "#ecdcae",
     text: "#9e7d36",
-    stripe: "#caa24f",
+    stripe: "#b7903e",
   },
   PASS: {
     icon: "✓",
@@ -74,7 +74,7 @@ const STS = {
     bg: "#eef4ee",
     border: "#ccd7ca",
     text: "#566554",
-    stripe: "#70866f",
+    stripe: "#60795f",
   },
   INFO: {
     icon: "i",
@@ -82,12 +82,11 @@ const STS = {
     bg: "#eff5f5",
     border: "#cadada",
     text: "#517674",
-    stripe: "#6f9a98",
+    stripe: "#5f8d8b",
   },
 };
 
-const STD_RE =
-  /^(EN|IEC|ISO|ETSI|EN IEC|EN ISO|IEC EN|UL|ASTM|CISPR|ITU|IEC\/EN)\b/i;
+const STD_RE = /^(EN|IEC|ISO|ETSI|EN IEC|EN ISO|IEC EN|UL|ASTM|CISPR|ITU|IEC\/EN)\b/i;
 
 function unique(arr = []) {
   return [...new Set(arr.filter(Boolean))];
@@ -145,49 +144,25 @@ function splitFindings(findings = []) {
 function inferDirectiveFromText(text = "") {
   const t = text.toLowerCase();
 
-  if (
-    /en\s*18031|18031-1|18031-2|18031-3|red da|delegated act|article 3\.3\(d\)|article 3\.3\(e\)|article 3\.3\(f\)|protect network|personal data.*radio|fraud.*radio/.test(
-      t
-    )
-  ) {
+  if (/en\s*18031|18031-1|18031-2|18031-3|red da|delegated act|article 3\.3\(d\)|article 3\.3\(e\)|article 3\.3\(f\)/.test(t)) {
     return "RED_CYBER";
   }
-  if (
-    /cyber resilience act|\bcra\b|secure development|vulnerability handling|sbom|software bill of materials|post-market security update|coordinated vulnerability disclosure/.test(
-      t
-    )
-  ) {
+  if (/cyber resilience act|\bcra\b|sbom|vulnerability|secure development/.test(t)) {
     return "CRA";
   }
-  if (
-    /rohs|2011\/65\/eu|en iec 63000|iec 63000|en 50581|hazardous substances|restricted substances|iec 62321|62321-3-1|62321-3-2|62321-3-3|62321-4|62321-5|62321-6|62321-7-1|62321-7-2|62321-8/.test(
-      t
-    )
-  ) {
+  if (/rohs|2011\/65\/eu|iec 63000|en iec 63000|62321/.test(t)) {
     return "ROHS";
   }
-  if (
-    /\breach\b|ec 1907\/2006|regulation \(ec\) no 1907\/2006|svhc|substances of very high concern|candidate list|annex xvii|article 33/.test(
-      t
-    )
-  ) {
+  if (/\breach\b|1907\/2006|svhc|article 33/.test(t)) {
     return "REACH";
   }
-  if (/60335|60730|62233|60335-1|60335-2|household|appliance safety|electrical safety/.test(t)) {
+  if (/60335|60730|62233|electrical safety|appliance safety/.test(t)) {
     return "LVD";
   }
-  if (
-    /55014|61000|emc|electromagnetic|cispr|harmonic|flicker|electrostatic|esd|surge|immunity|conducted emission|radiated emission/.test(
-      t
-    )
-  ) {
+  if (/55014|61000|emc|electromagnetic|cispr|harmonic|flicker|esd|surge|immunity/.test(t)) {
     return "EMC";
   }
-  if (
-    /300 328|301 489|300 220|300 330|300 440|300 086|300 113|radio spectrum|wireless|bluetooth|wifi|wi-fi|lte|5g|zigbee|matter|nfc|rf exposure|receiver category/.test(
-      t
-    )
-  ) {
+  if (/300 328|301 489|300 220|300 330|wireless|bluetooth|wifi|wi-fi|zigbee|matter|nfc|lte|5g/.test(t)) {
     return "RED";
   }
   if (/gdpr|privacy|personal data|data protection/.test(t)) {
@@ -205,12 +180,10 @@ function inferDirectiveFromText(text = "") {
 function enrichDirectives(f) {
   const combined = [f.article, f.finding, f.action].filter(Boolean).join(" ");
   const inferred = inferDirectiveFromText(combined);
-
   let explicit = getDirectiveListFromFinding(f).filter((d) => d !== "SYSTEM");
 
   if (/en\s*18031|18031-1|18031-2|18031-3/i.test(combined.toLowerCase())) {
-    explicit = explicit.filter((d) => d !== "CRA");
-    explicit = explicit.filter((d) => d !== "RED");
+    explicit = explicit.filter((d) => d !== "CRA" && d !== "RED");
     explicit.push("RED_CYBER");
   }
 
@@ -312,41 +285,53 @@ function StatusPill({ status }) {
 
 function StandardCard({ item }) {
   const mainStatus = priorityStatus(item.statuses);
+  const [open, setOpen] = useState(false);
+  const firstFinding = item.findings?.[0]?.finding || "";
+  const shortFinding = firstFinding.length > 110 ? `${firstFinding.slice(0, 110)}…` : firstFinding;
+
   return (
     <div
-      className="std-card"
+      className={`std-card ${open ? "std-card--open" : ""}`}
       style={{
         "--fbg": (STS[mainStatus] || STS.INFO).bg,
         "--fborder": (STS[mainStatus] || STS.INFO).border,
         "--ftext": (STS[mainStatus] || STS.INFO).text,
       }}
     >
-      <div className="std-card__top">
-        <div>
-          <div className="std-card__eyebrow">STANDARD</div>
-          <div className="std-card__name">{item.name}</div>
+      <button type="button" className="std-card__button" onClick={() => setOpen((v) => !v)}>
+        <div className="std-card__top">
+          <div className="std-card__titleWrap">
+            <div className="std-card__eyebrow">STANDARD</div>
+            <div className="std-card__name">{item.name}</div>
+          </div>
+          <div className="std-card__topRight">
+            <StatusPill status={mainStatus} />
+            <span className="std-card__chevron">{open ? "−" : "+"}</span>
+          </div>
         </div>
-        <StatusPill status={mainStatus} />
-      </div>
 
-      <div className="std-card__chips">
-        {item.directives.map((d) => (
-          <DirBadge key={d} code={d} compact />
-        ))}
-      </div>
+        <div className="std-card__chips">
+          {item.directives.map((d) => (
+            <DirBadge key={d} code={d} compact />
+          ))}
+        </div>
 
-      {item.findings?.[0]?.finding ? (
-        <div className="std-card__finding">{item.findings[0].finding}</div>
-      ) : null}
+        {shortFinding ? <div className="std-card__finding std-card__finding--compact">{shortFinding}</div> : null}
+      </button>
 
-      {item.actions.length > 0 ? (
-        <div className="std-card__actions">
-          <div className="std-card__actions-title">Suggested action</div>
-          <ul>
-            {item.actions.slice(0, 2).map((a, idx) => (
-              <li key={idx}>{a}</li>
-            ))}
-          </ul>
+      {open ? (
+        <div className="std-card__details">
+          {firstFinding ? <div className="std-card__finding">{firstFinding}</div> : null}
+          {item.actions.length > 0 ? (
+            <div className="std-card__actions">
+              <div className="std-card__actions-title">Suggested action</div>
+              <ul>
+                {item.actions.slice(0, 3).map((a, idx) => (
+                  <li key={idx}>{a}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -413,12 +398,7 @@ function ProductTypePicker({ onPick }) {
   return (
     <div className="type-picker">
       {types.map((item) => (
-        <button
-          key={item.label}
-          type="button"
-          className="type-chip"
-          onClick={() => onPick(item.value)}
-        >
+        <button key={item.label} type="button" className="type-chip" onClick={() => onPick(item.value)}>
           {item.label}
         </button>
       ))}
@@ -433,8 +413,7 @@ function EmptyState({ onLoadSample, onPickType }) {
       <div className="empty-state__eyebrow">Version 3</div>
       <h2 className="empty-state__title">Start with the product type</h2>
       <p className="empty-state__text">
-        Pick the closest product first. Then add power, connectivity, materials,
-        software, or moving-part details only when relevant.
+        Pick the closest product first. Then add power, connectivity, materials, software, or moving-part details only when relevant.
       </p>
       <ProductTypePicker onPick={onPickType} />
       <div className="empty-state__row">
@@ -504,9 +483,7 @@ function buildGuidedQuickAdds(description = "") {
   const quick = [];
 
   const add = (label, value, stage = "detail") => {
-    if (!t.includes(value.toLowerCase())) {
-      quick.push({ label, value, stage });
-    }
+    if (!t.includes(value.toLowerCase())) quick.push({ label, value, stage });
   };
 
   const productChoices = [
@@ -519,11 +496,7 @@ function buildGuidedQuickAdds(description = "") {
   ];
 
   if (!t || !productType) {
-    return {
-      productType,
-      primary: productChoices,
-      secondary: [],
-    };
+    return { productType, primary: productChoices, secondary: [] };
   }
 
   if (!hasAny(t, ["mains", "battery", "usb", "230v", "220v"])) {
@@ -531,13 +504,11 @@ function buildGuidedQuickAdds(description = "") {
     add("Battery powered", "Battery powered");
     add("USB powered", "USB powered");
   }
-
   if (!hasAny(t, ["wifi", "wi-fi", "bluetooth", "zigbee", "thread", "matter", "nfc"])) {
     add("Wi-Fi", "Wi-Fi connection");
     add("Bluetooth", "Bluetooth connection");
     add("Matter", "Matter support");
   }
-
   if (!hasAny(t, ["app", "cloud", "ota", "account", "login"])) {
     add("App control", "Mobile app control");
     add("Cloud", "Cloud connectivity");
@@ -549,57 +520,47 @@ function buildGuidedQuickAdds(description = "") {
     if (!hasAny(t, ["heating", "heater", "element"])) add("Heating element", "Contains heating element");
     if (!hasAny(t, ["timer", "display"])) add("Display / timer", "Electronic display and timer control");
   }
-
   if (productType === "kettle") {
     if (!hasAny(t, ["food", "water path", "beverage"])) add("Water contact", "Food-contact water path materials");
     if (!hasAny(t, ["heating", "heater", "element"])) add("Heating element", "Contains heating element");
     if (!hasAny(t, ["base", "cordless"])) add("Cordless base", "Cordless kettle with separate power base");
   }
-
   if (productType === "coffee_machine") {
     if (!hasAny(t, ["water", "milk", "coffee path", "food"])) add("Food contact path", "Food-contact water, coffee, and milk path materials");
     if (!hasAny(t, ["pump", "pressure"])) add("Pump / pressure", "Contains pump and pressurized fluid path");
     if (!hasAny(t, ["cleaning", "descale"])) add("Cleaning cycle", "Automatic cleaning and descaling functions");
   }
-
   if (productType === "vacuum") {
     if (!hasAny(t, ["motor", "suction"])) add("Motorized suction", "Motorized suction function");
     if (!hasAny(t, ["battery", "charger", "dock"])) add("Charging system", "Battery charging dock or charger");
     if (!hasAny(t, ["app", "mapping", "camera", "lidar"])) add("Navigation", "App-connected mapping or navigation sensors");
   }
-
   if (productType === "blender") {
     if (!hasAny(t, ["food", "jar", "blade"])) add("Food contact", "Food-contact jar, lid, seals, and blade area");
     if (!hasAny(t, ["motor", "blade"])) add("Motor and blades", "High-speed motorized blade system");
     if (!hasAny(t, ["safety lock", "interlock"])) add("Safety interlock", "Lid or jar safety interlock");
   }
-
   if (productType === "hair_dryer") {
     if (!hasAny(t, ["heating", "heater", "element"])) add("Heating element", "Contains heating element");
     if (!hasAny(t, ["fan", "motor"])) add("Fan motor", "Contains internal fan motor");
     if (!hasAny(t, ["ion", "ionic"])) add("Ionic function", "Ionic hair care function");
   }
-
   if (productType === "heater") {
     if (!hasAny(t, ["heating", "heater", "element"])) add("Heating element", "Contains heating element");
     if (!hasAny(t, ["thermostat", "temperature"])) add("Thermostat", "Electronic thermostat control");
     if (!hasAny(t, ["tip-over", "overheat"])) add("Protective safety", "Tip-over and overheat protection");
   }
-
   if (productType === "fan") {
     if (!hasAny(t, ["motor"])) add("Motorized", "Motorized fan function");
     if (!hasAny(t, ["remote", "wifi", "app"])) add("Remote control", "Remote or app control");
     if (!hasAny(t, ["oscillation", "guard"])) add("Oscillation / guard", "Oscillation function and protective guard");
   }
 
-  return {
-    productType,
-    primary: quick.slice(0, 4),
-    secondary: quick.slice(4, 9),
-  };
+  return { productType, primary: quick.slice(0, 4), secondary: quick.slice(4, 9) };
 }
 
 export default function App() {
+  const [collapsedGroups, setCollapsedGroups] = useState({});
   const [description, setDescription] = useState("");
   const [depth, setDepth] = useState("standard");
   const [loading, setLoading] = useState(false);
@@ -623,12 +584,7 @@ export default function App() {
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          description: text,
-          category: "",
-          directives: [],
-          depth,
-        }),
+        body: JSON.stringify({ description: text, category: "", directives: [], depth }),
       });
 
       if (!res.ok) {
@@ -661,7 +617,6 @@ export default function App() {
             .join(" ")
             .toLowerCase()
             .includes(search.trim().toLowerCase());
-
       const matchesDir = filterDir === "ALL" ? true : g.directives.includes(filterDir);
       return matchesSearch && matchesDir;
     });
@@ -679,6 +634,10 @@ export default function App() {
   }, [filteredStandardGroups]);
 
   const directiveCounts = useMemo(() => collectDirectiveCounts(standardGroups), [standardGroups]);
+
+  const toggleGroup = useCallback((key) => {
+    setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   const nonStdFindings = useMemo(() => {
     const arr = [...(findingsBucket.other || []), ...(findingsBucket.missing || []), ...(findingsBucket.contra || [])];
@@ -718,16 +677,17 @@ export default function App() {
     setDescription((prev) => {
       const trimmed = prev.trim();
       if (!trimmed) return value;
+      if (trimmed.toLowerCase().includes(value.toLowerCase())) return trimmed;
       if (trimmed.endsWith(".")) return `${trimmed} ${value}.`;
       return `${trimmed}. ${value}.`;
     });
   }, []);
 
   return (
-    <div className="page-shell">
+    <div className="page-shell v3">
       <Style />
-
       <div className="bg-grid" />
+
       <header className="topbar">
         <div className="container topbar__inner">
           <div className="brand">
@@ -752,8 +712,7 @@ export default function App() {
             <div className="hero-v2__eyebrow">CE / DoC preparation support</div>
             <h1 className="hero-v2__title">Guided EU compliance screening</h1>
             <p className="hero-v2__text">
-              Start with the product type first. Then add only the follow-up details that matter
-              for legislation and standard scoping.
+              Start with the product type first. Then add only the follow-up details that matter for legislation and standard scoping.
             </p>
           </div>
         </section>
@@ -852,10 +811,7 @@ export default function App() {
         </section>
 
         {!result && !loading ? (
-          <EmptyState
-            onLoadSample={() => setDescription(SAMPLE)}
-            onPickType={(value) => setDescription(value)}
-          />
+          <EmptyState onLoadSample={() => setDescription(SAMPLE)} onPickType={(value) => setDescription(value)} />
         ) : null}
 
         {loading ? (
@@ -889,6 +845,7 @@ export default function App() {
                   ))}
                 </select>
               </div>
+
               <div className="toolbar__right">
                 <button
                   type="button"
@@ -917,10 +874,32 @@ export default function App() {
               </div>
             </div>
 
+            <div className="chip-strip card">
+              <div className="chip-strip__label">Quick view</div>
+              <div className="chip-strip__items">
+                {(result.directives || []).slice(0, 10).map((d) => (
+                  <DirBadge key={d} code={d} compact />
+                ))}
+                <span className="meta-chip">{summaryStats.standards} standards</span>
+                <span className="meta-chip">{summaryStats.warn} warnings</span>
+                <span className="meta-chip">{summaryStats.fail} fails</span>
+              </div>
+            </div>
+
             <Section
               title="Summary"
-              helper="Top-level backend result"
-              right={<StatusPill status={result.overall_risk === "CRITICAL" ? "FAIL" : result.overall_risk === "HIGH" || result.overall_risk === "MEDIUM" ? "WARN" : "PASS"} />}
+              helper="High-level result with less visual noise"
+              right={
+                <StatusPill
+                  status={
+                    result.overall_risk === "CRITICAL"
+                      ? "FAIL"
+                      : result.overall_risk === "HIGH" || result.overall_risk === "MEDIUM"
+                      ? "WARN"
+                      : "PASS"
+                  }
+                />
+              }
             >
               <div className="summary-grid summary-grid--v2">
                 <div className="summary-box summary-box--feature">
@@ -937,32 +916,45 @@ export default function App() {
 
             <Section
               title="Applicable standards"
-              helper="Grouped by legislation bucket"
+              helper="Grouped by legislation bucket for easier scanning"
               count={filteredStandardGroups.length}
             >
               <div className="group-stack group-stack--v2">
-                {DIR_ORDER.filter((d) => (standardsByDirective[d] || []).length > 0).map((d) => (
-                  <div key={d} className="std-group std-group--v2">
-                    <div className="std-group__head std-group__head--v2">
-                      <div className="std-group__titleWrap">
-                        <DirBadge code={d} />
-                        <div className="std-group__subtitle">{DIR_NAME[d] || d}</div>
-                      </div>
-                      <span className="count-pill">{standardsByDirective[d].length}</span>
+                {DIR_ORDER.filter((d) => (standardsByDirective[d] || []).length > 0).map((d) => {
+                  const isCollapsed = !!collapsedGroups[d];
+                  return (
+                    <div key={d} className="std-group std-group--v2">
+                      <button
+                        type="button"
+                        className="std-group__head std-group__head--v2 std-group__toggle"
+                        onClick={() => toggleGroup(d)}
+                      >
+                        <div className="std-group__titleWrap">
+                          <DirBadge code={d} />
+                          <div className="std-group__subtitle">{DIR_NAME[d] || d}</div>
+                        </div>
+                        <div className="std-group__headRight">
+                          <span className="count-pill">{standardsByDirective[d].length}</span>
+                          <span className="std-group__chevron">{isCollapsed ? "+" : "−"}</span>
+                        </div>
+                      </button>
+
+                      {!isCollapsed ? (
+                        <div className="std-grid">
+                          {standardsByDirective[d].map((item) => (
+                            <StandardCard key={`${d}-${item.name}`} item={item} />
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="std-grid">
-                      {standardsByDirective[d].map((item) => (
-                        <StandardCard key={`${d}-${item.name}`} item={item} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </Section>
 
             <Section
               title="Other findings"
-              helper="Missing information, contradictions, legislation notes, and non-standard findings"
+              helper="Only non-standard findings are shown here"
               count={nonStdFindings.length}
             >
               <div className="list-pad">
@@ -998,30 +990,32 @@ function Style() {
       * { box-sizing: border-box; }
       html, body, #root { margin: 0; min-height: 100%; }
       :root {
-        --bg: #f4efe8;
-        --bg2: #ece4dc;
+        --bg: #ede5dc;
+        --bg2: #e3d8ce;
         --card: rgba(255,255,255,0.76);
-        --line: rgba(95, 88, 74, 0.10);
-        --ink: #403f3a;
-        --muted: #79776d;
-        --muted-2: #a39c93;
-        --shadow: 0 18px 50px rgba(104, 92, 78, 0.09);
-        --shadow-soft: 0 8px 24px rgba(104, 92, 78, 0.06);
-        --accent: #6f9a98;
-        --accent-deep: #3f6f78;
-        --accent-soft: #b08294;
-        --accent-warm: #caa24f;
-        --accent-earth: #c08b7c;
-        --accent-sage: #70866f;
+        --line: rgba(72, 68, 58, 0.14);
+        --ink: #3c3b36;
+        --muted: #706d64;
+        --muted-2: #958f86;
+        --shadow: 0 18px 50px rgba(88, 74, 62, 0.12);
+        --shadow-soft: 0 8px 24px rgba(88, 74, 62, 0.08);
+        --accent: #5f8d8b;
+        --accent-deep: #2f5f69;
+        --accent-soft: #9f7084;
+        --accent-warm: #b7903e;
+        --accent-earth: #aa7868;
+        --accent-sage: #60795f;
+        --surface-dark: #4b4e45;
+        --surface-deep: #2f5f69;
       }
       body {
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         background:
-          radial-gradient(circle at top left, rgba(176,130,148,.14), transparent 24%),
-          radial-gradient(circle at top right, rgba(202,162,79,.12), transparent 20%),
-          radial-gradient(circle at 50% 0%, rgba(111,154,152,.11), transparent 28%),
-          radial-gradient(circle at 80% 18%, rgba(192,139,124,.10), transparent 18%),
-          linear-gradient(180deg, #f4efe8 0%, #ebe4dc 100%);
+          radial-gradient(circle at top left, rgba(159,112,132,.20), transparent 24%),
+          radial-gradient(circle at top right, rgba(183,144,62,.16), transparent 20%),
+          radial-gradient(circle at 50% 0%, rgba(95,141,139,.14), transparent 28%),
+          radial-gradient(circle at 80% 18%, rgba(170,120,104,.12), transparent 18%),
+          linear-gradient(180deg, #ede5dc 0%, #e1d5ca 100%);
         color: var(--ink);
       }
       button, input, textarea, select { font: inherit; }
@@ -1032,10 +1026,10 @@ function Style() {
         inset: 0;
         pointer-events: none;
         background-image:
-          linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+          linear-gradient(rgba(148,163,184,.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(148,163,184,.06) 1px, transparent 1px);
         background-size: 32px 32px;
-        mask-image: linear-gradient(180deg, rgba(0,0,0,.55), transparent 80%);
+        mask-image: linear-gradient(180deg, rgba(0,0,0,.5), transparent 80%);
       }
 
       .container {
@@ -1051,8 +1045,8 @@ function Style() {
         top: 0;
         z-index: 40;
         backdrop-filter: blur(18px);
-        background: rgba(248,250,252,.72);
-        border-bottom: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(74,97,73,.78), rgba(47,95,105,.72));
+        border-bottom: 1px solid rgba(255,255,255,.10);
       }
       .topbar__inner {
         min-height: 74px;
@@ -1066,24 +1060,24 @@ function Style() {
         width: 42px;
         height: 42px;
         border-radius: 14px;
-        background: linear-gradient(135deg, #b08294 0%, #6f9a98 48%, #3f6f78 100%);
+        background: linear-gradient(135deg, #9f7084 0%, #5f8d8b 48%, #2f5f69 100%);
         color: white;
         display: grid;
         place-items: center;
         font-weight: 800;
         letter-spacing: -.03em;
-        box-shadow: 0 10px 28px rgba(111,154,152,.24);
+        box-shadow: 0 10px 28px rgba(95,141,139,.24);
       }
-      .brand__title { font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
-      .brand__sub { font-size: 12px; color: var(--muted); }
+      .brand__title { font-size: 16px; font-weight: 800; letter-spacing: -.02em; color: #f8f2ea; }
+      .brand__sub { font-size: 12px; color: rgba(248,242,234,.74); }
       .topbar__meta { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
       .meta-chip {
         min-height: 34px;
         padding: 0 12px;
         border-radius: 999px;
-        background: rgba(255,255,255,.75);
-        border: 1px solid var(--line);
-        color: #334155;
+        background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.14);
+        color: #f6efe7;
         display: inline-flex;
         align-items: center;
         font-size: 12px;
@@ -1092,18 +1086,16 @@ function Style() {
 
       .page { padding: 28px 20px 52px; position: relative; z-index: 1; }
 
-      .hero-v2 {
-        padding: 12px 0 18px;
-      }
+      .hero-v2 { padding: 12px 0 18px; }
       .hero-v2__eyebrow {
         display: inline-flex;
         align-items: center;
         min-height: 30px;
         padding: 0 12px;
         border-radius: 999px;
-        border: 1px solid #e2ccd4;
-        background: rgba(247,238,242,.90);
-        color: #8b6474;
+        border: 1px solid #d8c0c9;
+        background: rgba(241,231,235,.90);
+        color: #7a5667;
         font-size: 11px;
         font-weight: 800;
         letter-spacing: .09em;
@@ -1115,18 +1107,19 @@ function Style() {
         line-height: 1.02;
         letter-spacing: -.05em;
         max-width: 900px;
+        color: #3d3b36;
       }
       .hero-v2__text {
         margin: 0;
         max-width: 760px;
-        color: var(--muted);
+        color: #655f56;
         line-height: 1.8;
         font-size: 15px;
       }
 
       .card {
-        background: linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.72) 100%);
-        border: 1px solid rgba(255,255,255,0.46);
+        background: linear-gradient(180deg, rgba(255,255,255,0.80) 0%, rgba(250,247,242,0.72) 100%);
+        border: 1px solid rgba(255,255,255,0.38);
         box-shadow: var(--shadow);
         border-radius: 24px;
         backdrop-filter: blur(18px);
@@ -1138,13 +1131,14 @@ function Style() {
         inset: 0;
         border-radius: inherit;
         pointer-events: none;
-        background: linear-gradient(180deg, rgba(255,255,255,0.42), transparent 22%);
+        background: linear-gradient(180deg, rgba(255,255,255,.34), transparent 22%);
       }
 
       .composer {
         overflow: hidden;
         margin-bottom: 18px;
         border-radius: 28px;
+        border: 1px solid rgba(47,95,105,.10);
       }
       .composer__top {
         padding: 22px 24px 16px;
@@ -1152,11 +1146,13 @@ function Style() {
         align-items: flex-start;
         justify-content: space-between;
         gap: 16px;
+        background: linear-gradient(180deg, rgba(47,95,105,.10), rgba(255,255,255,0));
       }
       .composer__label {
         font-size: 16px;
         font-weight: 800;
         letter-spacing: -.02em;
+        color: #3f4c4a;
       }
       .composer__sub {
         margin-top: 6px;
@@ -1170,23 +1166,23 @@ function Style() {
       .seg-btn {
         padding: 9px 14px;
         border-radius: 12px;
-        border: 1px solid var(--line);
-        background: rgba(255,255,255,.76);
-        color: #475569;
+        border: 1px solid rgba(47,95,105,.16);
+        background: rgba(255,255,255,.72);
+        color: #4c5755;
         font-weight: 700;
         text-transform: capitalize;
         transition: .16s ease;
       }
       .seg-btn:hover { transform: translateY(-1px); }
       .seg-btn--on {
-        background: linear-gradient(180deg, #eef5f4 0%, #dde8e6 100%);
-        border-color: #c3d8d6;
-        color: #517674;
+        background: linear-gradient(180deg, #3f6f78 0%, #2f5f69 100%);
+        border-color: #2f5f69;
+        color: #f4ece4;
       }
 
       .composer__textareaWrap {
         position: relative;
-        padding: 0 22px;
+        padding: 0 24px;
       }
       .ta {
         display: block;
@@ -1200,157 +1196,44 @@ function Style() {
       .ta--v2 {
         min-height: 170px;
         border-radius: 22px;
-        border: 1px solid rgba(148,163,184,.16);
-        background:
-          linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(248,247,243,.92) 100%);
+        border: 1px solid rgba(95,141,139,.18);
+        background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(246,241,234,.92) 100%);
         padding: 26px 24px;
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,.8),
-          0 8px 30px rgba(104,92,78,.04);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 8px 30px rgba(88,74,62,.04);
         line-height: 1.95;
         font-size: 15px;
+        color: #3f3b37;
       }
+      .ta--v3 { min-height: 148px; }
       .ta--v2:focus {
-        border-color: #c3d8d6;
-        box-shadow: 0 0 0 4px rgba(111,154,152,.10), inset 0 1px 0 rgba(255,255,255,.7);
+        border-color: #bbd1cf;
+        box-shadow: 0 0 0 4px rgba(95,141,139,.10), inset 0 1px 0 rgba(255,255,255,.7);
       }
-      .ta--v2::placeholder {
-        color: #94a3b8;
-      }
+      .ta--v2::placeholder { color: #9a8f8c; }
 
       .ghost-guide {
         position: absolute;
         left: 42px;
-        bottom: 18px;
         right: 42px;
+        bottom: 18px;
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
         pointer-events: none;
       }
+      .ghost-guide--v3 { gap: 6px; }
       .ghost-guide span {
         padding: 8px 11px;
         border-radius: 999px;
         background: rgba(255,255,255,.78);
-        border: 1px dashed rgba(176,130,148,.22);
+        border: 1px dashed rgba(159,112,132,.22);
         color: #9a8d92;
         font-size: 12px;
         font-weight: 600;
       }
-
-      .quick-adds--v2 {
-        padding: 14px 22px 0;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .hint-chip {
-        padding: 9px 13px;
-        border-radius: 999px;
-        background: rgba(255,255,255,.88);
-        border: 1px solid rgba(148,163,184,.16);
-        color: #3f433f;
-        font-weight: 700;
-        transition: .16s ease;
-        box-shadow: 0 2px 10px rgba(104,92,78,.03);
-      }
-      .hint-chip:hover {
-        transform: translateY(-1px);
-        border-color: #c3d8d6;
-        color: #4f7674;
-        box-shadow: 0 10px 20px rgba(104,92,78,.06);
-      }
-
-      .composer__bottom {
-        padding: 18px 22px 22px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-      }
-      .composer__helper { color: var(--muted); font-size: 12.5px; }
-      .composer__actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .ghost-btn {
-        padding: 10px 14px;
-        border-radius: 12px;
-        background: rgba(255,255,255,.84);
-        border: 1px solid rgba(148,163,184,.18);
-        color: #4a4b46;
-        font-weight: 700;
-        transition: .16s ease;
-        box-shadow: 0 2px 10px rgba(104,92,78,.03);
-      }
-      .ghost-btn:hover {
-        transform: translateY(-1px);
-        background: white;
-        box-shadow: 0 10px 20px rgba(104,92,78,.06);
-      }
-      .run-btn {
-        padding: 10px 16px;
-        border-radius: 12px;
-        font-weight: 800;
-        background: linear-gradient(135deg, #b08294 0%, #6f9a98 55%, #3f6f78 100%);
-        color: #fff;
-        box-shadow: 0 14px 28px rgba(111,154,152,.22);
-      }
-      .run-btn:disabled {
-        background: #cbd5e1;
-        color: #64748b;
-        box-shadow: none;
-        cursor: not-allowed;
-      }
-      .err-bar {
-        margin: 0 22px 22px;
-        padding: 12px 14px;
-        border-radius: 14px;
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        color: #991b1b;
-      }
-
-      .empty-state {
-        position: relative;
-        overflow: hidden;
-        padding: 34px 24px;
-        text-align: center;
-        margin-bottom: 18px;
-      }
-      .empty-state--v3 {
-        padding: 30px 22px;
-      }
-      .empty-state__row {
-        margin-top: 16px;
-        display: flex;
-        justify-content: center;
-      }
-      .type-picker {
-        position: relative;
-        z-index: 1;
-        margin: 18px auto 6px;
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        flex-wrap: wrap;
-        max-width: 760px;
-      }
-      .type-chip {
-        padding: 11px 14px;
-        border-radius: 999px;
-        background: rgba(255,255,255,.88);
-        border: 1px solid rgba(148,163,184,.24);
-        color: #1e293b;
-        font-weight: 700;
-        transition: .16s ease;
-      }
-      .type-chip:hover {
-        transform: translateY(-1px);
-        border-color: #e2ccd4;
-        color: #8b6474;
+      .ghost-guide--v3 span {
+        font-size: 11.5px;
+        padding: 7px 9px;
       }
 
       .assist-panel {
@@ -1383,24 +1266,150 @@ function Style() {
         flex-wrap: wrap;
       }
 
+      .hint-chip {
+        padding: 9px 13px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.88);
+        border: 1px solid rgba(148,163,184,.16);
+        color: #3f433f;
+        font-weight: 700;
+        transition: .16s ease;
+        box-shadow: 0 2px 10px rgba(104,92,78,.03);
+      }
+      .hint-chip:hover {
+        transform: translateY(-1px);
+        border-color: #bbd1cf;
+        color: #456a69;
+        box-shadow: 0 10px 20px rgba(104,92,78,.06);
+      }
       .hint-chip--primary {
-        background: #f7eef2;
-        border-color: #e2ccd4;
-        color: #8b6474;
+        background: #f1e7eb;
+        border-color: #d8c0c9;
+        color: #7a5667;
       }
       .hint-chip--soft {
         background: rgba(255,255,255,.7);
       }
 
-      .ta--v3 {
-        min-height: 148px;
+      .composer__bottom {
+        padding: 18px 24px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
       }
-      .ghost-guide--v3 {
-        gap: 6px;
+      .composer__helper { color: var(--muted); font-size: 12.5px; }
+      .composer__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+      .ghost-btn {
+        padding: 10px 14px;
+        border-radius: 12px;
+        background: rgba(255,255,255,.84);
+        border: 1px solid rgba(47,95,105,.14);
+        color: #4a4b46;
+        font-weight: 700;
+        transition: .16s ease;
+        box-shadow: 0 2px 10px rgba(104,92,78,.03);
       }
-      .ghost-guide--v3 span {
-        font-size: 11.5px;
-        padding: 7px 9px;
+      .ghost-btn:hover {
+        transform: translateY(-1px);
+        background: white;
+        box-shadow: 0 10px 20px rgba(104,92,78,.06);
+      }
+      .run-btn {
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #9f7084 0%, #5f8d8b 48%, #2f5f69 100%);
+        color: #fff8f2;
+        box-shadow: 0 14px 28px rgba(47,95,105,.24);
+      }
+      .run-btn:disabled {
+        background: #cfc8bd;
+        color: #7b766d;
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+      .err-bar {
+        margin: 0 24px 22px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #f8eef1;
+        border: 1px solid #e6d0d6;
+        color: #8b6474;
+      }
+
+      .empty-state {
+        position: relative;
+        overflow: hidden;
+        padding: 30px 22px;
+        text-align: center;
+        margin-bottom: 18px;
+      }
+      .empty-state__orb {
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(95,141,139,.18) 0%, transparent 68%);
+        left: 50%;
+        top: -70px;
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+      .empty-state__eyebrow {
+        position: relative;
+        z-index: 1;
+        color: #7a5667;
+        font-weight: 800;
+        font-size: 11px;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+      .empty-state__title {
+        position: relative;
+        z-index: 1;
+        margin: 10px 0 8px;
+        font-size: 28px;
+        letter-spacing: -.04em;
+      }
+      .empty-state__text {
+        position: relative;
+        z-index: 1;
+        max-width: 640px;
+        margin: 0 auto;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+      .empty-state__row {
+        margin-top: 16px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .type-picker {
+        position: relative;
+        z-index: 1;
+        margin: 18px auto 6px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        max-width: 760px;
+      }
+      .type-chip {
+        padding: 11px 14px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.88);
+        border: 1px solid rgba(148,163,184,.24);
+        color: #1e293b;
+        font-weight: 700;
+        transition: .16s ease;
+      }
+      .type-chip:hover {
+        transform: translateY(-1px);
+        border-color: #d8c0c9;
+        color: #7a5667;
       }
 
       .loading__card {
@@ -1414,8 +1423,8 @@ function Style() {
         width: 24px;
         height: 24px;
         border-radius: 50%;
-        border: 3px solid #dbeafe;
-        border-top-color: #2563eb;
+        border: 3px solid #d8e4e2;
+        border-top-color: #2f5f69;
         animation: spin .75s linear infinite;
       }
       .loading__text { margin-top: 4px; color: var(--muted); }
@@ -1427,7 +1436,7 @@ function Style() {
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 18px;
+        margin-bottom: 12px;
         flex-wrap: wrap;
         border-radius: 20px;
       }
@@ -1450,8 +1459,33 @@ function Style() {
       }
       .search-input { width: 100%; }
       .search-input:focus, .select:focus {
-        border-color: #c3d8d6;
-        box-shadow: 0 0 0 4px rgba(111,154,152,.10);
+        border-color: #bbd1cf;
+        box-shadow: 0 0 0 4px rgba(95,141,139,.10);
+      }
+
+      .chip-strip {
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+        border-radius: 18px;
+        flex-wrap: wrap;
+        background: linear-gradient(180deg, rgba(47,95,105,.86), rgba(74,97,73,.82));
+        border: 1px solid rgba(255,255,255,.08);
+      }
+      .chip-strip__label {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: rgba(248,242,234,.72);
+      }
+      .chip-strip__items {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
       }
 
       .section {
@@ -1466,7 +1500,7 @@ function Style() {
         justify-content: space-between;
         gap: 14px;
         border-bottom: 1px solid rgba(95,88,74,.08);
-        background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,0));
+        background: linear-gradient(180deg, rgba(47,95,105,.08), rgba(255,255,255,0));
       }
       .section__titleRow {
         display: flex;
@@ -1477,6 +1511,7 @@ function Style() {
         font-size: 16px;
         font-weight: 800;
         letter-spacing: -.02em;
+        color: #38423f;
       }
       .section__helper {
         margin-top: 6px;
@@ -1490,9 +1525,9 @@ function Style() {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: rgba(255,255,255,.8);
-        border: 1px solid rgba(148,163,184,.22);
-        color: #334155;
+        background: rgba(47,95,105,.10);
+        border: 1px solid rgba(47,95,105,.14);
+        color: #355861;
         font-size: 11px;
         font-weight: 800;
       }
@@ -1500,8 +1535,8 @@ function Style() {
       .summary-grid {
         padding: 18px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
         gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
       }
       .summary-grid--v2 {
         grid-template-columns: 1.6fr repeat(5, minmax(120px, 1fr));
@@ -1514,7 +1549,7 @@ function Style() {
         box-shadow: var(--shadow-soft);
       }
       .summary-box--feature {
-        background: linear-gradient(135deg, rgba(247,238,242,.96) 0%, rgba(251,245,232,.96) 42%, rgba(237,245,244,.96) 100%);
+        background: linear-gradient(135deg, rgba(159,112,132,.14) 0%, rgba(183,144,62,.14) 42%, rgba(95,141,139,.16) 100%);
       }
       .summary-box__label {
         font-size: 11px;
@@ -1543,9 +1578,6 @@ function Style() {
         flex-direction: column;
         gap: 24px;
       }
-      .std-group--v2 {
-        padding: 0;
-      }
       .std-group__head--v2 {
         display: flex;
         align-items: center;
@@ -1553,15 +1585,38 @@ function Style() {
         gap: 12px;
         margin-bottom: 14px;
       }
+      .std-group__toggle {
+        width: 100%;
+        padding: 0;
+        background: transparent;
+        text-align: left;
+      }
       .std-group__titleWrap {
         display: flex;
         align-items: center;
         gap: 12px;
       }
       .std-group__subtitle {
-        color: var(--muted);
+        color: #68645c;
         font-size: 13px;
         font-weight: 600;
+      }
+      .std-group__headRight {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .std-group__chevron {
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        border: 1px solid rgba(47,95,105,.16);
+        background: rgba(47,95,105,.08);
+        display: grid;
+        place-items: center;
+        color: #355861;
+        font-weight: 800;
+        flex-shrink: 0;
       }
 
       .dir-badge {
@@ -1603,19 +1658,36 @@ function Style() {
         border: 1px solid var(--fborder);
         background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, var(--fbg) 100%);
         border-radius: 20px;
-        padding: 15px;
+        padding: 0;
         box-shadow: var(--shadow-soft);
         transition: transform .14s ease, box-shadow .14s ease;
+        overflow: hidden;
       }
       .std-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 16px 28px rgba(104,92,78,.08);
+      }
+      .std-card__button {
+        width: 100%;
+        background: transparent;
+        text-align: left;
+        padding: 15px;
+      }
+      .std-card__details {
+        padding: 0 15px 15px;
       }
       .std-card__top {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
+      }
+      .std-card__titleWrap { min-width: 0; }
+      .std-card__topRight {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
       }
       .std-card__eyebrow {
         font-size: 10px;
@@ -1631,6 +1703,17 @@ function Style() {
         line-height: 1.55;
         font-weight: 700;
       }
+      .std-card__chevron {
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        border: 1px solid rgba(47,95,105,.14);
+        background: rgba(47,95,105,.08);
+        display: grid;
+        place-items: center;
+        color: #355861;
+        font-weight: 800;
+      }
       .std-card__chips {
         margin-top: 12px;
         display: flex;
@@ -1642,6 +1725,9 @@ function Style() {
         color: #334155;
         line-height: 1.65;
         font-size: 12.5px;
+      }
+      .std-card__finding--compact {
+        color: #5d685e;
       }
       .std-card__actions {
         margin-top: 14px;
@@ -1755,9 +1841,9 @@ function Style() {
         z-index: 60;
         padding: 10px 14px;
         border-radius: 12px;
-        background: #3f6f78;
+        background: #2f5f69;
         color: white;
-        box-shadow: 0 14px 30px rgba(63,111,120,.24);
+        box-shadow: 0 14px 30px rgba(47,95,105,.26);
         font-size: 12.5px;
         font-weight: 700;
       }
