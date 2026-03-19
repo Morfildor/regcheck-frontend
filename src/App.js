@@ -94,6 +94,122 @@ const STS = {
 const STD_RE =
   /^(EN|IEC|ISO|ETSI|EN IEC|EN ISO|IEC EN|UL|ASTM|CISPR|ITU|IEC\/EN)\b/i;
 
+const INPUT_GUIDE = [
+  {
+    id: "product",
+    title: "What is the product?",
+    examples: "kettle, robot vacuum, air fryer, coffee machine, wearable",
+    keywords: ["smart kettle", "robot vacuum", "air fryer", "coffee machine"],
+    patterns: [
+      /\bkettle\b/i,
+      /\bvacc?uum\b/i,
+      /\bvacuum\b/i,
+      /\bair fryer\b/i,
+      /\bcoffee machine\b/i,
+      /\bwearable\b/i,
+      /\bappliance\b/i,
+      /\bdevice\b/i,
+      /\bproduct\b/i,
+      /\brobot\b/i,
+      /\blamp\b/i,
+      /\bcharger\b/i,
+      /\bcamera\b/i,
+      /\bthermostat\b/i,
+      /\block\b/i,
+    ],
+  },
+  {
+    id: "power",
+    title: "How is it powered?",
+    examples: "mains 230V, battery, USB-C, charger, low voltage adapter",
+    keywords: ["Mains powered, 230V.", "Battery powered.", "USB-C charging."],
+    patterns: [
+      /\b230v\b/i,
+      /\b240v\b/i,
+      /\bmains\b/i,
+      /\bbattery\b/i,
+      /\busb\b/i,
+      /\bcharger\b/i,
+      /\badapter\b/i,
+      /\blow voltage\b/i,
+      /\bac\b/i,
+      /\bdc\b/i,
+    ],
+  },
+  {
+    id: "connectivity",
+    title: "Does it connect wirelessly or by radio?",
+    examples: "Bluetooth, Wi-Fi, Zigbee, NFC, LTE, 5G",
+    keywords: ["Bluetooth connection.", "Wi-Fi connectivity.", "Zigbee radio."],
+    patterns: [
+      /\bbluetooth\b/i,
+      /\bwi-?fi\b/i,
+      /\bzigbee\b/i,
+      /\bnfc\b/i,
+      /\blte\b/i,
+      /\b5g\b/i,
+      /\b4g\b/i,
+      /\bradio\b/i,
+      /\bwireless\b/i,
+      /\bmatter\b/i,
+      /\bthread\b/i,
+    ],
+  },
+  {
+    id: "software",
+    title: "Is there software, app, cloud, or updates?",
+    examples: "mobile app, cloud backend, firmware update, OTA updates",
+    keywords: ["Mobile app.", "Cloud backend.", "Firmware / OTA updates."],
+    patterns: [
+      /\bapp\b/i,
+      /\bmobile\b/i,
+      /\bcloud\b/i,
+      /\bfirmware\b/i,
+      /\bupdate\b/i,
+      /\bota\b/i,
+      /\bsoftware\b/i,
+      /\bbackend\b/i,
+      /\baccount\b/i,
+      /\bapi\b/i,
+    ],
+  },
+  {
+    id: "data",
+    title: "Does it process user data or personal data?",
+    examples: "usage logs, location, camera data, voice, account data",
+    keywords: ["Collects usage data.", "Processes personal data.", "Stores user account data."],
+    patterns: [
+      /\bpersonal data\b/i,
+      /\buser data\b/i,
+      /\bprivacy\b/i,
+      /\baccount\b/i,
+      /\blocation\b/i,
+      /\bcamera\b/i,
+      /\bvoice\b/i,
+      /\baudio\b/i,
+      /\bvideo\b/i,
+      /\blogs?\b/i,
+      /\btelemetry\b/i,
+    ],
+  },
+  {
+    id: "environment",
+    title: "Where is it used?",
+    examples: "household, kitchen, indoor, outdoor, wet environment",
+    keywords: ["Household use.", "Kitchen appliance.", "Indoor use only."],
+    patterns: [
+      /\bhousehold\b/i,
+      /\bkitchen\b/i,
+      /\bindoor\b/i,
+      /\boutdoor\b/i,
+      /\bwet\b/i,
+      /\bbathroom\b/i,
+      /\bconsumer\b/i,
+      /\bhome\b/i,
+    ],
+  },
+];
+
 function unique(arr = []) {
   return [...new Set(arr.filter(Boolean))];
 }
@@ -150,7 +266,6 @@ function splitFindings(findings = []) {
 function inferDirectiveFromText(text = "") {
   const t = text.toLowerCase();
 
-  // RED DA cybersecurity first
   if (
     /en\s*18031|18031-1|18031-2|18031-3|red da|delegated act|article 3\.3\(d\)|article 3\.3\(e\)|article 3\.3\(f\)|protect network|personal data.*radio|fraud.*radio/.test(
       t
@@ -159,7 +274,6 @@ function inferDirectiveFromText(text = "") {
     return "RED_CYBER";
   }
 
-  // CRA separate
   if (
     /cyber resilience act|\bcra\b|secure development|vulnerability handling|sbom|software bill of materials|post-market security update|coordinated vulnerability disclosure/.test(
       t
@@ -168,7 +282,6 @@ function inferDirectiveFromText(text = "") {
     return "CRA";
   }
 
-  // RoHS
   if (
     /rohs|2011\/65\/eu|en iec 63000|iec 63000|en 50581|hazardous substances|restricted substances|iec 62321|62321-3-1|62321-3-2|62321-3-3|62321-4|62321-5|62321-6|62321-7-1|62321-7-2|62321-8/.test(
       t
@@ -177,7 +290,6 @@ function inferDirectiveFromText(text = "") {
     return "ROHS";
   }
 
-  // REACH
   if (
     /\breach\b|ec 1907\/2006|regulation \(ec\) no 1907\/2006|svhc|substances of very high concern|candidate list|annex xvii|article 33/.test(
       t
@@ -186,7 +298,6 @@ function inferDirectiveFromText(text = "") {
     return "REACH";
   }
 
-  // LVD
   if (
     /60335|60730|62233|60335-1|60335-2|household|appliance safety|electrical safety/.test(
       t
@@ -195,7 +306,6 @@ function inferDirectiveFromText(text = "") {
     return "LVD";
   }
 
-  // EMC
   if (
     /55014|61000|emc|electromagnetic|cispr|harmonic|flicker|electrostatic|esd|surge|immunity|conducted emission|radiated emission/.test(
       t
@@ -204,7 +314,6 @@ function inferDirectiveFromText(text = "") {
     return "EMC";
   }
 
-  // RF / RED non-cyber
   if (
     /300 328|301 489|300 220|300 330|300 440|300 086|300 113|radio spectrum|wireless|bluetooth|wifi|wi-fi|lte|5g|zigbee|matter|nfc|rf exposure|receiver category/.test(
       t
@@ -234,7 +343,6 @@ function enrichDirectives(f) {
 
   let explicit = getDirectiveListFromFinding(f).filter((d) => d !== "SYSTEM");
 
-  // EN 18031 must be RED_CYBER, never CRA
   if (/en\s*18031|18031-1|18031-2|18031-3/i.test(combined.toLowerCase())) {
     explicit = explicit.filter((d) => d !== "CRA");
     explicit = explicit.filter((d) => d !== "RED");
@@ -302,6 +410,37 @@ function dirCodeLabel(code) {
   if (code === "RED") return "RF";
   if (code === "RED_CYBER") return "RED CYBER";
   return code;
+}
+
+function getGuideStatus(text = "") {
+  return INPUT_GUIDE.map((item) => {
+    const complete = item.patterns.some((re) => re.test(text));
+    return { ...item, complete };
+  });
+}
+
+function buildStarterFromGuide(item) {
+  if (!item?.keywords?.length) return "";
+  return item.keywords[0];
+}
+
+function scoreInput(text = "") {
+  const matches = getGuideStatus(text).filter((x) => x.complete).length;
+  const total = INPUT_GUIDE.length;
+  const ratio = total ? matches / total : 0;
+  return {
+    matches,
+    total,
+    ratio,
+    label:
+      ratio >= 0.84
+        ? "Strong"
+        : ratio >= 0.5
+        ? "Good"
+        : ratio >= 0.25
+        ? "Basic"
+        : "Weak",
+  };
 }
 
 function DirBadge({ code }) {
@@ -447,7 +586,7 @@ export default function App() {
   useEffect(() => {
     if (!taRef.current) return;
     taRef.current.style.height = "auto";
-    taRef.current.style.height = Math.max(180, taRef.current.scrollHeight) + "px";
+    taRef.current.style.height = Math.max(220, taRef.current.scrollHeight) + "px";
   }, [desc]);
 
   useEffect(() => {
@@ -457,6 +596,17 @@ export default function App() {
   }, [toast]);
 
   const ready = desc.trim().length >= 10;
+
+  const guideStatus = useMemo(() => getGuideStatus(desc), [desc]);
+  const guideDone = useMemo(
+    () => guideStatus.filter((x) => x.complete).length,
+    [guideStatus]
+  );
+  const missingGuide = useMemo(
+    () => guideStatus.filter((x) => !x.complete),
+    [guideStatus]
+  );
+  const inputQuality = useMemo(() => scoreInput(desc), [desc]);
 
   const sections = useMemo(
     () => (result?.findings ? splitFindings(result.findings) : null),
@@ -516,6 +666,23 @@ export default function App() {
       found.has("OTHER") ? ["OTHER"] : []
     );
   }, [standards]);
+
+  const appendText = useCallback((snippet) => {
+    setDesc((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return snippet;
+      const needsSpace = !/[.\n]\s*$/.test(trimmed);
+      return `${trimmed}${needsSpace ? " " : "\n"}${snippet}`;
+    });
+  }, []);
+
+  const applyExample = useCallback(
+    (item) => {
+      const starter = buildStarterFromGuide(item);
+      if (starter) appendText(starter);
+    },
+    [appendText]
+  );
 
   const copyStandards = () => {
     copyText(standardsFiltered.map((s) => s.name).join("\n"));
@@ -618,76 +785,294 @@ export default function App() {
         <header className="hero">
           <div>
             <p className="hero__eyebrow">EU Compliance Scoping</p>
-            <h1 className="hero__title">Standards first. Faster review.</h1>
+            <h1 className="hero__title">Describe the product like a guided brief</h1>
             <p className="hero__sub">
-              Describe the product and review the standards grouped by LVD, EMC,
-              RF, RED Cybersecurity, CRA, RoHS, REACH, and the rest.
+              Ask the user for a few practical details first: what it is, how it is powered,
+              whether it has radio, whether it has app/cloud/software, and whether it handles data.
             </p>
           </div>
         </header>
 
         {!result && !loading && (
-          <div className="card input-card">
-            <div className="input-card__head">
-              <div>
-                <h2 className="section__title">Product description</h2>
-                <p className="input-card__hint">
-                  Keep it short: product type, connectivity, power, app/cloud.
-                </p>
-              </div>
-              <div className="input-card__controls">
-                <div className="depth">
-                  {["standard", "deep"].map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      className={"seg-btn" + (depth === v ? " seg-btn--on" : "")}
-                      onClick={() => setDepth(v)}
-                    >
-                      {v}
-                    </button>
-                  ))}
+          <div className="intake-layout">
+            <div className="card input-card">
+              <div className="input-card__head">
+                <div>
+                  <h2 className="section__title">Product description</h2>
+                  <p className="input-card__hint">
+                    Write a short technical summary. Users should mention the product,
+                    power source, connectivity, software/app/cloud, data, and use environment.
+                  </p>
+                </div>
+
+                <div className="input-card__controls">
+                  <div className="depth">
+                    {["standard", "deep"].map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        className={"seg-btn" + (depth === v ? " seg-btn--on" : "")}
+                        onClick={() => setDepth(v)}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
+
+              <div className="input-topbar">
+                <div className="quality-card">
+                  <div className="quality-card__meta">
+                    <span className="quality-card__label">Input quality</span>
+                    <span className="quality-card__value">{inputQuality.label}</span>
+                  </div>
+                  <div className="progress">
+                    <div
+                      className="progress__fill"
+                      style={{ width: `${Math.max(8, inputQuality.ratio * 100)}%` }}
+                    />
+                  </div>
+                  <div className="quality-card__sub">
+                    {inputQuality.matches} / {inputQuality.total} guidance areas covered
+                  </div>
+                </div>
+
+                <div className="mini-stats">
+                  <div className="mini-stat">
+                    <span className="mini-stat__k">Chars</span>
+                    <span className="mini-stat__v">{desc.length}</span>
+                  </div>
+                  <div className="mini-stat">
+                    <span className="mini-stat__k">Covered</span>
+                    <span className="mini-stat__v">{guideDone}</span>
+                  </div>
+                  <div className="mini-stat">
+                    <span className="mini-stat__k">Missing</span>
+                    <span className="mini-stat__v">{missingGuide.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="prompt-strip">
+                <div className="prompt-strip__label">Quick add</div>
+                <div className="prompt-strip__chips">
+                  <button
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => appendText("Mains powered, 230V.")}
+                  >
+                    230V mains
+                  </button>
+                  <button
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => appendText("Battery powered.")}
+                  >
+                    battery
+                  </button>
+                  <button
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => appendText("Bluetooth connection.")}
+                  >
+                    Bluetooth
+                  </button>
+                  <button
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => appendText("Wi-Fi connection.")}
+                  >
+                    Wi-Fi
+                  </button>
+                  <button
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => appendText("Mobile app.")}
+                  >
+                    app
+                  </button>
+                  <button
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => appendText("Cloud backend.")}
+                  >
+                    cloud
+                  </button>
+                  <button
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => appendText("Firmware / OTA updates.")}
+                  >
+                    OTA
+                  </button>
+                  <button
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => appendText("Processes personal data.")}
+                  >
+                    personal data
+                  </button>
+                  <button
+                    type="button"
+                    className="prompt-chip"
+                    onClick={() => appendText("Household use.")}
+                  >
+                    household
+                  </button>
+                </div>
+              </div>
+
+              <textarea
+                ref={taRef}
+                className="ta"
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                placeholder={
+                  "Example:\n\n" +
+                  "Smart kettle. Mains powered, 230V. Bluetooth connection. Mobile app. " +
+                  "Cloud backend for user account and usage logs. Household kitchen use."
+                }
+              />
+
+              <div className="starter-examples">
+                <div className="starter-examples__title">Good example prompts</div>
+                <div className="starter-examples__grid">
+                  <button
+                    type="button"
+                    className="example-card"
+                    onClick={() =>
+                      setDesc(
+                        "Smart kettle. Mains powered, 230V. Bluetooth connection. Mobile app. Household kitchen use."
+                      )
+                    }
+                  >
+                    <span className="example-card__title">Simple connected appliance</span>
+                    <span className="example-card__text">
+                      Smart kettle. Mains powered, 230V. Bluetooth connection. Mobile app. Household kitchen use.
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="example-card"
+                    onClick={() =>
+                      setDesc(
+                        "Robot vacuum cleaner. Rechargeable battery with charging dock. Wi-Fi connection. Mobile app and cloud backend. Stores usage logs and user account data. Household indoor use."
+                      )
+                    }
+                  >
+                    <span className="example-card__title">App + cloud + personal data</span>
+                    <span className="example-card__text">
+                      Robot vacuum cleaner. Rechargeable battery with charging dock. Wi-Fi connection. Mobile app and cloud backend.
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="example-card"
+                    onClick={() =>
+                      setDesc(
+                        "Smart door lock. Battery powered. Bluetooth and Wi-Fi connectivity. Mobile app. Firmware updates over the air. Processes user account and access data. Indoor residential use."
+                      )
+                    }
+                  >
+                    <span className="example-card__title">Cyber-heavy connected product</span>
+                    <span className="example-card__text">
+                      Smart door lock. Battery powered. Bluetooth and Wi-Fi connectivity. Mobile app. Firmware updates over the air.
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="input-card__foot">
+                <div className="input-card__meta">
+                  Minimum: 10 chars. Better results when 4+ guidance areas are covered.
+                </div>
+                <div className="input-card__actions">
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => setDesc(SAMPLE)}
+                  >
+                    Sample
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => setDesc("")}
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    className="run-btn"
+                    onClick={run}
+                    disabled={!ready}
+                  >
+                    Analyse
+                  </button>
+                </div>
+              </div>
+
+              {error ? <div className="err-bar">{error}</div> : null}
             </div>
 
-            <textarea
-              ref={taRef}
-              className="ta"
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              placeholder={"Example:\n\n" + SAMPLE}
-            />
+            <div className="card guide-card">
+              <div className="guide-card__head">
+                <h3 className="guide-card__title">What to ask the user</h3>
+                <span className="guide-card__count">{guideDone}/{INPUT_GUIDE.length}</span>
+              </div>
 
-            <div className="input-card__foot">
-              <div className="input-card__meta">{desc.length} chars</div>
-              <div className="input-card__actions">
-                <button
-                  type="button"
-                  className="ghost-btn"
-                  onClick={() => setDesc(SAMPLE)}
-                >
-                  Sample
-                </button>
-                <button
-                  type="button"
-                  className="ghost-btn"
-                  onClick={() => setDesc("")}
-                >
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  className="run-btn"
-                  onClick={run}
-                  disabled={!ready}
-                >
-                  Analyse
-                </button>
+              <div className="guide-list">
+                {guideStatus.map((item) => (
+                  <div
+                    key={item.id}
+                    className={
+                      "guide-item" + (item.complete ? " guide-item--done" : "")
+                    }
+                  >
+                    <div className="guide-item__top">
+                      <div className="guide-item__state">
+                        <span className="guide-item__icon">
+                          {item.complete ? "✓" : "?"}
+                        </span>
+                        <div>
+                          <div className="guide-item__title">{item.title}</div>
+                          <div className="guide-item__examples">{item.examples}</div>
+                        </div>
+                      </div>
+
+                      {!item.complete && (
+                        <button
+                          type="button"
+                          className="mini-ghost-btn"
+                          onClick={() => applyExample(item)}
+                        >
+                          Add hint
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {missingGuide.length > 0 && (
+                <div className="missing-box">
+                  <div className="missing-box__title">Still useful to include</div>
+                  <ul className="missing-box__list">
+                    {missingGuide.slice(0, 4).map((item) => (
+                      <li key={item.id}>{item.title}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="guide-note">
+                The goal is not a long paragraph. It is a compact technical brief with the few facts
+                that drive directive and standards scoping.
               </div>
             </div>
-
-            {error ? <div className="err-bar">{error}</div> : null}
           </div>
         )}
 
@@ -856,7 +1241,7 @@ function AppCSS() {
       }
 
       .shell { min-height: 100vh; }
-      .container { max-width: 1280px; margin: 0 auto; padding: 0 22px; }
+      .container { max-width: 1320px; margin: 0 auto; padding: 0 22px; }
 
       .nav {
         position: sticky;
@@ -924,17 +1309,24 @@ function AppCSS() {
       }
       .hero__sub {
         margin-top: 12px;
-        max-width: 62ch;
+        max-width: 70ch;
         color: #42616e;
         line-height: 1.8;
       }
 
       .card {
-        background: rgba(255,255,255,.88);
+        background: rgba(255,255,255,.9);
         border: 1px solid #cfe0e8;
         border-radius: 16px;
         box-shadow: 0 2px 6px rgba(13,44,59,.04), 0 12px 32px rgba(13,44,59,.05);
         backdrop-filter: blur(8px);
+      }
+
+      .intake-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(320px, .9fr);
+        gap: 16px;
+        align-items: start;
       }
 
       .input-card { overflow: hidden; }
@@ -950,6 +1342,7 @@ function AppCSS() {
         margin-top: 4px;
         color: #577582;
         font-size: 13px;
+        max-width: 72ch;
       }
       .input-card__controls { display: flex; align-items: center; gap: 8px; }
 
@@ -969,10 +1362,113 @@ function AppCSS() {
         color: #0f4256;
       }
 
+      .input-topbar {
+        padding: 14px 18px 10px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .quality-card {
+        padding: 12px 14px;
+        border: 1px solid #d7e6ed;
+        background: #f7fbfd;
+        border-radius: 12px;
+      }
+      .quality-card__meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .quality-card__label {
+        font-size: 12px;
+        color: #5d7884;
+        font-weight: 700;
+      }
+      .quality-card__value {
+        font-size: 12px;
+        font-weight: 800;
+        color: #0f4256;
+      }
+      .quality-card__sub {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #617f8b;
+      }
+
+      .progress {
+        height: 9px;
+        background: #e6f0f4;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .progress__fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #13678A, #35a37d);
+      }
+
+      .mini-stats {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .mini-stat {
+        min-width: 86px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid #d7e6ed;
+        background: #f8fcfe;
+        text-align: center;
+      }
+      .mini-stat__k {
+        display: block;
+        font-size: 11px;
+        color: #6b8792;
+        font-weight: 700;
+      }
+      .mini-stat__v {
+        display: block;
+        margin-top: 2px;
+        font-size: 18px;
+        font-weight: 800;
+        color: #103f53;
+      }
+
+      .prompt-strip {
+        padding: 0 18px 12px;
+      }
+      .prompt-strip__label {
+        font-size: 12px;
+        font-weight: 800;
+        color: #55727f;
+        margin-bottom: 8px;
+      }
+      .prompt-strip__chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .prompt-chip {
+        padding: 7px 11px;
+        border-radius: 999px;
+        border: 1px solid #cfe0e8;
+        background: #fff;
+        color: #31505d;
+        font-weight: 700;
+      }
+      .prompt-chip:hover {
+        background: #f5fbfd;
+        border-color: #a9c8d5;
+      }
+
       .ta {
         display: block;
         width: 100%;
-        min-height: 180px;
+        min-height: 220px;
         padding: 18px 20px;
         border: none;
         outline: none;
@@ -981,6 +1477,45 @@ function AppCSS() {
         line-height: 1.85;
       }
       .ta::placeholder { color: #8daab5; }
+
+      .starter-examples {
+        padding: 0 18px 16px;
+      }
+      .starter-examples__title {
+        font-size: 12px;
+        font-weight: 800;
+        color: #55727f;
+        margin-bottom: 10px;
+      }
+      .starter-examples__grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .example-card {
+        text-align: left;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #d8e7ee;
+        background: #f8fcfe;
+      }
+      .example-card:hover {
+        border-color: #abc9d6;
+        background: #f3fafc;
+      }
+      .example-card__title {
+        display: block;
+        font-weight: 800;
+        color: #123f52;
+        margin-bottom: 6px;
+        font-size: 12.5px;
+      }
+      .example-card__text {
+        display: block;
+        color: #5c7a86;
+        font-size: 12px;
+        line-height: 1.6;
+      }
 
       .input-card__foot {
         padding: 12px 16px;
@@ -1013,6 +1548,16 @@ function AppCSS() {
         background: #f4fafc;
       }
 
+      .mini-ghost-btn {
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid #cfe0e8;
+        color: #35515e;
+        font-weight: 700;
+        font-size: 12px;
+      }
+
       .run-btn {
         padding: 8px 16px;
         border-radius: 10px;
@@ -1035,6 +1580,115 @@ function AppCSS() {
         background: #edf4f6;
         border: 1px solid #c6d9e2;
         color: #0d2c3b;
+      }
+
+      .guide-card {
+        padding: 16px;
+        position: sticky;
+        top: 76px;
+      }
+      .guide-card__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .guide-card__title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #0d2c3b;
+      }
+      .guide-card__count {
+        min-width: 34px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #edf4f6;
+        border: 1px solid #c6d9e2;
+        color: #2a6782;
+        font-size: 11px;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .guide-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .guide-item {
+        border: 1px solid #d8e7ee;
+        border-radius: 12px;
+        padding: 12px;
+        background: #fbfeff;
+      }
+      .guide-item--done {
+        background: #f1fbf6;
+        border-color: #bcdcc8;
+      }
+      .guide-item__top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .guide-item__state {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .guide-item__icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        background: #e8f3f8;
+        color: #13678A;
+        flex-shrink: 0;
+      }
+      .guide-item--done .guide-item__icon {
+        background: #daf3e5;
+        color: #1c7c54;
+      }
+      .guide-item__title {
+        font-size: 13px;
+        font-weight: 800;
+        color: #123f52;
+      }
+      .guide-item__examples {
+        margin-top: 3px;
+        color: #66838f;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .missing-box {
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 12px;
+        background: #f7fbfd;
+        border: 1px solid #d8e7ee;
+      }
+      .missing-box__title {
+        font-size: 12px;
+        font-weight: 800;
+        color: #4e6d79;
+        margin-bottom: 8px;
+      }
+      .missing-box__list {
+        padding-left: 18px;
+        color: #4f6f7b;
+        font-size: 12.5px;
+        line-height: 1.7;
+      }
+
+      .guide-note {
+        margin-top: 14px;
+        font-size: 12.5px;
+        color: #627d8a;
+        line-height: 1.7;
       }
 
       .loading__card {
@@ -1322,6 +1976,19 @@ function AppCSS() {
         font-weight: 700;
       }
 
+      @media (max-width: 1120px) {
+        .intake-layout {
+          grid-template-columns: 1fr;
+        }
+        .guide-card {
+          position: static;
+          top: unset;
+        }
+        .starter-examples__grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
       @media (max-width: 980px) {
         .toolbar {
           flex-direction: column;
@@ -1340,8 +2007,10 @@ function AppCSS() {
         .container { padding: 0 14px; }
         .page { padding: 18px 14px 40px; }
         .input-card__head,
-        .input-card__foot {
+        .input-card__foot,
+        .input-topbar {
           flex-direction: column;
+          display: flex;
           align-items: stretch;
         }
         .input-card__actions,
@@ -1355,6 +2024,12 @@ function AppCSS() {
         }
         .nav__tag {
           display: none;
+        }
+        .mini-stats {
+          width: 100%;
+        }
+        .mini-stat {
+          flex: 1;
         }
       }
     `}</style>
