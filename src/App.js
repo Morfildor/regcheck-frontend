@@ -341,11 +341,10 @@ export default function App() {
                 </div>
 
                 <div className="action-row">
-                  <button type="button" className="ghost-btn" onClick={() => setDesc(SAMPLE)}>Sample</button>
                   <button type="button" className="ghost-btn" onClick={() => setDesc("")}>Clear</button>
                   <button type="button" className="run-btn" onClick={run} disabled={!ready}>
                   <button type="button" className="ghost-btn" onClick={() => {if (desc.length > 50 && !window.confirm("Clear your description?")) return; setDesc("");  }} >  Clear 
-                    
+
                   </button>
                     Analyse →
                   </button>
