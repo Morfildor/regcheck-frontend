@@ -6,25 +6,28 @@ const ANALYZE_URL =
 const METADATA_URL = ANALYZE_URL.replace(/\/analyze$/, "/metadata/options");
 
 const THEME = {
-  bg: "#f3ede4",
-  bg2: "#e7ddd1",
+  bg: "#f5efe7",
+  bg2: "#e9dfd4",
+  bg3: "#efe8f2",
   panel: "rgba(255,255,255,0.84)",
   panelStrong: "rgba(255,255,255,0.94)",
-  line: "rgba(54, 42, 56, 0.10)",
-  lineStrong: "rgba(54, 42, 56, 0.18)",
+  line: "rgba(54,42,56,0.10)",
+  lineStrong: "rgba(54,42,56,0.18)",
   text: "#211a20",
   subtext: "#665b67",
   soft: "#837783",
-  shadow: "0 12px 34px rgba(33, 26, 32, 0.08)",
-  shadowLg: "0 24px 60px rgba(33, 26, 32, 0.14)",
+  shadow: "0 12px 34px rgba(33,26,32,0.08)",
+  shadowLg: "0 24px 60px rgba(33,26,32,0.14)",
   accent: "#355f78",
   accent2: "#7b5a74",
   accent3: "#4c7a73",
   accent4: "#b48b43",
-  deep: "#241c28",
-  deep2: "#302537",
-  success: "#5d7f66",
-  warning: "#a77b37",
+  rose: "#c88ca0",
+  peach: "#d9a77c",
+  sage: "#90a77f",
+  sky: "#7c9eb5",
+  lavender: "#8c82b4",
+  mint: "#87b3a7",
   danger: "#b06a7c",
 };
 
@@ -69,23 +72,23 @@ const DIR_ORDER = [
 ];
 
 const DIR_TONES = {
-  LVD: { dot: "#7d8a63", bg: "#eef1e5", bd: "#d6debf", text: "#566143", glow: "rgba(125,138,99,0.16)" },
-  EMC: { dot: "#4f7f88", bg: "#e8f2f4", bd: "#c9dde2", text: "#355d65", glow: "rgba(79,127,136,0.16)" },
-  RED: { dot: "#355f78", bg: "#e7eef4", bd: "#c8d7e3", text: "#2f5065", glow: "rgba(53,95,120,0.16)" },
-  RED_CYBER: { dot: "#855d7d", bg: "#f2eaf0", bd: "#e0ccda", text: "#69495f", glow: "rgba(133,93,125,0.16)" },
-  CRA: { dot: "#618068", bg: "#ecf3ed", bd: "#d0dfd2", text: "#49614e", glow: "rgba(97,128,104,0.16)" },
-  ROHS: { dot: "#b48b43", bg: "#fbf4e3", bd: "#ecd9ad", text: "#8d6b2d", glow: "rgba(180,139,67,0.16)" },
-  REACH: { dot: "#9c7766", bg: "#f6ede9", bd: "#e4d3ca", text: "#7a5749", glow: "rgba(156,119,102,0.16)" },
-  GDPR: { dot: "#6d8e8b", bg: "#edf4f3", bd: "#d1dfdd", text: "#56706d", glow: "rgba(109,142,139,0.16)" },
-  AI_Act: { dot: "#8a6796", bg: "#f1ebf5", bd: "#ddcfe5", text: "#6b5276", glow: "rgba(138,103,150,0.16)" },
-  ESPR: { dot: "#b48b43", bg: "#fbf4e3", bd: "#ecd9ad", text: "#8d6b2d", glow: "rgba(180,139,67,0.16)" },
-  ECO: { dot: "#5d826c", bg: "#edf4ef", bd: "#d2e0d6", text: "#496354", glow: "rgba(93,130,108,0.16)" },
-  BATTERY: { dot: "#708557", bg: "#f1f5e9", bd: "#d9e5c6", text: "#586944", glow: "rgba(112,133,87,0.16)" },
-  FCM: { dot: "#8f6e60", bg: "#f6eee9", bd: "#e3d4cb", text: "#6c5247", glow: "rgba(143,110,96,0.16)" },
-  FCM_PLASTIC: { dot: "#8f6e60", bg: "#f6eee9", bd: "#e3d4cb", text: "#6c5247", glow: "rgba(143,110,96,0.16)" },
-  MD: { dot: "#6d6fa1", bg: "#eeeef7", bd: "#d5d6ea", text: "#555782", glow: "rgba(109,111,161,0.16)" },
-  MACH_REG: { dot: "#6d6fa1", bg: "#eeeef7", bd: "#d5d6ea", text: "#555782", glow: "rgba(109,111,161,0.16)" },
-  OTHER: { dot: "#8a807b", bg: "#f4efe9", bd: "#ddd4cd", text: "#665d59", glow: "rgba(138,128,123,0.16)" },
+  LVD: { dot: "#8fa07a", bg: "#eef4e9", bd: "#d6e2c8", text: "#5f6e4e", glow: "rgba(143,160,122,0.18)" },
+  EMC: { dot: "#7ba8b3", bg: "#e9f3f5", bd: "#cfe0e5", text: "#426670", glow: "rgba(123,168,179,0.18)" },
+  RED: { dot: "#7c9eb5", bg: "#e9f0f6", bd: "#cfdae6", text: "#4f6f85", glow: "rgba(124,158,181,0.18)" },
+  RED_CYBER: { dot: "#a48cb7", bg: "#f1ebf5", bd: "#dfd3e8", text: "#6d5a80", glow: "rgba(164,140,183,0.18)" },
+  CRA: { dot: "#85ad99", bg: "#ebf4ef", bd: "#d3e2d9", text: "#577565", glow: "rgba(133,173,153,0.18)" },
+  ROHS: { dot: "#c9ab67", bg: "#faf4e6", bd: "#ead9b4", text: "#8d7136", glow: "rgba(201,171,103,0.18)" },
+  REACH: { dot: "#c59a88", bg: "#f7eeea", bd: "#e6d4cb", text: "#825f52", glow: "rgba(197,154,136,0.18)" },
+  GDPR: { dot: "#87b3a7", bg: "#ecf5f2", bd: "#d3e3de", text: "#5c7a71", glow: "rgba(135,179,167,0.18)" },
+  AI_Act: { dot: "#aa96c7", bg: "#f2eef8", bd: "#ddd4ea", text: "#6f6187", glow: "rgba(170,150,199,0.18)" },
+  ESPR: { dot: "#d2a06d", bg: "#fbf1e7", bd: "#edd7bf", text: "#8b6637", glow: "rgba(210,160,109,0.18)" },
+  ECO: { dot: "#8db69d", bg: "#edf5f0", bd: "#d4e2d9", text: "#5f7867", glow: "rgba(141,182,157,0.18)" },
+  BATTERY: { dot: "#a3b777", bg: "#f1f6e8", bd: "#dbe6c6", text: "#687948", glow: "rgba(163,183,119,0.18)" },
+  FCM: { dot: "#c79a8d", bg: "#f8efec", bd: "#e7d4ce", text: "#7f5d53", glow: "rgba(199,154,141,0.18)" },
+  FCM_PLASTIC: { dot: "#c79a8d", bg: "#f8efec", bd: "#e7d4ce", text: "#7f5d53", glow: "rgba(199,154,141,0.18)" },
+  MD: { dot: "#97a0cf", bg: "#eef0fb", bd: "#d6daf1", text: "#616995", glow: "rgba(151,160,207,0.18)" },
+  MACH_REG: { dot: "#97a0cf", bg: "#eef0fb", bd: "#d6daf1", text: "#616995", glow: "rgba(151,160,207,0.18)" },
+  OTHER: { dot: "#b7aba4", bg: "#f5efeb", bd: "#ddd5cf", text: "#706762", glow: "rgba(183,171,164,0.18)" },
 };
 
 const STATUS = {
@@ -103,28 +106,28 @@ const IMPORTANCE = {
 
 const SECTION_TONES = {
   harmonized: {
-    bg: "linear-gradient(135deg, rgba(53,95,120,0.12), rgba(53,95,120,0.03))",
-    bd: "rgba(53,95,120,0.16)",
-    tagBg: "rgba(53,95,120,0.10)",
-    tagText: "#355f78",
+    bg: "linear-gradient(135deg, rgba(124,158,181,0.14), rgba(124,158,181,0.03))",
+    bd: "rgba(124,158,181,0.18)",
+    tagBg: "rgba(124,158,181,0.10)",
+    tagText: "#4f6f85",
   },
   state_of_the_art: {
-    bg: "linear-gradient(135deg, rgba(180,139,67,0.14), rgba(180,139,67,0.03))",
-    bd: "rgba(180,139,67,0.18)",
-    tagBg: "rgba(180,139,67,0.10)",
-    tagText: "#8d6b2d",
+    bg: "linear-gradient(135deg, rgba(210,160,109,0.14), rgba(210,160,109,0.03))",
+    bd: "rgba(210,160,109,0.18)",
+    tagBg: "rgba(210,160,109,0.10)",
+    tagText: "#8b6637",
   },
   review: {
-    bg: "linear-gradient(135deg, rgba(123,90,116,0.13), rgba(123,90,116,0.03))",
-    bd: "rgba(123,90,116,0.18)",
-    tagBg: "rgba(123,90,116,0.10)",
-    tagText: "#7b5a74",
+    bg: "linear-gradient(135deg, rgba(200,140,160,0.13), rgba(200,140,160,0.03))",
+    bd: "rgba(200,140,160,0.18)",
+    tagBg: "rgba(200,140,160,0.10)",
+    tagText: "#8d6474",
   },
   unknown: {
-    bg: "linear-gradient(135deg, rgba(138,128,123,0.12), rgba(138,128,123,0.03))",
-    bd: "rgba(138,128,123,0.18)",
-    tagBg: "rgba(138,128,123,0.10)",
-    tagText: "#665d59",
+    bg: "linear-gradient(135deg, rgba(183,171,164,0.12), rgba(183,171,164,0.03))",
+    bd: "rgba(183,171,164,0.18)",
+    tagBg: "rgba(183,171,164,0.10)",
+    tagText: "#706762",
   },
 };
 
@@ -170,6 +173,12 @@ function directiveShort(key) {
 function directiveRank(key) {
   const rank = DIR_ORDER.indexOf(key || "OTHER");
   return rank === -1 ? 999 : rank;
+}
+
+function normalizeStandardDirective(item) {
+  const code = String(item?.code || "").toUpperCase();
+  if (code.startsWith("EN 18031-")) return "RED_CYBER";
+  return item?.directive || item?.legislation_key || "OTHER";
 }
 
 function joinText(base, addition) {
@@ -232,9 +241,7 @@ function buildGuidedChips(metadata, result) {
   };
 
   missingItems.forEach((item) => {
-    (item.examples || []).slice(0, 2).forEach((example) => {
-      push(titleCase(item.key), example);
-    });
+    (item.examples || []).slice(0, 2).forEach((example) => push(titleCase(item.key), example));
   });
 
   if (product?.implied_traits?.includes("food_contact") || traits.has("food_contact")) {
@@ -269,121 +276,45 @@ function buildGuidedChips(metadata, result) {
   return chips.slice(0, 8);
 }
 
-function buildClarificationQuestions(result) {
+function buildGuidanceItems(result) {
   const traits = new Set(result?.all_traits || []);
-  const questions = [];
-  const existing = new Set();
+  const rawItems = result?.missing_information_items || [];
+  const items = [];
+  const seen = new Set();
 
-  const push = (key, title, why, importance, choices = []) => {
-    if (existing.has(key)) return;
-    existing.add(key);
-    questions.push({ key, title, why, importance, choices });
+  const add = (key, title, why, importance, choices = []) => {
+    if (seen.has(key)) return;
+    seen.add(key);
+    items.push({ key, title, why, importance, choices: choices.filter(Boolean).slice(0, 3) });
   };
 
   if (traits.has("radio")) {
-    push(
-      "radio_technology",
-      "Which radio technologies are actually present?",
-      "Needed to confirm RED scope, radio route, RF exposure, and whether RED cybersecurity stays in scope.",
-      "high",
-      [
-        "Wi-Fi radio",
-        "Bluetooth LE radio",
-        "Thread radio",
-        "Zigbee radio",
-        "Cellular radio",
-        "NFC radio",
-      ],
-    );
+    add("radio_stack", "Confirm radios", "Changes RED and RF scope.", "high", ["Wi-Fi radio", "Bluetooth LE radio", "NFC radio"]);
   }
-
   if (traits.has("cloud") || traits.has("internet") || traits.has("app_control") || traits.has("ota")) {
-    push(
-      "connectivity_architecture",
-      "How is the connected architecture designed?",
-      "Needed to confirm EN 18031 applicability, cybersecurity scoping, and whether the product depends on internet or cloud services.",
+    add(
+      "connected_architecture",
+      "Confirm connected design",
+      "Changes EN 18031 and cybersecurity route.",
       "high",
-      [
-        "cloud account required",
-        "local LAN control without cloud dependency",
-        "OTA firmware updates",
-        "remote control from outside home network",
-        "user login or authentication",
-      ],
+      ["cloud account required", "local LAN control without cloud dependency", "OTA firmware updates"]
     );
   }
-
   if (traits.has("food_contact")) {
-    push(
-      "food_contact_materials",
-      "Which food or wetted-path materials are present?",
-      "Needed to refine food-contact obligations and evidence expectations.",
-      "medium",
-      [
-        "food-contact plastics",
-        "silicone seal",
-        "rubber gasket",
-        "non-stick coating",
-        "metal wetted path",
-      ],
-    );
+    add("food_contact", "Confirm wetted materials", "Changes food-contact obligations.", "medium", ["food-contact plastics", "silicone seal", "metal wetted path"]);
   }
-
   if (traits.has("battery_powered")) {
-    push(
-      "battery_details",
-      "What battery configuration applies?",
-      "Needed to confirm Battery Regulation relevance and supporting documentation.",
-      "medium",
-      [
-        "rechargeable lithium battery",
-        "replaceable battery",
-        "battery supplied with the product",
-      ],
-    );
+    add("battery", "Confirm battery setup", "Changes Battery Regulation scope.", "medium", ["rechargeable lithium battery", "replaceable battery", "battery supplied with the product"]);
+  }
+  if (traits.has("camera") || traits.has("microphone") || traits.has("personal_data_likely")) {
+    add("data_functions", "Confirm sensitive functions", "Changes cybersecurity/privacy expectations.", "high", ["integrated camera", "microphone or voice input", "user account and profile data"]);
   }
 
-  if (traits.has("camera") || traits.has("microphone") || traits.has("location") || traits.has("personal_data_likely")) {
-    push(
-      "sensitive_functions",
-      "Does the product capture or process sensitive user-related data?",
-      "Needed to refine RED delegated-act and privacy-related scoping.",
-      "high",
-      [
-        "integrated camera",
-        "microphone or voice input",
-        "location tracking",
-        "user account and profile data",
-      ],
-    );
-  }
-
-  if (!traits.has("mains_powered") && !traits.has("battery_powered") && !traits.has("usb_powered")) {
-    push(
-      "power_source",
-      "What is the actual power source?",
-      "Needed to confirm the main electrical route and relevant standard families.",
-      "high",
-      [
-        "230 V mains powered",
-        "rechargeable lithium battery",
-        "USB-C powered",
-        "external power supply",
-      ],
-    );
-  }
-
-  (result?.missing_information_items || []).forEach((item) => {
-    push(
-      `missing_${item.key}`,
-      titleCase(item.key),
-      item.message,
-      item.importance || "medium",
-      (item.examples || []).slice(0, 5),
-    );
+  rawItems.forEach((item) => {
+    add(item.key, titleCase(item.key), item.message, item.importance || "medium", item.examples || []);
   });
 
-  return questions.slice(0, 6);
+  return items.slice(0, 4);
 }
 
 function buildCompactLegislationItems(result) {
@@ -393,7 +324,7 @@ function buildCompactLegislationItems(result) {
       ...item,
       section_key: section.key,
       section_title: section.title,
-    })),
+    }))
   );
 
   const sorted = [...allItems].sort((a, b) => {
@@ -414,28 +345,20 @@ function compactLegislationGroupLabel(item) {
 
 function sortStandardItems(items) {
   return [...(items || [])].sort((a, b) => {
-    return (
-      directiveRank(a.directive || a.legislation_key) - directiveRank(b.directive || b.legislation_key) ||
-      String(a.code || "").localeCompare(String(b.code || ""))
-    );
+    const aDir = normalizeStandardDirective(a);
+    const bDir = normalizeStandardDirective(b);
+    return directiveRank(aDir) - directiveRank(bDir) || String(a.code || "").localeCompare(String(b.code || ""));
   });
 }
 
 function buildSectionsFromFlatResult(result) {
-  const standardRows = (result?.standards || []).map((item) => ({
-    ...item,
-    item_type: item.item_type || "standard",
-  }));
-  const reviewRows = (result?.review_items || []).map((item) => ({
-    ...item,
-    item_type: "review",
-  }));
+  const standardRows = (result?.standards || []).map((item) => ({ ...item, item_type: item.item_type || "standard" }));
+  const reviewRows = (result?.review_items || []).map((item) => ({ ...item, item_type: "review" }));
 
   const grouped = {};
   [...standardRows, ...reviewRows].forEach((item) => {
     let key = item.harmonization_status || (item.item_type === "review" ? "review" : "unknown");
     if (!["harmonized", "state_of_the_art", "review", "unknown"].includes(key)) key = "unknown";
-
     if (!grouped[key]) {
       grouped[key] = {
         key,
@@ -461,6 +384,21 @@ function buildSectionsFromFlatResult(result) {
       items: sortStandardItems(grouped[key].items),
       count: grouped[key].items.length,
     }));
+}
+
+function buildDirectiveBreakdown(result) {
+  const sections = result?.standard_sections?.length ? result.standard_sections : buildSectionsFromFlatResult(result);
+  const counts = {};
+  sections.forEach((section) => {
+    (section.items || []).forEach((item) => {
+      const dir = normalizeStandardDirective(item);
+      counts[dir] = (counts[dir] || 0) + 1;
+    });
+  });
+
+  return Object.entries(counts)
+    .sort((a, b) => directiveRank(a[0]) - directiveRank(b[0]))
+    .map(([key, count]) => ({ key, count }));
 }
 
 function DirPill({ dirKey, large = false }) {
@@ -522,16 +460,8 @@ function Tag({ children, tone = "neutral" }) {
     tone === "neutral"
       ? { bg: "rgba(255,255,255,0.72)", bd: THEME.line, text: THEME.soft }
       : tone === "soft"
-        ? {
-            bg: "rgba(53,95,120,0.09)",
-            bd: "rgba(53,95,120,0.18)",
-            text: THEME.accent,
-          }
-        : {
-            bg: "rgba(123,90,116,0.09)",
-            bd: "rgba(123,90,116,0.18)",
-            text: THEME.accent2,
-          };
+        ? { bg: "rgba(124,158,181,0.10)", bd: "rgba(124,158,181,0.18)", text: THEME.accent }
+        : { bg: "rgba(200,140,160,0.10)", bd: "rgba(200,140,160,0.18)", text: THEME.accent2 };
 
   return (
     <span
@@ -561,7 +491,7 @@ function SectionCard({ title, subtitle, right, children, style }) {
         border: `1px solid ${THEME.line}`,
         background: THEME.panel,
         boxShadow: THEME.shadow,
-        backdropFilter: "blur(10px)",
+        backdropFilter: "blur(12px)",
         padding: 22,
         ...style,
       }}
@@ -578,28 +508,10 @@ function SectionCard({ title, subtitle, right, children, style }) {
         >
           <div style={{ minWidth: 0 }}>
             {title ? (
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 900,
-                  color: THEME.text,
-                  lineHeight: 1.2,
-                }}
-              >
-                {title}
-              </div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: THEME.text, lineHeight: 1.2 }}>{title}</div>
             ) : null}
             {subtitle ? (
-              <div
-                style={{
-                  marginTop: 5,
-                  fontSize: 13,
-                  color: THEME.subtext,
-                  lineHeight: 1.55,
-                }}
-              >
-                {subtitle}
-              </div>
+              <div style={{ marginTop: 5, fontSize: 13, color: THEME.subtext, lineHeight: 1.55 }}>{subtitle}</div>
             ) : null}
           </div>
           {right}
@@ -613,36 +525,20 @@ function SectionCard({ title, subtitle, right, children, style }) {
 function Hero({ result }) {
   const hero = result?.hero_summary || {};
   const primaryRegimes = hero.primary_regimes || [];
-  const showResultMeta = Boolean(result);
+  const showMeta = Boolean(result);
 
   return (
     <SectionCard
       style={{
         background:
-          "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(249,244,239,0.94) 54%, rgba(235,239,244,0.92))",
+          "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,243,238,0.95) 40%, rgba(240,236,246,0.94) 72%, rgba(235,243,241,0.94))",
         boxShadow: THEME.shadowLg,
         padding: 26,
-        maxWidth: "100%",
       }}
     >
-      <div
-        style={{
-          display: "grid",
-          gap: 18,
-          justifyItems: "center",
-          textAlign: "center",
-        }}
-      >
-        {showResultMeta ? (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 10,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+      <div style={{ display: "grid", gap: 16, justifyItems: "center", textAlign: "center" }}>
+        {showMeta ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "center" }}>
             <RiskPill value={result?.overall_risk || "MEDIUM"} />
             <Tag>{titleCase(hero.confidence || result?.product_match_confidence || "low")} Confidence</Tag>
           </div>
@@ -651,8 +547,8 @@ function Hero({ result }) {
         <div style={{ display: "grid", gap: 6, maxWidth: 980 }}>
           <div
             style={{
-              fontSize: 32,
-              lineHeight: 1.06,
+              fontSize: 31,
+              lineHeight: 1.04,
               fontWeight: 900,
               color: THEME.text,
               letterSpacing: "-0.03em",
@@ -660,19 +556,13 @@ function Hero({ result }) {
           >
             {hero.title || "RuleGrid regulatory scoping"}
           </div>
-          <div
-            style={{
-              fontSize: 15,
-              color: THEME.subtext,
-              lineHeight: 1.72,
-            }}
-          >
+          <div style={{ fontSize: 15, color: THEME.subtext, lineHeight: 1.7 }}>
             {hero.subtitle ||
               "Describe the product clearly to generate the standards route and the applicable legislation path."}
           </div>
         </div>
 
-        {showResultMeta && primaryRegimes.length ? (
+        {showMeta && primaryRegimes.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
             {primaryRegimes.map((dirKey) => (
               <DirPill key={dirKey} dirKey={dirKey} large />
@@ -686,29 +576,12 @@ function Hero({ result }) {
 
 function SidebarRail({ result }) {
   if (!result) return null;
-
   const items = buildCompactLegislationItems(result);
-  const confidence =
-    result?.confidence_panel?.confidence ||
-    result?.product_match_confidence ||
-    "low";
+  const confidence = result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
 
   return (
-    <aside
-      className="left-rail"
-      style={{
-        display: "grid",
-        gap: 14,
-        position: "sticky",
-        top: 18,
-        alignSelf: "start",
-      }}
-    >
-      <SectionCard
-        title="Applicable legislation"
-        subtitle="Sticky overview"
-        style={{ padding: 16, borderRadius: 20 }}
-      >
+    <aside className="left-rail" style={{ display: "grid", gap: 14, position: "sticky", top: 18, alignSelf: "start" }}>
+      <SectionCard title="Applicable legislation" subtitle="Sticky overview" style={{ padding: 16, borderRadius: 20 }}>
         <div style={{ display: "grid", gap: 8 }}>
           {items.map((item) => {
             const tone = directiveTone(item.directive_key || "OTHER");
@@ -726,69 +599,25 @@ function SidebarRail({ result }) {
                   boxShadow: `0 0 0 1px ${tone.glow}`,
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 999,
-                      background: tone.dot,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span style={{ fontSize: 12, fontWeight: 900 }}>
-                    {item.code}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      opacity: 0.82,
-                      fontWeight: 800,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 999, background: tone.dot, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 900 }}>{item.code}</span>
+                  <span style={{ fontSize: 10, opacity: 0.82, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     {compactLegislationGroupLabel(item)}
                   </span>
                 </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    lineHeight: 1.4,
-                    fontWeight: 700,
-                  }}
-                >
-                  {item.title}
-                </div>
+                <div style={{ fontSize: 12, lineHeight: 1.4, fontWeight: 700 }}>{item.title}</div>
               </div>
             );
           })}
         </div>
       </SectionCard>
 
-      <SectionCard
-        title="Detection confidence"
-        subtitle="Product identification"
-        style={{ padding: 16, borderRadius: 20 }}
-      >
+      <SectionCard title="Detection confidence" subtitle="Product identification" style={{ padding: 16, borderRadius: 20 }}>
         <div style={{ display: "grid", gap: 10 }}>
           <div style={softBoxStyle}>
             <div style={miniTitleStyle}>Detected Product</div>
-            <div
-              style={{
-                marginTop: 6,
-                fontSize: 18,
-                fontWeight: 900,
-                color: THEME.text,
-              }}
-            >
+            <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: THEME.text }}>
               {titleCase(result?.product_type || "Unclear")}
             </div>
           </div>
@@ -804,18 +633,12 @@ function SidebarRail({ result }) {
   );
 }
 
-function InputComposer({
-  description,
-  setDescription,
-  templates,
-  chips,
-  onAnalyze,
-  busy,
-}) {
+function InputComposer({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }) {
   return (
     <SectionCard
       title="Describe the product"
       subtitle="Describe product type, connectivity, power source, key functions, sensors, materials, and battery if relevant."
+      style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.93), rgba(252,249,247,0.88))" }}
     >
       <div style={{ display: "grid", gap: 14 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -823,7 +646,10 @@ function InputComposer({
             <button
               key={template.label}
               type="button"
-              onClick={() => setDescription(template.text)}
+              onClick={() => {
+                setDescription(template.text);
+                onDirty(false);
+              }}
               style={templateChipStyle}
             >
               {template.label}
@@ -833,15 +659,13 @@ function InputComposer({
 
         <textarea
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            onDirty(false);
+          }}
           placeholder="Example: Connected espresso machine with Wi-Fi, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
           rows={7}
-          style={{
-            ...inputStyle,
-            resize: "vertical",
-            minHeight: 190,
-            lineHeight: 1.65,
-          }}
+          style={{ ...inputStyle, resize: "vertical", minHeight: 180, lineHeight: 1.65 }}
         />
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -849,9 +673,10 @@ function InputComposer({
             <button
               key={chip.label + chip.text}
               type="button"
-              onClick={() =>
-                setDescription((current) => joinText(current, chip.text))
-              }
+              onClick={() => {
+                setDescription((current) => joinText(current, chip.text));
+                onDirty(true);
+              }}
               style={chipButtonStyle}
             >
               + {chip.label}
@@ -860,17 +685,15 @@ function InputComposer({
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button
-            type="button"
-            onClick={onAnalyze}
-            disabled={busy || !description.trim()}
-            style={primaryButtonStyle(busy || !description.trim())}
-          >
+          <button type="button" onClick={onAnalyze} disabled={busy || !description.trim()} style={primaryButtonStyle(busy || !description.trim())}>
             {busy ? "Analyzing..." : "Analyze product"}
           </button>
           <button
             type="button"
-            onClick={() => setDescription("")}
+            onClick={() => {
+              setDescription("");
+              onDirty(false);
+            }}
             style={secondaryButtonStyle}
           >
             Clear
@@ -881,110 +704,95 @@ function InputComposer({
   );
 }
 
-function InputGapsPanel({ result, onApply, onReanalyze, dirty, busy }) {
-  const questions = buildClarificationQuestions(result);
-  if (!questions.length) return null;
+function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }) {
+  const items = buildGuidanceItems(result);
+  if (!items.length) return null;
 
   return (
     <SectionCard
-      title="Clarify these first"
-      subtitle="These are the questions that meaningfully change scope, route, or evidence."
-      right={
-        <button
-          type="button"
-          onClick={onReanalyze}
-          disabled={!dirty || busy}
-          style={primaryButtonStyle(!dirty || busy)}
-        >
-          {busy ? "Analyzing..." : dirty ? "Re-analyze with updates" : "No updates yet"}
-        </button>
-      }
+      title="Guidance"
+      subtitle="Compact refinements before trusting the route."
+      right={<button type="button" onClick={onReanalyze} disabled={!dirty || busy} style={primaryButtonStyle(!dirty || busy)}>{busy ? "Analyzing..." : dirty ? "Refresh route" : "Route current"}</button>}
+      style={{ padding: 18, borderRadius: 20 }}
     >
-      <div
-        className="two-col-grid"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: 12,
-        }}
-      >
-        {questions.map((item) => {
+      <div className="guidance-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
+        {items.map((item) => {
           const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
           return (
             <div
               key={item.key}
               style={{
-                borderRadius: 18,
+                borderRadius: 16,
                 border: `1px solid ${tone.bd}`,
                 background: tone.bg,
-                padding: 15,
+                padding: 12,
                 display: "grid",
-                gap: 10,
+                gap: 8,
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div
-                  style={{ fontSize: 14, fontWeight: 900, color: tone.text }}
-                >
-                  {item.title}
-                </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: tone.text }}>{item.title}</div>
                 <Tag>{titleCase(item.importance)}</Tag>
               </div>
-
-              <div
-                style={{
-                  fontSize: 13,
-                  color: THEME.subtext,
-                  lineHeight: 1.65,
-                }}
-              >
-                {item.why}
+              <div style={{ fontSize: 12, color: THEME.subtext, lineHeight: 1.45 }}>{item.why}</div>
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                {item.choices.map((choice) => (
+                  <button key={choice} type="button" onClick={() => onApply(choice)} style={miniChipButtonStyle}>
+                    + {choice}
+                  </button>
+                ))}
               </div>
-
-              {item.choices?.length ? (
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {item.choices.map((choice) => (
-                    <button
-                      key={choice}
-                      type="button"
-                      onClick={() => onApply(choice)}
-                      style={chipButtonStyle}
-                    >
-                      + {choice}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
             </div>
           );
         })}
       </div>
+      {dirty ? <div style={{ marginTop: 10, fontSize: 12, color: THEME.accent2, fontWeight: 800 }}>Input updated. Refresh route to update standards.</div> : null}
+    </SectionCard>
+  );
+}
 
-      {dirty ? (
-        <div
-          style={{
-            marginTop: 14,
-            fontSize: 12,
-            color: THEME.accent2,
-            fontWeight: 800,
-          }}
-        >
-          New clarification details were added to the prompt. Re-analyze to refresh the route.
-        </div>
-      ) : null}
+function StandardsOverview({ result }) {
+  const breakdown = buildDirectiveBreakdown(result);
+  if (!breakdown.length) return null;
+
+  return (
+    <SectionCard
+      title="Route snapshot"
+      subtitle="Quick view of where the standards are concentrated."
+      style={{ padding: 18, borderRadius: 20, background: "linear-gradient(180deg, rgba(255,255,255,0.90), rgba(247,244,250,0.82))" }}
+    >
+      <div className="snapshot-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 10 }}>
+        {breakdown.map(({ key, count }) => {
+          const tone = directiveTone(key);
+          return (
+            <div
+              key={key}
+              style={{
+                borderRadius: 16,
+                border: `1px solid ${tone.bd}`,
+                background: tone.bg,
+                padding: "12px 10px",
+                display: "grid",
+                gap: 6,
+                boxShadow: `0 0 0 1px ${tone.glow}`,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: tone.dot, flexShrink: 0 }} />
+                <div style={{ fontSize: 12, fontWeight: 900, color: tone.text }}>{directiveShort(key)}</div>
+              </div>
+              <div style={{ fontSize: 24, lineHeight: 1, fontWeight: 900, color: THEME.text }}>{count}</div>
+              <div style={{ fontSize: 11, color: THEME.subtext }}>standards</div>
+            </div>
+          );
+        })}
+      </div>
     </SectionCard>
   );
 }
 
 function StandardCard({ item, sectionKey }) {
-  const dirKey = item.directive || item.legislation_key || "OTHER";
+  const dirKey = normalizeStandardDirective(item);
   const dirTone = directiveTone(dirKey);
   const sectionTone = SECTION_TONES[sectionKey] || SECTION_TONES.unknown;
   const evidence = sentenceCaseList(item.evidence_hint || []).join(" · ");
@@ -995,29 +803,21 @@ function StandardCard({ item, sectionKey }) {
       style={{
         borderRadius: 22,
         border: `1px solid ${dirTone.bd}`,
-        background: "rgba(255,255,255,0.93)",
+        background: "rgba(255,255,255,0.94)",
         overflow: "hidden",
         boxShadow: `0 12px 24px ${dirTone.glow}`,
       }}
     >
       <div
         style={{
-          padding: "14px 16px 12px",
-          background: `linear-gradient(135deg, ${dirTone.bg}, rgba(255,255,255,0.94))`,
+          padding: "15px 16px 12px",
+          background: `linear-gradient(135deg, ${dirTone.bg}, rgba(255,255,255,0.95))`,
           borderBottom: `1px solid ${dirTone.bd}`,
           display: "grid",
           gap: 10,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-          }}
-        >
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <DirPill dirKey={dirKey} />
             <span
@@ -1037,7 +837,6 @@ function StandardCard({ item, sectionKey }) {
             >
               {titleCase(item.harmonization_status || "unknown")}
             </span>
-            {item.item_type === "review" ? <Tag tone="accent2">Review</Tag> : null}
           </div>
 
           <span
@@ -1060,31 +859,12 @@ function StandardCard({ item, sectionKey }) {
         </div>
 
         <div>
-          <div style={{ fontSize: 15, fontWeight: 900, color: THEME.text }}>
-            {item.title}
-          </div>
-          <div
-            style={{
-              marginTop: 6,
-              fontSize: 13,
-              color: THEME.subtext,
-              lineHeight: 1.65,
-            }}
-          >
-            {summary}
-          </div>
+          <div style={{ fontSize: 15, fontWeight: 900, color: THEME.text }}>{item.title}</div>
+          <div style={{ marginTop: 6, fontSize: 13, color: THEME.subtext, lineHeight: 1.65 }}>{summary}</div>
         </div>
       </div>
 
-      <div
-        className="standard-meta-grid"
-        style={{
-          padding: 16,
-          display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: 10,
-        }}
-      >
+      <div className="standard-meta-grid" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
         <div style={softBoxStyle}>
           <div style={miniTitleStyle}>Harmonized Reference</div>
           <div style={metaValueStyle}>{prettyValue(item.harmonized_reference)}</div>
@@ -1111,7 +891,7 @@ function StandardsSection({ result }) {
     result?.standard_sections?.length
       ? result.standard_sections.map((section) => ({
           ...section,
-          items: sortStandardItems(section.items || []),
+          items: sortStandardItems(section.items || []).map((item) => ({ ...item, directive: normalizeStandardDirective(item) })),
         }))
       : buildSectionsFromFlatResult(result);
 
@@ -1124,7 +904,8 @@ function StandardsSection({ result }) {
   return (
     <SectionCard
       title="Standards route"
-      subtitle="Card content is tightened to the key compliance fields. Standard reference stays only on the card header."
+      subtitle="Primary output. Ordered to keep LVD, EMC, RED and RED cybersecurity visible and readable."
+      style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.92), rgba(249,246,243,0.88))" }}
     >
       <div style={{ display: "grid", gap: 18 }}>
         {ordered.map((section) => {
@@ -1135,7 +916,7 @@ function StandardsSection({ result }) {
               style={{
                 borderRadius: 22,
                 border: `1px solid ${sectionTone.bd}`,
-                background: "rgba(255,255,255,0.76)",
+                background: "rgba(255,255,255,0.78)",
                 overflow: "hidden",
               }}
             >
@@ -1152,24 +933,8 @@ function StandardsSection({ result }) {
                 }}
               >
                 <div>
-                  <div
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 900,
-                      color: THEME.text,
-                    }}
-                  >
-                    {section.title}
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 4,
-                      fontSize: 12,
-                      color: THEME.subtext,
-                    }}
-                  >
-                    {section.count} item{section.count === 1 ? "" : "s"}
-                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: THEME.text }}>{section.title}</div>
+                  <div style={{ marginTop: 4, fontSize: 12, color: THEME.subtext }}>{section.count} item{section.count === 1 ? "" : "s"}</div>
                 </div>
                 <span
                   style={{
@@ -1189,11 +954,7 @@ function StandardsSection({ result }) {
 
               <div style={{ padding: 16, display: "grid", gap: 14 }}>
                 {(section.items || []).map((item) => (
-                  <StandardCard
-                    key={`${section.key}-${item.code}-${item.title}`}
-                    item={item}
-                    sectionKey={section.key}
-                  />
+                  <StandardCard key={`${section.key}-${item.code}-${item.title}`} item={item} sectionKey={section.key} />
                 ))}
               </div>
             </div>
@@ -1214,29 +975,14 @@ function DiagnosticsPanel({ result }) {
     <SectionCard
       title="Advanced diagnostics"
       subtitle="Hidden by default."
-      right={
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          style={secondaryButtonStyle}
-        >
-          {open ? "Hide" : "Show"}
-        </button>
-      }
+      right={<button type="button" onClick={() => setOpen((value) => !value)} style={secondaryButtonStyle}>{open ? "Hide" : "Show"}</button>}
     >
       {open ? (
         <div style={{ display: "grid", gap: 14 }}>
           {traits.length ? (
             <div style={softBoxStyle}>
               <div style={miniTitleStyle}>All Traits</div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  flexWrap: "wrap",
-                  marginTop: 10,
-                }}
-              >
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
                 {traits.map((trait) => (
                   <Tag key={trait}>{titleCase(trait)}</Tag>
                 ))}
@@ -1247,16 +993,7 @@ function DiagnosticsPanel({ result }) {
           {diagnostics.length ? (
             <div style={softBoxStyle}>
               <div style={miniTitleStyle}>Diagnostics</div>
-              <div
-                style={{
-                  marginTop: 10,
-                  display: "grid",
-                  gap: 8,
-                  fontSize: 13,
-                  color: THEME.subtext,
-                  lineHeight: 1.65,
-                }}
-              >
+              <div style={{ marginTop: 10, display: "grid", gap: 8, fontSize: 13, color: THEME.subtext, lineHeight: 1.65 }}>
                 {diagnostics.map((line, index) => (
                   <div key={line + index}>• {line}</div>
                 ))}
@@ -1271,6 +1008,8 @@ function DiagnosticsPanel({ result }) {
 
 function CopyResultsButton({ result, description }) {
   const handleCopy = async () => {
+    const sections = result?.standard_sections?.length ? result.standard_sections : buildSectionsFromFlatResult(result);
+
     const text = [
       "RuleGrid compliance summary",
       "",
@@ -1283,63 +1022,30 @@ function CopyResultsButton({ result, description }) {
       `Summary: ${result?.summary || ""}`,
       "",
       "Standards route:",
-      ...(result?.standard_sections?.length
-        ? result.standard_sections.flatMap((section) => [
-            `- ${section.title} (${section.count})`,
-            ...sortStandardItems(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
-          ])
-        : buildSectionsFromFlatResult(result).flatMap((section) => [
-            `- ${section.title} (${section.count})`,
-            ...sortStandardItems(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
-          ])),
+      ...sections.flatMap((section) => [
+        `- ${section.title} (${section.count})`,
+        ...sortStandardItems(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
+      ]),
       "",
       "Applicable legislation:",
-      ...buildCompactLegislationItems(result).map(
-        (item) => `- ${item.code} — ${item.title}`,
-      ),
+      ...buildCompactLegislationItems(result).map((item) => `- ${item.code} — ${item.title}`),
     ].join("\n");
 
     try {
       await navigator.clipboard.writeText(text);
-    } catch {
-      // no-op
-    }
+    } catch (_) {}
   };
 
-  return (
-    <button type="button" onClick={handleCopy} style={secondaryButtonStyle}>
-      Copy summary
-    </button>
-  );
+  return <button type="button" onClick={handleCopy} style={secondaryButtonStyle}>Copy summary</button>;
 }
 
 function EmptyState() {
   return (
-    <SectionCard
-      title="Ready for analysis"
-      subtitle="Enter a product description to generate the standards route and legislation overview."
-    >
-      <div
-        style={{
-          display: "grid",
-          gap: 12,
-          color: THEME.subtext,
-          fontSize: 14,
-          lineHeight: 1.7,
-        }}
-      >
-        <div style={listRowStyle}>
-          <span style={bulletStyle} />
-          Start with a realistic product description.
-        </div>
-        <div style={listRowStyle}>
-          <span style={bulletStyle} />
-          Mention connectivity, power source, key functions, and special materials or sensors.
-        </div>
-        <div style={listRowStyle}>
-          <span style={bulletStyle} />
-          Use the clarification block after analysis to refine scope and refresh the route.
-        </div>
+    <SectionCard title="Ready for analysis" subtitle="Enter a product description to generate the standards route and legislation overview.">
+      <div style={{ display: "grid", gap: 12, color: THEME.subtext, fontSize: 14, lineHeight: 1.7 }}>
+        <div style={listRowStyle}><span style={bulletStyle} />Start with a realistic product description.</div>
+        <div style={listRowStyle}><span style={bulletStyle} />Mention connectivity, power source, key functions, and special materials or sensors.</div>
+        <div style={listRowStyle}><span style={bulletStyle} />Use the guidance strip to refine the standards route if needed.</div>
       </div>
     </SectionCard>
   );
@@ -1357,7 +1063,6 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-
     fetch(METADATA_URL)
       .then((res) => {
         if (!res.ok) throw new Error(`Metadata request failed (${res.status})`);
@@ -1369,7 +1074,6 @@ export default function App() {
       .catch(() => {
         if (active) setMetadata({ traits: [], products: [], legislations: [] });
       });
-
     return () => {
       active = false;
     };
@@ -1380,25 +1084,18 @@ export default function App() {
     return dynamic.length ? dynamic : DEFAULT_TEMPLATES;
   }, [metadata]);
 
-  const chips = useMemo(
-    () => buildGuidedChips(metadata, result),
-    [metadata, result],
-  );
+  const chips = useMemo(() => buildGuidedChips(metadata, result), [metadata, result]);
 
   useEffect(() => {
     if (!result || !resultsRef.current) return;
     const timer = window.setTimeout(() => {
-      resultsRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 80);
     return () => window.clearTimeout(timer);
   }, [result]);
 
   const runAnalysis = useCallback(async () => {
     if (!description.trim()) return;
-
     setBusy(true);
     setError("");
 
@@ -1410,11 +1107,7 @@ export default function App() {
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.detail || `Analysis failed (${response.status})`);
-      }
-
+      if (!response.ok) throw new Error(data?.detail || `Analysis failed (${response.status})`);
       setResult(data);
       setClarifyDirty(false);
     } catch (err) {
@@ -1424,97 +1117,76 @@ export default function App() {
     }
   }, [description]);
 
-  const applyText = useCallback((text) => {
-    setDescription((current) => {
-      const next = joinText(current, text);
-      if (next !== current) setClarifyDirty(true);
-      return next;
-    });
-  }, []);
-
   return (
     <div
       style={{
         minHeight: "100vh",
         background: `
-          radial-gradient(circle at top left, rgba(123,90,116,0.08), transparent 26%),
-          radial-gradient(circle at top right, rgba(53,95,120,0.08), transparent 26%),
-          linear-gradient(180deg, ${THEME.bg}, ${THEME.bg2})
+          radial-gradient(circle at top left, rgba(200,140,160,0.10), transparent 24%),
+          radial-gradient(circle at top right, rgba(124,158,181,0.10), transparent 24%),
+          radial-gradient(circle at bottom right, rgba(135,179,167,0.10), transparent 22%),
+          linear-gradient(180deg, ${THEME.bg}, ${THEME.bg2} 62%, ${THEME.bg3})
         `,
       }}
     >
       <style>{globalCss}</style>
 
-      <div
-        style={{
-          maxWidth: 1320,
-          margin: "0 auto",
-          padding: "28px 20px 56px",
-        }}
-      >
-        <div style={{ display: "grid", gap: 18 }}>
-          <Hero result={result} />
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "28px 20px 56px" }}>
+        <div className="app-shell-grid">
+          <div className="left-rail-slot">{result ? <SidebarRail result={result} /> : null}</div>
 
-          <div className="app-shell-grid">
-            {result ? <SidebarRail result={result} /> : <div />}
+          <main style={{ display: "grid", gap: 18, minWidth: 0 }}>
+            <Hero result={result} />
 
-            <main style={{ display: "grid", gap: 18, minWidth: 0 }}>
-              <InputComposer
-                description={description}
-                setDescription={(value) => {
-                  setDescription(value);
-                  setClarifyDirty(false);
-                }}
-                templates={templates}
-                chips={chips}
-                onAnalyze={runAnalysis}
-                busy={busy}
-              />
+            <InputComposer
+              description={description}
+              setDescription={setDescription}
+              templates={templates}
+              chips={chips}
+              onAnalyze={runAnalysis}
+              busy={busy}
+              onDirty={setClarifyDirty}
+            />
 
-              {error ? (
-                <SectionCard title="Analysis error">
-                  <div style={{ color: THEME.danger, fontSize: 14 }}>{error}</div>
-                </SectionCard>
-              ) : null}
+            {error ? (
+              <SectionCard title="Analysis error">
+                <div style={{ color: THEME.danger, fontSize: 14 }}>{error}</div>
+              </SectionCard>
+            ) : null}
 
-              <div ref={resultsRef} />
+            <div ref={resultsRef} />
 
-              {!result ? (
-                <EmptyState />
-              ) : (
-                <>
-                  <InputGapsPanel
-                    result={result}
-                    onApply={applyText}
-                    onReanalyze={runAnalysis}
-                    dirty={clarifyDirty}
-                    busy={busy}
-                  />
-                  <StandardsSection result={result} />
-                  <DiagnosticsPanel result={result} />
+            {!result ? (
+              <EmptyState />
+            ) : (
+              <>
+                <GuidanceStrip
+                  result={result}
+                  dirty={clarifyDirty}
+                  busy={busy}
+                  onReanalyze={runAnalysis}
+                  onApply={(text) => {
+                    setDescription((current) => {
+                      const next = joinText(current, text);
+                      if (next !== current) setClarifyDirty(true);
+                      return next;
+                    });
+                  }}
+                />
 
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      gap: 10,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <CopyResultsButton result={result} description={description} />
-                    <button
-                      type="button"
-                      onClick={runAnalysis}
-                      disabled={busy || !description.trim()}
-                      style={secondaryButtonStyle}
-                    >
-                      Re-run analysis
-                    </button>
-                  </div>
-                </>
-              )}
-            </main>
-          </div>
+                <StandardsOverview result={result} />
+                <StandardsSection result={result} />
+                <DiagnosticsPanel result={result} />
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
+                  <CopyResultsButton result={result} description={description} />
+                  <button type="button" onClick={runAnalysis} disabled={busy || !description.trim()} style={secondaryButtonStyle}>
+                    Re-run analysis
+                  </button>
+                </div>
+              </>
+            )}
+          </main>
         </div>
       </div>
     </div>
@@ -1537,18 +1209,22 @@ const globalCss = `
     gap: 18px;
     align-items: start;
   }
+  .left-rail-slot { min-width: 0; }
+  @media (max-width: 1120px) {
+    .snapshot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  }
   @media (max-width: 1040px) {
-    .app-shell-grid {
-      grid-template-columns: 1fr;
-    }
-    .left-rail {
+    .app-shell-grid { grid-template-columns: 1fr; }
+    .left-rail, .left-rail-slot {
       position: static !important;
       top: auto !important;
     }
   }
+  @media (max-width: 960px) {
+    .guidance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  }
   @media (max-width: 760px) {
-    .two-col-grid { grid-template-columns: 1fr !important; }
-    .standard-meta-grid { grid-template-columns: 1fr !important; }
+    .guidance-grid, .snapshot-grid, .standard-meta-grid { grid-template-columns: 1fr !important; }
   }
 `;
 
@@ -1556,7 +1232,7 @@ const inputStyle = {
   width: "100%",
   borderRadius: 16,
   border: `1px solid ${THEME.lineStrong}`,
-  background: "rgba(255,255,255,0.96)",
+  background: "rgba(255,255,255,0.97)",
   padding: "12px 14px",
   color: THEME.text,
   outline: "none",
@@ -1566,7 +1242,7 @@ const inputStyle = {
 const softBoxStyle = {
   borderRadius: 18,
   border: `1px solid ${THEME.line}`,
-  background: "rgba(255,255,255,0.76)",
+  background: "rgba(255,255,255,0.78)",
   padding: 14,
 };
 
@@ -1590,8 +1266,8 @@ const templateChipStyle = {
   cursor: "pointer",
   borderRadius: 999,
   border: `1px solid ${THEME.lineStrong}`,
-  background: "linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245,238,244,0.92))",
-  color: THEME.deep2,
+  background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,240,247,0.92))",
+  color: THEME.text,
   padding: "9px 13px",
   fontSize: 12,
   fontWeight: 900,
@@ -1607,6 +1283,18 @@ const chipButtonStyle = {
   color: THEME.text,
   padding: "7px 11px",
   fontSize: 12,
+  fontWeight: 800,
+};
+
+const miniChipButtonStyle = {
+  appearance: "none",
+  cursor: "pointer",
+  borderRadius: 999,
+  border: `1px solid ${THEME.lineStrong}`,
+  background: "rgba(255,255,255,0.88)",
+  color: THEME.text,
+  padding: "6px 9px",
+  fontSize: 11,
   fontWeight: 800,
 };
 
