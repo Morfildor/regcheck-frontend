@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-const ANALYZE_URL = process.env.REACT_APP_REGCHECK_API_URL || "https://regcheck-api.onrender.com/analyze";
+const ANALYZE_URL =
+  process.env.REACT_APP_REGCHECK_API_URL ||
+  "https://regcheck-api.onrender.com/analyze";
 const METADATA_URL = ANALYZE_URL.replace(/\/analyze$/, "/metadata/options");
 
 const THEME = {
@@ -65,8 +67,12 @@ const DIR_ORDER = [
   "ROHS",
   "REACH",
   "GDPR",
-  "ESPPR",
+  "FCM",
+  "BATTERY",
+  "ECO",
+  "ESPR",
   "CRA",
+  "AI_Act",
   "OTHER",
 ];
 
@@ -170,16 +176,21 @@ function groupBy(items, getKey) {
 function getHeroStats(heroSummary, result) {
   const stats = heroSummary?.stats || [];
   const fallback = [
-    { label: "Current CE", value: result?.stats?.current_legislation_count || 0 },
+    {
+      label: "Current CE",
+      value: result?.stats?.current_legislation_count || 0,
+    },
     { label: "Standards", value: result?.stats?.standards_count || 0 },
     { label: "Review items", value: result?.stats?.review_items_count || 0 },
-    { label: "Input gaps", value: result?.stats?.missing_information_count || 0 },
+    {
+      label: "Input gaps",
+      value: result?.stats?.missing_information_count || 0,
+    },
   ];
   return stats.length ? stats : fallback;
 }
 
 function buildDynamicTemplates(products) {
-  const wanted = ["coffee_machine", "electric_kettle", "air_purifier", "air_cleaner", "robot_vacuum", "robot_vacuum_cleaner"];
   const lookup = new Map((products || []).map((p) => [p.id, p]));
   const templates = [];
 
@@ -192,22 +203,42 @@ function buildDynamicTemplates(products) {
     });
   }
 
-  addTemplate("coffee_machine", "mains power, heating, food-contact brew path, app control, cloud account, and OTA updates");
-  addTemplate("electric_kettle", "mains power, liquid heating, steam generation, food-contact plastics, and optional Wi-Fi control");
-  addTemplate("air_purifier", "mains power, motorized fan, sensor electronics, networked standby, app control, and OTA updates");
-  addTemplate("air_cleaner", "mains power, motorized air cleaning, app control, and cloud dashboard");
-  addTemplate("robot_vacuum", "rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation");
-  addTemplate("robot_vacuum_cleaner", "rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation");
+  addTemplate(
+    "coffee_machine",
+    "mains power, heating, food-contact brew path, app control, cloud account, and OTA updates",
+  );
+  addTemplate(
+    "electric_kettle",
+    "mains power, liquid heating, steam generation, food-contact plastics, and optional Wi-Fi control",
+  );
+  addTemplate(
+    "air_purifier",
+    "mains power, motorized fan, sensor electronics, networked standby, app control, and OTA updates",
+  );
+  addTemplate(
+    "air_cleaner",
+    "mains power, motorized air cleaning, app control, and cloud dashboard",
+  );
+  addTemplate(
+    "robot_vacuum",
+    "rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation",
+  );
+  addTemplate(
+    "robot_vacuum_cleaner",
+    "rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation",
+  );
 
   const filtered = templates.filter(Boolean);
-  return filtered.length ? filtered : DEFAULT_TEMPLATES.filter((item) => wanted.includes(item.id));
+  return filtered.length ? filtered : DEFAULT_TEMPLATES;
 }
 
 function buildContextualChips(metadata, result) {
   const backend = result?.suggested_quick_adds || [];
   const chips = [...backend];
   const productId = result?.product_type;
-  const product = (metadata?.products || []).find((item) => item.id === productId);
+  const product = (metadata?.products || []).find(
+    (item) => item.id === productId,
+  );
   const traits = new Set(result?.all_traits || []);
 
   const push = (label, text) => {
@@ -217,11 +248,20 @@ function buildContextualChips(metadata, result) {
     }
   };
 
-  if (product?.implied_traits?.includes("food_contact") || traits.has("food_contact")) {
-    push("Food-contact", "food-contact plastics, coatings, rubber, or silicone");
+  if (
+    product?.implied_traits?.includes("food_contact") ||
+    traits.has("food_contact")
+  ) {
+    push(
+      "Food-contact",
+      "food-contact plastics, coatings, rubber, or silicone",
+    );
     push("Water path", "water tank, seals, and wetted path materials");
   }
-  if (product?.implied_traits?.includes("motorized") || traits.has("motorized")) {
+  if (
+    product?.implied_traits?.includes("motorized") ||
+    traits.has("motorized")
+  ) {
     push("Motor", "motor and moving parts");
     push("Pump", "pump or fluid transfer function");
   }
@@ -230,7 +270,11 @@ function buildContextualChips(metadata, result) {
     push("Bluetooth", "Bluetooth LE radio");
     push("OTA", "OTA firmware updates");
   }
-  if (traits.has("cloud") || traits.has("app_control") || traits.has("internet")) {
+  if (
+    traits.has("cloud") ||
+    traits.has("app_control") ||
+    traits.has("internet")
+  ) {
     push("Cloud account", "cloud account required");
     push("Local LAN", "local LAN control without cloud dependency");
     push("Patch route", "security and firmware patching over the air");
@@ -323,8 +367,16 @@ function Tag({ children, tone = "neutral" }) {
     tone === "neutral"
       ? { bg: "rgba(255,255,255,0.7)", bd: THEME.line, text: THEME.soft }
       : tone === "soft"
-      ? { bg: "rgba(47,95,105,0.08)", bd: "rgba(47,95,105,0.18)", text: THEME.accent }
-      : { bg: "rgba(159,112,132,0.08)", bd: "rgba(159,112,132,0.18)", text: THEME.accent2 };
+        ? {
+            bg: "rgba(47,95,105,0.08)",
+            bd: "rgba(47,95,105,0.18)",
+            text: THEME.accent,
+          }
+        : {
+            bg: "rgba(159,112,132,0.08)",
+            bd: "rgba(159,112,132,0.18)",
+            text: THEME.accent2,
+          };
   return (
     <span
       style={{
@@ -359,10 +411,40 @@ function SectionCard({ title, subtitle, right, children, style }) {
       }}
     >
       {(title || subtitle || right) && (
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            marginBottom: 18,
+          }}
+        >
           <div style={{ minWidth: 0 }}>
-            {title ? <div style={{ fontSize: 18, fontWeight: 900, color: THEME.text, lineHeight: 1.2 }}>{title}</div> : null}
-            {subtitle ? <div style={{ marginTop: 6, fontSize: 13, color: THEME.subtext, lineHeight: 1.55 }}>{subtitle}</div> : null}
+            {title ? (
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 900,
+                  color: THEME.text,
+                  lineHeight: 1.2,
+                }}
+              >
+                {title}
+              </div>
+            ) : null}
+            {subtitle ? (
+              <div
+                style={{
+                  marginTop: 6,
+                  fontSize: 13,
+                  color: THEME.subtext,
+                  lineHeight: 1.55,
+                }}
+              >
+                {subtitle}
+              </div>
+            ) : null}
           </div>
           {right}
         </div>
@@ -386,17 +468,44 @@ function Hero({ result }) {
       }}
     >
       <div style={{ display: "grid", gap: 24 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 10,
+            alignItems: "center",
+          }}
+        >
           <Tag tone="soft">RuleGrid</Tag>
           <RiskPill value={result?.overall_risk || "MEDIUM"} />
-          <Tag>{titleCase(hero.confidence || result?.product_match_confidence || "low")} confidence</Tag>
+          <Tag>
+            {titleCase(
+              hero.confidence || result?.product_match_confidence || "low",
+            )}{" "}
+            confidence
+          </Tag>
         </div>
 
         <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ fontSize: 34, lineHeight: 1.04, fontWeight: 900, color: THEME.text, letterSpacing: "-0.03em" }}>
+          <div
+            style={{
+              fontSize: 34,
+              lineHeight: 1.04,
+              fontWeight: 900,
+              color: THEME.text,
+              letterSpacing: "-0.03em",
+            }}
+          >
             {hero.title || "Compliance route analysis"}
           </div>
-          <div style={{ fontSize: 15, color: THEME.subtext, lineHeight: 1.75, maxWidth: 940 }}>
+          <div
+            style={{
+              fontSize: 15,
+              color: THEME.subtext,
+              lineHeight: 1.75,
+              maxWidth: 940,
+            }}
+          >
             {hero.subtitle || result?.summary}
           </div>
         </div>
@@ -407,7 +516,14 @@ function Hero({ result }) {
           ))}
         </div>
 
-        <div className="hero-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
+        <div
+          className="hero-stats-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: 14,
+          }}
+        >
           {stats.map((item) => (
             <div
               key={item.label}
@@ -418,10 +534,27 @@ function Hero({ result }) {
                 padding: "16px 16px 14px",
               }}
             >
-              <div style={{ fontSize: 12, fontWeight: 700, color: THEME.soft, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: THEME.soft,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                }}
+              >
                 {item.label}
               </div>
-              <div style={{ marginTop: 8, fontSize: 28, fontWeight: 900, color: THEME.text }}>{item.value}</div>
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 28,
+                  fontWeight: 900,
+                  color: THEME.text,
+                }}
+              >
+                {item.value}
+              </div>
             </div>
           ))}
         </div>
@@ -433,7 +566,10 @@ function Hero({ result }) {
 function Sidebar({ result, onJump }) {
   const sections = result?.legislation_sections || [];
   return (
-    <SectionCard title="Applicable legislation" subtitle="Current route, parallel obligations, and future watchlist are separated clearly.">
+    <SectionCard
+      title="Applicable legislation"
+      subtitle="Current route, parallel obligations, and future watchlist are separated clearly."
+    >
       <div style={{ display: "grid", gap: 12 }}>
         {sections.map((section) => {
           const first = section.items?.[0];
@@ -455,23 +591,51 @@ function Sidebar({ result, onJump }) {
                 gap: 10,
               }}
             >
-              <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "center",
+                    minWidth: 0,
+                  }}
+                >
                   <span
                     style={{
                       width: 12,
                       height: 12,
                       borderRadius: 999,
-                      background: directiveTone(first?.directive_key || "OTHER").dot,
+                      background: directiveTone(first?.directive_key || "OTHER")
+                        .dot,
                       flexShrink: 0,
                     }}
                   />
-                  <span style={{ fontSize: 14, fontWeight: 900, color: THEME.text }}>{section.title}</span>
+                  <span
+                    style={{ fontSize: 14, fontWeight: 900, color: THEME.text }}
+                  >
+                    {section.title}
+                  </span>
                 </div>
                 <Tag>{section.count}</Tag>
               </div>
-              <div style={{ fontSize: 12, lineHeight: 1.55, color: THEME.subtext }}>
-                {(section.items || []).slice(0, 2).map((item) => item.code).join(" • ") || "No items"}
+              <div
+                style={{
+                  fontSize: 12,
+                  color: THEME.subtext,
+                  lineHeight: 1.6,
+                }}
+              >
+                {(section.items || [])
+                  .slice(0, 2)
+                  .map((item) => item.code)
+                  .join(" · ") || "No items"}
               </div>
             </button>
           );
@@ -481,172 +645,122 @@ function Sidebar({ result, onJump }) {
   );
 }
 
-function InputComposer({ description, setDescription, templates, chips, onAnalyze, busy, metadata }) {
-  const [category, setCategory] = useState("");
-  const [depth, setDepth] = useState("standard");
-  const [selectedDirectives, setSelectedDirectives] = useState([]);
-
-  useEffect(() => {
-    if (!metadata?.legislations?.length) return;
-    setSelectedDirectives((current) => current.filter((item) => metadata.legislations.some((leg) => leg.directive_key === item)));
-  }, [metadata]);
-
-  const directiveOptions = useMemo(() => {
-    const raw = (metadata?.legislations || []).map((item) => item.directive_key).filter(Boolean);
-    return uniqueBy(raw.map((key) => ({ key })), (item) => item.key);
-  }, [metadata]);
-
-  const appendText = useCallback(
-    (text) => {
-      setDescription((current) => joinText(current, text));
-    },
-    [setDescription]
-  );
-
-  const toggleDirective = useCallback((dirKey) => {
-    setSelectedDirectives((current) => (current.includes(dirKey) ? current.filter((item) => item !== dirKey) : [...current, dirKey]));
-  }, []);
-
-  const handleAnalyze = useCallback(() => {
-    onAnalyze({ category, depth, directives: selectedDirectives });
-  }, [category, depth, selectedDirectives, onAnalyze]);
-
-  return (
-    <SectionCard
-      title="Describe the product"
-      subtitle="Give the commercial product family, power source, connectivity, food-contact path, sensors, data features, and whether it is consumer or professional."
-      right={
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <select
-            value={depth}
-            onChange={(e) => setDepth(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="quick">Quick</option>
-            <option value="standard">Standard</option>
-            <option value="deep">Deep</option>
-          </select>
-          <button type="button" onClick={handleAnalyze} disabled={busy || !description.trim()} style={primaryButtonStyle(busy || !description.trim())}>
-            {busy ? "Analyzing..." : "Analyze"}
-          </button>
-        </div>
-      }
-    >
-      <div style={{ display: "grid", gap: 16 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 16 }} className="composer-grid">
-          <div style={{ display: "grid", gap: 12 }}>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Example: Connected espresso machine with 230 V mains power, Wi‑Fi app control, OTA updates, cloud account, grinder, pressure brewing, water tank, and food-contact plastics in the brew path."
-              style={{
-                width: "100%",
-                minHeight: 180,
-                resize: "vertical",
-                borderRadius: 20,
-                border: `1px solid ${THEME.lineStrong}`,
-                background: "rgba(255,255,255,0.92)",
-                padding: 18,
-                boxSizing: "border-box",
-                font: "inherit",
-                fontSize: 15,
-                lineHeight: 1.7,
-                color: THEME.text,
-                outline: "none",
-              }}
-            />
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {chips.map((chip) => (
-                <button key={`${chip.label}-${chip.text}`} type="button" onClick={() => appendText(chip.text)} style={chipButtonStyle}>
-                  + {chip.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gap: 14 }}>
-            <div style={miniPanelStyle}>
-              <div style={miniTitleStyle}>Category hint</div>
-              <input
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Optional category, e.g. kitchen appliance"
-                style={inputStyle}
-              />
-            </div>
-
-            <div style={miniPanelStyle}>
-              <div style={miniTitleStyle}>Quick templates</div>
-              <div style={{ display: "grid", gap: 8 }}>
-                {templates.map((template) => (
-                  <button key={template.label} type="button" onClick={() => setDescription(template.text)} style={templateButtonStyle}>
-                    <span style={{ fontWeight: 800, color: THEME.text }}>{template.label}</span>
-                    <span style={{ fontSize: 12, color: THEME.subtext, lineHeight: 1.5 }}>{template.text}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={miniPanelStyle}>
-              <div style={miniTitleStyle}>Directive focus</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {directiveOptions.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => toggleDirective(item.key)}
-                    style={filterPillStyle(selectedDirectives.includes(item.key), directiveTone(item.key))}
-                  >
-                    {directiveShort(item.key)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </SectionCard>
-  );
-}
-
 function ConfidencePanel({ result }) {
   const panel = result?.confidence_panel || {};
   const candidates = result?.product_candidates || [];
-  const winner = candidates[0];
-  const alternatives = panel.alternatives || [];
+  const explanation =
+    panel.explanation ||
+    "Product confidence is based on alias match, trait overlap, context fit, and contradictory signals.";
+  const contradictions = result?.contradictions || [];
   return (
-    <SectionCard title="Detection confidence" subtitle="Keep the detection lean and honest. Alternatives and contradictions are shown instead of hidden.">
+    <SectionCard
+      title="Detection confidence"
+      subtitle="Minimal by design, but enough to show how solid the product classification is."
+    >
       <div style={{ display: "grid", gap: 16 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-          {winner?.id ? <Tag tone="soft">Detected as {titleCase(winner.id)}</Tag> : <Tag>No confident product family</Tag>}
-          <Tag>{titleCase(panel.level || result?.product_match_confidence || "low")} confidence</Tag>
-          {panel.contradiction_severity && panel.contradiction_severity !== "none" ? <Tag tone="warm">{titleCase(panel.contradiction_severity)} contradiction signal</Tag> : null}
+        <div style={softBoxStyle}>
+          <div style={{ fontSize: 12, color: THEME.soft, fontWeight: 800 }}>
+            Detected product
+          </div>
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 20,
+              fontWeight: 900,
+              color: THEME.text,
+            }}
+          >
+            {titleCase(result?.product_type || "Unclear")}
+          </div>
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              color: THEME.subtext,
+              lineHeight: 1.6,
+            }}
+          >
+            {explanation}
+          </div>
         </div>
 
-        <div style={{ display: "grid", gap: 10 }}>
-          {(panel.reasons || []).slice(0, 4).map((reason, index) => (
-            <div key={index} style={listRowStyle}>
-              <span style={bulletStyle} />
-              <span>{reason}</span>
-            </div>
-          ))}
-        </div>
-
-        {alternatives.length ? (
+        {candidates.length ? (
           <div style={{ display: "grid", gap: 10 }}>
-            <div style={miniTitleStyle}>Alternative matches</div>
-            <div style={{ display: "grid", gap: 10 }}>
-              {alternatives.map((candidate) => (
-                <div key={candidate.id} style={softBoxStyle}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-                    <div style={{ fontWeight: 800, color: THEME.text }}>{candidate.label || titleCase(candidate.id)}</div>
-                    <Tag>{titleCase(candidate.confidence)}</Tag>
+            {candidates.slice(0, 3).map((candidate, index) => (
+              <div
+                key={candidate.id + index}
+                style={{
+                  borderRadius: 16,
+                  border: `1px solid ${THEME.line}`,
+                  background: "rgba(255,255,255,0.8)",
+                  padding: 13,
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 900,
+                      color: THEME.text,
+                    }}
+                  >
+                    {candidate.label}
                   </div>
-                  <div style={{ marginTop: 8, fontSize: 13, color: THEME.subtext, lineHeight: 1.55 }}>
-                    {(candidate.reasons || []).slice(0, 2).join(" • ")}
-                  </div>
+                  <Tag>{titleCase(candidate.confidence)}</Tag>
                 </div>
-              ))}
+                <div style={{ fontSize: 12, color: THEME.subtext }}>
+                  Score {candidate.score}
+                  {candidate.matched_alias
+                    ? ` · Alias: ${candidate.matched_alias}`
+                    : ""}
+                </div>
+                {candidate.reasons?.length ? (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: THEME.subtext,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {candidate.reasons.join(" · ")}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {contradictions.length ? (
+          <div
+            style={{
+              borderRadius: 16,
+              border: `1px solid ${THEME.line}`,
+              background: "rgba(255,255,255,0.8)",
+              padding: 13,
+              display: "grid",
+              gap: 8,
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 900, color: THEME.text }}>
+              Contradictory signals
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: THEME.subtext,
+                lineHeight: 1.7,
+              }}
+            >
+              {contradictions.slice(0, 3).join(" · ")}
             </div>
           </div>
         ) : null}
@@ -655,81 +769,427 @@ function ConfidencePanel({ result }) {
   );
 }
 
-function InputGapsPanel({ result, onApply }) {
-  const panel = result?.input_gaps_panel || {};
-  const items = panel.items || [];
+function InputComposer({
+  description,
+  setDescription,
+  templates,
+  chips,
+  onAnalyze,
+  busy,
+  metadata,
+}) {
+  const [depth, setDepth] = useState("standard");
+  const [category, setCategory] = useState("");
+  const [directiveFilter, setDirectiveFilter] = useState([]);
+
+  const toggleDirective = (dir) => {
+    setDirectiveFilter((current) =>
+      current.includes(dir)
+        ? current.filter((item) => item !== dir)
+        : [...current, dir],
+    );
+  };
+
   return (
-    <SectionCard title={panel.title || "What to clarify next"} subtitle="Close the biggest input gaps first. One click can append common clarifications to the description.">
-      {!items.length ? (
-        <div style={{ color: THEME.subtext, fontSize: 14 }}>No major input gaps detected.</div>
-      ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {items.map((item) => {
-            const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
-            return (
+    <SectionCard
+      title="Describe the product"
+      subtitle="The more precise the input, the cleaner the route. Use product templates, adaptive quick-adds, and optional regime filters."
+    >
+      <div className="composer-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 0.9fr", gap: 18 }}>
+        <div style={{ display: "grid", gap: 14 }}>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Example: Connected espresso machine with Wi-Fi, OTA updates, cloud account, mains power, grinder, and food-contact brew path."
+            rows={8}
+            style={{
+              ...inputStyle,
+              resize: "vertical",
+              minHeight: 220,
+              lineHeight: 1.65,
+            }}
+          />
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {chips.map((chip) => (
+              <button
+                key={chip.label + chip.text}
+                type="button"
+                onClick={() =>
+                  setDescription((current) => joinText(current, chip.text))
+                }
+                style={chipButtonStyle}
+              >
+                + {chip.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => onAnalyze({ category, depth, directives: directiveFilter })}
+              disabled={busy || !description.trim()}
+              style={primaryButtonStyle(busy || !description.trim())}
+            >
+              {busy ? "Analyzing..." : "Analyze product"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDescription("")}
+              style={secondaryButtonStyle}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          <div style={miniPanelStyle}>
+            <div style={miniTitleStyle}>Suggested templates</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              {templates.slice(0, 4).map((template) => (
+                <button
+                  key={template.label}
+                  type="button"
+                  onClick={() => setDescription(template.text)}
+                  style={templateButtonStyle}
+                >
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 900,
+                      color: THEME.text,
+                    }}
+                  >
+                    {template.label}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: THEME.subtext,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {template.text}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={miniPanelStyle}>
+            <div style={miniTitleStyle}>Analysis mode</div>
+            <select
+              value={depth}
+              onChange={(e) => setDepth(e.target.value)}
+              style={selectStyle}
+            >
+              <option value="quick">Quick</option>
+              <option value="standard">Standard</option>
+              <option value="deep">Deep</option>
+            </select>
+          </div>
+
+          <div style={miniPanelStyle}>
+            <div style={miniTitleStyle}>Optional category</div>
+            <input
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="e.g. coffee machine, robot vacuum"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={miniPanelStyle}>
+            <div style={miniTitleStyle}>Directive focus</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {(metadata?.legislations || [])
+                .map((item) => item.directive_key)
+                .filter(Boolean)
+                .filter((value, index, arr) => arr.indexOf(value) === index)
+                .sort((a, b) => {
+                  const ai = DIR_ORDER.indexOf(a);
+                  const bi = DIR_ORDER.indexOf(b);
+                  return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+                })
+                .map((dir) => (
+                  <button
+                    key={dir}
+                    type="button"
+                    onClick={() => toggleDirective(dir)}
+                    style={filterPillStyle(
+                      directiveFilter.includes(dir),
+                      directiveTone(dir),
+                    )}
+                  >
+                    {directiveShort(dir)}
+                  </button>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+function InputGapsPanel({ result, onApply }) {
+  const items = result?.missing_information_items || [];
+  if (!items.length) return null;
+  return (
+    <SectionCard
+      title="Clarify these first"
+      subtitle="These missing inputs materially affect legislation scope, standard selection, or confidence."
+    >
+      <div className="two-col-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 }}>
+        {items.map((item) => {
+          const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
+          return (
+            <div
+              key={item.key}
+              style={{
+                borderRadius: 18,
+                border: `1px solid ${tone.bd}`,
+                background: tone.bg,
+                padding: 16,
+                display: "grid",
+                gap: 12,
+              }}
+            >
               <div
-                key={item.key}
                 style={{
-                  borderRadius: 18,
-                  border: `1px solid ${tone.bd}`,
-                  background: tone.bg,
-                  padding: 16,
-                  display: "grid",
-                  gap: 12,
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  justifyContent: "space-between",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: THEME.text }}>{item.message}</div>
-                  <Tag>{titleCase(item.importance)}</Tag>
+                <div
+                  style={{ fontSize: 14, fontWeight: 900, color: tone.text }}
+                >
+                  {titleCase(item.key)}
                 </div>
-                {item.examples?.length ? (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {item.examples.map((example) => (
-                      <button key={example} type="button" onClick={() => onApply(example)} style={chipButtonStyle}>
-                        + {example}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
+                <Tag>{titleCase(item.importance)}</Tag>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div
+                style={{
+                  fontSize: 13,
+                  color: THEME.subtext,
+                  lineHeight: 1.7,
+                }}
+              >
+                {item.message}
+              </div>
+              {item.examples?.length ? (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {item.examples.slice(0, 3).map((example) => (
+                    <button
+                      key={example}
+                      type="button"
+                      onClick={() => onApply(example)}
+                      style={chipButtonStyle}
+                    >
+                      + {example}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </SectionCard>
+  );
+}
+
+function ActionBoard({ result, onApply }) {
+  const actions = result?.top_actions || result?.suggested_questions || [];
+  if (!actions.length) return null;
+  return (
+    <SectionCard
+      title="Best next actions"
+      subtitle="Guided follow-up prompts and targeted additions to sharpen the route."
+    >
+      <div style={{ display: "grid", gap: 12 }}>
+        {actions.slice(0, 6).map((action, index) => {
+          const label = typeof action === "string" ? action : action.label || action.text;
+          const text = typeof action === "string" ? action : action.text || action.label;
+          return (
+            <div
+              key={label + index}
+              style={{
+                borderRadius: 18,
+                border: `1px solid ${THEME.line}`,
+                background: "rgba(255,255,255,0.82)",
+                padding: 14,
+                display: "grid",
+                gap: 10,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: THEME.text,
+                  lineHeight: 1.5,
+                }}
+              >
+                {label}
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => onApply(text)}
+                  style={secondaryButtonStyle}
+                >
+                  Add to input
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </SectionCard>
   );
 }
 
 function LegislationSections({ result, refs }) {
   const sections = result?.legislation_sections || [];
+  if (!sections.length) return null;
   return (
-    <SectionCard title="Applicable legislation path" subtitle="Current CE comes first. Framework regimes, non-CE obligations, and future watchlist are split out to avoid confusion.">
-      <div style={{ display: "grid", gap: 16 }}>
+    <SectionCard
+      title="Legislation route"
+      subtitle="Current CE obligations, framework regimes, parallel non-CE obligations, and future regimes are separated to avoid mixing current requirements with watchlist items."
+    >
+      <div style={{ display: "grid", gap: 18 }}>
         {sections.map((section) => (
-          <div key={section.key} ref={(node) => { refs.current[section.key] = node; }} style={{ display: "grid", gap: 12 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-              <div style={{ fontSize: 16, fontWeight: 900, color: THEME.text }}>{section.title}</div>
-              <Tag>{section.count} items</Tag>
+          <div
+            key={section.key}
+            ref={(node) => {
+              refs.current[section.key] = node;
+            }}
+            style={{
+              borderRadius: 20,
+              border: `1px solid ${THEME.line}`,
+              background: "rgba(255,255,255,0.72)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "14px 16px",
+                borderBottom: `1px solid ${THEME.line}`,
+                background: "rgba(255,255,255,0.68)",
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 900,
+                    color: THEME.text,
+                  }}
+                >
+                  {section.title}
+                </div>
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontSize: 12,
+                    color: THEME.subtext,
+                  }}
+                >
+                  {section.count} item{section.count === 1 ? "" : "s"}
+                </div>
+              </div>
+              <Tag>{titleCase(section.key)}</Tag>
             </div>
-            <div style={{ display: "grid", gap: 12 }}>
-              {(section.items || []).map((item) => (
-                <div key={`${section.key}-${item.code}`} style={softBoxStyle}>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-                      <DirPill dirKey={item.directive_key || "OTHER"} />
-                      <Tag>{item.code}</Tag>
-                    </div>
-                    {item.timing_status === "future" && <Tag tone="warm">Future</Tag>}
+
+            <div style={{ display: "grid", gap: 0 }}>
+              {(section.items || []).map((item, index) => (
+                <div
+                  key={item.code + index}
+                  style={{
+                    padding: 16,
+                    borderTop:
+                      index === 0 ? "none" : `1px solid ${THEME.line}`,
+                    display: "grid",
+                    gap: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <DirPill dirKey={item.directive_key || "OTHER"} />
+                    <Tag>{item.code}</Tag>
+                    <Tag>{titleCase(item.priority)}</Tag>
+                    <Tag>{titleCase(item.timing_status)}</Tag>
                   </div>
-                  <div style={{ marginTop: 10, fontSize: 16, fontWeight: 800, color: THEME.text, lineHeight: 1.35 }}>{item.title}</div>
-                  <div style={{ marginTop: 8, fontSize: 14, color: THEME.subtext, lineHeight: 1.65 }}>{item.reason || item.notes || "—"}</div>
-                  {item.doc_impacts?.length ? (
-                    <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {item.doc_impacts.slice(0, 6).map((impact) => (
-                        <Tag key={impact}>{impact}</Tag>
-                      ))}
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 900,
+                      color: THEME.text,
+                    }}
+                  >
+                    {item.title}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: THEME.subtext,
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    {item.reason}
+                  </div>
+                  <div
+                    className="standard-meta-grid"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                      gap: 10,
+                    }}
+                  >
+                    <div style={softBoxStyle}>
+                      <div style={miniTitleStyle}>Family</div>
+                      <div style={{ fontSize: 13, color: THEME.text }}>
+                        {prettyValue(item.family)}
+                      </div>
                     </div>
-                  ) : null}
+                    <div style={softBoxStyle}>
+                      <div style={miniTitleStyle}>Applicability</div>
+                      <div style={{ fontSize: 13, color: THEME.text }}>
+                        {prettyValue(item.applicability)}
+                      </div>
+                    </div>
+                    {item.applicable_from ? (
+                      <div style={softBoxStyle}>
+                        <div style={miniTitleStyle}>Applicable from</div>
+                        <div style={{ fontSize: 13, color: THEME.text }}>
+                          {item.applicable_from}
+                        </div>
+                      </div>
+                    ) : null}
+                    {item.applicable_until ? (
+                      <div style={softBoxStyle}>
+                        <div style={miniTitleStyle}>Applicable until</div>
+                        <div style={{ fontSize: 13, color: THEME.text }}>
+                          {item.applicable_until}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               ))}
             </div>
@@ -737,82 +1197,184 @@ function LegislationSections({ result, refs }) {
         ))}
       </div>
     </SectionCard>
+  );
+}
+
+function StandardCard({ item }) {
+  const dirKey = item.directive || item.legislation_key || "OTHER";
+  const tone = directiveTone(dirKey);
+  const tags = uniqueBy(
+    [
+      item.category ? titleCase(item.category) : null,
+      item.standard_family || null,
+      ...(item.test_focus || []).map((t) => titleCase(t)),
+    ]
+      .filter(Boolean)
+      .slice(0, 5),
+    (x) => x,
+  );
+
+  return (
+    <div
+      style={{
+        borderRadius: 20,
+        border: `1px solid ${THEME.line}`,
+        background: "rgba(255,255,255,0.82)",
+        padding: 16,
+        display: "grid",
+        gap: 12,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <DirPill dirKey={dirKey} />
+        <Tag>{item.code}</Tag>
+        <Tag>{titleCase(item.harmonization_status || "unknown")}</Tag>
+        {item.item_type === "review" ? <Tag tone="accent2">Review</Tag> : null}
+      </div>
+
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 900, color: THEME.text }}>
+          {item.title}
+        </div>
+        <div
+          style={{
+            marginTop: 6,
+            fontSize: 13,
+            color: THEME.subtext,
+            lineHeight: 1.7,
+          }}
+        >
+          {item.reason || item.notes || "Relevant standard route for this configuration."}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {tags.map((tag) => (
+          <Tag key={tag}>{tag}</Tag>
+        ))}
+      </div>
+
+      <div
+        className="standard-meta-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 10,
+        }}
+      >
+        <div style={softBoxStyle}>
+          <div style={miniTitleStyle}>Harmonized reference</div>
+          <div style={{ fontSize: 13, color: THEME.text, lineHeight: 1.6 }}>
+            {prettyValue(item.harmonized_reference)}
+          </div>
+        </div>
+        <div style={softBoxStyle}>
+          <div style={miniTitleStyle}>Harmonized version</div>
+          <div style={{ fontSize: 13, color: THEME.text, lineHeight: 1.6 }}>
+            {prettyValue(item.dated_version)}
+          </div>
+        </div>
+        <div style={softBoxStyle}>
+          <div style={miniTitleStyle}>State of the art</div>
+          <div style={{ fontSize: 13, color: THEME.text, lineHeight: 1.6 }}>
+            {prettyValue(item.version)}
+          </div>
+        </div>
+        <div style={softBoxStyle}>
+          <div style={miniTitleStyle}>Evidence expected</div>
+          <div style={{ fontSize: 13, color: THEME.text, lineHeight: 1.6 }}>
+            {prettyValue(item.evidence_hint)}
+          </div>
+        </div>
+      </div>
+
+      {(item.keywords || []).length ? (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {item.keywords.slice(0, 4).map((keyword) => (
+            <Tag key={keyword}>{keyword}</Tag>
+          ))}
+        </div>
+      ) : null}
+
+      <div
+        style={{
+          height: 4,
+          borderRadius: 999,
+          background: tone.dot,
+          opacity: 0.35,
+        }}
+      />
+    </div>
   );
 }
 
 function StandardsSection({ result }) {
   const sections = result?.standard_sections || [];
-  const groupedByDirective = useMemo(() => {
-    const map = {};
-    sections.forEach((section) => {
-      const directiveGroups = groupBy(section.items || [], (item) => item.directive || "OTHER");
-      map[section.key] = sortDirectiveGroups(
-        Object.entries(directiveGroups).map(([key, items]) => ({ key, items }))
-      );
-    });
-    return map;
-  }, [sections]);
+  if (!sections.length) return null;
+
+  const ordered = ["harmonized", "state_of_the_art", "review", "unknown"]
+    .map((key) => sections.find((section) => section.key === key))
+    .filter(Boolean);
 
   return (
-    <SectionCard title="Standards route" subtitle="The UI now renders backend-defined sections directly: harmonized, state-of-the-art, and review-required. Product-specific Part 2 routes are easy to spot.">
-      <div style={{ display: "grid", gap: 22 }}>
-        {sections.map((section) => (
-          <div key={section.key} style={{ display: "grid", gap: 14 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-              <div style={{ fontSize: 16, fontWeight: 900, color: THEME.text }}>{section.title}</div>
-              <Tag>{section.count} items</Tag>
-            </div>
-
-            <div style={{ display: "grid", gap: 16 }}>
-              {(groupedByDirective[section.key] || []).map((group) => (
-                <div key={`${section.key}-${group.key}`} style={{ borderRadius: 20, border: `1px solid ${THEME.line}`, overflow: "hidden", background: "rgba(255,255,255,0.68)" }}>
-                  <div
-                    style={{
-                      padding: "12px 16px",
-                      display: "flex",
-                      gap: 10,
-                      alignItems: "center",
-                      borderBottom: `1px solid ${THEME.line}`,
-                      background: directiveTone(group.key).bg,
-                    }}
-                  >
-                    <DirPill dirKey={group.key} />
-                    <div style={{ fontWeight: 800, color: THEME.text }}>{directiveName(group.key)}</div>
-                    <div style={{ marginLeft: "auto" }}><Tag>{group.items.length}</Tag></div>
-                  </div>
-
-                  <div style={{ display: "grid", gap: 0 }}>
-                    {group.items.map((item) => (
-                      <div key={`${section.key}-${group.key}-${item.code}`} style={{ padding: 16, borderTop: `1px solid ${THEME.line}` }}>
-                        <div style={{ display: "grid", gap: 12 }}>
-                          <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-                            <div style={{ fontSize: 17, fontWeight: 900, color: THEME.text, letterSpacing: "-0.01em" }}>{item.code}</div>
-                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                              {(item.display_tags || []).map((tag) => (
-                                <Tag key={`${item.code}-${tag}`}>{tag}</Tag>
-                              ))}
-                            </div>
-                          </div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: THEME.subtext, lineHeight: 1.6 }}>{item.title}</div>
-                          <div style={{ fontSize: 14, color: THEME.subtext, lineHeight: 1.7 }}>{item.standard_summary || item.reason || item.notes || "—"}</div>
-                          <div className="standard-meta-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
-                            <MetaRow label="Harmonized reference" value={item.harmonized_reference} />
-                            <MetaRow label="Harmonized version" value={item.dated_version} />
-                            <MetaRow label="State-of-the-art version" value={item.version} />
-                            <MetaRow label="Match basis" value={item.match_basis} />
-                          </div>
-                          {item.evidence_hint?.length ? (
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                              {item.evidence_hint.map((hint) => (
-                                <Tag key={`${item.code}-${hint}`}>{hint}</Tag>
-                              ))}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+    <SectionCard
+      title="Standards route"
+      subtitle="Harmonized standards, state-of-the-art standards, and review-required routes are separated so the user can see the route more clearly."
+    >
+      <div style={{ display: "grid", gap: 18 }}>
+        {ordered.map((section) => (
+          <div
+            key={section.key}
+            style={{
+              borderRadius: 20,
+              border: `1px solid ${THEME.line}`,
+              background: "rgba(255,255,255,0.7)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "14px 16px",
+                borderBottom: `1px solid ${THEME.line}`,
+                background: "rgba(255,255,255,0.6)",
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 900,
+                    color: THEME.text,
+                  }}
+                >
+                  {section.title}
                 </div>
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontSize: 12,
+                    color: THEME.subtext,
+                  }}
+                >
+                  {section.count} item{section.count === 1 ? "" : "s"}
+                </div>
+              </div>
+              <Tag>{titleCase(section.key)}</Tag>
+            </div>
+            <div style={{ padding: 16, display: "grid", gap: 14 }}>
+              {(section.items || []).map((item) => (
+                <StandardCard key={item.code + item.title} item={item} />
               ))}
             </div>
           </div>
@@ -822,121 +1384,203 @@ function StandardsSection({ result }) {
   );
 }
 
-function MetaRow({ label, value }) {
-  return (
-    <div style={{ borderRadius: 16, border: `1px solid ${THEME.line}`, background: "rgba(255,255,255,0.72)", padding: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: THEME.soft, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
-      <div style={{ marginTop: 6, fontSize: 13, color: THEME.text, lineHeight: 1.55 }}>{prettyValue(value)}</div>
-    </div>
-  );
-}
-
-function ActionBoard({ result, onApply }) {
-  return (
-    <SectionCard title="Recommended next steps" subtitle="Make the result actionable. The current route and future monitoring are separate so the user knows what to do now versus later.">
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="two-col-grid">
-        <InfoColumn title="Top actions" items={result?.top_actions || []} />
-        <InfoColumn title="Current path" items={result?.current_path || []} />
-        <InfoColumn title="Future watchlist" items={result?.future_watchlist || []} />
-        <div style={{ display: "grid", gap: 12 }}>
-          <div style={miniTitleStyle}>Follow-up questions</div>
-          {(result?.suggested_questions || []).map((question, index) => (
-            <div key={index} style={listRowStyle}>
-              <span style={bulletStyle} />
-              <span>{question}</span>
-            </div>
-          ))}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-            {(result?.suggested_quick_adds || []).slice(0, 6).map((chip) => (
-              <button key={`${chip.label}-${chip.text}`} type="button" onClick={() => onApply(chip.text)} style={chipButtonStyle}>
-                + {chip.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </SectionCard>
-  );
-}
-
-function InfoColumn({ title, items }) {
-  return (
-    <div style={{ display: "grid", gap: 10 }}>
-      <div style={miniTitleStyle}>{title}</div>
-      {items.length ? (
-        items.map((item, index) => (
-          <div key={`${title}-${index}`} style={listRowStyle}>
-            <span style={bulletStyle} />
-            <span>{item}</span>
-          </div>
-        ))
-      ) : (
-        <div style={{ fontSize: 13, color: THEME.subtext }}>No items.</div>
-      )}
-    </div>
-  );
-}
-
 function EvidenceStrip({ result }) {
-  const traits = result?.all_traits || [];
-  const explicit = result?.explicit_traits || [];
-  const inferred = result?.inferred_traits || [];
-  const classes = result?.functional_classes || [];
+  const stats = result?.stats;
+  if (!stats) return null;
+  const signals = [
+    {
+      label: "Harmonized standards",
+      value: stats.harmonized_standards_count,
+    },
+    {
+      label: "State-of-the-art standards",
+      value: stats.state_of_the_art_standards_count,
+    },
+    {
+      label: "Product-gated standards",
+      value: stats.product_gated_standards_count,
+    },
+    {
+      label: "Ambiguity flags",
+      value: stats.ambiguity_flag_count,
+    },
+  ];
   return (
-    <SectionCard title="Signals used" subtitle="Minimal, but visible. This keeps the UI honest without overwhelming the main decision flow.">
-      <div style={{ display: "grid", gap: 14 }}>
-        <TraitGroup label="All traits" values={traits} />
-        <TraitGroup label="Explicit" values={explicit} />
-        <TraitGroup label="Inferred" values={inferred} />
-        <TraitGroup label="Functional classes" values={classes} />
+    <SectionCard
+      title="Signal overview"
+      subtitle="Small trust layer showing the strength and complexity of the route without cluttering the main story."
+    >
+      <div
+        className="hero-stats-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gap: 12,
+        }}
+      >
+        {signals.map((signal) => (
+          <div
+            key={signal.label}
+            style={{
+              borderRadius: 18,
+              border: `1px solid ${THEME.line}`,
+              background: "rgba(255,255,255,0.8)",
+              padding: 14,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                color: THEME.soft,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                fontWeight: 700,
+              }}
+            >
+              {signal.label}
+            </div>
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 24,
+                fontWeight: 900,
+                color: THEME.text,
+              }}
+            >
+              {signal.value || 0}
+            </div>
+          </div>
+        ))}
       </div>
     </SectionCard>
-  );
-}
-
-function TraitGroup({ label, values }) {
-  return (
-    <div style={{ display: "grid", gap: 8 }}>
-      <div style={miniTitleStyle}>{label}</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {(values || []).length ? (values || []).map((value) => <Tag key={`${label}-${value}`}>{titleCase(value)}</Tag>) : <span style={{ color: THEME.subtext, fontSize: 13 }}>—</span>}
-      </div>
-    </div>
   );
 }
 
 function DiagnosticsPanel({ result }) {
   const [open, setOpen] = useState(false);
+  const diagnostics = result?.diagnostics || [];
+  const traits = result?.all_traits || [];
+  if (!diagnostics.length && !traits.length) return null;
+
   return (
     <SectionCard
       title="Advanced diagnostics"
-      subtitle="Hidden by default. Useful for troubleshooting matching logic and backend behaviour."
+      subtitle="Hidden by default. Useful for checking inferred traits and backend signals without crowding the main interface."
       right={
-        <button type="button" onClick={() => setOpen((v) => !v)} style={secondaryButtonStyle}>
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          style={secondaryButtonStyle}
+        >
           {open ? "Hide" : "Show"}
         </button>
       }
     >
       {open ? (
-        <div style={{ display: "grid", gap: 8 }}>
-          {(result?.diagnostics || []).map((line, index) => (
-            <div key={index} style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12, color: THEME.subtext, lineHeight: 1.6 }}>{line}</div>
-          ))}
+        <div style={{ display: "grid", gap: 14 }}>
+          {traits.length ? (
+            <div style={softBoxStyle}>
+              <div style={miniTitleStyle}>All traits</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                {traits.map((trait) => (
+                  <Tag key={trait}>{titleCase(trait)}</Tag>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {diagnostics.length ? (
+            <div style={softBoxStyle}>
+              <div style={miniTitleStyle}>Diagnostics</div>
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "grid",
+                  gap: 8,
+                  fontSize: 13,
+                  color: THEME.subtext,
+                  lineHeight: 1.7,
+                }}
+              >
+                {diagnostics.map((line, index) => (
+                  <div key={line + index}>• {line}</div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
-      ) : (
-        <div style={{ color: THEME.subtext, fontSize: 14 }}>Diagnostics hidden.</div>
-      )}
+      ) : null}
     </SectionCard>
+  );
+}
+
+function CopyResultsButton({ result, description }) {
+  const handleCopy = async () => {
+    const text = [
+      "RuleGrid compliance summary",
+      "",
+      `Input: ${description}`,
+      "",
+      `Detected product: ${titleCase(result?.product_type || "Unclear")}`,
+      `Confidence: ${titleCase(result?.product_match_confidence || "low")}`,
+      `Overall risk: ${result?.overall_risk || "MEDIUM"}`,
+      "",
+      `Summary: ${result?.summary || ""}`,
+      "",
+      "Legislation sections:",
+      ...(result?.legislation_sections || []).flatMap((section) => [
+        `- ${section.title} (${section.count})`,
+        ...(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
+      ]),
+      "",
+      "Standards sections:",
+      ...(result?.standard_sections || []).flatMap((section) => [
+        `- ${section.title} (${section.count})`,
+        ...(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
+      ]),
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // ignore clipboard errors
+    }
+  };
+
+  return (
+    <button type="button" onClick={handleCopy} style={secondaryButtonStyle}>
+      Copy summary
+    </button>
   );
 }
 
 function EmptyState() {
   return (
-    <SectionCard title="Ready for a fuller release" subtitle="The new interface is designed around decision flow: detect the product, show confidence, clarify gaps, show legislation, then show standards.">
-      <div style={{ display: "grid", gap: 12, color: THEME.subtext, fontSize: 14, lineHeight: 1.75 }}>
-        <div style={listRowStyle}><span style={bulletStyle} />Start with a realistic product description.</div>
-        <div style={listRowStyle}><span style={bulletStyle} />Use the adaptive quick-add chips to enrich the input fast.</div>
-        <div style={listRowStyle}><span style={bulletStyle} />The output will separate current CE routes, future watchlist items, and non-CE obligations.</div>
+    <SectionCard
+      title="Ready for analysis"
+      subtitle="The experience is now structured to detect the product, show confidence, clarify gaps, show legislation, then show standards."
+    >
+      <div
+        style={{
+          display: "grid",
+          gap: 12,
+          color: THEME.subtext,
+          fontSize: 14,
+          lineHeight: 1.75,
+        }}
+      >
+        <div style={listRowStyle}>
+          <span style={bulletStyle} />
+          Start with a realistic product description.
+        </div>
+        <div style={listRowStyle}>
+          <span style={bulletStyle} />
+          Use the adaptive quick-add chips to enrich the input fast.
+        </div>
+        <div style={listRowStyle}>
+          <span style={bulletStyle} />
+          The output will separate current CE routes, future watchlist items,
+          and non-CE obligations.
+        </div>
       </div>
     </SectionCard>
   );
@@ -948,7 +1592,11 @@ function App() {
   const [metadata, setMetadata] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [lastOptions, setLastOptions] = useState({ category: "", depth: "standard", directives: [] });
+  const [lastOptions, setLastOptions] = useState({
+    category: "",
+    depth: "standard",
+    directives: [],
+  });
   const sectionRefs = useMemo(() => ({ current: {} }), []);
 
   useEffect(() => {
@@ -974,7 +1622,10 @@ function App() {
     return dynamic.length ? dynamic : DEFAULT_TEMPLATES;
   }, [metadata]);
 
-  const chips = useMemo(() => buildContextualChips(metadata, result), [metadata, result]);
+  const chips = useMemo(
+    () => buildContextualChips(metadata, result),
+    [metadata, result],
+  );
 
   const runAnalysis = useCallback(
     async ({ category = "", depth = "standard", directives = [] } = {}) => {
@@ -990,7 +1641,9 @@ function App() {
         });
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data?.detail || `Analysis failed (${response.status})`);
+          throw new Error(
+            data?.detail || `Analysis failed (${response.status})`,
+          );
         }
         setResult(data);
       } catch (err) {
@@ -999,31 +1652,62 @@ function App() {
         setBusy(false);
       }
     },
-    [description]
+    [description],
   );
 
   const applyText = useCallback((text) => {
     setDescription((current) => joinText(current, text));
   }, []);
 
-  const rerun = useCallback(() => runAnalysis(lastOptions), [lastOptions, runAnalysis]);
+  const rerun = useCallback(
+    () => runAnalysis(lastOptions),
+    [lastOptions, runAnalysis],
+  );
 
-  const jumpToSection = useCallback((key) => {
-    const node = sectionRefs.current[key];
-    if (node && typeof node.scrollIntoView === "function") {
-      node.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [sectionRefs]);
+  const jumpToSection = useCallback(
+    (key) => {
+      const node = sectionRefs.current[key];
+      if (node && typeof node.scrollIntoView === "function") {
+        node.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    [sectionRefs],
+  );
 
   return (
-    <div style={{ minHeight: "100vh", background: `linear-gradient(180deg, ${THEME.bg}, #ece5da)` }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: `linear-gradient(180deg, ${THEME.bg}, #ece5da)`,
+      }}
+    >
       <style>{globalCss}</style>
-      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "28px 20px 56px" }}>
+      <div
+        style={{ maxWidth: 1440, margin: "0 auto", padding: "28px 20px 56px" }}
+      >
         <div style={{ display: "grid", gap: 20 }}>
-          <Hero result={result || { overall_risk: "MEDIUM", hero_summary: { title: "RuleGrid regulatory scoping" } }} />
+          <Hero
+            result={
+              result || {
+                overall_risk: "MEDIUM",
+                hero_summary: { title: "RuleGrid regulatory scoping" },
+              }
+            }
+          />
 
-          <div className="layout-grid" style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr)", gap: 20, alignItems: "start" }}>
-            <div style={{ display: "grid", gap: 20, position: "sticky", top: 18 }} className="sidebar-stack">
+          <div
+            className="layout-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "320px minmax(0, 1fr)",
+              gap: 20,
+              alignItems: "start",
+            }}
+          >
+            <div
+              style={{ display: "grid", gap: 20, position: "sticky", top: 18 }}
+              className="sidebar-stack"
+            >
               <Sidebar result={result} onJump={jumpToSection} />
               <ConfidencePanel result={result} />
             </div>
@@ -1041,7 +1725,9 @@ function App() {
 
               {error ? (
                 <SectionCard title="Analysis error">
-                  <div style={{ color: THEME.danger, fontSize: 14 }}>{error}</div>
+                  <div style={{ color: THEME.danger, fontSize: 14 }}>
+                    {error}
+                  </div>
                 </SectionCard>
               ) : null}
 
@@ -1055,8 +1741,24 @@ function App() {
                   <StandardsSection result={result} />
                   <EvidenceStrip result={result} />
                   <DiagnosticsPanel result={result} />
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <button type="button" onClick={rerun} disabled={busy || !description.trim()} style={secondaryButtonStyle}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <CopyResultsButton
+                      result={result}
+                      description={description}
+                    />
+                    <button
+                      type="button"
+                      onClick={rerun}
+                      disabled={busy || !description.trim()}
+                      style={secondaryButtonStyle}
+                    >
                       Re-run analysis
                     </button>
                   </div>
