@@ -24,11 +24,11 @@ const SECTION_META = {
 };
 
 const LEG_META = {
-  ce:{title:"CE", subtitle:"Current CE legislations"},
-  framework:{title:"Framework", subtitle:"Cross-cutting or family regimes"},
-  non_ce:{title:"Parallel", subtitle:"Non-CE obligations"},
-  future:{title:"Future", subtitle:"Upcoming obligations"},
-  informational:{title:"Info", subtitle:"Informational references"},
+  ce:{title:"CE", short:"CE", subtitle:"Current CE legislations"},
+  framework:{title:"Framework", short:"FW", subtitle:"Cross-cutting or family regimes"},
+  non_ce:{title:"Parallel", short:"PX", subtitle:"Non-CE obligations"},
+  future:{title:"Future", short:"FU", subtitle:"Upcoming obligations"},
+  informational:{title:"Info", short:"IN", subtitle:"Informational references"},
 };
 
 const QUICK_CHIPS = [
@@ -58,6 +58,68 @@ function statusTone(level){
 }
 function titleCase(value){ return String(value || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()); }
 function normalize(text){ return String(text || "").toLowerCase(); }
+
+function codeOf(item){
+  return String(item?.code || "").toUpperCase().trim();
+}
+
+function is603351(item){
+  const code = codeOf(item);
+  return code.includes("60335-1");
+}
+
+function is603352(item){
+  const code = codeOf(item);
+  return code.includes("60335-2");
+}
+
+function isEmcCode(item){
+  const code = codeOf(item);
+  return (
+    code.includes("55014") ||
+    code.includes("55032") ||
+    code.includes("55035") ||
+    code.includes("61000") ||
+    code.includes("62233")
+  );
+}
+
+function isRadioCode(item){
+  const code = codeOf(item);
+  return (
+    code.includes("EN 300") ||
+    code.includes("ETSI EN 300") ||
+    code.includes("EN 301") ||
+    code.includes("ETSI EN 301") ||
+    code.includes("EN 18031")
+  );
+}
+
+function displayDirectiveKey(item){
+  if (is603351(item) || is603352(item)) return "LVD";
+  if (item?.directive) return item.directive;
+  if (item?.directive_key) return item.directive_key;
+  if (item?.legislation_key) return item.legislation_key;
+  return "OTHER";
+}
+
+function standardsOrderRank(item){
+  const dir = displayDirectiveKey(item);
+  if (is603351(item)) return 0;
+  if (is603352(item)) return 1;
+  if (isEmcCode(item)) return 2;
+  if (dir === "EMC") return 3;
+  if (dir === "RED" || dir === "RED_CYBER" || isRadioCode(item)) return 4;
+  return 5;
+}
+
+function compareStandards(a, b){
+  const rankDiff = standardsOrderRank(a) - standardsOrderRank(b);
+  if (rankDiff !== 0) return rankDiff;
+  const aCode = codeOf(a);
+  const bCode = codeOf(b);
+  return aCode.localeCompare(bCode, undefined, { numeric:true, sensitivity:"base" });
+}
 
 function loadHistory(){
   try {
@@ -155,15 +217,22 @@ function LoadingSkeleton(){
         ))}
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"240px minmax(0,1fr) 300px",gap:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"240px minmax(0,1fr) 320px",gap:14}}>
         <div style={{borderRadius:20,border:"1px solid rgba(183,175,163,0.28)",background:"rgba(255,255,255,0.72)",padding:12}}>
           <SkeletonLine w="70%" h={12} />
           <div style={{height:10}} />
-          {[0,1,2,3].map(i => (
-            <div key={i} style={{marginBottom:8}}>
-              <SkeletonLine w="100%" h={36} />
-            </div>
-          ))}
+          <div style={{display:"grid",gap:10}}>
+            {[0,1,2,3].map(i => (
+              <div key={i} style={{display:"flex",gap:10,alignItems:"center"}}>
+                <SkeletonLine w={56} h={56} />
+                <div style={{flex:1}}>
+                  <SkeletonLine w="60%" h={12} />
+                  <div style={{height:6}} />
+                  <SkeletonLine w="90%" h={10} />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{display:"grid",gap:14}}>
@@ -188,12 +257,12 @@ function LoadingSkeleton(){
           ))}
         </div>
 
-        <div style={{borderRadius:20,border:"1px solid rgba(183,175,163,0.28)",background:"rgba(255,255,255,0.72)",padding:12}}>
-          <SkeletonLine w="52%" h={16} />
-          <div style={{height:10}} />
+        <div style={{borderRadius:20,border:"1px solid rgba(183,175,163,0.28)",background:"rgba(255,255,255,0.72)",padding:16}}>
+          <SkeletonLine w="45%" h={16} />
+          <div style={{height:12}} />
           {[0,1,2].map(i => (
-            <div key={i} style={{marginBottom:8}}>
-              <SkeletonLine w="100%" h={52} />
+            <div key={i} style={{marginBottom:10}}>
+              <SkeletonLine w="100%" h={58} />
             </div>
           ))}
         </div>
@@ -228,7 +297,7 @@ function HistoryPanel({ history, onLoad, onDelete, onClear }){
       >
         <span>🕑</span>
         History
-        <span style={{minWidth:18,height:18,padding:"0 5px",borderRadius:999,background:"rgba(143,148,132,0.18)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900}}>
+        <span style={{minWidth:18,height:18,padding:"0 5px",borderRadius:999,bg:"rgba(143,148,132,0.18)",background:"rgba(143,148,132,0.18)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900}}>
           {history.length}
         </span>
       </button>
@@ -281,34 +350,89 @@ function HistoryPanel({ history, onLoad, onDelete, onClear }){
   );
 }
 
-function LegislationRail({ sections, activeKey, setActiveKey }){
+function LegislationSidebar({ sections, activeKey, setActiveKey }){
   const available = (sections || []).filter(s => s.items?.length);
   if(!available.length) return null;
 
   return (
-    <aside style={{display:"grid",gap:10,alignSelf:"start"}}>
-      <div style={{padding:"12px",borderRadius:18,border:"1px solid rgba(183,175,163,0.28)",background:"rgba(255,255,255,0.72)",backdropFilter:"blur(18px)"}}>
-        <div style={{fontSize:12,fontWeight:900,letterSpacing:"0.08em",textTransform:"uppercase",color:"#8e867d",marginBottom:10}}>Applicable legislations</div>
-        <div style={{display:"grid",gap:8}}>
+    <aside style={{display:"grid",gap:12,alignSelf:"start"}}>
+      <div style={{padding:"14px",borderRadius:20,border:"1px solid rgba(183,175,163,0.28)",background:"rgba(255,255,255,0.72)",backdropFilter:"blur(18px)"}}>
+        <div style={{fontSize:12,fontWeight:900,letterSpacing:"0.08em",textTransform:"uppercase",color:"#8e867d",marginBottom:14}}>
+          Applicable legislations
+        </div>
+
+        <div style={{display:"grid",gap:14}}>
           {available.map(section => {
             const active = activeKey === section.key;
             const first = section.items?.[0]?.directive_key || "OTHER";
             const tone = toneForDirective(first);
+            const meta = LEG_META[section.key] || { title: titleCase(section.key), short: titleCase(section.key).slice(0,2) };
 
             return (
               <button
                 key={section.key}
                 type="button"
                 onClick={() => setActiveKey(section.key)}
-                style={{textAlign:"left",padding:"10px 12px",borderRadius:14,border:`1px solid ${active ? tone.bd : "rgba(190,182,171,0.4)"}`,background:active ? tone.bg : "rgba(255,255,255,0.7)",cursor:"pointer",fontFamily:"inherit"}}
+                style={{
+                  display:"grid",
+                  gridTemplateColumns:"56px 1fr",
+                  gap:12,
+                  alignItems:"center",
+                  padding:"0",
+                  border:"none",
+                  background:"transparent",
+                  cursor:"pointer",
+                  textAlign:"left",
+                  fontFamily:"inherit"
+                }}
               >
-                <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center"}}>
-                  <span style={{fontSize:13,fontWeight:900,color:active ? tone.tx : "#4a443d"}}>{LEG_META[section.key]?.title || titleCase(section.key)}</span>
-                  <span style={{minWidth:24,height:24,padding:"0 8px",borderRadius:999,border:`1px solid ${tone.bd}`,background:active ? "rgba(255,255,255,0.7)" : tone.bg,color:tone.tx,fontSize:12,fontWeight:900,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
-                    {section.count}
-                  </span>
+                <div
+                  style={{
+                    width:56,
+                    height:56,
+                    borderRadius:"50%",
+                    border:`1px solid ${active ? tone.bd : "rgba(190,182,171,0.55)"}`,
+                    background:active ? tone.bg : "rgba(255,255,255,0.82)",
+                    color:active ? tone.tx : "#5c554d",
+                    display:"grid",
+                    placeItems:"center",
+                    fontWeight:900,
+                    fontSize:12,
+                    boxShadow:active ? `0 0 0 4px ${tone.stripe || "rgba(0,0,0,0.04)"}` : "none",
+                    transition:"all 0.18s ease"
+                  }}
+                >
+                  {meta.short}
                 </div>
-                <div style={{marginTop:4,fontSize:12,color:"#7f776d",lineHeight:1.4}}>{LEG_META[section.key]?.subtitle || section.title}</div>
+
+                <div style={{minWidth:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center"}}>
+                    <div style={{fontSize:14,fontWeight:900,color:active ? tone.tx : "#433d36"}}>
+                      {meta.title}
+                    </div>
+                    <div
+                      style={{
+                        minWidth:22,
+                        height:22,
+                        padding:"0 7px",
+                        borderRadius:999,
+                        border:`1px solid ${tone.bd}`,
+                        background:active ? tone.bg : "#f6f4ef",
+                        color:tone.tx,
+                        display:"inline-flex",
+                        alignItems:"center",
+                        justifyContent:"center",
+                        fontSize:12,
+                        fontWeight:900
+                      }}
+                    >
+                      {section.count}
+                    </div>
+                  </div>
+                  <div style={{marginTop:3,fontSize:12,color:"#7f776d",lineHeight:1.4}}>
+                    {meta.subtitle}
+                  </div>
+                </div>
               </button>
             );
           })}
@@ -321,20 +445,23 @@ function LegislationRail({ sections, activeKey, setActiveKey }){
 function StandardsSection({ section, query }){
   const meta = SECTION_META[section.key] || { title: section.title, subtitle: "" };
 
-  const items = (section.items || []).filter(item => {
-    const hay = [
-      item.code,
-      item.title,
-      item.directive,
-      item.legislation_key,
-      item.reason,
-      item.notes,
-      item.version,
-      item.dated_version,
-      ...(item.keywords || [])
-    ].join(" ").toLowerCase();
-    return !query || hay.includes(query);
-  });
+  const items = (section.items || [])
+    .filter(item => {
+      const hay = [
+        item.code,
+        item.title,
+        item.directive,
+        item.directive_key,
+        item.legislation_key,
+        item.reason,
+        item.notes,
+        item.version,
+        item.dated_version,
+        ...(item.keywords || [])
+      ].join(" ").toLowerCase();
+      return !query || hay.includes(query);
+    })
+    .sort(compareStandards);
 
   if(!items.length) return null;
 
@@ -354,15 +481,25 @@ function StandardsSection({ section, query }){
 
       <div style={{padding:14,display:"grid",gap:10}}>
         {items.map(item => {
-          const tone = toneForDirective(item.directive || item.legislation_key);
+          const directiveKey = displayDirectiveKey(item);
+          const tone = toneForDirective(directiveKey);
+
           return (
             <div key={`${section.key}-${item.code}`} style={{borderRadius:16,border:`1px solid ${tone.bd}`,background:"rgba(255,255,255,0.84)",padding:"14px 15px",boxShadow:"0 1px 0 rgba(255,255,255,0.7) inset"}}>
               <div style={{display:"flex",justifyContent:"space-between",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
                 <div style={{display:"grid",gap:8,minWidth:0,flex:1}}>
                   <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                    <Pill tone={tone}>{DIR[item.directive]?.label || item.directive || item.legislation_key || "Other"}</Pill>
+                    <Pill tone={tone}>{DIR[directiveKey]?.label || directiveKey || "Other"}</Pill>
                     <span style={{display:"inline-flex",padding:"4px 9px",borderRadius:999,border:"1px solid rgba(197,189,177,0.7)",background:"#f7f5f1",color:"#655f57",fontWeight:800,fontSize:12}}>
-                      {item.item_type === "review" ? "Review" : (section.key === "state_of_the_art" ? "Latest route" : "Standard")}
+                      {item.item_type === "review"
+                        ? "Review"
+                        : section.key === "state_of_the_art"
+                          ? "Latest route"
+                          : is603351(item)
+                            ? "Base safety standard"
+                            : is603352(item)
+                              ? "Part 2 product standard"
+                              : "Standard"}
                     </span>
                   </div>
 
@@ -429,24 +566,78 @@ function LegislationPanel({ section }){
   );
 }
 
-function CheckPanel({ items }){
-  if(!items?.length) return null;
+function FocusPanel({ missingItems, contradictionItems, reviewItems }){
+  const hasAnything = missingItems.length || contradictionItems.length || reviewItems.length;
+  if(!hasAnything) return null;
 
   return (
-    <section style={{borderRadius:20,border:"1px solid rgba(220,205,170,0.9)",background:"rgba(255,255,255,0.72)",backdropFilter:"blur(18px)",overflow:"hidden"}}>
-      <div style={{padding:"15px 16px",borderBottom:"1px solid rgba(220,205,170,0.9)",background:"#f7f2e6"}}>
-        <div style={{fontSize:16,fontWeight:900,color:"#7d6432"}}>Things to check</div>
-        <div style={{fontSize:13,color:"#8d7a56",marginTop:4}}>Missing inputs and contradictions that still affect scope quality.</div>
+    <section style={{borderRadius:20,border:"1px solid rgba(183,175,163,0.28)",background:"rgba(255,255,255,0.78)",backdropFilter:"blur(18px)",overflow:"hidden"}}>
+      <div style={{padding:"16px 18px",borderBottom:"1px solid rgba(188,178,165,0.2)",background:"rgba(248,246,241,0.9)"}}>
+        <div style={{fontSize:17,fontWeight:900,color:"#312b26"}}>Assessment focus</div>
+        <div style={{fontSize:13,color:"#7a7268",marginTop:4}}>
+          Concrete follow-up points that affect scoping quality and compliance confidence.
+        </div>
       </div>
 
-      <div style={{padding:12,display:"grid",gap:8}}>
-        {items.map((item, idx) => (
-          <div key={`${item.article}-${idx}`} style={{padding:"12px 13px",borderRadius:14,border:"1px solid #e5d6b4",background:"#fffaf0"}}>
-            <div style={{fontSize:13,fontWeight:800,color:"#745f34"}}>{item.article}</div>
-            <div style={{marginTop:4,fontSize:13,color:"#6a655e",lineHeight:1.5}}>{item.finding}</div>
-            {item.action ? <div style={{marginTop:5,fontSize:12,color:"#8a8379",lineHeight:1.5}}>{item.action}</div> : null}
+      <div style={{padding:14,display:"grid",gap:12}}>
+        {missingItems.length ? (
+          <div style={{padding:"12px 13px",borderRadius:16,border:"1px solid #e2d7bf",background:"#fffaf0"}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",marginBottom:8}}>
+              <div style={{fontSize:13,fontWeight:900,color:"#6f5b2b"}}>Missing product inputs</div>
+              <div style={{padding:"3px 8px",borderRadius:999,border:"1px solid #decfa8",background:"#f7efd9",color:"#7f6828",fontSize:11,fontWeight:900}}>
+                {missingItems.length}
+              </div>
+            </div>
+            <div style={{display:"grid",gap:8}}>
+              {missingItems.map((item, idx) => (
+                <div key={`m-${idx}`} style={{padding:"10px 11px",borderRadius:12,border:"1px solid #eadfbf",background:"#fffdf7"}}>
+                  <div style={{fontSize:13,fontWeight:800,color:"#554b39"}}>{item.finding}</div>
+                  {item.action ? <div style={{marginTop:4,fontSize:12,color:"#867d73",lineHeight:1.5}}>{item.action}</div> : null}
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
+        ) : null}
+
+        {contradictionItems.length ? (
+          <div style={{padding:"12px 13px",borderRadius:16,border:"1px solid #e4ccd3",background:"#fff7f9"}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",marginBottom:8}}>
+              <div style={{fontSize:13,fontWeight:900,color:"#8a5567"}}>Conflicts to resolve</div>
+              <div style={{padding:"3px 8px",borderRadius:999,border:"1px solid #ddc0c9",background:"#f5e8ec",color:"#8a5567",fontSize:11,fontWeight:900}}>
+                {contradictionItems.length}
+              </div>
+            </div>
+            <div style={{display:"grid",gap:8}}>
+              {contradictionItems.map((item, idx) => (
+                <div key={`c-${idx}`} style={{padding:"10px 11px",borderRadius:12,border:"1px solid #ecd8de",background:"#fffafb"}}>
+                  <div style={{fontSize:13,fontWeight:800,color:"#55434a"}}>{item.finding}</div>
+                  {item.action ? <div style={{marginTop:4,fontSize:12,color:"#887980",lineHeight:1.5}}>{item.action}</div> : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {reviewItems.length ? (
+          <div style={{padding:"12px 13px",borderRadius:16,border:"1px solid #d0d8dd",background:"#f8fbfc"}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",marginBottom:8}}>
+              <div style={{fontSize:13,fontWeight:900,color:"#4f6570"}}>Manual review routes</div>
+              <div style={{padding:"3px 8px",borderRadius:999,border:"1px solid #c6d1d7",background:"#eaf1f4",color:"#56707b",fontSize:11,fontWeight:900}}>
+                {reviewItems.length}
+              </div>
+            </div>
+            <div style={{display:"grid",gap:8}}>
+              {reviewItems.map((item, idx) => (
+                <div key={`r-${idx}`} style={{padding:"10px 11px",borderRadius:12,border:"1px solid #dae3e8",background:"#ffffff"}}>
+                  <div style={{fontSize:13,fontWeight:900,color:"#36434a"}}>{item.code || "Review item"}</div>
+                  <div style={{marginTop:3,fontSize:12,color:"#6d777b",lineHeight:1.5}}>
+                    {item.reason || item.notes || item.title}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -549,10 +740,25 @@ export default function App(){
     [result]
   );
 
+  const missingItems = useMemo(
+    () => findingsToCheck.filter(item => /^Missing:/i.test(item.article || "")),
+    [findingsToCheck]
+  );
+
+  const contradictionItems = useMemo(
+    () => findingsToCheck.filter(item => /^Contradiction$/i.test(item.article || "")),
+    [findingsToCheck]
+  );
+
   const standardSections = useMemo(
     () => result?.standard_sections || [],
     [result]
   );
+
+  const reviewItems = useMemo(() => {
+    const reviewSection = standardSections.find(section => section.key === "review");
+    return (reviewSection?.items || []).slice(0, 5);
+  }, [standardSections]);
 
   const legislationSections = useMemo(
     () => result?.legislation_sections || [],
@@ -600,7 +806,7 @@ export default function App(){
     <div style={{minHeight:"100vh",padding:"24px 20px 80px",fontFamily:"Inter, system-ui, sans-serif",background:"radial-gradient(circle at top left, rgba(143,182,193,0.22), transparent 24%), radial-gradient(circle at top right, rgba(184,154,90,0.18), transparent 20%), linear-gradient(180deg,#ddd7cf 0%,#d4cdc4 100%)",color:"#342f2b"}}>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div style={{maxWidth:1260,margin:"0 auto",display:"grid",gap:14}}>
+      <div style={{maxWidth:1280,margin:"0 auto",display:"grid",gap:14}}>
         <header style={{padding:"18px 22px",borderRadius:22,border:"1px solid rgba(183,175,163,0.28)",background:"rgba(255,255,255,0.6)",backdropFilter:"blur(18px)",display:"flex",justifyContent:"space-between",gap:16,alignItems:"center",flexWrap:"wrap"}}>
           <div style={{display:"flex",gap:14,alignItems:"center"}}>
             <div style={{width:42,height:42,borderRadius:14,background:"linear-gradient(135deg,#7fa4af,#5f7f87)",display:"grid",placeItems:"center",color:"white",fontSize:14,fontWeight:900}}>RC</div>
@@ -706,8 +912,8 @@ export default function App(){
         {loading ? <LoadingSkeleton /> : null}
 
         {result && !loading ? (
-          <div ref={resultsRef} style={{display:"grid",gridTemplateColumns:"240px minmax(0,1fr) 300px",gap:14,alignItems:"start"}}>
-            <LegislationRail sections={legislationSections} activeKey={activeLegislationKey} setActiveKey={setActiveLegislationKey} />
+          <div ref={resultsRef} style={{display:"grid",gridTemplateColumns:"240px minmax(0,1fr) 320px",gap:14,alignItems:"start"}}>
+            <LegislationSidebar sections={legislationSections} activeKey={activeLegislationKey} setActiveKey={setActiveLegislationKey} />
 
             <div style={{display:"grid",gap:14,minWidth:0}}>
               <section style={{borderRadius:20,border:"1px solid rgba(183,175,163,0.28)",background:"rgba(255,255,255,0.72)",backdropFilter:"blur(18px)",padding:"16px 18px"}}>
@@ -740,7 +946,11 @@ export default function App(){
               <LegislationPanel section={activeLegislationSection} />
             </div>
 
-            <CheckPanel items={findingsToCheck} />
+            <FocusPanel
+              missingItems={missingItems}
+              contradictionItems={contradictionItems}
+              reviewItems={reviewItems}
+            />
           </div>
         ) : null}
       </div>
