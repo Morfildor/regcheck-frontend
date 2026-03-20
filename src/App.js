@@ -23,8 +23,8 @@ const T = {
 
   // Text — noticeably brighter than before
   text:        "#eef0f8",       // primary
-  textSub:     "#b0b6d0",       // secondary — was #8b90a8
-  textMuted:   "#7880a0",       // tertiary  — was #555a72
+  textSub:     "#b0b6d0",       // secondary
+  textMuted:   "#7880a0",       // tertiary
   textLabel:   "#9098b8",       // label / caps
 
   // Accents
@@ -100,62 +100,86 @@ const DEFAULT_TEMPLATES = [
   { label:"Robot vacuum",    text:"Robot vacuum cleaner with rechargeable lithium battery, Wi-Fi and Bluetooth, cloud account, OTA firmware updates, LiDAR navigation, and camera." },
 ];
 
-// ─── Utility functions (logic unchanged) ─────────────────────────────────────
+// ─── Utility functions ────────────────────────────────────────────────────────
 function titleCase(input) {
-  return String(input||"").replace(/[_-]+/g," ").replace(/\s+/g," ").trim().replace(/\b\w/g,m=>m.toUpperCase());
+  return String(input||"")
+    .replace(/[_-]+/g," ")
+    .replace(/\s+/g," ")
+    .trim()
+    .replace(/\b\w/g,m=>m.toUpperCase());
 }
-function sentenceCaseList(values){ return (values||[]).map(v=>titleCase(String(v))); }
-function directiveTone(key){ return DIR_TONES[key]||DIR_TONES.OTHER; }
-function directiveShort(key){ return DIR_SHORT[key]||titleCase(key); }
-function directiveRank(key){ const r=DIR_ORDER.indexOf(key||"OTHER"); return r===-1?999:r; }
+
+function sentenceCaseList(values){
+  return (values||[]).map(v=>titleCase(String(v)));
+}
+
+function directiveTone(key){
+  return DIR_TONES[key]||DIR_TONES.OTHER;
+}
+
+function directiveShort(key){
+  return DIR_SHORT[key]||titleCase(key);
+}
+
+function directiveRank(key){
+  const r=DIR_ORDER.indexOf(key||"OTHER");
+  return r===-1?999:r;
+}
+
 function normalizeStandardDirective(item){
   const code=String(item?.code||"").toUpperCase();
   if(code.startsWith("EN 18031-")) return "RED_CYBER";
   return item?.directive||item?.legislation_key||"OTHER";
 }
+
 function joinText(base,addition){
-  const a=String(base||"").trim(), b=String(addition||"").trim();
-  if(!b) return a; if(!a) return b;
+  const a=String(base||"").trim();
+  const b=String(addition||"").trim();
+  if(!b) return a;
+  if(!a) return b;
   if(a.toLowerCase().includes(b.toLowerCase())) return a;
   const sep=/[\s,;:]$/.test(a)?" ":a.endsWith(".")?" ":", ";
   return `${a}${sep}${b}`;
 }
+
 function uniqueBy(items,getKey){
   const map=new Map();
-  (items||[]).forEach(item=>{ const k=getKey(item); if(!map.has(k)) map.set(k,item); });
+  (items||[]).forEach(item=>{
+    const k=getKey(item);
+    if(!map.has(k)) map.set(k,item);
+  });
   return Array.from(map.values());
 }
+
 function prettyValue(value){
   if(value===null||value===undefined||value==="") return "—";
   if(Array.isArray(value)) return value.join(", ");
   return String(value);
 }
 
-function standardCardTags(item){
-  return uniqueBy(
-    [
-      ...(item.display_tags||[]),
-      item.category ? titleCase(item.category) : null,
-      item.standard_family || null,
-    ].filter(Boolean),
-    value=>value,
-  ).slice(0,5);
-}
-
 function buildDynamicTemplates(products){
   const lookup=new Map((products||[]).map(p=>[p.id,p]));
   const templates=[];
+
   function addTemplate(productId,suffix,labelOverride){
     const product=lookup.get(productId);
     if(!product) return;
-    templates.push({ label:labelOverride||product.label, text:`${product.label} with ${suffix}.` });
+    templates.push({
+      label:labelOverride||product.label,
+      text:`${product.label} with ${suffix}.`
+    });
   }
+
   addTemplate("coffee_machine","mains power, heating, water tank, grinder, food-contact brew path, app control, and OTA updates","Coffee machine");
   addTemplate("electric_kettle","mains power, liquid heating, food-contact water path, and optional Wi-Fi control","Electric kettle");
   addTemplate("air_purifier","mains power, motorized fan, sensor electronics, app control, and OTA updates","Air purifier");
   addTemplate("robot_vacuum","rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation","Robot vacuum");
   addTemplate("robot_vacuum_cleaner","rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation","Robot vacuum");
-  return uniqueBy(templates.length?templates:DEFAULT_TEMPLATES, item=>item.label).slice(0,4);
+
+  return uniqueBy(
+    templates.length?templates:DEFAULT_TEMPLATES,
+    item=>item.label
+  ).slice(0,4);
 }
 
 function buildGuidedChips(metadata,result){
@@ -164,8 +188,16 @@ function buildGuidedChips(metadata,result){
   const traits=new Set(result?.all_traits||[]);
   const missingItems=result?.missing_information_items||[];
   const chips=[];
-  const push=(label,text)=>{ if(!label||!text) return; if(!chips.some(item=>item.text===text)) chips.push({label,text}); };
-  missingItems.forEach(item=>(item.examples||[]).slice(0,2).forEach(ex=>push(titleCase(item.key),ex)));
+
+  const push=(label,text)=>{
+    if(!label||!text) return;
+    if(!chips.some(item=>item.text===text)) chips.push({label,text});
+  };
+
+  missingItems.forEach(item=>
+    (item.examples||[]).slice(0,2).forEach(ex=>push(titleCase(item.key),ex))
+  );
+
   if(product?.implied_traits?.includes("food_contact")||traits.has("food_contact")){
     push("Food contact","food-contact plastics, coatings, silicone, or rubber");
     push("Water path","wetted path materials, seals, and water tank");
@@ -187,51 +219,72 @@ function buildGuidedChips(metadata,result){
   if(traits.has("battery_powered")) push("Battery","rechargeable lithium battery");
   if(traits.has("camera")) push("Camera","integrated camera");
   if(traits.has("microphone")) push("Microphone","microphone or voice input");
+
   if(!chips.length){
     push("Mains","230 V mains powered");
     push("Consumer","consumer household use");
     push("App control","mobile app control");
     push("Food contact","food-contact plastics or coatings");
   }
+
   return chips.slice(0,8);
 }
 
 function buildGuidanceItems(result){
-  const backend=(result?.input_gaps_panel?.items||result?.missing_information_items||[]).map(item=>({
-    key:item.key,
-    title:titleCase(item.key),
-    why:item.message||item.why||"Clarify this detail before freezing the route.",
-    importance:item.importance||"medium",
-    choices:(item.examples||item.choices||[]).filter(Boolean).slice(0,3),
-  }));
-
   const traits=new Set(result?.all_traits||[]);
   const rawItems=result?.missing_information_items||[];
-  const derived=[], seen=new Set();
+  const items=[];
+  const seen=new Set();
+
   const add=(key,title,why,importance,choices=[])=>{
-    if(seen.has(key)) return; seen.add(key);
-    derived.push({key,title,why,importance,choices:choices.filter(Boolean).slice(0,3)});
+    if(seen.has(key)) return;
+    seen.add(key);
+    items.push({
+      key,
+      title,
+      why,
+      importance,
+      choices:choices.filter(Boolean).slice(0,3)
+    });
   };
+
   if(traits.has("radio"))
     add("radio_stack","Confirm radios","Changes RED and RF scope.","high",["Wi-Fi radio","Bluetooth LE radio","NFC radio"]);
+
   if(traits.has("cloud")||traits.has("internet")||traits.has("app_control")||traits.has("ota"))
     add("connected_architecture","Confirm connected design","Changes EN 18031 and cybersecurity route.","high",["cloud account required","local LAN control without cloud dependency","OTA firmware updates"]);
+
   if(traits.has("food_contact"))
     add("food_contact","Confirm wetted materials","Changes food-contact obligations.","medium",["food-contact plastics","silicone seal","metal wetted path"]);
+
   if(traits.has("battery_powered"))
     add("battery","Confirm battery setup","Changes Battery Regulation scope.","medium",["rechargeable lithium battery","replaceable battery","battery supplied with the product"]);
+
   if(traits.has("camera")||traits.has("microphone")||traits.has("personal_data_likely"))
     add("data_functions","Confirm sensitive functions","Changes cybersecurity/privacy expectations.","high",["integrated camera","microphone or voice input","user account and profile data"]);
-  rawItems.forEach(item=>add(item.key,titleCase(item.key),item.message,item.importance||"medium",item.examples||[]));
 
-  return uniqueBy([...backend,...derived], item=>item.key).slice(0,6);
+  rawItems.forEach(item=>
+    add(item.key,titleCase(item.key),item.message,item.importance||"medium",item.examples||[])
+  );
+
+  return items.slice(0,4);
 }
 
 function buildCompactLegislationItems(result){
   const sections=result?.legislation_sections||[];
-  const allItems=sections.flatMap(section=>(section.items||[]).map(item=>({...item,section_key:section.key,section_title:section.title})));
+  const allItems=sections.flatMap(section=>
+    (section.items||[]).map(item=>({
+      ...item,
+      section_key:section.key,
+      section_title:section.title
+    }))
+  );
+
   return uniqueBy(
-    [...allItems].sort((a,b)=>directiveRank(a.directive_key)-directiveRank(b.directive_key)||String(a.code).localeCompare(String(b.code))),
+    [...allItems].sort((a,b)=>
+      directiveRank(a.directive_key)-directiveRank(b.directive_key) ||
+      String(a.code).localeCompare(String(b.code))
+    ),
     item=>`${item.code}-${item.directive_key}`
   );
 }
@@ -247,49 +300,95 @@ function compactLegislationGroupLabel(item){
 
 function sortStandardItems(items){
   return [...(items||[])].sort((a,b)=>{
-    const aDir=normalizeStandardDirective(a), bDir=normalizeStandardDirective(b);
-    return directiveRank(aDir)-directiveRank(bDir)||String(a.code||"").localeCompare(String(b.code||""));
+    const aDir=normalizeStandardDirective(a);
+    const bDir=normalizeStandardDirective(b);
+    return directiveRank(aDir)-directiveRank(bDir) ||
+      String(a.code||"").localeCompare(String(b.code||""));
   });
 }
 
 function buildSectionsFromFlatResult(result){
-  const standardRows=(result?.standards||[]).map(item=>({...item,item_type:item.item_type||"standard"}));
-  const reviewRows=(result?.review_items||[]).map(item=>({...item,item_type:"review"}));
+  const standardRows=(result?.standards||[]).map(item=>({
+    ...item,
+    item_type:item.item_type||"standard"
+  }));
+  const reviewRows=(result?.review_items||[]).map(item=>({
+    ...item,
+    item_type:"review"
+  }));
+
   const grouped={};
+
   [...standardRows,...reviewRows].forEach(item=>{
     let key=item.harmonization_status||(item.item_type==="review"?"review":"unknown");
     if(!["harmonized","state_of_the_art","review","unknown"].includes(key)) key="unknown";
-    if(!grouped[key]) grouped[key]={ key, title:
-      key==="harmonized"?"Harmonized standards":
-      key==="state_of_the_art"?"State of the art / latest technical route":
-      key==="review"?"Review-required routes":"Other standards",
-      count:0, items:[] };
+
+    if(!grouped[key]){
+      grouped[key]={
+        key,
+        title:
+          key==="harmonized"?"Harmonized standards":
+          key==="state_of_the_art"?"State of the art / latest technical route":
+          key==="review"?"Review-required routes":"Other standards",
+        count:0,
+        items:[]
+      };
+    }
     grouped[key].items.push(item);
   });
+
   return ["harmonized","state_of_the_art","review","unknown"]
     .filter(k=>grouped[k])
-    .map(key=>({ ...grouped[key], items:sortStandardItems(grouped[key].items), count:grouped[key].items.length }));
+    .map(key=>({
+      ...grouped[key],
+      items:sortStandardItems(grouped[key].items),
+      count:grouped[key].items.length
+    }));
 }
 
 function buildDirectiveBreakdown(result){
-  const sections=result?.standard_sections?.length?result.standard_sections:buildSectionsFromFlatResult(result);
+  const sections=result?.standard_sections?.length
+    ?result.standard_sections
+    :buildSectionsFromFlatResult(result);
+
   const counts={};
-  sections.forEach(section=>(section.items||[]).forEach(item=>{ const dir=normalizeStandardDirective(item); counts[dir]=(counts[dir]||0)+1; }));
-  return Object.entries(counts).sort((a,b)=>directiveRank(a[0])-directiveRank(b[0])).map(([key,count])=>({key,count}));
+  sections.forEach(section=>
+    (section.items||[]).forEach(item=>{
+      const dir=normalizeStandardDirective(item);
+      counts[dir]=(counts[dir]||0)+1;
+    })
+  );
+
+  return Object.entries(counts)
+    .sort((a,b)=>directiveRank(a[0])-directiveRank(b[0]))
+    .map(([key,count])=>({key,count}));
 }
 
 // ─── Primitive UI components ──────────────────────────────────────────────────
-
 function DirPill({ dirKey, large=false }){
   const tone=directiveTone(dirKey);
   return (
     <span style={{
-      display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,
-      border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
-      padding:large?"5px 11px":"3px 9px", fontSize:large?12:11, fontWeight:700,
-      whiteSpace:"nowrap",letterSpacing:"0.03em",
+      display:"inline-flex",
+      alignItems:"center",
+      gap:6,
+      borderRadius:6,
+      border:`1px solid ${tone.bd}`,
+      background:tone.bg,
+      color:tone.text,
+      padding:large?"5px 11px":"3px 9px",
+      fontSize:large?12:11,
+      fontWeight:700,
+      whiteSpace:"nowrap",
+      letterSpacing:"0.03em",
     }}>
-      <span style={{width:6,height:6,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+      <span style={{
+        width:6,
+        height:6,
+        borderRadius:999,
+        background:tone.dot,
+        flexShrink:0
+      }}/>
       {directiveShort(dirKey)}
     </span>
   );
@@ -299,11 +398,25 @@ function RiskBadge({ value }){
   const tone=STATUS[value]||STATUS.MEDIUM;
   return (
     <span style={{
-      display:"inline-flex",alignItems:"center",gap:7,borderRadius:6,
-      border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
-      padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:"0.08em",textTransform:"uppercase",
+      display:"inline-flex",
+      alignItems:"center",
+      gap:7,
+      borderRadius:6,
+      border:`1px solid ${tone.bd}`,
+      background:tone.bg,
+      color:tone.text,
+      padding:"4px 12px",
+      fontSize:11,
+      fontWeight:800,
+      letterSpacing:"0.08em",
+      textTransform:"uppercase",
     }}>
-      <span style={{width:5,height:5,borderRadius:999,background:tone.text}}/>
+      <span style={{
+        width:5,
+        height:5,
+        borderRadius:999,
+        background:tone.text
+      }}/>
       {value} Risk
     </span>
   );
@@ -315,22 +428,36 @@ function Chip({ children, tone="neutral" }){
     : tone==="blue"
     ? {bg:"rgba(99,172,255,0.12)", bd:"rgba(99,172,255,0.24)", text:T.blue}
     : {bg:"rgba(56,201,176,0.10)", bd:"rgba(56,201,176,0.22)", text:T.teal};
+
   return (
     <span style={{
-      display:"inline-flex",alignItems:"center",borderRadius:6,
-      border:`1px solid ${s.bd}`,background:s.bg,color:s.text,
-      padding:"3px 9px",fontSize:11,fontWeight:600,
-    }}>{children}</span>
+      display:"inline-flex",
+      alignItems:"center",
+      borderRadius:6,
+      border:`1px solid ${s.bd}`,
+      background:s.bg,
+      color:s.text,
+      padding:"3px 9px",
+      fontSize:11,
+      fontWeight:600,
+    }}>
+      {children}
+    </span>
   );
 }
 
 function Card({ children, style }){
   return (
     <div style={{
-      borderRadius:18,border:`1px solid ${T.lineStrong}`,
-      background:T.bgCard, boxShadow:T.shadow, overflow:"hidden",
+      borderRadius:18,
+      border:`1px solid ${T.lineStrong}`,
+      background:T.bgCard,
+      boxShadow:T.shadow,
+      overflow:"hidden",
       ...style,
-    }}>{children}</div>
+    }}>
+      {children}
+    </div>
   );
 }
 
@@ -340,18 +467,38 @@ function CardHeader({ title, subtitle, right }){
       padding:"16px 20px 13px",
       borderBottom:`1px solid ${T.line}`,
       background:T.bgCardDeep,
-      display:"flex",gap:14,alignItems:"flex-start",justifyContent:"space-between",
+      display:"flex",
+      gap:14,
+      alignItems:"flex-start",
+      justifyContent:"space-between",
     }}>
       <div>
-        {title&&<div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>{title}</div>}
-        {subtitle&&<div style={{marginTop:4,fontSize:12,color:T.textMuted,lineHeight:1.5}}>{subtitle}</div>}
+        {title&&(
+          <div style={{
+            fontSize:14,
+            fontWeight:700,
+            color:T.text,
+            letterSpacing:"-0.01em"
+          }}>
+            {title}
+          </div>
+        )}
+        {subtitle&&(
+          <div style={{
+            marginTop:4,
+            fontSize:12,
+            color:T.textMuted,
+            lineHeight:1.5
+          }}>
+            {subtitle}
+          </div>
+        )}
       </div>
       {right&&<div style={{flexShrink:0}}>{right}</div>}
     </div>
   );
 }
 
-// Inner meta box — now uses a noticeably lighter background
 function SoftBox({ children, style }){
   return (
     <div style={{
@@ -360,80 +507,137 @@ function SoftBox({ children, style }){
       background:"rgba(255,255,255,0.07)",
       padding:"11px 13px",
       ...style,
-    }}>{children}</div>
+    }}>
+      {children}
+    </div>
   );
 }
 
 function Label({ children }){
   return (
     <div style={{
-      fontSize:10,fontWeight:700,color:T.textLabel,
-      textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:5,
-    }}>{children}</div>
+      fontSize:10,
+      fontWeight:700,
+      color:T.textLabel,
+      textTransform:"uppercase",
+      letterSpacing:"0.10em",
+      marginBottom:5,
+    }}>
+      {children}
+    </div>
   );
 }
 
 function Value({ children }){
   return (
-    <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{children}</div>
+    <div style={{
+      fontSize:13,
+      color:T.textSub,
+      lineHeight:1.6
+    }}>
+      {children}
+    </div>
   );
 }
 
 // ─── Buttons ──────────────────────────────────────────────────────────────────
-
 function PrimaryBtn({ onClick, disabled, children }){
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.4:1,borderRadius:10,border:"none",
-      background:disabled?"rgba(99,172,255,0.25)":`linear-gradient(135deg,${T.blue},${T.teal})`,
-      color:"#000",padding:"10px 20px",fontWeight:700,fontSize:13,
+      appearance:"none",
+      cursor:disabled?"not-allowed":"pointer",
+      opacity:disabled?0.4:1,
+      borderRadius:10,
+      border:"none",
+      background:disabled
+        ?"rgba(99,172,255,0.25)"
+        :`linear-gradient(135deg,${T.blue},${T.teal})`,
+      color:"#000",
+      padding:"10px 20px",
+      fontWeight:700,
+      fontSize:13,
       boxShadow:disabled?"none":"0 0 28px rgba(99,172,255,0.28)",
-      transition:"all 0.2s",letterSpacing:"0.01em",whiteSpace:"nowrap",
-    }}>{children}</button>
+      transition:"all 0.2s",
+      letterSpacing:"0.01em",
+      whiteSpace:"nowrap",
+    }}>
+      {children}
+    </button>
   );
 }
 
 function SecondaryBtn({ onClick, disabled, children, style }){
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.45:1,borderRadius:10,
-      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.05)",
-      color:T.textSub,padding:"9px 16px",fontWeight:600,fontSize:13,
-      transition:"all 0.2s",...style,
-    }}>{children}</button>
+      appearance:"none",
+      cursor:disabled?"not-allowed":"pointer",
+      opacity:disabled?0.45:1,
+      borderRadius:10,
+      border:`1px solid ${T.lineStrong}`,
+      background:"rgba(255,255,255,0.05)",
+      color:T.textSub,
+      padding:"9px 16px",
+      fontWeight:600,
+      fontSize:13,
+      transition:"all 0.2s",
+      ...style,
+    }}>
+      {children}
+    </button>
   );
 }
 
 function GhostBtn({ onClick, children }){
   return (
     <button onClick={onClick} style={{
-      appearance:"none",cursor:"pointer",borderRadius:8,
-      border:`1px solid ${T.line}`,background:"transparent",
-      color:T.textMuted,padding:"6px 12px",fontWeight:600,fontSize:12,
+      appearance:"none",
+      cursor:"pointer",
+      borderRadius:8,
+      border:`1px solid ${T.line}`,
+      background:"transparent",
+      color:T.textMuted,
+      padding:"6px 12px",
+      fontWeight:600,
+      fontSize:12,
       transition:"all 0.2s",
-    }}>{children}</button>
+    }}>
+      {children}
+    </button>
   );
 }
 
 function AddChipBtn({ onClick, children }){
   return (
     <button onClick={onClick} style={{
-      appearance:"none",cursor:"pointer",borderRadius:8,
-      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.05)",
-      color:T.textSub,padding:"5px 11px",fontWeight:600,fontSize:12,
+      appearance:"none",
+      cursor:"pointer",
+      borderRadius:8,
+      border:`1px solid ${T.lineStrong}`,
+      background:"rgba(255,255,255,0.05)",
+      color:T.textSub,
+      padding:"5px 11px",
+      fontWeight:600,
+      fontSize:12,
       transition:"background 0.15s,color 0.15s",
-    }}>{children}</button>
+    }}>
+      {children}
+    </button>
   );
 }
 
 // ─── Char counter ─────────────────────────────────────────────────────────────
 function CharCounter({ value, max=1200 }){
-  const len=value.length, pct=Math.min(len/max,1);
+  const len=value.length;
+  const pct=Math.min(len/max,1);
   const color=pct>0.9?T.rose:pct>0.7?T.amber:T.textMuted;
+
   return (
-    <span style={{fontSize:11,color,fontWeight:500,fontVariantNumeric:"tabular-nums"}}>
+    <span style={{
+      fontSize:11,
+      color,
+      fontWeight:500,
+      fontVariantNumeric:"tabular-nums"
+    }}>
       {len} / {max}
     </span>
   );
@@ -442,9 +646,11 @@ function CharCounter({ value, max=1200 }){
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 function Topbar({ result }){
   const totalStandards=result
-    ?(result?.standard_sections?.length
-      ?result.standard_sections.reduce((n,s)=>n+(s.items||[]).length,0)
-      :(result?.standards||[]).length+(result?.review_items||[]).length)
+    ?(
+      result?.standard_sections?.length
+        ?result.standard_sections.reduce((n,s)=>n+(s.items||[]).length,0)
+        :(result?.standards||[]).length+(result?.review_items||[]).length
+    )
     :null;
 
   return (
@@ -453,31 +659,59 @@ function Topbar({ result }){
       background:`${T.bgPanel}e0`,
       backdropFilter:"blur(18px)",
       padding:"0 24px",
-      display:"flex",alignItems:"center",gap:12,height:52,
-      position:"sticky",top:0,zIndex:100,
+      display:"flex",
+      alignItems:"center",
+      gap:12,
+      height:52,
+      position:"sticky",
+      top:0,
+      zIndex:100,
     }}>
-      <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
+      <div style={{
+        display:"flex",
+        alignItems:"center",
+        gap:9,
+        flexShrink:0
+      }}>
         <div style={{
-          width:28,height:28,borderRadius:8,
+          width:28,
+          height:28,
+          borderRadius:8,
           background:`linear-gradient(135deg,${T.blue},${T.teal})`,
-          display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:13,fontWeight:900,color:"#000",
-        }}>⬡</div>
-        <span style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:18,color:T.text,letterSpacing:"-0.01em"}}>
+          display:"flex",
+          alignItems:"center",
+          justifyContent:"center",
+          fontSize:13,
+          fontWeight:900,
+          color:"#000",
+        }}>
+          ⬡
+        </div>
+        <span style={{
+          fontFamily:"'DM Serif Display', Georgia, serif",
+          fontSize:18,
+          color:T.text,
+          letterSpacing:"-0.01em"
+        }}>
           RuleGrid
         </span>
       </div>
-      <div style={{width:1,height:20,background:T.line,margin:"0 2px"}}/>
+
+      <div style={{width:1,height:20,background:T.line,margin:"0 2px"}} />
       <span style={{fontSize:11,color:T.textMuted,fontWeight:500}}>EU Regulatory Scoping</span>
 
       {result&&(
         <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
-          <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
+          <RiskBadge value={result?.overall_risk||"MEDIUM"} />
           {totalStandards!==null&&(
             <span style={{
-              fontSize:11,color:T.textMuted,fontWeight:600,
-              background:"rgba(255,255,255,0.05)",border:`1px solid ${T.line}`,
-              borderRadius:6,padding:"3px 9px",
+              fontSize:11,
+              color:T.textMuted,
+              fontWeight:600,
+              background:"rgba(255,255,255,0.05)",
+              border:`1px solid ${T.line}`,
+              borderRadius:6,
+              padding:"3px 9px",
             }}>
               {totalStandards} standard{totalStandards!==1?"s":""}
             </span>
@@ -496,40 +730,93 @@ function Hero({ result }){
 
   return (
     <div style={{
-      borderRadius:20,border:`1px solid ${T.lineStrong}`,
+      borderRadius:20,
+      border:`1px solid ${T.lineStrong}`,
       background:"linear-gradient(145deg,#1e2236,#1a1d2e 55%,#1d2238)",
       boxShadow:`${T.shadowLg},0 0 80px rgba(99,172,255,0.06)`,
-      padding:"32px 28px",position:"relative",overflow:"hidden",
+      padding:"32px 28px",
+      position:"relative",
+      overflow:"hidden",
     }}>
-      <div style={{position:"absolute",inset:0,pointerEvents:"none",backgroundImage:`linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)`,backgroundSize:"40px 40px"}}/>
-      <div style={{position:"absolute",top:-80,left:"50%",transform:"translateX(-50%)",width:500,height:240,background:"radial-gradient(ellipse,rgba(99,172,255,0.09),transparent 70%)",pointerEvents:"none"}}/>
+      <div style={{
+        position:"absolute",
+        inset:0,
+        pointerEvents:"none",
+        backgroundImage:`linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)`,
+        backgroundSize:"40px 40px"
+      }}/>
+      <div style={{
+        position:"absolute",
+        top:-80,
+        left:"50%",
+        transform:"translateX(-50%)",
+        width:500,
+        height:240,
+        background:"radial-gradient(ellipse,rgba(99,172,255,0.09),transparent 70%)",
+        pointerEvents:"none"
+      }}/>
 
-      <div style={{position:"relative",display:"grid",gap:16,justifyItems:"center",textAlign:"center"}}>
+      <div style={{
+        position:"relative",
+        display:"grid",
+        gap:16,
+        justifyItems:"center",
+        textAlign:"center"
+      }}>
         {showMeta&&(
           <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
-            <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
-            <Chip tone="blue">{titleCase(hero.confidence||result?.product_match_confidence||"low")} Confidence</Chip>
+            <RiskBadge value={result?.overall_risk||"MEDIUM"} />
+            <Chip tone="blue">
+              {titleCase(hero.confidence||result?.product_match_confidence||"low")} Confidence
+            </Chip>
           </div>
         )}
+
         <div>
-          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:400,color:T.text,lineHeight:1.08,letterSpacing:"-0.02em",marginBottom:12}}>
+          <div style={{
+            fontFamily:"'DM Serif Display', Georgia, serif",
+            fontSize:"clamp(26px,4vw,40px)",
+            fontWeight:400,
+            color:T.text,
+            lineHeight:1.08,
+            letterSpacing:"-0.02em",
+            marginBottom:12
+          }}>
             {hero.title||"RuleGrid Regulatory Scoping"}
           </div>
-          <div style={{fontSize:14,color:T.textSub,lineHeight:1.75,maxWidth:600,margin:"0 auto"}}>
+          <div style={{
+            fontSize:14,
+            color:T.textSub,
+            lineHeight:1.75,
+            maxWidth:600,
+            margin:"0 auto"
+          }}>
             {hero.subtitle||"Describe the product clearly to generate the standards route and the applicable legislation path."}
           </div>
         </div>
+
         {showMeta&&primaryRegimes.length>0&&(
           <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
-            {primaryRegimes.map(dirKey=><DirPill key={dirKey} dirKey={dirKey} large/>)}
+            {primaryRegimes.map(dirKey=>(
+              <DirPill key={dirKey} dirKey={dirKey} large />
+            ))}
           </div>
         )}
+
         {showMeta&&result?.summary&&(
           <div style={{
-            maxWidth:680,padding:"12px 18px",borderRadius:12,
-            background:"rgba(99,172,255,0.07)",border:`1px solid rgba(99,172,255,0.16)`,
-            fontSize:13,color:T.textSub,lineHeight:1.7,textAlign:"left",
-          }}>{result.summary}</div>
+            maxWidth:680,
+            padding:"12px 18px",
+            borderRadius:12,
+            background:"rgba(99,172,255,0.07)",
+            border:`1px solid rgba(99,172,255,0.16)`,
+            fontSize:13,
+            color:T.textSub,
+            lineHeight:1.7,
+            textAlign:"left",
+          }}>
+            {result.summary}
+          </div>
         )}
       </div>
     </div>
@@ -539,26 +826,57 @@ function Hero({ result }){
 // ─── Sidebar rail ─────────────────────────────────────────────────────────────
 function SidebarRail({ result }){
   if(!result) return null;
+
   const items=buildCompactLegislationItems(result);
   const confidence=result?.confidence_panel?.confidence||result?.product_match_confidence||"low";
+
   return (
-    <aside className="left-rail" style={{display:"grid",gap:12,position:"sticky",top:68,alignSelf:"start"}}>
+    <aside className="left-rail" style={{
+      display:"grid",
+      gap:12,
+      position:"sticky",
+      top:68,
+      alignSelf:"start"
+    }}>
       <Card>
-        <CardHeader title="Applicable legislation" subtitle="All detected legislation"/>
+        <CardHeader title="Applicable legislation" subtitle="All detected legislation" />
         <div style={{padding:"12px 14px",display:"grid",gap:7}}>
           {items.map(item=>{
             const tone=directiveTone(item.directive_key||"OTHER");
             return (
-              <div key={`${item.code}-${item.directive_key}-${item.section_key}`}
-                style={{borderRadius:10,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"9px 11px",display:"grid",gap:4}}>
+              <div
+                key={`${item.code}-${item.directive_key}-${item.section_key}`}
+                style={{
+                  borderRadius:10,
+                  border:`1px solid ${tone.bd}`,
+                  background:tone.bg,
+                  padding:"9px 11px",
+                  display:"grid",
+                  gap:4
+                }}
+              >
                 <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
-                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot}}/>
+                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot}} />
                   <span style={{fontSize:12,fontWeight:700,color:tone.text}}>{item.code}</span>
-                  <span style={{fontSize:10,opacity:0.75,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:tone.text}}>
+                  <span style={{
+                    fontSize:10,
+                    opacity:0.75,
+                    fontWeight:700,
+                    textTransform:"uppercase",
+                    letterSpacing:"0.06em",
+                    color:tone.text
+                  }}>
                     {compactLegislationGroupLabel(item)}
                   </span>
                 </div>
-                <div style={{fontSize:11,lineHeight:1.45,color:T.textSub,fontWeight:500}}>{item.title}</div>
+                <div style={{
+                  fontSize:11,
+                  lineHeight:1.45,
+                  color:T.textSub,
+                  fontWeight:500
+                }}>
+                  {item.title}
+                </div>
               </div>
             );
           })}
@@ -566,11 +884,13 @@ function SidebarRail({ result }){
       </Card>
 
       <Card>
-        <CardHeader title="Detection" subtitle="Product identification"/>
+        <CardHeader title="Detection" subtitle="Product identification" />
         <div style={{padding:"12px 14px",display:"grid",gap:8}}>
           <SoftBox>
             <Label>Detected product</Label>
-            <div style={{fontSize:16,fontWeight:700,color:T.text}}>{titleCase(result?.product_type||"Unclear")}</div>
+            <div style={{fontSize:16,fontWeight:700,color:T.text}}>
+              {titleCase(result?.product_type||"Unclear")}
+            </div>
           </SoftBox>
           <SoftBox>
             <Label>Confidence</Label>
@@ -579,7 +899,7 @@ function SidebarRail({ result }){
           {result?.overall_risk&&(
             <SoftBox>
               <Label>Overall risk</Label>
-              <RiskBadge value={result.overall_risk}/>
+              <RiskBadge value={result.overall_risk} />
             </SoftBox>
           )}
         </div>
@@ -602,14 +922,39 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
       />
       <div style={{padding:"16px 18px",display:"grid",gap:14}}>
         <div>
-          <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Quick fill</div>
+          <div style={{
+            fontSize:10,
+            fontWeight:700,
+            color:T.textLabel,
+            textTransform:"uppercase",
+            letterSpacing:"0.1em",
+            marginBottom:8
+          }}>
+            Quick fill
+          </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {templates.slice(0,4).map(template=>(
-              <button key={template.label} type="button" onClick={()=>{ setDescription(template.text); onDirty(true); }} style={{
-                appearance:"none",cursor:"pointer",borderRadius:8,
-                border:`1px solid rgba(99,172,255,0.22)`,background:"rgba(99,172,255,0.08)",
-                color:T.blue,padding:"6px 14px",fontSize:12,fontWeight:600,transition:"all 0.15s",
-              }}>{template.label}</button>
+              <button
+                key={template.label}
+                onClick={()=>{
+                  setDescription(template.text);
+                  onDirty(false);
+                }}
+                style={{
+                  appearance:"none",
+                  cursor:"pointer",
+                  borderRadius:8,
+                  border:`1px solid rgba(99,172,255,0.22)`,
+                  background:"rgba(99,172,255,0.08)",
+                  color:T.blue,
+                  padding:"6px 14px",
+                  fontSize:12,
+                  fontWeight:600,
+                  transition:"all 0.15s",
+                }}
+              >
+                {template.label}
+              </button>
             ))}
           </div>
         </div>
@@ -617,33 +962,58 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
         <div style={{position:"relative"}}>
           <textarea
             value={description}
-            onChange={e=>{ setDescription(e.target.value); onDirty(true); }}
+            onChange={e=>{
+              setDescription(e.target.value);
+              onDirty(false);
+            }}
             onFocus={()=>setFocused(true)}
             onBlur={()=>setFocused(false)}
             placeholder="Example: Connected espresso machine with Wi-Fi, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
             rows={7}
             maxLength={charMax}
             style={{
-              width:"100%",borderRadius:12,resize:"vertical",minHeight:160,lineHeight:1.75,
+              width:"100%",
+              borderRadius:12,
+              resize:"vertical",
+              minHeight:160,
+              lineHeight:1.75,
               border:`1px solid ${focused?T.lineFocus:T.lineStrong}`,
-              background:"rgba(0,0,0,0.28)",padding:"13px 15px 32px",
-              color:T.text,outline:"none",fontSize:14,
+              background:"rgba(0,0,0,0.28)",
+              padding:"13px 15px 32px",
+              color:T.text,
+              outline:"none",
+              fontSize:14,
               boxShadow:focused?"0 0 0 3px rgba(99,172,255,0.09)":"none",
               transition:"border-color 0.2s,box-shadow 0.2s",
               boxSizing:"border-box",
             }}
           />
           <div style={{position:"absolute",bottom:10,right:12,pointerEvents:"none"}}>
-            <CharCounter value={description} max={charMax}/>
+            <CharCounter value={description} max={charMax} />
           </div>
         </div>
 
         {chips.length>0&&(
           <div>
-            <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Add detail</div>
+            <div style={{
+              fontSize:10,
+              fontWeight:700,
+              color:T.textLabel,
+              textTransform:"uppercase",
+              letterSpacing:"0.1em",
+              marginBottom:8
+            }}>
+              Add detail
+            </div>
             <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
               {chips.map(chip=>(
-                <AddChipBtn key={chip.label+chip.text} onClick={()=>{ setDescription(cur=>joinText(cur,chip.text)); onDirty(true); }}>
+                <AddChipBtn
+                  key={chip.label+chip.text}
+                  onClick={()=>{
+                    setDescription(cur=>joinText(cur,chip.text));
+                    onDirty(true);
+                  }}
+                >
                   + {chip.label}
                 </AddChipBtn>
               ))}
@@ -651,20 +1021,44 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
           </div>
         )}
 
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{
+          display:"flex",
+          gap:10,
+          flexWrap:"wrap",
+          alignItems:"center",
+          justifyContent:"space-between"
+        }}>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
             <PrimaryBtn onClick={onAnalyze} disabled={busy||!description.trim()}>
               {busy?(
                 <span style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span className="spin" style={{display:"inline-block",width:12,height:12,border:"2px solid rgba(0,0,0,0.3)",borderTopColor:"#000",borderRadius:999}}/>
+                  <span className="spin" style={{
+                    display:"inline-block",
+                    width:12,
+                    height:12,
+                    border:"2px solid rgba(0,0,0,0.3)",
+                    borderTopColor:"#000",
+                    borderRadius:999
+                  }}/>
                   Analyzing…
                 </span>
               ):"Analyze product"}
             </PrimaryBtn>
-            <SecondaryBtn onClick={()=>{ setDescription(""); onDirty(false); }} disabled={!description.trim()}>Clear</SecondaryBtn>
+            <SecondaryBtn
+              onClick={()=>{
+                setDescription("");
+                onDirty(false);
+              }}
+              disabled={!description.trim()}
+            >
+              Clear
+            </SecondaryBtn>
           </div>
+
           {wordCount>0&&!busy&&(
-            <span style={{fontSize:11,color:T.textMuted,fontStyle:"italic"}}>{wordCount} word{wordCount!==1?"s":""}</span>
+            <span style={{fontSize:11,color:T.textMuted,fontStyle:"italic"}}>
+              {wordCount} word{wordCount!==1?"s":""}
+            </span>
           )}
         </div>
       </div>
@@ -676,40 +1070,97 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
 function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
   const items=buildGuidanceItems(result);
   if(!items.length) return null;
+
   return (
     <Card>
       <CardHeader
         title="Refinement guidance"
         subtitle="Clarifications that can change the standards route."
-        right={<PrimaryBtn onClick={onReanalyze} disabled={!dirty||busy}>{busy?"Analyzing…":dirty?"Refresh route →":"Route current"}</PrimaryBtn>}
+        right={
+          <PrimaryBtn onClick={onReanalyze} disabled={!dirty||busy}>
+            {busy?"Analyzing…":dirty?"Refresh route →":"Route current"}
+          </PrimaryBtn>
+        }
       />
       <div style={{padding:"14px 16px",display:"grid",gap:10}}>
-        <div className="guidance-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:10}}>
+        <div className="guidance-grid" style={{
+          display:"grid",
+          gridTemplateColumns:"repeat(4,minmax(0,1fr))",
+          gap:10
+        }}>
           {items.map(item=>{
             const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
             return (
-              <div key={item.key} style={{borderRadius:12,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"12px 13px",display:"grid",gap:8}}>
+              <div key={item.key} style={{
+                borderRadius:12,
+                border:`1px solid ${tone.bd}`,
+                background:tone.bg,
+                padding:"12px 13px",
+                display:"grid",
+                gap:8
+              }}>
                 <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"space-between"}}>
-                  <div style={{fontSize:12,fontWeight:700,color:tone.text}}>{item.title}</div>
-                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+                  <div style={{fontSize:12,fontWeight:700,color:tone.text}}>
+                    {item.title}
+                  </div>
+                  <span style={{
+                    width:6,
+                    height:6,
+                    borderRadius:999,
+                    background:tone.dot,
+                    flexShrink:0
+                  }}/>
                 </div>
-                <div style={{fontSize:12,color:"rgba(255,255,255,0.55)",lineHeight:1.5}}>{item.why}</div>
+                <div style={{
+                  fontSize:12,
+                  color:"rgba(255,255,255,0.55)",
+                  lineHeight:1.5
+                }}>
+                  {item.why}
+                </div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                   {item.choices.map(choice=>(
-                    <button key={choice} onClick={()=>onApply(choice)} style={{
-                      appearance:"none",cursor:"pointer",borderRadius:6,
-                      border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.2)",
-                      color:tone.text,padding:"4px 9px",fontSize:11,fontWeight:600,
-                    }}>+ {choice}</button>
+                    <button
+                      key={choice}
+                      onClick={()=>onApply(choice)}
+                      style={{
+                        appearance:"none",
+                        cursor:"pointer",
+                        borderRadius:6,
+                        border:`1px solid ${tone.bd}`,
+                        background:"rgba(0,0,0,0.2)",
+                        color:tone.text,
+                        padding:"4px 9px",
+                        fontSize:11,
+                        fontWeight:600,
+                      }}
+                    >
+                      + {choice}
+                    </button>
                   ))}
                 </div>
               </div>
             );
           })}
         </div>
+
         {dirty&&(
-          <div style={{fontSize:12,color:T.amber,fontWeight:600,display:"flex",alignItems:"center",gap:7,paddingTop:2}}>
-            <span style={{width:5,height:5,borderRadius:999,background:T.amber,display:"inline-block"}}/>
+          <div style={{
+            fontSize:12,
+            color:T.amber,
+            fontWeight:600,
+            display:"flex",
+            alignItems:"center",
+            gap:7,
+            paddingTop:2
+          }}>
+            <span style={{
+              width:5,
+              height:5,
+              borderRadius:999,
+              background:T.amber,
+              display:"inline-block"
+            }}/>
             Input updated — refresh route to apply changes.
           </div>
         )}
@@ -721,67 +1172,63 @@ function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
 // ─── Route snapshot ───────────────────────────────────────────────────────────
 function StandardsOverview({ result }){
   const breakdown=buildDirectiveBreakdown(result);
-  const currentPath=result?.current_path||[];
-  const watchlist=result?.future_watchlist||[];
-  const questions=result?.suggested_questions||[];
-
-  if(!breakdown.length && !currentPath.length && !watchlist.length && !questions.length) return null;
+  if(!breakdown.length) return null;
 
   const total=breakdown.reduce((n,{count})=>n+count,0);
-  const listRow=(items, emptyText)=>items.length ? (
-    <div style={{display:"grid",gap:8}}>
-      {items.map((line,index)=>(
-        <div key={`${line}-${index}`} style={{display:"grid",gridTemplateColumns:"10px minmax(0,1fr)",gap:10,alignItems:"start"}}>
-          <span style={{width:6,height:6,borderRadius:999,background:T.blue,marginTop:6}}/>
-          <span style={{fontSize:12,color:T.textSub,lineHeight:1.6}}>{line}</span>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <div style={{fontSize:12,color:T.textMuted,lineHeight:1.6}}>{emptyText}</div>
-  );
 
   return (
     <Card>
-      <CardHeader title="Route snapshot" subtitle={total?`${total} standards across ${breakdown.length} directive${breakdown.length!==1?"s":""}.`:"Current path, input focus, and future watchlist."}/>
-      <div style={{padding:"14px 16px",display:"grid",gap:14}}>
-        {breakdown.length>0&&(
-          <div className="snapshot-grid" style={{display:"grid",gridTemplateColumns:"repeat(6,minmax(0,1fr))",gap:8}}>
-            {breakdown.map(({key,count})=>{
-              const tone=directiveTone(key);
-              const barPct=Math.max(12,Math.round((count/Math.max(total,1))*100));
-              return (
-                <div key={key} style={{borderRadius:12,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"12px 10px",display:"grid",gap:6}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <span style={{width:6,height:6,borderRadius:999,background:tone.dot}}/>
-                    <div style={{fontSize:11,fontWeight:700,color:tone.text}}>{directiveShort(key)}</div>
+      <CardHeader
+        title="Route snapshot"
+        subtitle={`${total} standards across ${breakdown.length} directive${breakdown.length!==1?"s":""}.`}
+      />
+      <div style={{padding:"14px 16px"}}>
+        <div className="snapshot-grid" style={{
+          display:"grid",
+          gridTemplateColumns:"repeat(6,minmax(0,1fr))",
+          gap:8
+        }}>
+          {breakdown.map(({key,count})=>{
+            const tone=directiveTone(key);
+            const barPct=Math.max(12,Math.round((count/total)*100));
+            return (
+              <div key={key} style={{
+                borderRadius:12,
+                border:`1px solid ${tone.bd}`,
+                background:tone.bg,
+                padding:"12px 10px",
+                display:"grid",
+                gap:6
+              }}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot}} />
+                  <div style={{fontSize:11,fontWeight:700,color:tone.text}}>
+                    {directiveShort(key)}
                   </div>
-                  <div style={{fontSize:28,lineHeight:1,fontWeight:800,color:T.text}}>{count}</div>
-                  <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,0.08)",overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${barPct}%`,borderRadius:999,background:tone.dot,transition:"width 0.6s ease"}}/>
-                  </div>
-                  <div style={{fontSize:10,color:T.textMuted,letterSpacing:"0.04em"}}>standard{count!==1?"s":""}</div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="guidance-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10}}>
-          <SoftBox>
-            <Label>Current path</Label>
-            <div style={{marginTop:8}}>{listRow(currentPath, "No current path summary available.")}</div>
-          </SoftBox>
-          <SoftBox>
-            <Label>Input focus</Label>
-            <div style={{marginTop:8,display:"flex",gap:7,flexWrap:"wrap"}}>
-              {questions.length ? questions.slice(0,6).map(item=><Chip key={item}>{item}</Chip>) : <span style={{fontSize:12,color:T.textMuted}}>No guided questions available.</span>}
-            </div>
-          </SoftBox>
-          <SoftBox>
-            <Label>Future watchlist</Label>
-            <div style={{marginTop:8}}>{listRow(watchlist, "No future watchlist items.")}</div>
-          </SoftBox>
+                <div style={{fontSize:28,lineHeight:1,fontWeight:800,color:T.text}}>
+                  {count}
+                </div>
+                <div style={{
+                  height:3,
+                  borderRadius:999,
+                  background:"rgba(255,255,255,0.08)",
+                  overflow:"hidden"
+                }}>
+                  <div style={{
+                    height:"100%",
+                    width:`${barPct}%`,
+                    borderRadius:999,
+                    background:tone.dot,
+                    transition:"width 0.6s ease"
+                  }}/>
+                </div>
+                <div style={{fontSize:10,color:T.textMuted,letterSpacing:"0.04em"}}>
+                  standard{count!==1?"s":""}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </Card>
@@ -795,55 +1242,98 @@ function StandardCard({ item, sectionKey }){
   const sectionTone=SECTION_TONES[sectionKey]||SECTION_TONES.unknown;
   const evidence=sentenceCaseList(item.evidence_hint||[]).join(" · ");
   const summary=item.standard_summary||item.reason||item.notes||item.title;
-  const tags=standardCardTags(item);
 
   const metaFields=[
     {label:"Harmonized Reference", value:prettyValue(item.harmonized_reference)},
-    {label:"Evidence Expected",    value:prettyValue(evidence||"—")},
-    {label:"Harmonized Version",   value:prettyValue(item.dated_version)},
-    {label:"EU Latest Version",    value:prettyValue(item.version)},
+    {label:"Evidence Expected", value:prettyValue(evidence||"—")},
+    {label:"Harmonized Version", value:prettyValue(item.dated_version)},
+    {label:"EU Latest Version", value:prettyValue(item.version)},
   ];
 
   return (
     <div style={{
-      borderRadius:14,border:`1px solid ${dirTone.bd}`,
+      borderRadius:14,
+      border:`1px solid ${dirTone.bd}`,
       background:"rgba(255,255,255,0.04)",
-      overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.25)",
+      overflow:"hidden",
+      boxShadow:"0 2px 12px rgba(0,0,0,0.25)",
     }}>
       <div style={{
         padding:"13px 15px 11px",
         background:`linear-gradient(135deg,${dirTone.bg},transparent)`,
-        borderBottom:`1px solid ${T.line}`,display:"grid",gap:10,
+        borderBottom:`1px solid ${T.line}`,
+        display:"grid",
+        gap:10,
       }}>
-        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",justifyContent:"space-between"}}>
+        <div style={{
+          display:"flex",
+          gap:8,
+          alignItems:"center",
+          flexWrap:"wrap",
+          justifyContent:"space-between"
+        }}>
           <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-            <DirPill dirKey={dirKey}/>
+            <DirPill dirKey={dirKey} />
             <span style={{
-              display:"inline-flex",alignItems:"center",borderRadius:6,
-              background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
-              color:sectionTone.tagText,padding:"2px 8px",fontSize:10,fontWeight:700,
-              textTransform:"uppercase",letterSpacing:"0.08em",
-            }}>{titleCase(item.harmonization_status||"unknown")}</span>
+              display:"inline-flex",
+              alignItems:"center",
+              borderRadius:6,
+              background:sectionTone.tag,
+              border:`1px solid ${sectionTone.bd}`,
+              color:sectionTone.tagText,
+              padding:"2px 8px",
+              fontSize:10,
+              fontWeight:700,
+              textTransform:"uppercase",
+              letterSpacing:"0.08em",
+            }}>
+              {titleCase(item.harmonization_status||"unknown")}
+            </span>
           </div>
+
           <span style={{
-            display:"inline-flex",alignItems:"center",borderRadius:8,
-            background:dirTone.dot,color:"#000",
-            padding:"7px 13px",fontSize:14,fontWeight:800,
-            letterSpacing:"-0.02em",whiteSpace:"nowrap",flexShrink:0,
-          }}>{item.code}</span>
+            display:"inline-flex",
+            alignItems:"center",
+            borderRadius:8,
+            background:dirTone.dot,
+            color:"#000",
+            padding:"7px 13px",
+            fontSize:14,
+            fontWeight:800,
+            letterSpacing:"-0.02em",
+            whiteSpace:"nowrap",
+            flexShrink:0,
+          }}>
+            {item.code}
+          </span>
         </div>
+
         <div>
-          <div style={{fontSize:14,fontWeight:700,color:T.text,lineHeight:1.35}}>{item.title}</div>
-          <div style={{marginTop:5,fontSize:12,color:T.textSub,lineHeight:1.7}}>{summary}</div>
-        </div>
-        {tags.length>0&&(
-          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-            {tags.map(tag=><Chip key={`${item.code}-${tag}`}>{tag}</Chip>)}
+          <div style={{
+            fontSize:14,
+            fontWeight:700,
+            color:T.text,
+            lineHeight:1.35
+          }}>
+            {item.title}
           </div>
-        )}
+          <div style={{
+            marginTop:5,
+            fontSize:12,
+            color:T.textSub,
+            lineHeight:1.7
+          }}>
+            {summary}
+          </div>
+        </div>
       </div>
 
-      <div className="standard-meta-grid" style={{padding:14,display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8}}>
+      <div className="standard-meta-grid" style={{
+        padding:14,
+        display:"grid",
+        gridTemplateColumns:"repeat(2,minmax(0,1fr))",
+        gap:8
+      }}>
         {metaFields.map(({label,value})=>(
           <SoftBox key={label}>
             <Label>{label}</Label>
@@ -859,34 +1349,74 @@ function StandardCard({ item, sectionKey }){
 function CollapsibleSection({ section, defaultOpen=true }){
   const [open,setOpen]=useState(defaultOpen);
   const sectionTone=SECTION_TONES[section.key]||SECTION_TONES.unknown;
+
   return (
-    <div style={{borderRadius:14,border:`1px solid ${sectionTone.bd}`,background:`linear-gradient(135deg,${sectionTone.bg},transparent)`,overflow:"hidden"}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{
-        appearance:"none",cursor:"pointer",width:"100%",
-        padding:"12px 14px",borderBottom:open?`1px solid ${sectionTone.bd}`:"none",
-        background:"transparent",textAlign:"left",
-        display:"flex",gap:12,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",
-      }}>
+    <div style={{
+      borderRadius:14,
+      border:`1px solid ${sectionTone.bd}`,
+      background:`linear-gradient(135deg,${sectionTone.bg},transparent)`,
+      overflow:"hidden"
+    }}>
+      <button
+        onClick={()=>setOpen(v=>!v)}
+        style={{
+          appearance:"none",
+          cursor:"pointer",
+          width:"100%",
+          padding:"12px 14px",
+          borderBottom:open?`1px solid ${sectionTone.bd}`:"none",
+          background:"transparent",
+          textAlign:"left",
+          display:"flex",
+          gap:12,
+          alignItems:"center",
+          justifyContent:"space-between",
+          flexWrap:"wrap",
+        }}
+      >
         <div>
-          <div style={{fontSize:13,fontWeight:700,color:T.text}}>{section.title}</div>
-          <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>{section.count} item{section.count!==1?"s":""}</div>
+          <div style={{fontSize:13,fontWeight:700,color:T.text}}>
+            {section.title}
+          </div>
+          <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>
+            {section.count} item{section.count!==1?"s":""}
+          </div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{
-            display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,
-            background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
-            color:sectionTone.tagText,padding:"3px 10px",fontSize:11,fontWeight:700,
-          }}>{sectionTone.icon} {titleCase(section.key)}</span>
+            display:"inline-flex",
+            alignItems:"center",
+            gap:6,
+            borderRadius:6,
+            background:sectionTone.tag,
+            border:`1px solid ${sectionTone.bd}`,
+            color:sectionTone.tagText,
+            padding:"3px 10px",
+            fontSize:11,
+            fontWeight:700,
+          }}>
+            {sectionTone.icon} {titleCase(section.key)}
+          </span>
           <span style={{
-            fontSize:14,color:T.textMuted,display:"inline-block",
-            transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s",
-          }}>▾</span>
+            fontSize:14,
+            color:T.textMuted,
+            display:"inline-block",
+            transform:open?"rotate(0deg)":"rotate(-90deg)",
+            transition:"transform 0.2s",
+          }}>
+            ▾
+          </span>
         </div>
       </button>
+
       {open&&(
         <div style={{padding:14,display:"grid",gap:12}}>
           {(section.items||[]).map(item=>(
-            <StandardCard key={`${section.key}-${item.code}-${item.title}`} item={item} sectionKey={section.key}/>
+            <StandardCard
+              key={`${section.key}-${item.code}-${item.title}`}
+              item={item}
+              sectionKey={section.key}
+            />
           ))}
         </div>
       )}
@@ -897,7 +1427,13 @@ function CollapsibleSection({ section, defaultOpen=true }){
 // ─── Standards section ────────────────────────────────────────────────────────
 function StandardsSection({ result }){
   const sourceSections=result?.standard_sections?.length
-    ?result.standard_sections.map(section=>({...section,items:sortStandardItems(section.items||[]).map(item=>({...item,directive:normalizeStandardDirective(item)}))}))
+    ?result.standard_sections.map(section=>({
+      ...section,
+      items:sortStandardItems(section.items||[]).map(item=>({
+        ...item,
+        directive:normalizeStandardDirective(item)
+      }))
+    }))
     :buildSectionsFromFlatResult(result);
 
   const ordered=["harmonized","state_of_the_art","review","unknown"]
@@ -908,10 +1444,13 @@ function StandardsSection({ result }){
 
   return (
     <Card>
-      <CardHeader title="Standards route" subtitle="Primary output · ordered LVD → EMC → RED → RED Cyber."/>
+      <CardHeader
+        title="Standards route"
+        subtitle="Primary output · ordered LVD → EMC → RED → RED Cyber."
+      />
       <div style={{padding:"14px 16px",display:"grid",gap:14}}>
         {ordered.map((section,i)=>(
-          <CollapsibleSection key={section.key} section={section} defaultOpen={i<2}/>
+          <CollapsibleSection key={section.key} section={section} defaultOpen={i<2} />
         ))}
       </div>
     </Card>
@@ -924,12 +1463,17 @@ function DiagnosticsPanel({ result }){
   const diagnostics=result?.diagnostics||[];
   const traits=result?.all_traits||[];
   if(!diagnostics.length&&!traits.length) return null;
+
   return (
     <Card>
       <CardHeader
         title="Advanced diagnostics"
         subtitle="Trait detection and engine output."
-        right={<GhostBtn onClick={()=>setOpen(v=>!v)}>{open?"Hide diagnostics":"Show diagnostics"}</GhostBtn>}
+        right={
+          <GhostBtn onClick={()=>setOpen(v=>!v)}>
+            {open?"Hide diagnostics":"Show diagnostics"}
+          </GhostBtn>
+        }
       />
       {open&&(
         <div style={{padding:"12px 16px 16px",display:"grid",gap:12}}>
@@ -937,16 +1481,30 @@ function DiagnosticsPanel({ result }){
             <SoftBox>
               <Label>All traits detected</Label>
               <div style={{display:"flex",gap:7,flexWrap:"wrap",marginTop:8}}>
-                {traits.map(trait=><Chip key={trait}>{titleCase(trait)}</Chip>)}
+                {traits.map(trait=>(
+                  <Chip key={trait}>{titleCase(trait)}</Chip>
+                ))}
               </div>
             </SoftBox>
           )}
+
           {diagnostics.length>0&&(
             <SoftBox>
               <Label>Engine diagnostics</Label>
               <div style={{marginTop:8,display:"grid",gap:6}}>
                 {diagnostics.map((line,i)=>(
-                  <div key={line+i} style={{fontSize:12,color:T.textSub,lineHeight:1.65,paddingLeft:12,borderLeft:`2px solid ${T.line}`}}>{line}</div>
+                  <div
+                    key={line+i}
+                    style={{
+                      fontSize:12,
+                      color:T.textSub,
+                      lineHeight:1.65,
+                      paddingLeft:12,
+                      borderLeft:`2px solid ${T.line}`
+                    }}
+                  >
+                    {line}
+                  </div>
                 ))}
               </div>
             </SoftBox>
@@ -960,27 +1518,45 @@ function DiagnosticsPanel({ result }){
 // ─── Copy button ──────────────────────────────────────────────────────────────
 function CopyResultsButton({ result, description }){
   const [copied,setCopied]=useState(false);
+
   const handleCopy=async()=>{
-    const sections=result?.standard_sections?.length?result.standard_sections:buildSectionsFromFlatResult(result);
+    const sections=result?.standard_sections?.length
+      ?result.standard_sections
+      :buildSectionsFromFlatResult(result);
+
     const text=[
-      "RuleGrid compliance summary","",
-      `Input: ${description}`,"",
+      "RuleGrid compliance summary",
+      "",
+      `Input: ${description}`,
+      "",
       `Detected product: ${titleCase(result?.product_type||"Unclear")}`,
       `Confidence: ${titleCase(result?.product_match_confidence||"low")}`,
-      `Overall risk: ${result?.overall_risk||"MEDIUM"}`,"",
-      `Summary: ${result?.summary||""}`,"",
+      `Overall risk: ${result?.overall_risk||"MEDIUM"}`,
+      "",
+      `Summary: ${result?.summary||""}`,
+      "",
       "Standards route:",
       ...sections.flatMap(section=>[
         `- ${section.title} (${section.count})`,
         ...sortStandardItems(section.items||[]).map(item=>`  • ${item.code} — ${item.title}`),
-      ]),"",
+      ]),
+      "",
       "Applicable legislation:",
       ...buildCompactLegislationItems(result).map(item=>`- ${item.code} — ${item.title}`),
     ].join("\n");
-    try{ await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2200); }catch(_){}
+
+    try{
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(()=>setCopied(false),2200);
+    }catch(_){}
   };
+
   return (
-    <SecondaryBtn onClick={handleCopy} style={copied?{color:T.green,borderColor:"rgba(74,222,128,0.3)"}:{}}>
+    <SecondaryBtn
+      onClick={handleCopy}
+      style={copied?{color:T.green,borderColor:"rgba(74,222,128,0.3)"}:{}}
+    >
       {copied?"✓ Copied to clipboard":"Copy summary"}
     </SecondaryBtn>
   );
@@ -993,35 +1569,96 @@ function EmptyState(){
     {icon:"02",label:"Add detail",text:"Materials (food-contact), sensors, battery, certifications needed."},
     {icon:"03",label:"Refine iteratively",text:"Use the guidance strip to clarify traits and refresh the route."},
   ];
+
   return (
     <Card style={{border:`1px dashed ${T.line}`}}>
-      <div style={{padding:"36px 28px",display:"grid",gap:24,justifyItems:"center",textAlign:"center"}}>
+      <div style={{
+        padding:"36px 28px",
+        display:"grid",
+        gap:24,
+        justifyItems:"center",
+        textAlign:"center"
+      }}>
         <div style={{
-          width:60,height:60,borderRadius:18,
-          border:`1px solid rgba(99,172,255,0.2)`,background:"rgba(99,172,255,0.07)",
-          display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,
-        }}>⬡</div>
+          width:60,
+          height:60,
+          borderRadius:18,
+          border:`1px solid rgba(99,172,255,0.2)`,
+          background:"rgba(99,172,255,0.07)",
+          display:"flex",
+          alignItems:"center",
+          justifyContent:"center",
+          fontSize:26,
+        }}>
+          ⬡
+        </div>
+
         <div>
-          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:22,color:T.text,marginBottom:8}}>Ready for analysis</div>
-          <div style={{fontSize:13,color:T.textSub,lineHeight:1.75,maxWidth:440}}>
+          <div style={{
+            fontFamily:"'DM Serif Display', Georgia, serif",
+            fontSize:22,
+            color:T.text,
+            marginBottom:8
+          }}>
+            Ready for analysis
+          </div>
+          <div style={{
+            fontSize:13,
+            color:T.textSub,
+            lineHeight:1.75,
+            maxWidth:440
+          }}>
             Enter a product description above to generate the standards route and legislation overview.
           </div>
         </div>
-        <div style={{display:"grid",gap:10,width:"100%",maxWidth:480,textAlign:"left"}}>
+
+        <div style={{
+          display:"grid",
+          gap:10,
+          width:"100%",
+          maxWidth:480,
+          textAlign:"left"
+        }}>
           {steps.map(step=>(
             <div key={step.icon} style={{
-              display:"flex",gap:14,alignItems:"flex-start",
-              padding:"10px 14px",borderRadius:12,
-              background:"rgba(255,255,255,0.03)",border:`1px solid ${T.line}`,
+              display:"flex",
+              gap:14,
+              alignItems:"flex-start",
+              padding:"10px 14px",
+              borderRadius:12,
+              background:"rgba(255,255,255,0.03)",
+              border:`1px solid ${T.line}`,
             }}>
               <span style={{
-                fontSize:10,fontWeight:800,color:T.blue,letterSpacing:"0.08em",
-                background:"rgba(99,172,255,0.10)",border:`1px solid rgba(99,172,255,0.18)`,
-                borderRadius:6,padding:"3px 7px",flexShrink:0,marginTop:1,
-              }}>{step.icon}</span>
+                fontSize:10,
+                fontWeight:800,
+                color:T.blue,
+                letterSpacing:"0.08em",
+                background:"rgba(99,172,255,0.10)",
+                border:`1px solid rgba(99,172,255,0.18)`,
+                borderRadius:6,
+                padding:"3px 7px",
+                flexShrink:0,
+                marginTop:1,
+              }}>
+                {step.icon}
+              </span>
               <div>
-                <div style={{fontSize:12,fontWeight:700,color:T.text,marginBottom:2}}>{step.label}</div>
-                <div style={{fontSize:12,color:T.textSub,lineHeight:1.6}}>{step.text}</div>
+                <div style={{
+                  fontSize:12,
+                  fontWeight:700,
+                  color:T.text,
+                  marginBottom:2
+                }}>
+                  {step.label}
+                </div>
+                <div style={{
+                  fontSize:12,
+                  color:T.textSub,
+                  lineHeight:1.6
+                }}>
+                  {step.text}
+                </div>
               </div>
             </div>
           ))}
@@ -1035,14 +1672,27 @@ function EmptyState(){
 function ErrorCard({ message }){
   return (
     <div style={{
-      borderRadius:14,border:`1px solid rgba(248,113,113,0.28)`,
-      background:"rgba(248,113,113,0.07)",padding:"14px 18px",
-      display:"flex",gap:12,alignItems:"flex-start",
+      borderRadius:14,
+      border:`1px solid rgba(248,113,113,0.28)`,
+      background:"rgba(248,113,113,0.07)",
+      padding:"14px 18px",
+      display:"flex",
+      gap:12,
+      alignItems:"flex-start",
     }}>
       <span style={{fontSize:16,flexShrink:0,marginTop:1,color:T.rose}}>⚠</span>
       <div>
-        <div style={{fontSize:13,fontWeight:700,color:"#fb7185",marginBottom:4}}>Analysis error</div>
-        <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{message}</div>
+        <div style={{
+          fontSize:13,
+          fontWeight:700,
+          color:"#fb7185",
+          marginBottom:4
+        }}>
+          Analysis error
+        </div>
+        <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>
+          {message}
+        </div>
       </div>
     </div>
   );
@@ -1054,16 +1704,30 @@ function ScrollTopBtn({ visible }){
     <button
       onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}
       style={{
-        position:"fixed",bottom:28,right:28,zIndex:200,
-        width:40,height:40,borderRadius:12,
-        border:`1px solid ${T.lineStrong}`,background:T.bgCard,
-        color:T.textSub,fontSize:16,cursor:"pointer",
-        boxShadow:T.shadow,display:"flex",alignItems:"center",justifyContent:"center",
-        opacity:visible?1:0,pointerEvents:visible?"auto":"none",
+        position:"fixed",
+        bottom:28,
+        right:28,
+        zIndex:200,
+        width:40,
+        height:40,
+        borderRadius:12,
+        border:`1px solid ${T.lineStrong}`,
+        background:T.bgCard,
+        color:T.textSub,
+        fontSize:16,
+        cursor:"pointer",
+        boxShadow:T.shadow,
+        display:"flex",
+        alignItems:"center",
+        justifyContent:"center",
+        opacity:visible?1:0,
+        pointerEvents:visible?"auto":"none",
         transition:"opacity 0.3s",
       }}
       title="Back to top"
-    >↑</button>
+    >
+      ↑
+    </button>
   );
 }
 
@@ -1087,9 +1751,17 @@ export default function App(){
   useEffect(()=>{
     let active=true;
     fetch(METADATA_URL)
-      .then(res=>{ if(!res.ok) throw new Error(`Metadata failed (${res.status})`); return res.json(); })
-      .then(data=>{ if(active) setMetadata(data); })
-      .catch(()=>{ if(active) setMetadata({traits:[],products:[],legislations:[]}); });
+      .then(res=>{
+        if(!res.ok) throw new Error(`Metadata failed (${res.status})`);
+        return res.json();
+      })
+      .then(data=>{
+        if(active) setMetadata(data);
+      })
+      .catch(()=>{
+        if(active) setMetadata({traits:[],products:[],legislations:[]});
+      });
+
     return()=>{ active=false; };
   },[]);
 
@@ -1098,35 +1770,33 @@ export default function App(){
     return dynamic.length?dynamic:DEFAULT_TEMPLATES;
   },[metadata]);
 
-  const chips=useMemo(()=>{
-    const backend=(result?.suggested_quick_adds||[]).map(item=>({
-      label:titleCase(item.label),
-      text:item.text,
-    }));
-    const frontend=buildGuidedChips(metadata,result);
-    return uniqueBy([...backend,...frontend], item=>item.text).slice(0,12);
-  },[metadata,result]);
+  const chips=useMemo(()=>buildGuidedChips(metadata,result),[metadata,result]);
 
   useEffect(()=>{
     if(!result||!resultsRef.current) return;
-    const timer=window.setTimeout(()=>resultsRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),80);
+    const timer=window.setTimeout(()=>{
+      resultsRef.current?.scrollIntoView({behavior:"smooth",block:"start"});
+    },80);
     return()=>window.clearTimeout(timer);
   },[result]);
 
   const runAnalysis=useCallback(async()=>{
-    const payloadDescription=String(description||"").trim();
-    if(!payloadDescription) return;
-    setBusy(true); setError("");
+    if(!description.trim()) return;
+    setBusy(true);
+    setError("");
+
     try{
       const response=await fetch(ANALYZE_URL,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({description:payloadDescription, depth:"deep"}),
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({description}),
       });
-      const data=await response.json().catch(()=>({}));
+      const data=await response.json();
       if(!response.ok) throw new Error(data?.detail||`Analysis failed (${response.status})`);
-      setResult(data); setClarifyDirty(false);
+      setResult(data);
+      setClarifyDirty(false);
     }catch(err){
-      setError(err?.message||"Analysis failed.");
+      setError(err.message||"Analysis failed.");
     }finally{
       setBusy(false);
     }
@@ -1135,14 +1805,16 @@ export default function App(){
   return (
     <div style={{minHeight:"100vh",background:T.bg}}>
       <style>{globalCss}</style>
-      <Topbar result={result}/>
+      <Topbar result={result} />
 
       <div style={{maxWidth:1380,margin:"0 auto",padding:"22px 20px 72px"}}>
         <div className="app-shell-grid">
-          <div className="left-rail-slot">{result?<SidebarRail result={result}/>:null}</div>
+          <div className="left-rail-slot">
+            {result?<SidebarRail result={result} />:null}
+          </div>
 
           <main style={{display:"grid",gap:14,minWidth:0}}>
-            <Hero result={result}/>
+            <Hero result={result} />
 
             <InputComposer
               description={description}
@@ -1154,11 +1826,11 @@ export default function App(){
               onDirty={setClarifyDirty}
             />
 
-            {error&&<ErrorCard message={error}/>}
-            <div ref={resultsRef}/>
+            {error&&<ErrorCard message={error} />}
+            <div ref={resultsRef} />
 
             {!result?(
-              <EmptyState/>
+              <EmptyState />
             ):(
               <>
                 <GuidanceStrip
@@ -1167,16 +1839,22 @@ export default function App(){
                   busy={busy}
                   onReanalyze={runAnalysis}
                   onApply={text=>{
-                    setDescription(cur=>{ const next=joinText(cur,text); if(next!==cur) setClarifyDirty(true); return next; });
+                    setDescription(cur=>{
+                      const next=joinText(cur,text);
+                      if(next!==cur) setClarifyDirty(true);
+                      return next;
+                    });
                   }}
                 />
-                <StandardsOverview result={result}/>
-                <StandardsSection result={result}/>
-                <DiagnosticsPanel result={result}/>
+                <StandardsOverview result={result} />
+                <StandardsSection result={result} />
+                <DiagnosticsPanel result={result} />
 
                 <div style={{display:"flex",justifyContent:"flex-end",gap:10,flexWrap:"wrap"}}>
-                  <CopyResultsButton result={result} description={description}/>
-                  <SecondaryBtn onClick={runAnalysis} disabled={busy||!description.trim()}>Re-run analysis</SecondaryBtn>
+                  <CopyResultsButton result={result} description={description} />
+                  <SecondaryBtn onClick={runAnalysis} disabled={busy||!description.trim()}>
+                    Re-run analysis
+                  </SecondaryBtn>
                 </div>
               </>
             )}
@@ -1184,7 +1862,7 @@ export default function App(){
         </div>
       </div>
 
-      <ScrollTopBtn visible={scrolled}/>
+      <ScrollTopBtn visible={scrolled} />
     </div>
   );
 }
@@ -1192,7 +1870,13 @@ export default function App(){
 // ─── Global CSS ───────────────────────────────────────────────────────────────
 const globalCss=`
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
-  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  *{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+  }
+
   html,body,#root{
     min-height:100%;
     font-family:'DM Sans',ui-sans-serif,system-ui,sans-serif;
@@ -1200,11 +1884,28 @@ const globalCss=`
     background:${T.bg};
     -webkit-font-smoothing:antialiased;
   }
-  button,input,select,textarea{ font:inherit; color:inherit; }
-  textarea::placeholder{ color:${T.textMuted}; }
-  textarea::-webkit-scrollbar{ width:5px; }
-  textarea::-webkit-scrollbar-track{ background:transparent; }
-  textarea::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.12); border-radius:3px; }
+
+  button,input,select,textarea{
+    font:inherit;
+    color:inherit;
+  }
+
+  textarea::placeholder{
+    color:${T.textMuted};
+  }
+
+  textarea::-webkit-scrollbar{
+    width:5px;
+  }
+
+  textarea::-webkit-scrollbar-track{
+    background:transparent;
+  }
+
+  textarea::-webkit-scrollbar-thumb{
+    background:rgba(255,255,255,0.12);
+    border-radius:3px;
+  }
 
   .app-shell-grid{
     display:grid;
@@ -1212,27 +1913,64 @@ const globalCss=`
     gap:16px;
     align-items:start;
   }
-  .left-rail-slot{ min-width:0; }
 
-  @keyframes spin{ to{ transform:rotate(360deg); } }
-  .spin{ animation:spin 0.75s linear infinite; }
+  .left-rail-slot{
+    min-width:0;
+  }
 
-  button:not(:disabled):hover{ filter:brightness(1.12); }
-  button:not(:disabled):active{ filter:brightness(0.95); transform:scale(0.99); }
+  @keyframes spin{
+    to{ transform:rotate(360deg); }
+  }
+
+  .spin{
+    animation:spin 0.75s linear infinite;
+  }
+
+  button:not(:disabled):hover{
+    filter:brightness(1.12);
+  }
+
+  button:not(:disabled):active{
+    filter:brightness(0.95);
+    transform:scale(0.99);
+  }
 
   @media(max-width:1120px){
-    .snapshot-grid{ grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+    .snapshot-grid{
+      grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    }
   }
+
   @media(max-width:1040px){
-    .app-shell-grid{ grid-template-columns:1fr; }
-    .left-rail,.left-rail-slot{ position:static !important; top:auto !important; }
-    .snapshot-grid{ grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+    .app-shell-grid{
+      grid-template-columns:1fr;
+    }
+
+    .left-rail,.left-rail-slot{
+      position:static !important;
+      top:auto !important;
+    }
+
+    .snapshot-grid{
+      grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    }
   }
+
   @media(max-width:960px){
-    .guidance-grid{ grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
-    .snapshot-grid{ grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+    .guidance-grid{
+      grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    }
+
+    .snapshot-grid{
+      grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    }
   }
+
   @media(max-width:680px){
-    .guidance-grid,.snapshot-grid,.standard-meta-grid{ grid-template-columns:1fr !important; }
+    .guidance-grid,
+    .snapshot-grid,
+    .standard-meta-grid{
+      grid-template-columns:1fr !important;
+    }
   }
 `;
