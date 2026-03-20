@@ -808,43 +808,7 @@ function StandardCard({ item, sectionKey }){
 }
 
 // ─── Collapsible section wrapper ──────────────────────────────────────────────
-function CollapsibleSection({ section, defaultOpen=true }){
-  const [open,setOpen]=useState(defaultOpen);
-  const sectionTone=SECTION_TONES[section.key]||SECTION_TONES.unknown;
-  return (
-    <div style={{borderRadius:14,border:`1px solid ${sectionTone.bd}`,background:`linear-gradient(135deg,${sectionTone.bg},transparent)`,overflow:"hidden"}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{
-        appearance:"none",cursor:"pointer",width:"100%",
-        padding:"12px 14px",borderBottom:open?`1px solid ${sectionTone.bd}`:"none",
-        background:"transparent",textAlign:"left",
-        display:"flex",gap:12,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",
-      }}>
-        <div>
-          <div style={{fontSize:13,fontWeight:700,color:T.text}}>{section.title}</div>
-          <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>{section.count} item{section.count!==1?"s":""}</div>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{
-            display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,
-            background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
-            color:sectionTone.tagText,padding:"3px 10px",fontSize:11,fontWeight:700,
-          }}>{sectionTone.icon} {titleCase(section.key)}</span>
-          <span style={{
-            fontSize:14,color:T.textMuted,display:"inline-block",
-            transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s",
-          }}>▾</span>
-        </div>
-      </button>
-      {open&&(
-        <div style={{padding:14,display:"grid",gap:12}}>
-          {(section.items||[]).map(item=>(
-            <StandardCard key={`${section.key}-${item.code}-${item.title}`} item={item} sectionKey={section.key}/>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+
 
 // ─── Standards section ────────────────────────────────────────────────────────
 function StandardsSection({ result }){
