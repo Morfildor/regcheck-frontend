@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const ANALYZE_URL =
@@ -151,22 +150,6 @@ function titleCase(input) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function gapLabel(key) {
-  const labels = {
-    product_type: "Product type",
-    power_source: "Power source",
-    radio_scope_confirmation: "Radio scope",
-    radio_technology: "Radio technology",
-    wifi_band: "Wi-Fi band",
-    food_contact_materials: "Food-contact materials",
-    connectivity_architecture: "Connected design",
-    redcyber_auth_scope: "Login / authentication",
-    redcyber_transaction_scope: "Payments / subscriptions",
-    contradictions: "Contradictions",
-  };
-  return labels[key] || titleCase(key);
-}
-
 function directiveTone(key) {
   return DIR_TONES[key] || DIR_TONES.OTHER;
 }
@@ -281,7 +264,7 @@ function buildGuidedChips(metadata, result) {
   };
 
   missingItems.forEach((item) => {
-    (item.examples || []).slice(0, 2).forEach((example) => push(gapLabel(item.key), example));
+    (item.examples || []).slice(0, 2).forEach((example) => push(titleCase(item.key), example));
   });
 
   if (product?.implied_traits?.includes("food_contact") || traits.has("food_contact")) {
@@ -305,18 +288,10 @@ function buildGuidedChips(metadata, result) {
     push("Bluetooth", "Bluetooth LE radio");
   }
 
-  if (traits.has("cloud") || traits.has("app_control") || traits.has("internet") || traits.has("wifi")) {
+  if (traits.has("cloud") || traits.has("app_control") || traits.has("internet")) {
     push("Cloud", "cloud account required");
     push("Local control", "local LAN control without cloud dependency");
     push("Patching", "security and firmware patching over the air");
-    push("Login", "user account and password login");
-    push("PIN", "PIN or passcode entry");
-    push("Payments", "payment or subscription purchase through app");
-  }
-
-  if (traits.has("wifi") && !traits.has("wifi_5ghz")) {
-    push("5 GHz", "dual-band 2.4/5 GHz Wi-Fi");
-    push("2.4 GHz", "Wi-Fi 2.4 GHz radio");
   }
 
   if (traits.has("battery_powered")) push("Battery", "rechargeable lithium battery");
@@ -696,7 +671,7 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, user login, mains power, grinder, pressure system, and food-contact brew path."
+          placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
           rows={7}
           style={{
             ...inputStyle,
@@ -766,7 +741,7 @@ function GuidanceStrip({ result, dirty, busy, onApply, onReanalyze }) {
               }}
             >
               <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ fontSize: 13, fontWeight: 900, color: tone.text }}>{gapLabel(item.key)}</div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: tone.text }}>{titleCase(item.key)}</div>
                 <Tag>{titleCase(item.importance)}</Tag>
               </div>
 
@@ -941,7 +916,7 @@ function EmptyState() {
           Start with product type, power source, connectivity, food-contact path, sensors, user-account features, and updates.
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {["Wi-Fi radio", "OTA updates", "Cloud account", "User login", "Payment or subscription flow", "230 V mains powered", "Food-contact plastics"].map((item) => (
+          {["Wi-Fi radio", "OTA updates", "Cloud account", "230 V mains powered", "Food-contact plastics"].map((item) => (
             <Tag key={item}>{item}</Tag>
           ))}
         </div>
