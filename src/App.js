@@ -698,12 +698,13 @@ export default function App() {
 
       setResult(data);
 
-const initialExpanded = {};
-[...(data.standards || []), ...(data.review_items || [])].forEach((row) => {
-  const key = normalizeStdName(row.code || row.title || "Unnamed item");
-  initialExpanded[key] = true;
-});
-setExpandedStandards(initialExpanded);
+      const initialExpanded = {};
+      buildGroupsFromBackendItems(data.standards || [], data.review_items || []).forEach((group) => {
+        const directive = group.directives?.[0] || "OTHER";
+        const key = `${directive}::${group.name}`;
+        initialExpanded[key] = true;
+      });
+      setExpandedStandards(initialExpanded);
     } catch (err) {
       setError(err?.message || "Analysis failed");
       setResult(null);
