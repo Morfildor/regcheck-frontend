@@ -1,22 +1,43 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-const API_URL =
-  process.env.REACT_APP_REGCHECK_API_URL ||
-  "https://regcheck-api.onrender.com/analyze";
+const ANALYZE_URL = process.env.REACT_APP_REGCHECK_API_URL || "https://regcheck-api.onrender.com/analyze";
+const METADATA_URL = ANALYZE_URL.replace(/\/analyze$/, "/metadata/options");
+
+const THEME = {
+  bg: "#f4efe7",
+  panel: "rgba(255,255,255,0.78)",
+  panelStrong: "rgba(255,255,255,0.92)",
+  line: "rgba(109, 99, 88, 0.14)",
+  lineStrong: "rgba(109, 99, 88, 0.22)",
+  text: "#28241f",
+  subtext: "#665f56",
+  soft: "#847c72",
+  shadow: "0 10px 30px rgba(67, 57, 49, 0.08)",
+  shadowLg: "0 18px 48px rgba(67, 57, 49, 0.12)",
+  accent: "#2f5f69",
+  accent2: "#8d6f85",
+  accent3: "#5f8d8b",
+  accent4: "#b7903e",
+  success: "#5e7f5b",
+  warning: "#a67c34",
+  danger: "#b06779",
+};
 
 const DIR_NAME = {
   LVD: "Low Voltage Directive",
   EMC: "EMC Directive",
-  RED: "RF / Radio Equipment",
+  RED: "Radio Equipment Directive",
   RED_CYBER: "RED Cybersecurity DA",
   CRA: "Cyber Resilience Act",
   ROHS: "RoHS Directive",
   REACH: "REACH Regulation",
-  GDPR: "Data & Privacy",
+  GDPR: "GDPR",
   AI_Act: "AI Act",
-  ESPR: "ESPR / Ecodesign",
+  ESPR: "ESPR",
+  ECO: "Ecodesign",
+  BATTERY: "Batteries Regulation",
+  FCM: "Food Contact",
   OTHER: "Other",
-  SYSTEM: "System",
 };
 
 const DIR_SHORT = {
@@ -30,8 +51,10 @@ const DIR_SHORT = {
   GDPR: "GDPR",
   AI_Act: "AI Act",
   ESPR: "ESPR",
+  ECO: "ECO",
+  BATTERY: "Battery",
+  FCM: "FCM",
   OTHER: "Other",
-  SYSTEM: "System",
 };
 
 const DIR_ORDER = [
@@ -39,1527 +62,1160 @@ const DIR_ORDER = [
   "EMC",
   "RED",
   "RED_CYBER",
-  "CRA",
   "ROHS",
   "REACH",
   "GDPR",
-  "AI_Act",
-  "ESPR",
+  "ESPPR",
+  "CRA",
   "OTHER",
 ];
 
-const DIR = {
-  LVD: { dot: "#6f7566", pill: "#ece8dc", ring: "#cfc7b7", ink: "#505647", accent: "#8a9484", header: "#d8d3c8" },
-  EMC: { dot: "#5f8d8b", pill: "#e6f0ef", ring: "#bbd1cf", ink: "#456a69", accent: "#5f8d8b", header: "#d0e4e3" },
-  RED: { dot: "#2f5f69", pill: "#e3eef0", ring: "#b2c7cc", ink: "#294b53", accent: "#2f5f69", header: "#cde0e4" },
-  RED_CYBER: { dot: "#9f7084", pill: "#f1e7eb", ring: "#d8c0c9", ink: "#7a5667", accent: "#9f7084", header: "#e8d8df" },
-  CRA: { dot: "#60795f", pill: "#e8efe7", ring: "#c1cec0", ink: "#4a6149", accent: "#60795f", header: "#d5e3d4" },
-  ROHS: { dot: "#b7903e", pill: "#f7efd9", ring: "#e5d3a1", ink: "#8f6e2d", accent: "#b7903e", header: "#f0e5c3" },
-  REACH: { dot: "#aa7868", pill: "#f5eae6", ring: "#e3cbc2", ink: "#83584a", accent: "#aa7868", header: "#e8d8d0" },
-  GDPR: { dot: "#7f9995", pill: "#edf3f2", ring: "#cad9d8", ink: "#607773", accent: "#7f9995", header: "#daeaea" },
-  AI_Act: { dot: "#9f7084", pill: "#f1e7eb", ring: "#d8c0c9", ink: "#7a5667", accent: "#9f7084", header: "#e8d8df" },
-  ESPR: { dot: "#b7903e", pill: "#f7f0dd", ring: "#e5d7aa", ink: "#8f6e2d", accent: "#b7903e", header: "#f0e8ca" },
-  OTHER: { dot: "#8d8779", pill: "#f0ece3", ring: "#d5cec0", ink: "#686356", accent: "#8d8779", header: "#e5e0d7" },
-  SYSTEM: { dot: "#8d8779", pill: "#f0ece3", ring: "#d5cec0", ink: "#686356", accent: "#8d8779", header: "#e5e0d7" },
+const DIR_TONES = {
+  LVD: { dot: "#7f8872", bg: "#efeadf", bd: "#d8d1c1", text: "#505647" },
+  EMC: { dot: "#5f8d8b", bg: "#e8f2f1", bd: "#c6dddb", text: "#446b69" },
+  RED: { dot: "#2f5f69", bg: "#e6eef0", bd: "#cadbe0", text: "#2e4f57" },
+  RED_CYBER: { dot: "#9c7185", bg: "#f3eaee", bd: "#dfcad3", text: "#765365" },
+  CRA: { dot: "#667f65", bg: "#edf3ec", bd: "#d5e0d3", text: "#4e634d" },
+  ROHS: { dot: "#b7903e", bg: "#faf2df", bd: "#ecd8ab", text: "#8f6e2d" },
+  REACH: { dot: "#a97869", bg: "#f6ece8", bd: "#e5d2c8", text: "#84574a" },
+  GDPR: { dot: "#7f9995", bg: "#edf3f2", bd: "#d1dfde", text: "#5e7875" },
+  AI_Act: { dot: "#9c7185", bg: "#f3eaee", bd: "#dfcad3", text: "#765365" },
+  ESPR: { dot: "#b7903e", bg: "#faf2df", bd: "#ecd8ab", text: "#8f6e2d" },
+  ECO: { dot: "#6f8f7a", bg: "#edf4ef", bd: "#d5e3d9", text: "#53705d" },
+  BATTERY: { dot: "#738a5a", bg: "#f0f5e9", bd: "#dae5c7", text: "#5d6f48" },
+  FCM: { dot: "#8f7060", bg: "#f6ede8", bd: "#e3d3c9", text: "#6f574a" },
+  OTHER: { dot: "#8b857a", bg: "#f3efe7", bd: "#ddd5c8", text: "#6a635a" },
 };
 
-const STS = {
-  FAIL: { icon: "✕", label: "FAIL", bg: "#f8eef1", border: "#e6d0d6", text: "#8b6474", dot: "#c97a90" },
-  WARN: { icon: "!", label: "WARN", bg: "#fbf5e8", border: "#ecdcae", text: "#9e7d36", dot: "#c9a040" },
-  PASS: { icon: "✓", label: "PASS", bg: "#eef4ee", border: "#ccd7ca", text: "#566554", dot: "#6a9068" },
-  INFO: { icon: "·", label: "INFO", bg: "#eff5f5", border: "#cadada", text: "#517674", dot: "#7fa8a6" },
+const STATUS = {
+  LOW: { bg: "#eef4ee", bd: "#d4e2d3", text: "#52664f" },
+  MEDIUM: { bg: "#fbf5e8", bd: "#ecdcae", text: "#9a7a33" },
+  HIGH: { bg: "#f9ecef", bd: "#ebd1d8", text: "#9a6878" },
+  CRITICAL: { bg: "#f3e6eb", bd: "#e0c2cd", text: "#8f5468" },
 };
 
-const STD_RE = /^(EN|IEC|ISO|ETSI|EN IEC|EN ISO|IEC EN|UL|ASTM|CISPR|ITU|IEC\/EN)\b/i;
-
-// IMPROVEMENT: mode descriptions shown as tooltips on the segmented control
-const MODE_DESCRIPTIONS = {
-  quick: "Fast scan, key directives only",
-  standard: "Full directive + standards mapping",
-  deep: "All edge cases, Part 2 standards",
+const IMPORTANCE = {
+  high: { bg: "#f8eef1", bd: "#e8d2d9", text: "#8d6474" },
+  medium: { bg: "#fbf5e8", bd: "#ecdcae", text: "#9e7d36" },
+  low: { bg: "#eef4ee", bd: "#d7e3d5", text: "#5d7659" },
 };
 
-const QUICK_CHIPS = [
-  { label: "Heating element", text: "heating element" },
-  { label: "Wi-Fi / BT", text: "Wi-Fi and Bluetooth connectivity" },
-  { label: "OTA updates", text: "OTA firmware updates" },
-  { label: "Battery", text: "rechargeable lithium battery" },
-  { label: "Food-contact", text: "food-contact materials" },
-  { label: "Cloud account", text: "cloud account and user data storage" },
-  { label: "Motor / pump", text: "motor and pump" },
-  { label: "Display / UI", text: "display and touch UI" },
+const DEFAULT_TEMPLATES = [
+  {
+    label: "Coffee machine",
+    text: "Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud brew profiles, water tank, pressure, grinder, and food-contact brew path.",
+  },
+  {
+    label: "Air fryer",
+    text: "Smart air fryer with mains power, heating element, food-contact basket coating, Wi-Fi app control, OTA updates, and cloud recipe sync.",
+  },
+  {
+    label: "Robot vacuum",
+    text: "Robot vacuum cleaner with rechargeable lithium battery, Wi-Fi and Bluetooth, cloud account, OTA firmware updates, LiDAR navigation, and camera.",
+  },
+  {
+    label: "Air purifier",
+    text: "Smart air purifier with mains power, motorized fan, PM sensor, Wi-Fi app control, networked standby, and OTA firmware updates.",
+  },
 ];
 
-const PRODUCT_TEMPLATES = [
-  { label: "Air fryer", text: "Smart air fryer with Wi-Fi app control, mains powered, OTA updates, cloud recipe sync, and food-contact basket coating." },
-  { label: "Coffee machine", text: "Connected espresso machine with app control, mains powered, OTA updates, cloud brew profiles, water tank sensor, and food-contact brew path." },
-  { label: "Robot vacuum", text: "Robot vacuum cleaner with Wi-Fi and Bluetooth, LiDAR navigation, OTA firmware updates, cloud cleaning schedule, rechargeable lithium battery, and camera." },
-  { label: "Air purifier", text: "Smart air purifier with Wi-Fi control, PM2.5 sensor, OTA firmware updates, cloud air quality logging, and mains power." },
-];
-
-/* ------------------------------------------------------------------ */
-/* Pure helpers                                                         */
-/* ------------------------------------------------------------------ */
-
-function unique(arr) { return [...new Set((arr || []).filter(Boolean))]; }
-function normalizeStdName(s) { return (s || "").replace(/\s+/g, " ").trim(); }
-function getDirectiveListFromFinding(f) {
-  return (f.directive || "").split(",").map((x) => x.trim()).filter(Boolean).map((d) => (d === "RF" ? "RED" : d));
-}
-function statusRank(s) { return { FAIL: 4, WARN: 3, PASS: 2, INFO: 1 }[s] || 1; }
-function priorityStatus(statuses) {
-  if (!statuses || !statuses.length) return "INFO";
-  return [...statuses].sort((a, b) => statusRank(b) - statusRank(a))[0];
-}
-function isStandardFinding(f) {
-  const art = (f.article || "").trim();
-  return STD_RE.test(art) || /review$/i.test(art);
-}
-function titleCase(s) {
-  return String(s || "").replace(/[_-]/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (m) => m.toUpperCase());
-}
-function prettyDirectiveName(key) { return DIR_NAME[key] || titleCase(key); }
-function prettyTag(s) {
-  return String(s || "").replace(/[_-]/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (m) => m.toUpperCase());
-}
-function firstNonEmpty(...values) {
-  for (const v of values) { if (typeof v === "string" && v.trim()) return v.trim(); }
-  return "";
-}
-function cleanReference(ref) { return String(ref || "").replace(/\s+/g, " ").trim(); }
-function cleanVersionText(v) { return String(v || "").replace(/\s+/g, " ").trim(); }
-
-function getStandardMeta(item) {
-  return {
-    harmonizedReference: cleanReference(item?.harmonized_reference || item?.harmonised_reference || ""),
-    harmonizedVersion: cleanVersionText(item?.dated_version || item?.harmonized_version || item?.harmonised_version || ""),
-    stateOfTheArtVersion: cleanVersionText(item?.version || item?.state_of_the_art_version || ""),
-    evidence: cleanVersionText(item?.evidence_hint || item?.evidence || ""),
-    notes: cleanVersionText(item?.notes || ""),
-  };
+function titleCase(input) {
+  return String(input || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function inferStandardBadge(item) {
-  const code = String(item?.code || "").toUpperCase();
-  const directive = String(item?.directive || item?.legislation_key || "").toUpperCase();
-  const family = String(item?.standard_family || "").toLowerCase();
-
-  if (/EN\s*60335-1\b/.test(code)) return "Base safety standard";
-  if (/EN\s*60335-2-\d+\b/.test(code)) return "Part 2 product standard";
-  if (/EN\s*60730-1\b/.test(code)) return "Control safety standard";
-  if (/EN\s*60730-2-/.test(code)) return "Control Part 2 standard";
-  if (/EN\s*55014-1\b/.test(code)) return "Emission standard";
-  if (/EN\s*55014-2\b/.test(code)) return "Immunity standard";
-  if (/EN\s*61000-3-2\b/.test(code)) return "Harmonics standard";
-  if (/EN\s*61000-3-3\b/.test(code)) return "Flicker standard";
-  if (/EN\s*61000-3-11\b/.test(code)) return "Voltage fluctuation standard";
-  if (/EN\s*61000-3-12\b/.test(code)) return "Harmonics standard";
-  if (/EN\s*62233\b/.test(code)) return "EMF assessment standard";
-  if (/EN\s*62311\b/.test(code)) return "RF exposure standard";
-  if (/EN\s*62479\b/.test(code)) return "Low-power RF exposure";
-  if (/EN\s*300 328\b/.test(code)) return "2.4 GHz radio standard";
-  if (/EN\s*301 489-1\b/.test(code)) return "Radio EMC common standard";
-  if (/EN\s*301 489-17\b/.test(code)) return "Radio EMC short-range";
-  if (/EN\s*301 489-52\b/.test(code)) return "Radio EMC cellular";
-  if (/EN\s*300 220\b/.test(code)) return "Short-range radio standard";
-  if (/EN\s*300 330\b/.test(code)) return "Low-frequency radio standard";
-  if (/EN\s*301 893\b/.test(code)) return "5 GHz radio standard";
-  if (/EN\s*18031-1\b/.test(code)) return "Cybersecurity network standard";
-  if (/EN\s*18031-2\b/.test(code)) return "Cybersecurity access standard";
-  if (/EN\s*18031-3\b/.test(code)) return "Cybersecurity privacy standard";
-  if (/EN\s*63000\b/.test(code)) return "RoHS technical documentation";
-
-  if (directive === "LVD") {
-    if (family.includes("60335-2")) return "Part 2 product standard";
-    if (family.includes("60335-1")) return "Base safety standard";
-    if (family.includes("60730")) return "Control safety standard";
-    return "Safety standard";
-  }
-  if (directive === "EMC") return "Standard";
-  if (directive === "RED") return "RF standard";
-  if (directive === "RED_CYBER") return "Cybersecurity standard";
-  if (directive === "ROHS") return "Substance compliance standard";
-  if (directive === "REACH") return "Chemical compliance standard";
-
-  return firstNonEmpty(
-    item?.standard_family ? prettyTag(item.standard_family) : "",
-    item?.category ? `${prettyTag(item.category)} standard` : "",
-    "Standard"
-  );
+function directiveTone(key) {
+  return DIR_TONES[key] || DIR_TONES.OTHER;
 }
 
-function buildStandardTags(item) {
-  const directive = String(item?.directive || item?.legislation_key || "OTHER").toUpperCase();
-  const category = String(item?.category || "").toLowerCase();
-  const code = String(item?.code || "").toUpperCase();
-  const title = String(item?.title || "").toLowerCase();
-  const tags = [inferStandardBadge(item)];
-
-  if (directive === "LVD") tags.push("LVD");
-  if (directive === "EMC") tags.push("EMC");
-  if (directive === "RED") tags.push("RED");
-  if (directive === "RED_CYBER") tags.push("Cybersecurity");
-  if (directive === "ROHS") tags.push("RoHS");
-
-  if (/55014-1/.test(code) || category.includes("emission")) tags.push("Emission");
-  if (/55014-2/.test(code) || category.includes("immunity")) tags.push("Immunity");
-  if (/61000-3-2|61000-3-12/.test(code) || /harmonic/.test(title)) tags.push("Harmonics");
-  if (/61000-3-3|61000-3-11/.test(code) || /flicker|voltage change/.test(title)) tags.push("Flicker");
-  if (/301 489-/.test(code)) tags.push("Radio EMC");
-  if (/300 328/.test(code)) tags.push("2.4 GHz");
-  if (/301 893/.test(code)) tags.push("5 GHz");
-  if (/300 220/.test(code)) tags.push("Short-range");
-  if (/300 330/.test(code)) tags.push("Low frequency");
-  if (/62311|62479/.test(code) || category === "emf") tags.push("EMF");
-  if (/18031-1/.test(code)) tags.push("Network");
-  if (/18031-2/.test(code)) tags.push("Access control");
-  if (/18031-3/.test(code)) tags.push("Personal data");
-  if (/18031-/.test(code)) tags.push("RED DA");
-  if (/60335-2-/.test(code)) tags.push("Part 2");
-  if (/60335-1\b/.test(code)) tags.push("Base");
-
-  return unique(tags).filter((t) => t !== "LVD" && t !== "EMC" && t !== "RED").slice(0, 3);
+function directiveName(key) {
+  return DIR_NAME[key] || titleCase(key);
 }
 
-function summarizeStandardCard(item, finding) {
-  const code = String(item?.code || "").toUpperCase();
-  const title = String(item?.title || "").trim();
-  const directive = String(item?.directive || item?.legislation_key || "OTHER").toUpperCase();
-
-  if (/EN\s*60335-1\b/.test(code)) return "General household appliance electrical safety standard.";
-  if (/EN\s*60335-2-\d+\b/.test(code)) return "Product-specific Part 2 appliance safety standard.";
-  if (/EN\s*55014-1\b/.test(code)) return "EMC emissions requirements for household appliances and similar equipment.";
-  if (/EN\s*55014-2\b/.test(code)) return "EMC immunity requirements for household appliances and similar equipment.";
-  if (/EN\s*61000-3-2\b/.test(code)) return "Harmonic current emissions limits for mains-connected equipment.";
-  if (/EN\s*61000-3-3\b/.test(code)) return "Voltage fluctuation and flicker limits for mains-connected equipment.";
-  if (/EN\s*61000-3-11\b/.test(code)) return "Voltage changes, fluctuations and flicker limits for conditionally connected equipment.";
-  if (/EN\s*61000-3-12\b/.test(code)) return "Harmonic current limits for equipment with higher input current.";
-  if (/EN\s*300 328\b/.test(code)) return "Radio spectrum requirements for 2.4 GHz wideband transmission systems such as Wi-Fi and Bluetooth.";
-  if (/EN\s*301 489-1\b/.test(code)) return "Common EMC requirements for radio equipment.";
-  if (/EN\s*301 489-17\b/.test(code)) return "EMC requirements for 2.4 GHz and 5 GHz short-range radio technologies.";
-  if (/EN\s*301 893\b/.test(code)) return "Radio spectrum requirements for 5 GHz wireless access systems.";
-  if (/EN\s*62311\b/.test(code)) return "Assessment of RF exposure for electronic and radio equipment.";
-  if (/EN\s*62479\b/.test(code)) return "RF exposure assessment method for low-power electronic and radio equipment.";
-  if (/EN\s*18031-1\b/.test(code)) return "Cybersecurity requirements for protecting network functions of radio equipment.";
-  if (/EN\s*18031-2\b/.test(code)) return "Cybersecurity requirements for access control and protection against misuse.";
-  if (/EN\s*18031-3\b/.test(code)) return "Cybersecurity and personal data/privacy protection requirements.";
-  if (/EN\s*63000\b/.test(code)) return "Technical documentation standard for RoHS substance restriction compliance.";
-
-  if (directive === "EMC") return title || "EMC standard applicable to the product configuration.";
-  if (directive === "RED") return title || "RF standard applicable to the radio functions identified.";
-  if (directive === "RED_CYBER") return title || "Cybersecurity standard applicable to the connected radio functions identified.";
-  if (directive === "LVD") return title || "Electrical safety standard applicable to the product configuration.";
-  if (directive === "ROHS") return title || "Substance compliance standard for technical documentation and material restrictions.";
-
-  return firstNonEmpty(title, finding?.finding, "Applicable standard.");
+function directiveShort(key) {
+  return DIR_SHORT[key] || titleCase(key);
 }
 
-function inferDirectiveFromText(text) {
-  const t = (text || "").toLowerCase();
-  if (/en\s*18031|18031-1|18031-2|18031-3|red da|delegated act|article 3\.3\(d\)|article 3\.3\(e\)|article 3\.3\(f\)/.test(t)) return "RED_CYBER";
-  if (/cyber resilience act|\bcra\b|sbom|vulnerability|secure development/.test(t)) return "CRA";
-  if (/rohs|2011\/65\/eu|iec 63000|en iec 63000|62321/.test(t)) return "ROHS";
-  if (/\breach\b|1907\/2006|svhc|article 33/.test(t)) return "REACH";
-  if (/60335|60730|62233|electrical safety|appliance safety/.test(t)) return "LVD";
-  if (/55014|61000|emc|electromagnetic|cispr|harmonic|flicker|esd|surge|immunity/.test(t)) return "EMC";
-  if (/300 328|301 489|300 220|300 330|wireless|bluetooth|wifi|wi-fi|zigbee|matter|nfc|lte|5g/.test(t)) return "RED";
-  if (/gdpr|privacy|personal data|data protection/.test(t)) return "GDPR";
-  if (/ai act|artificial intelligence|machine learning|model/.test(t)) return "AI_Act";
-  if (/ecodesign|espr|repairability|durability|energy/.test(t)) return "ESPR";
-  return "OTHER";
+function joinText(base, addition) {
+  const a = String(base || "").trim();
+  const b = String(addition || "").trim();
+  if (!b) return a;
+  if (!a) return b;
+  if (a.toLowerCase().includes(b.toLowerCase())) return a;
+  const separator = /[\s,;:]$/.test(a) ? " " : a.endsWith(".") ? " " : ", ";
+  return `${a}${separator}${b}`;
 }
 
-function enrichDirectives(f) {
-  const combined = [f.article, f.finding, f.action].filter(Boolean).join(" ");
-  const inferred = inferDirectiveFromText(combined);
-  let explicit = getDirectiveListFromFinding(f).filter((d) => d !== "SYSTEM");
-
-  if (/en\s*18031|18031-1|18031-2|18031-3/i.test(combined.toLowerCase())) {
-    explicit = explicit.filter((d) => d !== "CRA" && d !== "RED");
-    explicit.push("RED_CYBER");
-  }
-
-  if (inferred === "RED_CYBER" && !explicit.includes("RED_CYBER")) explicit.push("RED_CYBER");
-  if (!explicit.length) explicit = inferred ? [inferred] : ["OTHER"];
-  return unique(explicit);
-}
-
-function standardStatusFromItem(item) {
-  return item.item_type === "review" ? "WARN" : "PASS";
-}
-
-function buildGroupsFromBackendItems(standards, reviewItems) {
-  const all = [...(standards || []), ...(reviewItems || [])];
+function uniqueBy(items, getKey) {
   const map = new Map();
-
-  all.forEach((row) => {
-    const name = normalizeStdName(row.code || row.title || "Unnamed item");
-    const directive = row.directive || row.legislation_key || "OTHER";
-    const key = directive + "::" + name.toLowerCase();
-    const status = standardStatusFromItem(row);
-    const findingText = row.title || "";
-    const actionText = row.reason || row.notes || "";
-
-    const itemPayload = {
-      code: row.code || "",
-      title: row.title || "",
-      category: row.category || "",
-      directive: row.directive || "",
-      legislation_key: row.legislation_key || "",
-      standard_family: row.standard_family || "",
-      item_type: row.item_type || "",
-      test_focus: row.test_focus || [],
-      keywords: row.keywords || [],
-      harmonized_reference: row.harmonized_reference || row.harmonised_reference || "",
-      dated_version: row.dated_version || row.harmonized_version || row.harmonised_version || "",
-      version: row.version || row.state_of_the_art_version || "",
-      evidence_hint: row.evidence_hint || row.evidence || "",
-      notes: row.notes || "",
-    };
-
-    if (!map.has(key)) {
-      map.set(key, {
-        name,
-        directives: [directive],
-        statuses: [status],
-        findings: [{ finding: findingText, action: actionText, status, item: itemPayload }],
-        actions: actionText ? [actionText] : [],
-      });
-      return;
-    }
-
-    const curr = map.get(key);
-    curr.directives = unique([...curr.directives, directive]);
-    curr.statuses = unique([...curr.statuses, status]);
-    if (actionText) curr.actions = unique([...curr.actions, actionText]);
-    curr.findings.push({ finding: findingText, action: actionText, status, item: itemPayload });
+  (items || []).forEach((item) => {
+    const key = getKey(item);
+    if (!map.has(key)) map.set(key, item);
   });
-
-  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return Array.from(map.values());
 }
 
-function categoriseFindings(findings, knownStdNames) {
-  const toCheck = [];
-  const notes = [];
-  const stdSet = knownStdNames || new Set();
+function groupBy(items, getKey) {
+  return (items || []).reduce((acc, item) => {
+    const key = getKey(item);
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+}
 
-  (findings || []).forEach((f, i) => {
-    const row = { ...f, _i: i };
-    const art = (f.article || "").trim();
-    const findingText = (f.finding || "").trim();
+function getHeroStats(heroSummary, result) {
+  const stats = heroSummary?.stats || [];
+  const fallback = [
+    { label: "Current CE", value: result?.stats?.current_legislation_count || 0 },
+    { label: "Standards", value: result?.stats?.standards_count || 0 },
+    { label: "Review items", value: result?.stats?.review_items_count || 0 },
+    { label: "Input gaps", value: result?.stats?.missing_information_count || 0 },
+  ];
+  return stats.length ? stats : fallback;
+}
 
-    if (isStandardFinding(f)) return;
+function buildDynamicTemplates(products) {
+  const wanted = ["coffee_machine", "electric_kettle", "air_purifier", "air_cleaner", "robot_vacuum", "robot_vacuum_cleaner"];
+  const lookup = new Map((products || []).map((p) => [p.id, p]));
+  const templates = [];
 
-    const artLow = art.toLowerCase();
-    const findLow = findingText.toLowerCase();
-    const coversKnownStd = [...stdSet].some((name) => {
-      const n = name.toLowerCase();
-      return artLow === n || (n.length > 8 && (artLow.includes(n) || findLow.includes(n)));
+  function addTemplate(productId, suffix) {
+    const product = lookup.get(productId);
+    if (!product) return;
+    templates.push({
+      label: product.label,
+      text: `${product.label} with ${suffix}.`,
     });
+  }
 
-    if (coversKnownStd) return;
+  addTemplate("coffee_machine", "mains power, heating, food-contact brew path, app control, cloud account, and OTA updates");
+  addTemplate("electric_kettle", "mains power, liquid heating, steam generation, food-contact plastics, and optional Wi-Fi control");
+  addTemplate("air_purifier", "mains power, motorized fan, sensor electronics, networked standby, app control, and OTA updates");
+  addTemplate("air_cleaner", "mains power, motorized air cleaning, app control, and cloud dashboard");
+  addTemplate("robot_vacuum", "rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation");
+  addTemplate("robot_vacuum_cleaner", "rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation");
 
-    const isUncertain =
-      /Missing|unclear|not specified|confirm|check whether|verify|not confirmed/i.test(art) ||
-      /Missing|unclear|not specified|confirm|check whether|verify|not confirmed/i.test(findingText);
+  const filtered = templates.filter(Boolean);
+  return filtered.length ? filtered : DEFAULT_TEMPLATES.filter((item) => wanted.includes(item.id));
+}
 
-    if (isUncertain) toCheck.push(row);
-    else notes.push(row);
+function buildContextualChips(metadata, result) {
+  const backend = result?.suggested_quick_adds || [];
+  const chips = [...backend];
+  const productId = result?.product_type;
+  const product = (metadata?.products || []).find((item) => item.id === productId);
+  const traits = new Set(result?.all_traits || []);
+
+  const push = (label, text) => {
+    if (!text) return;
+    if (!chips.some((item) => item.text === text)) {
+      chips.push({ label, text });
+    }
+  };
+
+  if (product?.implied_traits?.includes("food_contact") || traits.has("food_contact")) {
+    push("Food-contact", "food-contact plastics, coatings, rubber, or silicone");
+    push("Water path", "water tank, seals, and wetted path materials");
+  }
+  if (product?.implied_traits?.includes("motorized") || traits.has("motorized")) {
+    push("Motor", "motor and moving parts");
+    push("Pump", "pump or fluid transfer function");
+  }
+  if (traits.has("radio")) {
+    push("Wi-Fi", "Wi-Fi radio");
+    push("Bluetooth", "Bluetooth LE radio");
+    push("OTA", "OTA firmware updates");
+  }
+  if (traits.has("cloud") || traits.has("app_control") || traits.has("internet")) {
+    push("Cloud account", "cloud account required");
+    push("Local LAN", "local LAN control without cloud dependency");
+    push("Patch route", "security and firmware patching over the air");
+  }
+  if (traits.has("battery_powered")) {
+    push("Battery", "rechargeable lithium battery");
+  }
+  if (traits.has("display")) {
+    push("Display", "display and touch UI");
+  }
+  push("230 V mains", "230 V mains powered");
+  push("Consumer", "consumer household use");
+  push("Professional", "professional or commercial use");
+
+  return chips.slice(0, 12);
+}
+
+function sortDirectiveGroups(groups) {
+  return [...(groups || [])].sort((a, b) => {
+    const ai = DIR_ORDER.indexOf(a.key);
+    const bi = DIR_ORDER.indexOf(b.key);
+    const aRank = ai === -1 ? 999 : ai;
+    const bRank = bi === -1 ? 999 : bi;
+    return aRank - bRank || String(a.key).localeCompare(String(b.key));
   });
-
-  return { toCheck, notes };
 }
 
-function tagToneForSignal(signal) {
-  if (signal === "high") return { bg: "#f8eef1", bd: "#e6d0d6", tx: "#8b6474" };
-  if (signal === "medium") return { bg: "#fbf5e8", bd: "#ecdcae", tx: "#9e7d36" };
-  if (signal === "good") return { bg: "#eef4ee", bd: "#ccd7ca", tx: "#566554" };
-  return { bg: "#eff5f5", bd: "#cadada", tx: "#517674" };
+function prettyValue(value) {
+  if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return value.join(", ");
+  return String(value);
 }
 
-/* ------------------------------------------------------------------ */
-/* Atoms                                                                */
-/* ------------------------------------------------------------------ */
-
-function DirPill({ dirKey, size = "sm" }) {
-  const tone = DIR[dirKey] || DIR.OTHER;
-  const fs = size === "sm" ? 11 : 13;
+function DirPill({ dirKey, large = false }) {
+  const tone = directiveTone(dirKey);
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      padding: size === "sm" ? "2px 9px 2px 7px" : "3px 11px 3px 9px",
-      borderRadius: 999, border: "1px solid " + tone.ring,
-      background: tone.pill, color: tone.ink,
-      fontSize: fs, fontWeight: 800, letterSpacing: "0.04em", whiteSpace: "nowrap",
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: 999, background: tone.dot, flexShrink: 0 }} />
-      {DIR_SHORT[dirKey] || dirKey}
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 7,
+        borderRadius: 999,
+        border: `1px solid ${tone.bd}`,
+        background: tone.bg,
+        color: tone.text,
+        padding: large ? "6px 12px" : "4px 10px",
+        fontSize: large ? 13 : 12,
+        fontWeight: 800,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span
+        style={{
+          width: 7,
+          height: 7,
+          borderRadius: 999,
+          background: tone.dot,
+          flexShrink: 0,
+        }}
+      />
+      {directiveShort(dirKey)}
     </span>
   );
 }
 
-function StatusBadge({ status, small }) {
-  const s = STS[status] || STS.INFO;
-  const fs = small ? 12 : 13;
+function RiskPill({ value }) {
+  const tone = STATUS[value] || STATUS.MEDIUM;
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      padding: small ? "3px 9px" : "4px 11px",
-      borderRadius: 999, border: "1px solid " + s.border,
-      background: s.bg, color: s.text,
-      fontSize: fs, fontWeight: 900, lineHeight: 1, whiteSpace: "nowrap",
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: 999, background: s.dot, flexShrink: 0 }} />
-      {s.label}
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 7,
+        borderRadius: 999,
+        border: `1px solid ${tone.bd}`,
+        background: tone.bg,
+        color: tone.text,
+        padding: "5px 11px",
+        fontSize: 12,
+        fontWeight: 900,
+      }}
+    >
+      {value}
     </span>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* IMPROVEMENT: LoadingSkeleton — animated placeholder while fetching  */
-/* ------------------------------------------------------------------ */
-function LoadingSkeleton() {
+function Tag({ children, tone = "neutral" }) {
+  const styles =
+    tone === "neutral"
+      ? { bg: "rgba(255,255,255,0.7)", bd: THEME.line, text: THEME.soft }
+      : tone === "soft"
+      ? { bg: "rgba(47,95,105,0.08)", bd: "rgba(47,95,105,0.18)", text: THEME.accent }
+      : { bg: "rgba(159,112,132,0.08)", bd: "rgba(159,112,132,0.18)", text: THEME.accent2 };
   return (
-    <div style={{ display: "grid", gap: 10 }}>
-      {[1, 2, 3].map((i) => (
-        <div key={i} style={{
-          borderRadius: 16, border: "1px solid rgba(183,175,163,0.2)",
-          overflow: "hidden", background: "rgba(255,255,255,0.5)",
-        }}>
-          <div style={{
-            padding: "13px 16px",
-            background: "rgba(255,255,255,0.4)",
-            display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <div className="skeleton-pulse" style={{ width: 10, height: 10, borderRadius: 999 }} />
-            <div className="skeleton-pulse" style={{ height: 14, width: `${120 + i * 40}px`, borderRadius: 6 }} />
-            <div style={{ flex: 1 }} />
-            <div className="skeleton-pulse" style={{ height: 22, width: 28, borderRadius: 99 }} />
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        borderRadius: 999,
+        border: `1px solid ${styles.bd}`,
+        background: styles.bg,
+        color: styles.text,
+        padding: "4px 10px",
+        fontSize: 12,
+        fontWeight: 700,
+        lineHeight: 1.1,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function SectionCard({ title, subtitle, right, children, style }) {
+  return (
+    <section
+      style={{
+        borderRadius: 24,
+        border: `1px solid ${THEME.line}`,
+        background: THEME.panel,
+        boxShadow: THEME.shadow,
+        backdropFilter: "blur(10px)",
+        padding: 22,
+        ...style,
+      }}
+    >
+      {(title || subtitle || right) && (
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
+          <div style={{ minWidth: 0 }}>
+            {title ? <div style={{ fontSize: 18, fontWeight: 900, color: THEME.text, lineHeight: 1.2 }}>{title}</div> : null}
+            {subtitle ? <div style={{ marginTop: 6, fontSize: 13, color: THEME.subtext, lineHeight: 1.55 }}>{subtitle}</div> : null}
           </div>
-          <div style={{ padding: "10px 16px 14px", display: "grid", gap: 8 }}>
-            {[1, 2].map((j) => (
-              <div key={j} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0" }}>
-                <div className="skeleton-pulse" style={{ width: 3, height: 36, borderRadius: 99 }} />
-                <div className="skeleton-pulse" style={{ height: 14, width: `${60 + j * 80}px`, borderRadius: 6 }} />
-                <div style={{ flex: 1 }} />
-                <div className="skeleton-pulse" style={{ height: 20, width: 44, borderRadius: 99 }} />
+          {right}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+function Hero({ result }) {
+  const hero = result?.hero_summary || {};
+  const stats = getHeroStats(hero, result);
+  const primaryRegimes = hero.primary_regimes || [];
+  return (
+    <SectionCard
+      style={{
+        background:
+          "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(250,245,238,0.94) 56%, rgba(235,241,242,0.9))",
+        boxShadow: THEME.shadowLg,
+        padding: 28,
+      }}
+    >
+      <div style={{ display: "grid", gap: 24 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+          <Tag tone="soft">RuleGrid</Tag>
+          <RiskPill value={result?.overall_risk || "MEDIUM"} />
+          <Tag>{titleCase(hero.confidence || result?.product_match_confidence || "low")} confidence</Tag>
+        </div>
+
+        <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ fontSize: 34, lineHeight: 1.04, fontWeight: 900, color: THEME.text, letterSpacing: "-0.03em" }}>
+            {hero.title || "Compliance route analysis"}
+          </div>
+          <div style={{ fontSize: 15, color: THEME.subtext, lineHeight: 1.75, maxWidth: 940 }}>
+            {hero.subtitle || result?.summary}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          {primaryRegimes.map((dirKey) => (
+            <DirPill key={dirKey} dirKey={dirKey} large />
+          ))}
+        </div>
+
+        <div className="hero-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
+          {stats.map((item) => (
+            <div
+              key={item.label}
+              style={{
+                borderRadius: 20,
+                border: `1px solid ${THEME.line}`,
+                background: "rgba(255,255,255,0.74)",
+                padding: "16px 16px 14px",
+              }}
+            >
+              <div style={{ fontSize: 12, fontWeight: 700, color: THEME.soft, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                {item.label}
               </div>
+              <div style={{ marginTop: 8, fontSize: 28, fontWeight: 900, color: THEME.text }}>{item.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+function Sidebar({ result, onJump }) {
+  const sections = result?.legislation_sections || [];
+  return (
+    <SectionCard title="Applicable legislation" subtitle="Current route, parallel obligations, and future watchlist are separated clearly.">
+      <div style={{ display: "grid", gap: 12 }}>
+        {sections.map((section) => {
+          const first = section.items?.[0];
+          return (
+            <button
+              key={section.key}
+              type="button"
+              onClick={() => onJump(section.key)}
+              style={{
+                appearance: "none",
+                cursor: "pointer",
+                textAlign: "left",
+                width: "100%",
+                borderRadius: 18,
+                border: `1px solid ${THEME.line}`,
+                background: "rgba(255,255,255,0.82)",
+                padding: 14,
+                display: "grid",
+                gap: 10,
+              }}
+            >
+              <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
+                  <span
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: 999,
+                      background: directiveTone(first?.directive_key || "OTHER").dot,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ fontSize: 14, fontWeight: 900, color: THEME.text }}>{section.title}</span>
+                </div>
+                <Tag>{section.count}</Tag>
+              </div>
+              <div style={{ fontSize: 12, lineHeight: 1.55, color: THEME.subtext }}>
+                {(section.items || []).slice(0, 2).map((item) => item.code).join(" • ") || "No items"}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </SectionCard>
+  );
+}
+
+function InputComposer({ description, setDescription, templates, chips, onAnalyze, busy, metadata }) {
+  const [category, setCategory] = useState("");
+  const [depth, setDepth] = useState("standard");
+  const [selectedDirectives, setSelectedDirectives] = useState([]);
+
+  useEffect(() => {
+    if (!metadata?.legislations?.length) return;
+    setSelectedDirectives((current) => current.filter((item) => metadata.legislations.some((leg) => leg.directive_key === item)));
+  }, [metadata]);
+
+  const directiveOptions = useMemo(() => {
+    const raw = (metadata?.legislations || []).map((item) => item.directive_key).filter(Boolean);
+    return uniqueBy(raw.map((key) => ({ key })), (item) => item.key);
+  }, [metadata]);
+
+  const appendText = useCallback(
+    (text) => {
+      setDescription((current) => joinText(current, text));
+    },
+    [setDescription]
+  );
+
+  const toggleDirective = useCallback((dirKey) => {
+    setSelectedDirectives((current) => (current.includes(dirKey) ? current.filter((item) => item !== dirKey) : [...current, dirKey]));
+  }, []);
+
+  const handleAnalyze = useCallback(() => {
+    onAnalyze({ category, depth, directives: selectedDirectives });
+  }, [category, depth, selectedDirectives, onAnalyze]);
+
+  return (
+    <SectionCard
+      title="Describe the product"
+      subtitle="Give the commercial product family, power source, connectivity, food-contact path, sensors, data features, and whether it is consumer or professional."
+      right={
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <select
+            value={depth}
+            onChange={(e) => setDepth(e.target.value)}
+            style={selectStyle}
+          >
+            <option value="quick">Quick</option>
+            <option value="standard">Standard</option>
+            <option value="deep">Deep</option>
+          </select>
+          <button type="button" onClick={handleAnalyze} disabled={busy || !description.trim()} style={primaryButtonStyle(busy || !description.trim())}>
+            {busy ? "Analyzing..." : "Analyze"}
+          </button>
+        </div>
+      }
+    >
+      <div style={{ display: "grid", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 16 }} className="composer-grid">
+          <div style={{ display: "grid", gap: 12 }}>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Example: Connected espresso machine with 230 V mains power, Wi‑Fi app control, OTA updates, cloud account, grinder, pressure brewing, water tank, and food-contact plastics in the brew path."
+              style={{
+                width: "100%",
+                minHeight: 180,
+                resize: "vertical",
+                borderRadius: 20,
+                border: `1px solid ${THEME.lineStrong}`,
+                background: "rgba(255,255,255,0.92)",
+                padding: 18,
+                boxSizing: "border-box",
+                font: "inherit",
+                fontSize: 15,
+                lineHeight: 1.7,
+                color: THEME.text,
+                outline: "none",
+              }}
+            />
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {chips.map((chip) => (
+                <button key={`${chip.label}-${chip.text}`} type="button" onClick={() => appendText(chip.text)} style={chipButtonStyle}>
+                  + {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: 14 }}>
+            <div style={miniPanelStyle}>
+              <div style={miniTitleStyle}>Category hint</div>
+              <input
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Optional category, e.g. kitchen appliance"
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={miniPanelStyle}>
+              <div style={miniTitleStyle}>Quick templates</div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {templates.map((template) => (
+                  <button key={template.label} type="button" onClick={() => setDescription(template.text)} style={templateButtonStyle}>
+                    <span style={{ fontWeight: 800, color: THEME.text }}>{template.label}</span>
+                    <span style={{ fontSize: 12, color: THEME.subtext, lineHeight: 1.5 }}>{template.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={miniPanelStyle}>
+              <div style={miniTitleStyle}>Directive focus</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {directiveOptions.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => toggleDirective(item.key)}
+                    style={filterPillStyle(selectedDirectives.includes(item.key), directiveTone(item.key))}
+                  >
+                    {directiveShort(item.key)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+function ConfidencePanel({ result }) {
+  const panel = result?.confidence_panel || {};
+  const candidates = result?.product_candidates || [];
+  const winner = candidates[0];
+  const alternatives = panel.alternatives || [];
+  return (
+    <SectionCard title="Detection confidence" subtitle="Keep the detection lean and honest. Alternatives and contradictions are shown instead of hidden.">
+      <div style={{ display: "grid", gap: 16 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+          {winner?.id ? <Tag tone="soft">Detected as {titleCase(winner.id)}</Tag> : <Tag>No confident product family</Tag>}
+          <Tag>{titleCase(panel.level || result?.product_match_confidence || "low")} confidence</Tag>
+          {panel.contradiction_severity && panel.contradiction_severity !== "none" ? <Tag tone="warm">{titleCase(panel.contradiction_severity)} contradiction signal</Tag> : null}
+        </div>
+
+        <div style={{ display: "grid", gap: 10 }}>
+          {(panel.reasons || []).slice(0, 4).map((reason, index) => (
+            <div key={index} style={listRowStyle}>
+              <span style={bulletStyle} />
+              <span>{reason}</span>
+            </div>
+          ))}
+        </div>
+
+        {alternatives.length ? (
+          <div style={{ display: "grid", gap: 10 }}>
+            <div style={miniTitleStyle}>Alternative matches</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              {alternatives.map((candidate) => (
+                <div key={candidate.id} style={softBoxStyle}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+                    <div style={{ fontWeight: 800, color: THEME.text }}>{candidate.label || titleCase(candidate.id)}</div>
+                    <Tag>{titleCase(candidate.confidence)}</Tag>
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 13, color: THEME.subtext, lineHeight: 1.55 }}>
+                    {(candidate.reasons || []).slice(0, 2).join(" • ")}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </SectionCard>
+  );
+}
+
+function InputGapsPanel({ result, onApply }) {
+  const panel = result?.input_gaps_panel || {};
+  const items = panel.items || [];
+  return (
+    <SectionCard title={panel.title || "What to clarify next"} subtitle="Close the biggest input gaps first. One click can append common clarifications to the description.">
+      {!items.length ? (
+        <div style={{ color: THEME.subtext, fontSize: 14 }}>No major input gaps detected.</div>
+      ) : (
+        <div style={{ display: "grid", gap: 12 }}>
+          {items.map((item) => {
+            const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
+            return (
+              <div
+                key={item.key}
+                style={{
+                  borderRadius: 18,
+                  border: `1px solid ${tone.bd}`,
+                  background: tone.bg,
+                  padding: 16,
+                  display: "grid",
+                  gap: 12,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: THEME.text }}>{item.message}</div>
+                  <Tag>{titleCase(item.importance)}</Tag>
+                </div>
+                {item.examples?.length ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {item.examples.map((example) => (
+                      <button key={example} type="button" onClick={() => onApply(example)} style={chipButtonStyle}>
+                        + {example}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+function LegislationSections({ result, refs }) {
+  const sections = result?.legislation_sections || [];
+  return (
+    <SectionCard title="Applicable legislation path" subtitle="Current CE comes first. Framework regimes, non-CE obligations, and future watchlist are split out to avoid confusion.">
+      <div style={{ display: "grid", gap: 16 }}>
+        {sections.map((section) => (
+          <div key={section.key} ref={(node) => { refs.current[section.key] = node; }} style={{ display: "grid", gap: 12 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: THEME.text }}>{section.title}</div>
+              <Tag>{section.count} items</Tag>
+            </div>
+            <div style={{ display: "grid", gap: 12 }}>
+              {(section.items || []).map((item) => (
+                <div key={`${section.key}-${item.code}`} style={softBoxStyle}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                      <DirPill dirKey={item.directive_key || "OTHER"} />
+                      <Tag>{item.code}</Tag>
+                    </div>
+                    {item.timing_status === "future" && <Tag tone="warm">Future</Tag>}
+                  </div>
+                  <div style={{ marginTop: 10, fontSize: 16, fontWeight: 800, color: THEME.text, lineHeight: 1.35 }}>{item.title}</div>
+                  <div style={{ marginTop: 8, fontSize: 14, color: THEME.subtext, lineHeight: 1.65 }}>{item.reason || item.notes || "—"}</div>
+                  {item.doc_impacts?.length ? (
+                    <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {item.doc_impacts.slice(0, 6).map((impact) => (
+                        <Tag key={impact}>{impact}</Tag>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </SectionCard>
+  );
+}
+
+function StandardsSection({ result }) {
+  const sections = result?.standard_sections || [];
+  const groupedByDirective = useMemo(() => {
+    const map = {};
+    sections.forEach((section) => {
+      const directiveGroups = groupBy(section.items || [], (item) => item.directive || "OTHER");
+      map[section.key] = sortDirectiveGroups(
+        Object.entries(directiveGroups).map(([key, items]) => ({ key, items }))
+      );
+    });
+    return map;
+  }, [sections]);
+
+  return (
+    <SectionCard title="Standards route" subtitle="The UI now renders backend-defined sections directly: harmonized, state-of-the-art, and review-required. Product-specific Part 2 routes are easy to spot.">
+      <div style={{ display: "grid", gap: 22 }}>
+        {sections.map((section) => (
+          <div key={section.key} style={{ display: "grid", gap: 14 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: THEME.text }}>{section.title}</div>
+              <Tag>{section.count} items</Tag>
+            </div>
+
+            <div style={{ display: "grid", gap: 16 }}>
+              {(groupedByDirective[section.key] || []).map((group) => (
+                <div key={`${section.key}-${group.key}`} style={{ borderRadius: 20, border: `1px solid ${THEME.line}`, overflow: "hidden", background: "rgba(255,255,255,0.68)" }}>
+                  <div
+                    style={{
+                      padding: "12px 16px",
+                      display: "flex",
+                      gap: 10,
+                      alignItems: "center",
+                      borderBottom: `1px solid ${THEME.line}`,
+                      background: directiveTone(group.key).bg,
+                    }}
+                  >
+                    <DirPill dirKey={group.key} />
+                    <div style={{ fontWeight: 800, color: THEME.text }}>{directiveName(group.key)}</div>
+                    <div style={{ marginLeft: "auto" }}><Tag>{group.items.length}</Tag></div>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 0 }}>
+                    {group.items.map((item) => (
+                      <div key={`${section.key}-${group.key}-${item.code}`} style={{ padding: 16, borderTop: `1px solid ${THEME.line}` }}>
+                        <div style={{ display: "grid", gap: 12 }}>
+                          <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+                            <div style={{ fontSize: 17, fontWeight: 900, color: THEME.text, letterSpacing: "-0.01em" }}>{item.code}</div>
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                              {(item.display_tags || []).map((tag) => (
+                                <Tag key={`${item.code}-${tag}`}>{tag}</Tag>
+                              ))}
+                            </div>
+                          </div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: THEME.subtext, lineHeight: 1.6 }}>{item.title}</div>
+                          <div style={{ fontSize: 14, color: THEME.subtext, lineHeight: 1.7 }}>{item.standard_summary || item.reason || item.notes || "—"}</div>
+                          <div className="standard-meta-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+                            <MetaRow label="Harmonized reference" value={item.harmonized_reference} />
+                            <MetaRow label="Harmonized version" value={item.dated_version} />
+                            <MetaRow label="State-of-the-art version" value={item.version} />
+                            <MetaRow label="Match basis" value={item.match_basis} />
+                          </div>
+                          {item.evidence_hint?.length ? (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                              {item.evidence_hint.map((hint) => (
+                                <Tag key={`${item.code}-${hint}`}>{hint}</Tag>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </SectionCard>
+  );
+}
+
+function MetaRow({ label, value }) {
+  return (
+    <div style={{ borderRadius: 16, border: `1px solid ${THEME.line}`, background: "rgba(255,255,255,0.72)", padding: 12 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: THEME.soft, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+      <div style={{ marginTop: 6, fontSize: 13, color: THEME.text, lineHeight: 1.55 }}>{prettyValue(value)}</div>
+    </div>
+  );
+}
+
+function ActionBoard({ result, onApply }) {
+  return (
+    <SectionCard title="Recommended next steps" subtitle="Make the result actionable. The current route and future monitoring are separate so the user knows what to do now versus later.">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="two-col-grid">
+        <InfoColumn title="Top actions" items={result?.top_actions || []} />
+        <InfoColumn title="Current path" items={result?.current_path || []} />
+        <InfoColumn title="Future watchlist" items={result?.future_watchlist || []} />
+        <div style={{ display: "grid", gap: 12 }}>
+          <div style={miniTitleStyle}>Follow-up questions</div>
+          {(result?.suggested_questions || []).map((question, index) => (
+            <div key={index} style={listRowStyle}>
+              <span style={bulletStyle} />
+              <span>{question}</span>
+            </div>
+          ))}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+            {(result?.suggested_quick_adds || []).slice(0, 6).map((chip) => (
+              <button key={`${chip.label}-${chip.text}`} type="button" onClick={() => onApply(chip.text)} style={chipButtonStyle}>
+                + {chip.label}
+              </button>
             ))}
           </div>
         </div>
-      ))}
-    </div>
+      </div>
+    </SectionCard>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* StandardRow                                                          */
-/* ------------------------------------------------------------------ */
-function StandardRow({ group, expanded, onToggle, compact = false }) {
-  const topStatus = priorityStatus(group.statuses);
-  const d = (group.directives && group.directives[0]) || "OTHER";
-  const tone = DIR[d] || DIR.OTHER;
-
+function InfoColumn({ title, items }) {
   return (
-    <div style={{ borderBottom: "1px solid rgba(188,178,165,0.15)" }}>
-      <div
-        onClick={onToggle}
-        className="std-row-head"
-        style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: compact ? "11px 10px 11px 0" : "11px 16px 11px 0",
-          cursor: "pointer", transition: "background 0.12s",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.4)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-      >
-        <span style={{ width: 3, alignSelf: "stretch", borderRadius: 99, background: tone.accent, flexShrink: 0, minHeight: 24, marginLeft: 0 }} />
-        <span className="std-row-title" style={{
-          flex: 1, fontSize: compact ? 14 : 15, fontWeight: 700, color: "#2c2925",
-          minWidth: 0, overflow: "hidden", textOverflow: "ellipsis",
-          whiteSpace: compact ? "normal" : "nowrap", paddingLeft: 8, lineHeight: 1.35,
-        }}>
-          {group.name}
-        </span>
-        <StatusBadge status={topStatus} small={true} />
-        <span style={{
-          fontSize: 11, color: "#9e9890", marginLeft: 4,
-          transition: "transform 0.2s",
-          transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-          display: "inline-block", flexShrink: 0, fontWeight: 900,
-        }}>▾</span>
-      </div>
-
-      {expanded && (
-        <div style={{
-          marginLeft: 4, marginBottom: 12,
-          borderLeft: "2px solid " + tone.ring,
-          paddingLeft: compact ? 10 : 16,
-          marginRight: compact ? 4 : 8,
-          display: "grid", gap: 8,
-        }}>
-          {group.findings.map((f, idx) => {
-            const rowStatus = f.status || topStatus;
-            const signal = rowStatus === "FAIL" ? "high" : rowStatus === "WARN" ? "medium" : rowStatus === "PASS" ? "good" : "neutral";
-            const tagTone = tagToneForSignal(signal);
-            const tags = buildStandardTags(f.item || {});
-            const summary = summarizeStandardCard(f.item || {}, f);
-            const meta = getStandardMeta(f.item || {});
-
-            return (
-              <div key={group.name + "-" + idx} style={{
-                borderRadius: 10, border: "1px solid " + tagTone.bd,
-                background: tagTone.bg, padding: compact ? "10px 11px" : "11px 14px",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-                  <DirPill dirKey={d} />
-                  {tags.map((tag) => (
-                    <span key={`${group.name}-${idx}-${tag}`} style={{
-                      display: "inline-flex", alignItems: "center",
-                      padding: "3px 10px", borderRadius: 999,
-                      border: "1px solid rgba(120,112,101,0.18)",
-                      background: "rgba(255,255,255,0.68)", color: "#6a6258",
-                      fontSize: 12, fontWeight: 800, lineHeight: 1.1, whiteSpace: "nowrap",
-                    }}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                {f.item?.code && (
-                  <div style={{ fontSize: 16, fontWeight: 900, color: "#2f2c28", lineHeight: 1.3, marginBottom: 10 }}>
-                    {f.item.code}
-                  </div>
-                )}
-
-                {f.item?.title && (
-                  <div style={{ fontSize: 14, color: "#5e5850", lineHeight: 1.6, marginBottom: 10 }}>
-                    {f.item.title}
-                  </div>
-                )}
-
-                <div style={{ display: "grid", gap: 7 }}>
-                  {meta.harmonizedReference && (
-                    <div style={{ fontSize: 13, color: "#6d675f", lineHeight: 1.55 }}>
-                      <span style={{ fontWeight: 800, color: "#4c4741" }}>Harmonized reference:</span>{" "}{meta.harmonizedReference}
-                    </div>
-                  )}
-                  {meta.harmonizedVersion && (
-                    <div style={{ fontSize: 13, color: "#6d675f", lineHeight: 1.55 }}>
-                      <span style={{ fontWeight: 800, color: "#4c4741" }}>Harmonized version:</span>{" "}{meta.harmonizedVersion}
-                    </div>
-                  )}
-                  {meta.stateOfTheArtVersion && (
-                    <div style={{ fontSize: 13, color: "#6d675f", lineHeight: 1.55 }}>
-                      <span style={{ fontWeight: 800, color: "#4c4741" }}>State-of-the-art version:</span>{" "}{meta.stateOfTheArtVersion}
-                    </div>
-                  )}
-                  <div style={{ fontSize: 13, color: "#6d675f", lineHeight: 1.55 }}>
-                    <span style={{ fontWeight: 800, color: "#4c4741" }}>Match basis:</span>{" "}Traits
-                  </div>
-                  <div style={{ fontSize: 13, color: "#6d675f", lineHeight: 1.55 }}>
-                    <span style={{ fontWeight: 800, color: "#4c4741" }}>Summary:</span>{" "}{summary}
-                  </div>
-                  {meta.evidence && (
-                    <div style={{ fontSize: 13, color: "#6d675f", lineHeight: 1.55 }}>
-                      <span style={{ fontWeight: 800, color: "#4c4741" }}>Evidence:</span>{" "}{meta.evidence}
-                    </div>
-                  )}
-                  {meta.notes && (
-                    <div style={{ fontSize: 13, color: "#6d675f", lineHeight: 1.55 }}>
-                      <span style={{ fontWeight: 800, color: "#4c4741" }}>Notes:</span>{" "}{meta.notes}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* DirectiveLane                                                        */
-/* ------------------------------------------------------------------ */
-function DirectiveLane({ dirKey, groups, expandedStandards, onToggleStandard, compact = false }) {
-  const [open, setOpen] = useState(true);
-  const tone = DIR[dirKey] || DIR.OTHER;
-
-  return (
-    <div style={{ borderRadius: 16, border: "1px solid " + tone.ring, overflow: "hidden", background: "rgba(255,255,255,0.72)" }}>
-      <div
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "13px 16px", cursor: "pointer",
-          background: tone.header,
-          borderBottom: open ? "1px solid " + tone.ring : "none",
-        }}
-      >
-        <span style={{ width: 10, height: 10, borderRadius: 999, background: tone.dot, flexShrink: 0 }} />
-        <span style={{ fontSize: 14, fontWeight: 900, color: tone.ink, flex: 1, letterSpacing: "0.02em" }}>
-          {prettyDirectiveName(dirKey)}
-        </span>
-        <span style={{
-          minWidth: 24, height: 24, padding: "0 8px", borderRadius: 999,
-          background: tone.ring, color: tone.ink,
-          fontWeight: 900, fontSize: 12,
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {groups.length}
-        </span>
-        <span style={{
-          fontSize: 11, color: tone.ink, opacity: 0.7,
-          transform: open ? "rotate(180deg)" : "rotate(0deg)",
-          display: "inline-block", transition: "transform 0.2s", fontWeight: 900,
-        }}>▾</span>
-      </div>
-
-      {open && (
-        <div style={{ padding: "0 0 4px" }}>
-          {groups.map((group) => {
-            const key = dirKey + "::" + group.name;
-            return (
-              <StandardRow
-                key={key}
-                group={group}
-                expanded={!!expandedStandards[key]}
-                onToggle={() => onToggleStandard(key)}
-                compact={compact}
-              />
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* CheckItem                                                            */
-/* ------------------------------------------------------------------ */
-function CheckItem({ finding, index }) {
-  const directives = enrichDirectives(finding);
-  const tone = DIR[directives[0] || "OTHER"] || DIR.OTHER;
-  const rawLabel = (finding.article || finding.finding || "").trim();
-  const label = rawLabel.replace(/^Missing[:\s]*/i, "").replace(/^Check[:\s]*/i, "").trim();
-  const shortLabel = label.length > 72 ? label.slice(0, 70) + "…" : label;
-  const body = (finding.action || (finding.article ? finding.finding : "") || "").trim();
-
-  return (
-    <div style={{
-      padding: "12px 14px", borderRadius: 12,
-      border: "1px solid " + tone.ring,
-      background: "rgba(255,255,255,0.8)",
-      display: "grid", gap: 7,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-        <span style={{
-          width: 22, height: 22, borderRadius: 999, flexShrink: 0,
-          background: tone.accent, color: "#fff",
-          fontSize: 11, fontWeight: 900,
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {index + 1}
-        </span>
-        {directives.map((d) => <DirPill key={d} dirKey={d} />)}
-      </div>
-      <div style={{ fontSize: 14, fontWeight: 800, color: "#2c2925", lineHeight: 1.45 }}>
-        {shortLabel || "Confirm applicability"}
-      </div>
-      {body && body !== shortLabel && (
-        <div style={{ fontSize: 13, color: "#7a746b", lineHeight: 1.55 }}>{body}</div>
-      )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* LegislationItem                                                      */
-/* ------------------------------------------------------------------ */
-function LegislationItem({ finding }) {
-  const status = finding.status || "INFO";
-  const directives = enrichDirectives(finding);
-  const s = STS[status] || STS.INFO;
-  const d = directives[0] || "OTHER";
-  const tone = DIR[d] || DIR.OTHER;
-
-  return (
-    <div style={{
-      display: "flex", gap: 12, alignItems: "flex-start",
-      padding: "12px 14px", borderRadius: 12,
-      background: "rgba(255,255,255,0.72)",
-      border: "1px solid " + tone.ring,
-    }}>
-      <div style={{
-        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-        background: tone.pill, border: "1px solid " + tone.ring,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        color: tone.ink, fontSize: 14, fontWeight: 900,
-      }}>
-        {s.icon}
-      </div>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 5 }}>
-          {directives.map((dKey) => <DirPill key={dKey} dirKey={dKey} />)}
-          <StatusBadge status={status} small={true} />
-        </div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#2f2c28", lineHeight: 1.45 }}>
-          {finding.finding || finding.article || "Legislation note"}
-        </div>
-        {finding.action && (
-          <div style={{ marginTop: 4, fontSize: 13, color: "#7a746b", lineHeight: 1.55 }}>{finding.action}</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* EmptyState                                                           */
-/* ------------------------------------------------------------------ */
-function EmptyState({ title, subtitle }) {
-  return (
-    <div style={{
-      borderRadius: 12, border: "1px dashed rgba(186,176,160,0.7)",
-      background: "rgba(250,247,242,0.6)", padding: "24px 20px",
-      color: "#807b73", textAlign: "center",
-    }}>
-      <div style={{ fontSize: 16, fontWeight: 800, color: "#59544c" }}>{title}</div>
-      {subtitle && <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.55 }}>{subtitle}</div>}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* SummaryBar                                                           */
-/* ------------------------------------------------------------------ */
-function SummaryBar({ topRisk, standardGroups, standardsByDirective, toCheck }) {
-  const riskColor =
-    topRisk === "FAIL" ? DIR.RED_CYBER
-    : topRisk === "WARN" ? DIR.ROHS
-    : topRisk === "PASS" ? DIR.CRA
-    : DIR.EMC;
-
-  const items = [
-    { label: "Overall Risk", value: topRisk, c: riskColor, big: true },
-    { label: "Standards", value: standardGroups.length, c: DIR.LVD },
-    { label: "Directives", value: Object.keys(standardsByDirective).length, c: DIR.EMC },
-    ...(toCheck.length > 0 ? [{ label: "To Verify", value: toCheck.length, c: DIR.ROHS }] : []),
-  ];
-
-  return (
-    <div style={{
-      display: "flex", gap: 0, borderRadius: 18,
-      border: "1px solid rgba(183,175,163,0.3)",
-      overflow: "hidden", background: "rgba(255,255,255,0.55)",
-      backdropFilter: "blur(16px)", flexWrap: "wrap",
-    }}>
-      {items.map((item, i) => (
-        <div key={item.label} style={{
-          flex: "1 1 auto", padding: "14px 20px",
-          borderRight: i < items.length - 1 ? "1px solid rgba(183,175,163,0.25)" : "none",
-          background: i === 0 ? item.c.pill : "transparent",
-        }}>
-          <div style={{
-            fontSize: 11, fontWeight: 800, letterSpacing: "0.1em",
-            color: item.c.ink, opacity: 0.7, marginBottom: 3, textTransform: "uppercase",
-          }}>
-            {item.label}
+    <div style={{ display: "grid", gap: 10 }}>
+      <div style={miniTitleStyle}>{title}</div>
+      {items.length ? (
+        items.map((item, index) => (
+          <div key={`${title}-${index}`} style={listRowStyle}>
+            <span style={bulletStyle} />
+            <span>{item}</span>
           </div>
-          <div style={{ fontSize: item.big ? 24 : 22, fontWeight: 900, color: item.c.ink, lineHeight: 1 }}>
-            {item.value}
-          </div>
-        </div>
-      ))}
+        ))
+      ) : (
+        <div style={{ fontSize: 13, color: THEME.subtext }}>No items.</div>
+      )}
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* IMPROVEMENT: CopyButton — copy plain-text summary to clipboard      */
-/* ------------------------------------------------------------------ */
-function CopyButton({ standardGroups, standardsByDirective, toCheck, notes, topRisk }) {
-  const [copied, setCopied] = useState(false);
-
-  function buildTextSummary() {
-    const lines = ["RegCheck — EU Compliance Analysis", "=".repeat(40), ""];
-    lines.push(`Risk level : ${topRisk}`);
-    lines.push(`Standards  : ${standardGroups.length}`);
-    lines.push(`Directives : ${Object.keys(standardsByDirective).length}`);
-    if (toCheck.length) lines.push(`To verify  : ${toCheck.length}`);
-    lines.push("");
-
-    DIR_ORDER.filter((d) => standardsByDirective[d]?.length).forEach((d) => {
-      lines.push(`[${DIR_NAME[d] || d}]`);
-      standardsByDirective[d].forEach((g) => lines.push(`  • ${g.name}`));
-      lines.push("");
-    });
-
-    if (toCheck.length) {
-      lines.push("THINGS TO CHECK");
-      lines.push("-".repeat(30));
-      toCheck.forEach((f, i) => {
-        const lbl = (f.article || f.finding || "").replace(/^Missing[:\s]*/i, "").replace(/^Check[:\s]*/i, "").trim();
-        lines.push(`  ${i + 1}. ${lbl}`);
-      });
-      lines.push("");
-    }
-
-    if (notes.length) {
-      lines.push("APPLICABLE LEGISLATIONS");
-      lines.push("-".repeat(30));
-      notes.forEach((f) => lines.push(`  • ${f.finding || f.article || ""}`));
-    }
-
-    return lines.join("\n");
-  }
-
-  function handleCopy() {
-    navigator.clipboard.writeText(buildTextSummary()).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }
-
+function EvidenceStrip({ result }) {
+  const traits = result?.all_traits || [];
+  const explicit = result?.explicit_traits || [];
+  const inferred = result?.inferred_traits || [];
+  const classes = result?.functional_classes || [];
   return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      title="Copy results as plain text"
-      style={{
-        padding: "7px 14px", borderRadius: 10,
-        border: "1px solid rgba(197,190,180,0.7)",
-        background: copied ? "rgba(96,121,95,0.12)" : "rgba(255,255,255,0.72)",
-        color: copied ? "#4a6149" : "#6f6a61",
-        fontWeight: 700, fontSize: 13,
-        cursor: "pointer", fontFamily: "inherit",
-        transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6,
-      }}
+    <SectionCard title="Signals used" subtitle="Minimal, but visible. This keeps the UI honest without overwhelming the main decision flow.">
+      <div style={{ display: "grid", gap: 14 }}>
+        <TraitGroup label="All traits" values={traits} />
+        <TraitGroup label="Explicit" values={explicit} />
+        <TraitGroup label="Inferred" values={inferred} />
+        <TraitGroup label="Functional classes" values={classes} />
+      </div>
+    </SectionCard>
+  );
+}
+
+function TraitGroup({ label, values }) {
+  return (
+    <div style={{ display: "grid", gap: 8 }}>
+      <div style={miniTitleStyle}>{label}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {(values || []).length ? (values || []).map((value) => <Tag key={`${label}-${value}`}>{titleCase(value)}</Tag>) : <span style={{ color: THEME.subtext, fontSize: 13 }}>—</span>}
+      </div>
+    </div>
+  );
+}
+
+function DiagnosticsPanel({ result }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <SectionCard
+      title="Advanced diagnostics"
+      subtitle="Hidden by default. Useful for troubleshooting matching logic and backend behaviour."
+      right={
+        <button type="button" onClick={() => setOpen((v) => !v)} style={secondaryButtonStyle}>
+          {open ? "Hide" : "Show"}
+        </button>
+      }
     >
-      <span style={{ fontSize: 14 }}>{copied ? "✓" : "⎘"}</span>
-      {copied ? "Copied!" : "Copy results"}
-    </button>
+      {open ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          {(result?.diagnostics || []).map((line, index) => (
+            <div key={index} style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12, color: THEME.subtext, lineHeight: 1.6 }}>{line}</div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ color: THEME.subtext, fontSize: 14 }}>Diagnostics hidden.</div>
+      )}
+    </SectionCard>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* App                                                                  */
-/* ------------------------------------------------------------------ */
-export default function App() {
-  const [mode, setMode] = useState("standard");
-  const [text, setText] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [expandedStandards, setExpandedStandards] = useState({});
-  const [search, setSearch] = useState("");
-  const [legsOpen, setLegsOpen] = useState(true);
-  const [viewportWidth, setViewportWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1280
+function EmptyState() {
+  return (
+    <SectionCard title="Ready for a fuller release" subtitle="The new interface is designed around decision flow: detect the product, show confidence, clarify gaps, show legislation, then show standards.">
+      <div style={{ display: "grid", gap: 12, color: THEME.subtext, fontSize: 14, lineHeight: 1.75 }}>
+        <div style={listRowStyle}><span style={bulletStyle} />Start with a realistic product description.</div>
+        <div style={listRowStyle}><span style={bulletStyle} />Use the adaptive quick-add chips to enrich the input fast.</div>
+        <div style={listRowStyle}><span style={bulletStyle} />The output will separate current CE routes, future watchlist items, and non-CE obligations.</div>
+      </div>
+    </SectionCard>
   );
-  const inputRef = useRef(null);
-  // IMPROVEMENT: ref to scroll results into view after analysis
-  const resultsRef = useRef(null);
+}
+
+function App() {
+  const [description, setDescription] = useState("");
+  const [result, setResult] = useState(null);
+  const [metadata, setMetadata] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [lastOptions, setLastOptions] = useState({ category: "", depth: "standard", directives: [] });
+  const sectionRefs = useMemo(() => ({ current: {} }), []);
+
+  useEffect(() => {
+    let active = true;
+    fetch(METADATA_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Metadata request failed (${res.status})`);
+        return res.json();
+      })
+      .then((data) => {
+        if (active) setMetadata(data);
+      })
+      .catch(() => {
+        if (active) setMetadata({ traits: [], products: [], legislations: [] });
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const templates = useMemo(() => {
+    const dynamic = buildDynamicTemplates(metadata?.products || []);
+    return dynamic.length ? dynamic : DEFAULT_TEMPLATES;
+  }, [metadata]);
+
+  const chips = useMemo(() => buildContextualChips(metadata, result), [metadata, result]);
 
   const runAnalysis = useCallback(
-    function (payloadText) {
-      const trimmed = ((payloadText !== undefined ? payloadText : text) || "").trim();
-      if (!trimmed) return Promise.resolve();
-
-      setLoading(true);
+    async ({ category = "", depth = "standard", directives = [] } = {}) => {
+      if (!description.trim()) return;
+      setBusy(true);
       setError("");
-      // IMPROVEMENT: clear previous results immediately so loading skeleton shows
-      setResult(null);
-
-      return fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: trimmed, depth: mode, category: "", directives: [] }),
-      })
-        .then((res) =>
-          res.json().then((data) => {
-            if (!res.ok) throw new Error((data && data.detail) || "Analysis failed");
-            setResult(data);
-
-            const initialExpanded = {};
-            buildGroupsFromBackendItems(data.standards || [], data.review_items || []).forEach((group) => {
-              const directive = (group.directives && group.directives[0]) || "OTHER";
-              initialExpanded[directive + "::" + group.name] = true;
-            });
-            setExpandedStandards(initialExpanded);
-
-            // IMPROVEMENT: scroll to results after a short frame delay
-            setTimeout(() => {
-              if (resultsRef.current) {
-                resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-              }
-            }, 80);
-          })
-        )
-        .catch((err) => {
-          setError((err && err.message) || "Analysis failed");
-          setResult(null);
-        })
-        .finally(() => setLoading(false));
+      setLastOptions({ category, depth, directives });
+      try {
+        const response = await fetch(ANALYZE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ description, category, depth, directives }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.detail || `Analysis failed (${response.status})`);
+        }
+        setResult(data);
+      } catch (err) {
+        setError(err.message || "Analysis failed.");
+      } finally {
+        setBusy(false);
+      }
     },
-    [mode, text]
+    [description]
   );
 
-  useEffect(() => {
-    if (inputRef.current && window.innerWidth > 900) inputRef.current.focus();
+  const applyText = useCallback((text) => {
+    setDescription((current) => joinText(current, text));
   }, []);
 
-  useEffect(() => {
-    function onResize() { setViewportWidth(window.innerWidth); }
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+  const rerun = useCallback(() => runAnalysis(lastOptions), [lastOptions, runAnalysis]);
 
-  const standardGroups = useMemo(
-    () => buildGroupsFromBackendItems((result && result.standards) || [], (result && result.review_items) || []),
-    [result]
-  );
-
-  const categorised = useMemo(() => {
-    const knownStdNames = new Set(standardGroups.map((g) => g.name));
-    return categoriseFindings((result && result.findings) || [], knownStdNames);
-  }, [result, standardGroups]);
-
-  const toCheck = categorised.toCheck;
-  const notes = categorised.notes;
-
-  const filteredStandardGroups = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return standardGroups;
-    return standardGroups.filter((g) => {
-      const hay = [
-        g.name,
-        ...(g.directives || []),
-        ...(g.actions || []),
-        ...(g.findings || []).map((f) => {
-          const item = f.item || {};
-          return [
-            f.finding || "",
-            item.code || "",
-            item.title || "",
-            item.category || "",
-            item.standard_family || "",
-            ...(item.test_focus || []),
-            ...(item.keywords || []),
-            ...buildStandardTags(item),
-          ].join(" ");
-        }),
-      ].join(" ").toLowerCase();
-      return hay.includes(q);
-    });
-  }, [search, standardGroups]);
-
-  const standardsByDirective = useMemo(() => {
-    const groups = {};
-    filteredStandardGroups.forEach((g) => {
-      const d = (g.directives && g.directives[0]) || "OTHER";
-      if (!groups[d]) groups[d] = [];
-      groups[d].push(g);
-    });
-    return groups;
-  }, [filteredStandardGroups]);
-
-  const topRisk = useMemo(() => {
-    const statuses = [
-      ...((result && result.findings) || []).map((f) => f.status).filter(Boolean),
-      ...standardGroups.flatMap((g) => g.statuses || []),
-    ];
-    return priorityStatus(statuses);
-  }, [result, standardGroups]);
-
-  function appendChip(chipText) {
-    setText((t) => {
-      const trimmed = t.trimEnd();
-      if (!trimmed) return chipText.charAt(0).toUpperCase() + chipText.slice(1);
-      return /[.!?]$/.test(trimmed) ? trimmed + " " + chipText : trimmed + ", " + chipText;
-    });
-    if (inputRef.current) inputRef.current.focus();
-  }
-
-  // IMPROVEMENT: expand/collapse all standards at once
-  function handleToggleAllStandards(expand) {
-    const next = {};
-    standardGroups.forEach((group) => {
-      const directive = (group.directives && group.directives[0]) || "OTHER";
-      next[directive + "::" + group.name] = expand;
-    });
-    setExpandedStandards(next);
-  }
-
-  const allExpanded = standardGroups.length > 0 &&
-    standardGroups.every((g) => {
-      const d = (g.directives && g.directives[0]) || "OTHER";
-      return expandedStandards[d + "::" + g.name];
-    });
-
-  const isTablet = viewportWidth < 980;
-  const isMobile = viewportWidth < 720;
-  const hasResults = !!result;
-  const hasSidebar = hasResults && toCheck.length > 0;
-  const hasLegislations = hasResults && notes.length > 0;
-  // IMPROVEMENT: show skeleton when loading (before first result arrives)
-  const showSkeleton = loading && !result;
+  const jumpToSection = useCallback((key) => {
+    const node = sectionRefs.current[key];
+    if (node && typeof node.scrollIntoView === "function") {
+      node.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [sectionRefs]);
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "radial-gradient(ellipse at top left, rgba(133,176,190,0.25), transparent 30%), radial-gradient(ellipse at top right, rgba(204,189,148,0.2), transparent 28%), linear-gradient(180deg,#ddd7cf 0%,#d4cdc4 100%)",
-      padding: isMobile ? "14px 10px 90px" : "24px 20px 100px",
-      fontFamily: "'DM Sans','Helvetica Neue',Arial,sans-serif",
-      color: "#3d3832",
-    }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800;9..40,900&display=swap');
-        *{box-sizing:border-box;}
-        ::placeholder{color:#b0a89d;}
-        ::-webkit-scrollbar{width:5px;}
-        ::-webkit-scrollbar-thumb{background:rgba(150,140,128,0.35);border-radius:99px;}
-        textarea:focus,input:focus{outline:none;}
-        .chip-btn:hover{background:rgba(255,255,255,0.95)!important;border-color:#b0a89d!important;}
-        .tmpl-btn:hover{background:rgba(255,255,255,0.9)!important;}
-        .run-btn:not(:disabled):hover{filter:brightness(1.06);}
-        .mode-seg-btn:hover{background:rgba(255,255,255,0.18)!important;}
-        .clear-btn:hover{background:rgba(255,255,255,0.95)!important;}
-        .icon-btn:hover{background:rgba(255,255,255,0.95)!important;}
-        @media (max-width: 720px){
-          .std-row-head{align-items:flex-start!important;}
-          .std-row-title{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
-        }
+    <div style={{ minHeight: "100vh", background: `linear-gradient(180deg, ${THEME.bg}, #ece5da)` }}>
+      <style>{globalCss}</style>
+      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "28px 20px 56px" }}>
+        <div style={{ display: "grid", gap: 20 }}>
+          <Hero result={result || { overall_risk: "MEDIUM", hero_summary: { title: "RuleGrid regulatory scoping" } }} />
 
-        /* IMPROVEMENT: skeleton shimmer animation */
-        @keyframes shimmer {
-          0%{background-position:-600px 0}
-          100%{background-position:600px 0}
-        }
-        .skeleton-pulse {
-          background: linear-gradient(90deg, rgba(183,175,163,0.2) 25%, rgba(183,175,163,0.38) 50%, rgba(183,175,163,0.2) 75%);
-          background-size: 600px 100%;
-          animation: shimmer 1.4s ease-in-out infinite;
-          border-radius: 6px;
-        }
-
-        /* IMPROVEMENT: results fade-in animation */
-        @keyframes fadeSlideUp {
-          from{opacity:0;transform:translateY(10px)}
-          to{opacity:1;transform:translateY(0)}
-        }
-        .results-appear {
-          animation: fadeSlideUp 0.3s ease-out both;
-        }
-
-        /* IMPROVEMENT: mode tooltip */
-        .mode-tooltip-wrap{position:relative;}
-        .mode-tooltip-wrap .mode-tooltip{
-          display:none;position:absolute;bottom:calc(100% + 7px);left:50%;
-          transform:translateX(-50%);
-          background:#2a2520;color:#fffdf8;
-          font-size:11px;font-weight:600;white-space:nowrap;
-          padding:5px 9px;border-radius:7px;pointer-events:none;
-          box-shadow:0 4px 12px rgba(0,0,0,0.18);
-          z-index:100;
-        }
-        .mode-tooltip-wrap .mode-tooltip::after{
-          content:'';position:absolute;top:100%;left:50%;
-          transform:translateX(-50%);
-          border:5px solid transparent;border-top-color:#2a2520;
-        }
-        .mode-tooltip-wrap:hover .mode-tooltip{display:block;}
-
-        /* IMPROVEMENT: search clear button */
-        .search-wrap{position:relative;}
-        .search-clear{
-          position:absolute;right:10px;top:50%;transform:translateY(-50%);
-          background:none;border:none;cursor:pointer;
-          color:#b0a89d;font-size:14px;padding:2px 4px;line-height:1;
-          border-radius:4px;transition:color 0.12s;
-        }
-        .search-clear:hover{color:#6f6a61;}
-      `}</style>
-
-      <div style={{ maxWidth: 1120, margin: "0 auto", display: "grid", gap: 14, width: "100%" }}>
-
-        {/* ── HEADER ── */}
-        <header style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "16px 22px", borderRadius: 20,
-          background: "rgba(255,255,255,0.55)",
-          border: "1px solid rgba(183,175,163,0.3)",
-          backdropFilter: "blur(20px)", flexWrap: "wrap", gap: 12,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 12,
-              background: "linear-gradient(135deg,#8fb6c1,#5d848f)",
-              display: "grid", placeItems: "center",
-              color: "white", fontWeight: 900, fontSize: 14, letterSpacing: "-0.02em",
-            }}>
-              RC
-            </div>
-            <div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: "#2a2520", letterSpacing: "-0.03em", lineHeight: 1 }}>
-                RegCheck
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#9e9890", marginTop: 1 }}>
-                EU Product Compliance Analyser
-              </div>
-            </div>
-            <span style={{
-              fontSize: 11, fontWeight: 800, color: "#8c887f",
-              background: "rgba(0,0,0,0.07)", borderRadius: 99, padding: "2px 9px",
-              alignSelf: "flex-start", marginTop: 1,
-            }}>v3</span>
-          </div>
-
-          {hasResults && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-              {DIR_ORDER.filter((d) => standardsByDirective[d] && standardsByDirective[d].length).map((d) => (
-                <DirPill key={d} dirKey={d} />
-              ))}
-            </div>
-          )}
-        </header>
-
-        {/* ── SUMMARY BAR ── */}
-        {hasResults && (
-          <SummaryBar
-            topRisk={topRisk}
-            standardGroups={standardGroups}
-            standardsByDirective={standardsByDirective}
-            toCheck={toCheck}
-          />
-        )}
-
-        {/* ── INPUT PANEL ── */}
-        <div style={{
-          borderRadius: 22, border: "1px solid rgba(183,175,163,0.3)",
-          background: "rgba(255,255,255,0.65)", backdropFilter: "blur(20px)", overflow: "hidden",
-        }}>
-          {/* Textarea */}
-          <div style={{ padding: "18px 20px 0" }}>
-            <textarea
-              ref={inputRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") runAnalysis(); }}
-              placeholder="Describe the product — include power source, connectivity, features, and materials. e.g. Smart air fryer with Wi-Fi, mains powered, OTA updates, food-contact basket coating..."
-              style={{
-                width: "100%", minHeight: 96, resize: "vertical",
-                border: "none", background: "transparent",
-                fontSize: 16, lineHeight: 1.65, color: "#2e2b27", fontFamily: "inherit",
-              }}
-            />
-          </div>
-
-          {/* IMPROVEMENT: char count hint below textarea */}
-          {text.length > 0 && (
-            <div style={{ padding: "0 20px 6px", display: "flex", justifyContent: "flex-end" }}>
-              <span style={{
-                fontSize: 11, color: text.length < 40 ? "#c9a040" : "#a0998f", fontWeight: 600,
-              }}>
-                {text.length < 40 ? "Add more detail for better results · " : ""}{text.length} chars
-              </span>
-            </div>
-          )}
-
-          {/* Quick chips */}
-          <div style={{ padding: "10px 20px", borderTop: "1px solid rgba(188,178,165,0.18)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-              <span style={{
-                fontSize: 11, fontWeight: 800, color: "#b0a89d",
-                letterSpacing: "0.1em", marginRight: 2, textTransform: "uppercase",
-              }}>Add</span>
-              {QUICK_CHIPS.map((chip) => (
-                <button key={chip.label} type="button" className="chip-btn"
-                  onClick={() => appendChip(chip.text)}
-                  style={{
-                    padding: "5px 12px", borderRadius: 99,
-                    border: "1px solid rgba(200,192,182,0.7)",
-                    background: "rgba(255,255,255,0.65)",
-                    color: "#5c5750", fontWeight: 700, fontSize: 13,
-                    cursor: "pointer", transition: "all 0.12s", fontFamily: "inherit",
-                  }}>
-                  {chip.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Controls row */}
-          <div style={{
-            padding: "12px 20px 16px",
-            borderTop: "1px solid rgba(188,178,165,0.18)",
-            display: "flex",
-            alignItems: isMobile ? "stretch" : "center",
-            flexDirection: isMobile ? "column" : "row",
-            justifyContent: "space-between",
-            gap: 12, flexWrap: "wrap",
-          }}>
-            {/* Templates */}
-            <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-              <span style={{
-                fontSize: 11, fontWeight: 800, color: "#b0a89d",
-                letterSpacing: "0.1em", marginRight: 2, textTransform: "uppercase",
-              }}>Template</span>
-              {PRODUCT_TEMPLATES.map((tpl) => (
-                <button key={tpl.label} type="button" className="tmpl-btn"
-                  onClick={() => { setText(tpl.text); if (inputRef.current) inputRef.current.focus(); }}
-                  style={{
-                    padding: "5px 12px", borderRadius: 99,
-                    border: "1px solid rgba(200,192,182,0.7)",
-                    background: text === tpl.text ? "rgba(143,182,193,0.2)" : "rgba(255,255,255,0.55)",
-                    color: text === tpl.text ? "#3e7080" : "#5c5750",
-                    fontWeight: 700, fontSize: 13, cursor: "pointer",
-                    transition: "all 0.12s", fontFamily: "inherit",
-                  }}>
-                  {tpl.label}
-                </button>
-              ))}
+          <div className="layout-grid" style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr)", gap: 20, alignItems: "start" }}>
+            <div style={{ display: "grid", gap: 20, position: "sticky", top: 18 }} className="sidebar-stack">
+              <Sidebar result={result} onJump={jumpToSection} />
+              <ConfidencePanel result={result} />
             </div>
 
-            {/* Action group */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 20 }}>
+              <InputComposer
+                description={description}
+                setDescription={setDescription}
+                templates={templates}
+                chips={chips}
+                onAnalyze={runAnalysis}
+                busy={busy}
+                metadata={metadata}
+              />
 
-              {/* IMPROVEMENT: mode selector with tooltips */}
-              <div style={{
-                display: "flex", borderRadius: 12,
-                border: "1px solid rgba(197,190,180,0.7)",
-                overflow: "visible", background: "rgba(255,255,255,0.45)",
-              }}>
-                {[["quick", "Quick"], ["standard", "Standard"], ["deep", "Deep"]].map(([val, lbl], i, arr) => {
-                  const active = mode === val;
-                  return (
-                    <div key={val} className="mode-tooltip-wrap" style={{ position: "relative" }}>
-                      <div className="mode-tooltip">{MODE_DESCRIPTIONS[val]}</div>
-                      <button
-                        type="button"
-                        className="mode-seg-btn"
-                        onClick={() => setMode(val)}
-                        style={{
-                          padding: "7px 15px", border: "none",
-                          borderRight: val !== "deep" ? "1px solid rgba(197,190,180,0.5)" : "none",
-                          borderRadius: i === 0 ? "11px 0 0 11px" : i === arr.length - 1 ? "0 11px 11px 0" : 0,
-                          background: active ? "linear-gradient(180deg,#6f9199,#567a82)" : "transparent",
-                          color: active ? "#fffdf8" : "#7f7a71",
-                          fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit",
-                        }}>
-                        {lbl}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+              {error ? (
+                <SectionCard title="Analysis error">
+                  <div style={{ color: THEME.danger, fontSize: 14 }}>{error}</div>
+                </SectionCard>
+              ) : null}
 
-              <button type="button" className="clear-btn"
-                onClick={() => { setText(""); setResult(null); setError(""); setSearch(""); }}
-                style={{
-                  padding: "8px 15px", borderRadius: 11,
-                  border: "1px solid rgba(197,190,180,0.7)",
-                  background: "rgba(255,255,255,0.72)",
-                  color: "#6f6a61", fontWeight: 700, fontSize: 13,
-                  cursor: "pointer", fontFamily: "inherit", transition: "all 0.12s",
-                }}>Clear</button>
-
-              <button
-                type="button"
-                disabled={loading || !text.trim()}
-                className="run-btn"
-                onClick={() => runAnalysis()}
-                style={{
-                  padding: "8px 22px", borderRadius: 11,
-                  border: "1px solid #5a8188",
-                  background: loading || !text.trim()
-                    ? "linear-gradient(180deg,#a7b7bb,#95a4a8)"
-                    : "linear-gradient(180deg,#6f9199,#567a82)",
-                  color: "#fffdf8", fontWeight: 900, fontSize: 14,
-                  cursor: loading || !text.trim() ? "not-allowed" : "pointer",
-                  boxShadow: loading || !text.trim() ? "none" : "0 6px 20px rgba(86,122,130,0.25)",
-                  transition: "all 0.14s", fontFamily: "inherit", letterSpacing: "-0.01em",
-                  display: "flex", alignItems: "center", gap: 7,
-                }}>
-                {loading ? (
-                  <>
-                    {/* IMPROVEMENT: spinner inside run button */}
-                    <span style={{
-                      width: 13, height: 13, borderRadius: "50%",
-                      border: "2px solid rgba(255,255,255,0.35)",
-                      borderTopColor: "#fff",
-                      display: "inline-block",
-                      animation: "spin 0.7s linear infinite",
-                    }} />
-                    Analysing…
-                  </>
-                ) : (
-                  <>
-                    Run analysis
-                    {/* IMPROVEMENT: keyboard shortcut hint */}
-                    <span style={{
-                      fontSize: 11, fontWeight: 700, opacity: 0.65,
-                      background: "rgba(255,255,255,0.15)", borderRadius: 5,
-                      padding: "1px 5px", letterSpacing: 0,
-                    }}>⌘↵</span>
-                  </>
-                )}
-              </button>
+              {!result ? (
+                <EmptyState />
+              ) : (
+                <>
+                  <InputGapsPanel result={result} onApply={applyText} />
+                  <ActionBoard result={result} onApply={applyText} />
+                  <LegislationSections result={result} refs={sectionRefs} />
+                  <StandardsSection result={result} />
+                  <EvidenceStrip result={result} />
+                  <DiagnosticsPanel result={result} />
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <button type="button" onClick={rerun} disabled={busy || !description.trim()} style={secondaryButtonStyle}>
+                      Re-run analysis
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Error */}
-        {error && (
-          <div style={{
-            borderRadius: 14, border: "1px solid #e3c7cf",
-            background: "#f9edf1", color: "#906878",
-            padding: "13px 16px", fontSize: 14,
-            display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <span style={{ fontSize: 18, flexShrink: 0 }}>⚠</span>
-            {error}
-          </div>
-        )}
-
-        {/* ── LOADING SKELETON ── */}
-        {showSkeleton && (
-          <div style={{ display: "grid", gap: 14 }}>
-            <div style={{
-              borderRadius: 22, border: "1px solid rgba(183,175,163,0.28)",
-              background: "rgba(255,255,255,0.62)", backdropFilter: "blur(18px)", overflow: "hidden",
-            }}>
-              <div style={{
-                padding: "16px 20px 14px",
-                borderBottom: "1px solid rgba(188,178,165,0.22)",
-                display: "flex", alignItems: "center", gap: 10,
-              }}>
-                <div className="skeleton-pulse" style={{ height: 18, width: 180, borderRadius: 6 }} />
-                <div style={{ flex: 1 }} />
-                <div className="skeleton-pulse" style={{ height: 32, width: 200, borderRadius: 11 }} />
-              </div>
-              <div style={{ padding: "14px" }}>
-                <LoadingSkeleton />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── RESULTS ── */}
-        {hasResults && (
-          <div
-            ref={resultsRef}
-            className="results-appear"
-            style={{
-              display: "grid",
-              gridTemplateColumns: hasSidebar && !isTablet ? "1fr 272px" : "1fr",
-              gap: 14, alignItems: "start",
-            }}
-          >
-            <div style={{ display: "grid", gap: 14 }}>
-              {/* Standards panel */}
-              <div style={{
-                borderRadius: 22, border: "1px solid rgba(183,175,163,0.28)",
-                background: "rgba(255,255,255,0.62)", backdropFilter: "blur(18px)", overflow: "hidden",
-              }}>
-                {/* Standards header */}
-                <div style={{
-                  padding: "16px 20px 14px",
-                  borderBottom: "1px solid rgba(188,178,165,0.22)",
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  gap: 12, flexWrap: "wrap",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: "#3a3630", letterSpacing: "-0.02em" }}>
-                      Applicable Standards
-                    </span>
-                    <span style={{
-                      minWidth: 26, height: 24, padding: "0 9px", borderRadius: 99,
-                      background: "#eef2f0", border: "1px solid #d6ddd8",
-                      color: "#5b6862", fontWeight: 900, fontSize: 13,
-                      display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {filteredStandardGroups.length}
-                    </span>
-
-                    {/* IMPROVEMENT: expand / collapse all toggle */}
-                    {standardGroups.length > 0 && (
-                      <button
-                        type="button"
-                        className="icon-btn"
-                        onClick={() => handleToggleAllStandards(!allExpanded)}
-                        title={allExpanded ? "Collapse all" : "Expand all"}
-                        style={{
-                          padding: "4px 10px", borderRadius: 8,
-                          border: "1px solid rgba(197,190,180,0.6)",
-                          background: "rgba(255,255,255,0.6)",
-                          color: "#7a746b", fontWeight: 700, fontSize: 12,
-                          cursor: "pointer", fontFamily: "inherit", transition: "all 0.12s",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {allExpanded ? "Collapse all" : "Expand all"}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* IMPROVEMENT: search with clear button */}
-                  <div className="search-wrap" style={{ position: "relative" }}>
-                    <input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Filter standards…"
-                      style={{
-                        width: isMobile ? "100%" : 210, maxWidth: "100%",
-                        borderRadius: 11, border: "1px solid rgba(198,189,177,0.7)",
-                        background: "rgba(255,255,255,0.8)",
-                        padding: search ? "8px 30px 8px 13px" : "8px 13px",
-                        fontSize: 14, color: "#46413a", fontFamily: "inherit",
-                      }}
-                    />
-                    {search && (
-                      <button
-                        type="button"
-                        className="search-clear"
-                        onClick={() => setSearch("")}
-                        aria-label="Clear search"
-                      >×</button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Standards lanes */}
-                <div style={{ padding: "14px 14px", display: "grid", gap: 10 }}>
-                  {!filteredStandardGroups.length ? (
-                    <EmptyState
-                      title={search ? "No standards match that filter" : "No standards found"}
-                      subtitle={search ? "Try a different keyword, or clear the filter." : "Run analysis with a more detailed product description."}
-                    />
-                  ) : (
-                    DIR_ORDER
-                      .filter((d) => standardsByDirective[d] && standardsByDirective[d].length)
-                      .map((directive) => (
-                        <DirectiveLane
-                          key={directive}
-                          dirKey={directive}
-                          groups={standardsByDirective[directive]}
-                          expandedStandards={expandedStandards}
-                          compact={isMobile}
-                          onToggleStandard={(key) =>
-                            setExpandedStandards((prev) => {
-                              const next = { ...prev };
-                              next[key] = !prev[key];
-                              return next;
-                            })
-                          }
-                        />
-                      ))
-                  )}
-                </div>
-              </div>
-
-              {/* Applicable Legislations */}
-              {hasLegislations && (
-                <div style={{
-                  borderRadius: 22, border: "1px solid rgba(183,175,163,0.28)",
-                  background: "rgba(255,255,255,0.62)", backdropFilter: "blur(18px)", overflow: "hidden",
-                }}>
-                  <div
-                    onClick={() => setLegsOpen((o) => !o)}
-                    style={{
-                      padding: "16px 20px 14px", cursor: "pointer",
-                      borderBottom: legsOpen ? "1px solid rgba(188,178,165,0.22)" : "none",
-                      display: "flex", alignItems: "center", gap: 10,
-                      background: "rgba(255,255,255,0.3)",
-                    }}
-                  >
-                    <span style={{ fontSize: 17, fontWeight: 900, color: "#3a3630", flex: 1, letterSpacing: "-0.02em" }}>
-                      Applicable Legislations
-                    </span>
-                    <span style={{
-                      minWidth: 26, height: 24, padding: "0 9px", borderRadius: 99,
-                      background: "#eef2f0", border: "1px solid #d6ddd8",
-                      color: "#5b6862", fontWeight: 900, fontSize: 13,
-                      display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {notes.length}
-                    </span>
-                    <span style={{
-                      fontSize: 11, color: "#9e9890", fontWeight: 900,
-                      transform: legsOpen ? "rotate(180deg)" : "rotate(0deg)",
-                      display: "inline-block", transition: "transform 0.2s",
-                    }}>▾</span>
-                  </div>
-
-                  {legsOpen && (
-                    <div style={{ padding: "14px", display: "grid", gap: 10 }}>
-                      {notes.map((f, i) => (
-                        <LegislationItem key={f._i + "-" + i} finding={f} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* IMPROVEMENT: Copy results button row — shown below all result panels */}
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <CopyButton
-                  standardGroups={standardGroups}
-                  standardsByDirective={standardsByDirective}
-                  toCheck={toCheck}
-                  notes={notes}
-                  topRisk={topRisk}
-                />
-              </div>
-            </div>
-
-            {/* Things to Check sidebar */}
-            {hasSidebar && (
-              <div style={{
-                borderRadius: 20, overflow: "hidden",
-                border: "1px solid " + DIR.ROHS.ring,
-                background: "rgba(255,255,255,0.62)",
-                backdropFilter: "blur(18px)",
-              }}>
-                <div style={{
-                  padding: "15px 16px 12px",
-                  borderBottom: "1px solid " + DIR.ROHS.ring,
-                  background: DIR.ROHS.header,
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: DIR.ROHS.ink, flex: 1, letterSpacing: "-0.01em" }}>
-                      Things to Check
-                    </span>
-                    <span style={{
-                      minWidth: 24, height: 24, padding: "0 8px", borderRadius: 99,
-                      background: DIR.ROHS.ring, color: DIR.ROHS.ink,
-                      fontWeight: 900, fontSize: 12,
-                      display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {toCheck.length}
-                    </span>
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: 13, color: "#7a6030", lineHeight: 1.5 }}>
-                    Potentially applicable — verify before scoping out.
-                  </div>
-                </div>
-                <div style={{ padding: "12px", display: "grid", gap: 9 }}>
-                  {toCheck.map((f, i) => (
-                    <CheckItem key={f._i + "-" + i} finding={f} index={i} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
       </div>
-
-      {/* IMPROVEMENT: spinner keyframe (appended to existing style block above via inline) */}
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
+
+const globalCss = `
+  * { box-sizing: border-box; }
+  html, body, #root { margin: 0; padding: 0; min-height: 100%; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: ${THEME.text}; }
+  button, input, select, textarea { font: inherit; }
+  @media (max-width: 1180px) {
+    .layout-grid { grid-template-columns: 1fr !important; }
+    .sidebar-stack { position: static !important; }
+    .composer-grid { grid-template-columns: 1fr !important; }
+    .hero-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  }
+  @media (max-width: 820px) {
+    .two-col-grid { grid-template-columns: 1fr !important; }
+    .standard-meta-grid { grid-template-columns: 1fr !important; }
+  }
+  @media (max-width: 640px) {
+    .hero-stats-grid { grid-template-columns: 1fr 1fr !important; }
+  }
+  @media (max-width: 540px) {
+    .hero-stats-grid { grid-template-columns: 1fr !important; }
+  }
+`;
+
+const inputStyle = {
+  width: "100%",
+  borderRadius: 14,
+  border: `1px solid ${THEME.lineStrong}`,
+  background: "rgba(255,255,255,0.94)",
+  padding: "12px 14px",
+  color: THEME.text,
+  outline: "none",
+};
+
+const selectStyle = {
+  borderRadius: 14,
+  border: `1px solid ${THEME.lineStrong}`,
+  background: "rgba(255,255,255,0.94)",
+  padding: "10px 12px",
+  color: THEME.text,
+  outline: "none",
+};
+
+const miniPanelStyle = {
+  borderRadius: 18,
+  border: `1px solid ${THEME.line}`,
+  background: "rgba(255,255,255,0.84)",
+  padding: 14,
+  display: "grid",
+  gap: 10,
+};
+
+const miniTitleStyle = {
+  fontSize: 12,
+  fontWeight: 900,
+  color: THEME.soft,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+};
+
+const templateButtonStyle = {
+  appearance: "none",
+  width: "100%",
+  textAlign: "left",
+  cursor: "pointer",
+  borderRadius: 14,
+  border: `1px solid ${THEME.line}`,
+  background: "rgba(255,255,255,0.92)",
+  padding: 12,
+  display: "grid",
+  gap: 6,
+};
+
+const chipButtonStyle = {
+  appearance: "none",
+  cursor: "pointer",
+  borderRadius: 999,
+  border: `1px solid ${THEME.lineStrong}`,
+  background: "rgba(255,255,255,0.88)",
+  color: THEME.text,
+  padding: "7px 11px",
+  fontSize: 12,
+  fontWeight: 800,
+};
+
+function filterPillStyle(active, tone) {
+  return {
+    appearance: "none",
+    cursor: "pointer",
+    borderRadius: 999,
+    border: `1px solid ${active ? tone.bd : THEME.lineStrong}`,
+    background: active ? tone.bg : "rgba(255,255,255,0.88)",
+    color: active ? tone.text : THEME.text,
+    padding: "7px 11px",
+    fontSize: 12,
+    fontWeight: 800,
+  };
+}
+
+function primaryButtonStyle(disabled) {
+  return {
+    appearance: "none",
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.55 : 1,
+    borderRadius: 14,
+    border: "none",
+    background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.accent3})`,
+    color: "white",
+    padding: "11px 15px",
+    fontWeight: 900,
+    boxShadow: "0 12px 24px rgba(47,95,105,0.18)",
+  };
+}
+
+const secondaryButtonStyle = {
+  appearance: "none",
+  cursor: "pointer",
+  borderRadius: 14,
+  border: `1px solid ${THEME.lineStrong}`,
+  background: "rgba(255,255,255,0.88)",
+  color: THEME.text,
+  padding: "10px 14px",
+  fontWeight: 800,
+};
+
+const softBoxStyle = {
+  borderRadius: 18,
+  border: `1px solid ${THEME.line}`,
+  background: "rgba(255,255,255,0.74)",
+  padding: 14,
+};
+
+const listRowStyle = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 10,
+  fontSize: 14,
+  color: THEME.subtext,
+  lineHeight: 1.7,
+};
+
+const bulletStyle = {
+  width: 7,
+  height: 7,
+  borderRadius: 999,
+  background: THEME.accent,
+  marginTop: 8,
+  flexShrink: 0,
+};
+
+export default App;
