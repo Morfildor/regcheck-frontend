@@ -509,9 +509,9 @@ function StandardsSection({ section, query }){
               </div>
 
               <div style={{marginTop:10,display:"grid",gap:4}}>
-                <SmallMeta label="Harmonized reference" value={item.harmonized_reference} />
-                <SmallMeta label="Harmonized version" value={item.dated_version} />
-                <SmallMeta label="State-of-the-art version" value={item.version} />
+                <SmallMeta label="Legislation reference" value={item.harmonized_reference} />
+                <SmallMeta label="EU harmonized reference" value={item.dated_version} />
+                <SmallMeta label="EU latest version" value={item.version} />
                 <SmallMeta label="Match basis" value={item.match_basis ? titleCase(item.match_basis) : null} />
                 <SmallMeta label="Reason" value={item.reason || item.notes} />
                 <SmallMeta label="Evidence" value={(item.evidence_hint || []).join(", ")} />
