@@ -258,16 +258,45 @@ export default function App(){
     }
   }, [mode, text]);
 
-  const findingsToCheck = useMemo(() => (result?.findings || []).filter(item => item.status === "WARN" && /^Missing:|Contradiction$/i.test(item.article || "")), [result]);
-  const standardSections = result?.standard_sections || [];
-  const legislationSections = result?.legislation_sections || [];
-  const activeLegislationSection = legislationSections.find(section => section.key === activeLegislationKey) || legislationSections[0] || null;
+    const findingsToCheck = useMemo(
+    () => (result?.findings || []).filter(
+      item => item.status === "WARN" && /^Missing:|Contradiction$/i.test(item.article || "")
+    ),
+    [result]
+  );
+
+  const standardSections = useMemo(
+    () => result?.standard_sections || [],
+    [result]
+  );
+
+  const legislationSections = useMemo(
+    () => result?.legislation_sections || [],
+    [result]
+  );
+
+  const activeLegislationSection = useMemo(
+    () =>
+      legislationSections.find(section => section.key === activeLegislationKey) ||
+      legislationSections[0] ||
+      null,
+    [legislationSections, activeLegislationKey]
+  );
+
   const riskTone = statusTone(result?.overall_risk || "LOW");
+
   const directiveTags = useMemo(() => {
     const keys = new Set();
-    (standardSections || []).forEach(section => (section.items || []).forEach(item => keys.add(item.directive || item.legislation_key || "OTHER")));
+    standardSections.forEach(section => {
+      (section.items || []).forEach(item => {
+        keys.add(item.directive || item.legislation_key || "OTHER");
+      });
+    });
     return [...keys];
   }, [standardSections]);
+  
+  
+  
 
   function append(textToAdd){
     setText(prev => {
