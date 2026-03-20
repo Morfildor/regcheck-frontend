@@ -697,7 +697,13 @@ export default function App() {
       }
 
       setResult(data);
-      setExpandedStandards({});
+
+const initialExpanded = {};
+[...(data.standards || []), ...(data.review_items || [])].forEach((row) => {
+  const key = normalizeStdName(row.code || row.title || "Unnamed item");
+  initialExpanded[key] = true;
+});
+setExpandedStandards(initialExpanded);
     } catch (err) {
       setError(err?.message || "Analysis failed");
       setResult(null);
