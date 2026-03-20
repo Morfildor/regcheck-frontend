@@ -4,8 +4,6 @@ const API_URL =
   process.env.REACT_APP_REGCHECK_API_URL ||
   "https://regcheck-api.onrender.com/analyze";
 
-const SAMPLE =
-  "Smart air fryer with Wi-Fi app control, mains powered, OTA updates, cloud recipe sync, and food-contact basket coating.";
 
 const DIR_NAME = {
   LVD: "Low Voltage",
@@ -148,11 +146,7 @@ function buildGroupsFromBackendItems(standards = [], reviewItems = []) {
   });
   return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
-function collectDirectiveCounts(groups = []) {
-  const counts = {};
-  groups.forEach((g) => { const d = g.directives?.[0] || "OTHER"; counts[d] = (counts[d] || 0) + 1; });
-  return counts;
-}
+
 function titleCase(s = "") {
   return String(s).replace(/[_-]/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (m) => m.toUpperCase());
 }
@@ -397,7 +391,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [expandedStandards, setExpandedStandards] = useState({});
   const [search, setSearch] = useState("");
-  const [inputFocused, setInputFocused] = useState(false);
+
   const inputRef = useRef(null);
 
   const runAnalysis = useCallback(async (payloadText) => {
@@ -558,8 +552,6 @@ export default function App() {
               ref={inputRef}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onFocus={() => setInputFocused(true)}
-              onBlur={() => setInputFocused(false)}
               onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") runAnalysis(); }}
               placeholder="Describe the product — e.g. Smart air fryer with Wi-Fi, mains powered, OTA updates, food-contact basket coating..."
               style={{
