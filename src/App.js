@@ -114,12 +114,9 @@ function firstNonEmpty(...values){
 }
 function inferStandardBadge(item){
   const code=String(item?.code||"").toUpperCase();
-  const title=String(item?.title||"").toLowerCase();
-  const category=String(item?.category||"").toLowerCase();
   const directive=String(item?.directive||item?.legislation_key||"").toUpperCase();
   const family=String(item?.standard_family||"").toLowerCase();
-  const focus=(item?.test_focus||[]).map(x=>String(x).toLowerCase());
-
+  
   if(/EN\s*60335-1\b/.test(code)) return "Safety standard";
   if(/EN\s*60335-2-\d+\b/.test(code)) return "Part 2 product safety standard";
   if(/EN\s*60730-1\b/.test(code)) return "Safety standard";
