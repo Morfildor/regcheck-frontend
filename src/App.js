@@ -82,12 +82,26 @@ function isStandardFinding(f) {
   const article = (f.article || "").trim();
   return STD_RE.test(article) || /review$/i.test(article);
 }
-function splitFindings(findings = []) {
+function splitFindings(findings = [], knownStdNames = new Set()) {
   const bucket = { stds: [], missing: [], contra: [], other: [] };
   findings.forEach((f, i) => {
     const row = { ...f, _i: i };
     const art = (f.article || "").trim();
+    const findingText = (f.finding || "").trim();
+
+    // Already a standard reference — skip entirely (shown above)
     if (isStandardFinding(f)) { bucket.stds.push(row); return; }
+
+    // Skip if article or finding text overlaps with a known standard name
+    const artLower = art.toLowerCase();
+    const findLower = findingText.toLowerCase();
+    const isDuplicate = [...knownStdNames].some((name) => {
+      const n = name.toLowerCase();
+      // article IS the standard name, or finding text contains it
+      return artLower === n || findLower.includes(n) || (n.length > 8 && artLower.includes(n));
+    });
+    if (isDuplicate) return;
+
     if (/Missing/i.test(art)) { bucket.missing.push(row); return; }
     if (/Contradiction/i.test(art)) { bucket.contra.push(row); return; }
     bucket.other.push(row);
@@ -426,8 +440,12 @@ export default function App() {
     if (inputRef.current && window.innerWidth > 900) inputRef.current.focus();
   }, []);
 
-  const findingsBucket = useMemo(() => splitFindings(result?.findings || []), [result]);
   const standardGroups = useMemo(() => buildGroupsFromBackendItems(result?.standards || [], result?.review_items || []), [result]);
+
+  const findingsBucket = useMemo(() => {
+    const knownStdNames = new Set(standardGroups.map((g) => g.name));
+    return splitFindings(result?.findings || [], knownStdNames);
+  }, [result, standardGroups]);
 
   const filteredStandardGroups = useMemo(() => {
     const q = search.trim().toLowerCase();
