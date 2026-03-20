@@ -137,10 +137,6 @@ function directiveTone(key) {
   return DIR_TONES[key] || DIR_TONES.OTHER;
 }
 
-function directiveName(key) {
-  return DIR_NAME[key] || titleCase(key);
-}
-
 function directiveShort(key) {
   return DIR_SHORT[key] || titleCase(key);
 }
@@ -162,15 +158,6 @@ function uniqueBy(items, getKey) {
     if (!map.has(key)) map.set(key, item);
   });
   return Array.from(map.values());
-}
-
-function groupBy(items, getKey) {
-  return (items || []).reduce((acc, item) => {
-    const key = getKey(item);
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(item);
-    return acc;
-  }, {});
 }
 
 function getHeroStats(heroSummary, result) {
@@ -290,16 +277,6 @@ function buildContextualChips(metadata, result) {
   push("Professional", "professional or commercial use");
 
   return chips.slice(0, 12);
-}
-
-function sortDirectiveGroups(groups) {
-  return [...(groups || [])].sort((a, b) => {
-    const ai = DIR_ORDER.indexOf(a.key);
-    const bi = DIR_ORDER.indexOf(b.key);
-    const aRank = ai === -1 ? 999 : ai;
-    const bRank = bi === -1 ? 999 : bi;
-    return aRank - bRank || String(a.key).localeCompare(String(b.key));
-  });
 }
 
 function prettyValue(value) {
