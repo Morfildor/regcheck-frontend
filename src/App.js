@@ -190,21 +190,82 @@ function tagToneForSignal(signal){
 }
 
 /* ------------------------------------------------------------------ */
+/* History helpers                                                      */
+/* ------------------------------------------------------------------ */
+const HISTORY_KEY = "regcheck_history_v1";
+const MAX_HISTORY = 10;
+
+function loadHistory(){
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]");
+  } catch { return []; }
+}
+function saveHistory(entries){
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0,MAX_HISTORY))); } catch {}
+}
+
+/* ------------------------------------------------------------------ */
+/* Export helpers                                                       */
+/* ------------------------------------------------------------------ */
+function buildExportText(text, standardGroups, standardsByDirective, notes, toCheck){
+  const lines=[];
+  lines.push("RegCheck — Compliance Analysis Export");
+  lines.push("Product: "+text.trim());
+  lines.push("Date: "+new Date().toLocaleString());
+  lines.push("");
+  lines.push("=== APPLICABLE STANDARDS ===");
+  DIR_ORDER.forEach(d=>{
+    const grps=standardsByDirective[d];
+    if(!grps||!grps.length) return;
+    lines.push("\n-- "+prettyDirectiveName(d)+" --");
+    grps.forEach(g=>{
+      lines.push("  "+g.name+" ["+priorityStatus(g.statuses)+"]");
+      g.findings.forEach(f=>{
+        if(f.finding) lines.push("    • "+f.finding);
+        if(f.action) lines.push("      → "+f.action);
+      });
+    });
+  });
+  if(notes.length){
+    lines.push("\n=== APPLICABLE LEGISLATIONS ===");
+    notes.forEach(f=>{
+      lines.push("  • "+(f.finding||f.article||""));
+      if(f.action) lines.push("    → "+f.action);
+    });
+  }
+  if(toCheck.length){
+    lines.push("\n=== THINGS TO VERIFY ===");
+    toCheck.forEach((f,i)=>{
+      const label=(f.article||f.finding||"").replace(/^Missing[:\s]*/i,"").replace(/^Check[:\s]*/i,"").trim();
+      lines.push("  "+(i+1)+". "+label);
+      if(f.action) lines.push("     → "+f.action);
+    });
+  }
+  return lines.join("\n");
+}
+
+/* ------------------------------------------------------------------ */
 /* Atoms                                                                */
 /* ------------------------------------------------------------------ */
 
-function DirPill({dirKey,size="sm"}){
+function DirPill({dirKey,size="sm",active,onClick}){
   const tone=DIR[dirKey]||DIR.OTHER;
   const fs=size==="sm"?11:13;
   return(
-    <span style={{
-      display:"inline-flex",alignItems:"center",gap:5,
-      padding:size==="sm"?"2px 9px 2px 7px":"3px 11px 3px 9px",
-      borderRadius:999,border:"1px solid "+tone.ring,
-      background:tone.pill,color:tone.ink,
-      fontSize:fs,fontWeight:800,letterSpacing:"0.04em",whiteSpace:"nowrap",
-    }}>
-      <span style={{width:6,height:6,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+    <span
+      onClick={onClick}
+      style={{
+        display:"inline-flex",alignItems:"center",gap:5,
+        padding:size==="sm"?"2px 9px 2px 7px":"3px 11px 3px 9px",
+        borderRadius:999,border:"1px solid "+(active?tone.dot:tone.ring),
+        background:active?tone.dot:tone.pill,
+        color:active?"#fff":tone.ink,
+        fontSize:fs,fontWeight:800,letterSpacing:"0.04em",whiteSpace:"nowrap",
+        cursor:onClick?"pointer":"default",
+        transition:"all 0.15s",
+        boxShadow:active?"0 1px 6px rgba(0,0,0,0.12)":"none",
+      }}>
+      <span style={{width:6,height:6,borderRadius:999,background:active?"rgba(255,255,255,0.7)":tone.dot,flexShrink:0}}/>
       {DIR_SHORT[dirKey]||dirKey}
     </span>
   );
@@ -224,6 +285,70 @@ function StatusBadge({status,small}){
       <span style={{width:6,height:6,borderRadius:999,background:s.dot,flexShrink:0}}/>
       {s.label}
     </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Skeleton loader                                                      */
+/* ------------------------------------------------------------------ */
+function SkeletonPulse({w="100%",h=16,r=8,mb=0}){
+  return(
+    <div style={{
+      width:w,height:h,borderRadius:r,marginBottom:mb,
+      background:"linear-gradient(90deg,rgba(200,193,183,0.35) 25%,rgba(220,214,206,0.55) 50%,rgba(200,193,183,0.35) 75%)",
+      backgroundSize:"200% 100%",
+      animation:"skeletonShimmer 1.6s infinite",
+    }}/>
+  );
+}
+
+function LoadingSkeleton(){
+  return(
+    <div style={{display:"grid",gap:14}}>
+      {/* Summary bar skeleton */}
+      <div style={{
+        display:"flex",gap:0,borderRadius:18,
+        border:"1px solid rgba(183,175,163,0.3)",
+        overflow:"hidden",background:"rgba(255,255,255,0.55)",
+        backdropFilter:"blur(16px)",
+      }}>
+        {[100,80,80,80].map((w,i)=>(
+          <div key={i} style={{flex:"1 1 auto",padding:"14px 20px",borderRight:i<3?"1px solid rgba(183,175,163,0.25)":"none"}}>
+            <SkeletonPulse w={60} h={10} r={6} mb={10}/>
+            <SkeletonPulse w={w} h={22} r={6}/>
+          </div>
+        ))}
+      </div>
+      {/* Main panel skeleton */}
+      <div style={{
+        borderRadius:22,border:"1px solid rgba(183,175,163,0.28)",
+        background:"rgba(255,255,255,0.62)",backdropFilter:"blur(18px)",overflow:"hidden",
+      }}>
+        <div style={{padding:"16px 20px 14px",borderBottom:"1px solid rgba(188,178,165,0.22)"}}>
+          <SkeletonPulse w={180} h={18} r={8}/>
+        </div>
+        <div style={{padding:"14px",display:"grid",gap:10}}>
+          {[0,1,2].map(i=>(
+            <div key={i} style={{borderRadius:16,border:"1px solid rgba(200,193,183,0.35)",overflow:"hidden"}}>
+              <div style={{padding:"13px 16px",background:"rgba(230,225,218,0.4)",display:"flex",alignItems:"center",gap:10}}>
+                <SkeletonPulse w={10} h={10} r={99}/>
+                <SkeletonPulse w={140} h={14} r={6}/>
+                <div style={{marginLeft:"auto"}}><SkeletonPulse w={28} h={24} r={99}/></div>
+              </div>
+              <div style={{padding:"10px 16px 14px",display:"grid",gap:8}}>
+                {[0,1].map(j=>(
+                  <div key={j} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid rgba(188,178,165,0.12)"}}>
+                    <SkeletonPulse w={3} h={28} r={99}/>
+                    <SkeletonPulse w={`${60+j*15}%`} h={14} r={6}/>
+                    <div style={{marginLeft:"auto"}}><SkeletonPulse w={48} h={22} r={99}/></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -375,7 +500,7 @@ function CheckItem({finding,index}){
 }
 
 /* ------------------------------------------------------------------ */
-/* LegislationItem — for Applicable Legislations panel                 */
+/* LegislationItem                                                      */
 /* ------------------------------------------------------------------ */
 
 function LegislationItem({finding}){
@@ -465,6 +590,132 @@ function SummaryBar({topRisk,standardGroups,standardsByDirective,toCheck}){
 }
 
 /* ------------------------------------------------------------------ */
+/* HistoryPanel                                                         */
+/* ------------------------------------------------------------------ */
+
+function HistoryPanel({history,onLoad,onDelete,onClear}){
+  const [open,setOpen]=useState(false);
+  if(!history.length) return null;
+  return(
+    <div style={{position:"relative"}}>
+      <button
+        onClick={()=>setOpen(o=>!o)}
+        style={{
+          display:"flex",alignItems:"center",gap:7,
+          padding:"7px 14px",borderRadius:11,
+          border:"1px solid rgba(197,190,180,0.7)",
+          background:open?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.55)",
+          color:"#5c5750",fontWeight:700,fontSize:13,
+          cursor:"pointer",fontFamily:"inherit",transition:"all 0.12s",
+        }}
+      >
+        <span style={{fontSize:15}}>🕑</span>
+        History
+        <span style={{
+          minWidth:18,height:18,padding:"0 5px",borderRadius:99,
+          background:"rgba(143,148,132,0.18)",color:"#6b6760",
+          fontWeight:900,fontSize:11,
+          display:"inline-flex",alignItems:"center",justifyContent:"center",
+        }}>{history.length}</span>
+      </button>
+      {open&&(
+        <div style={{
+          position:"absolute",top:"calc(100% + 8px)",right:0,zIndex:100,
+          width:340,borderRadius:16,
+          border:"1px solid rgba(197,190,180,0.7)",
+          background:"rgba(252,250,247,0.98)",
+          backdropFilter:"blur(20px)",
+          boxShadow:"0 8px 32px rgba(0,0,0,0.12)",
+          overflow:"hidden",
+        }}>
+          <div style={{
+            padding:"12px 16px",borderBottom:"1px solid rgba(197,190,180,0.4)",
+            display:"flex",alignItems:"center",justifyContent:"space-between",
+          }}>
+            <span style={{fontSize:14,fontWeight:900,color:"#3a3630"}}>Recent Analyses</span>
+            <button onClick={()=>{onClear();setOpen(false);}} style={{
+              padding:"4px 10px",borderRadius:8,border:"1px solid rgba(197,190,180,0.7)",
+              background:"transparent",color:"#9e9890",fontSize:12,fontWeight:700,
+              cursor:"pointer",fontFamily:"inherit",
+            }}>Clear all</button>
+          </div>
+          <div style={{maxHeight:320,overflowY:"auto",padding:"8px"}}>
+            {history.map(entry=>(
+              <div key={entry.id} style={{
+                display:"flex",alignItems:"flex-start",gap:10,
+                padding:"10px 12px",borderRadius:10,
+                border:"1px solid rgba(197,190,180,0.3)",
+                background:"rgba(255,255,255,0.6)",
+                marginBottom:6,cursor:"pointer",transition:"background 0.12s",
+              }}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.95)"}
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.6)"}
+              onClick={()=>{onLoad(entry);setOpen(false);}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#2c2925",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {entry.text.slice(0,60)+(entry.text.length>60?"…":"")}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginTop:5,flexWrap:"wrap"}}>
+                    <span style={{fontSize:11,color:"#b0a89d"}}>{entry.time}</span>
+                    {entry.directives&&entry.directives.slice(0,3).map(d=><DirPill key={d} dirKey={d}/>)}
+                    {entry.directives&&entry.directives.length>3&&(
+                      <span style={{fontSize:11,color:"#9e9890",fontWeight:700}}>+{entry.directives.length-3}</span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={e=>{e.stopPropagation();onDelete(entry.id);}}
+                  style={{
+                    flexShrink:0,width:22,height:22,borderRadius:6,
+                    border:"none",background:"rgba(0,0,0,0.06)",
+                    color:"#9e9890",fontSize:13,cursor:"pointer",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                  }}
+                >×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Sticky New Analysis Bar                                              */
+/* ------------------------------------------------------------------ */
+
+function StickyBar({onNewAnalysis}){
+  return(
+    <div style={{
+      position:"fixed",bottom:0,left:0,right:0,zIndex:50,
+      padding:"12px 20px",
+      background:"rgba(218,212,204,0.88)",
+      backdropFilter:"blur(20px)",
+      borderTop:"1px solid rgba(183,175,163,0.35)",
+      display:"flex",justifyContent:"center",
+    }}>
+      <button
+        onClick={onNewAnalysis}
+        style={{
+          padding:"10px 28px",borderRadius:12,
+          border:"1px solid rgba(90,129,136,0.6)",
+          background:"linear-gradient(180deg,#6f9199,#567a82)",
+          color:"#fffdf8",fontWeight:900,fontSize:14,
+          cursor:"pointer",
+          boxShadow:"0 4px 16px rgba(86,122,130,0.3)",
+          transition:"all 0.14s",fontFamily:"inherit",letterSpacing:"-0.01em",
+        }}
+        onMouseEnter={e=>e.currentTarget.style.filter="brightness(1.08)"}
+        onMouseLeave={e=>e.currentTarget.style.filter="brightness(1)"}
+      >
+        ↑ New Analysis
+      </button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* App                                                                  */
 /* ------------------------------------------------------------------ */
 
@@ -477,13 +728,19 @@ export default function App(){
   const [expandedStandards,setExpandedStandards]=useState({});
   const [search,setSearch]=useState("");
   const [legsOpen,setLegsOpen]=useState(true);
+  const [activeDirectiveFilter,setActiveDirectiveFilter]=useState(null); // NEW: directive filter
+  const [history,setHistory]=useState(()=>loadHistory());                // NEW: history
+  const [copied,setCopied]=useState(false);                               // NEW: export feedback
   const inputRef=useRef(null);
+  const topRef=useRef(null);
 
   const runAnalysis=useCallback(function(payloadText){
     const trimmed=((payloadText!==undefined?payloadText:text)||"").trim();
     if(!trimmed) return Promise.resolve();
     setLoading(true);
     setError("");
+    setResult(null);
+    setActiveDirectiveFilter(null);
     return fetch(API_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -523,14 +780,48 @@ export default function App(){
   const toCheck=categorised.toCheck;
   const notes=categorised.notes;
 
+  // Save to history when we get a result
+  useEffect(()=>{
+    if(!result||!text.trim()) return;
+    const directives=DIR_ORDER.filter(d=>{
+      const grps={};
+      buildGroupsFromBackendItems(result.standards||[],result.review_items||[]).forEach(g=>{
+        const dir=(g.directives&&g.directives[0])||"OTHER";
+        if(!grps[dir]) grps[dir]=[];
+        grps[dir].push(g);
+      });
+      return grps[d]&&grps[d].length;
+    });
+    const entry={
+      id:Date.now().toString(),
+      text:text.trim(),
+      time:new Date().toLocaleString("en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}),
+      result,
+      directives,
+      mode,
+    };
+    setHistory(prev=>{
+      const next=[entry,...prev.filter(h=>h.text!==entry.text)];
+      saveHistory(next);
+      return next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[result]);
+
   const filteredStandardGroups=useMemo(()=>{
+    let groups=standardGroups;
+    // Directive filter
+    if(activeDirectiveFilter){
+      groups=groups.filter(g=>(g.directives||[]).includes(activeDirectiveFilter));
+    }
+    // Text search
     const q=search.trim().toLowerCase();
-    if(!q) return standardGroups;
-    return standardGroups.filter(g=>{
+    if(!q) return groups;
+    return groups.filter(g=>{
       const hay=[g.name,...(g.directives||[]),...(g.actions||[]),...(g.findings||[]).map(f=>(f.finding||"")+" "+(f.action||""))].join(" ").toLowerCase();
       return hay.includes(q);
     });
-  },[search,standardGroups]);
+  },[search,standardGroups,activeDirectiveFilter]);
 
   const standardsByDirective=useMemo(()=>{
     const groups={};
@@ -541,6 +832,17 @@ export default function App(){
     });
     return groups;
   },[filteredStandardGroups]);
+
+  // Unfiltered directive map (for header pills)
+  const allDirectives=useMemo(()=>{
+    const map={};
+    standardGroups.forEach(g=>{
+      const d=(g.directives&&g.directives[0])||"OTHER";
+      if(!map[d]) map[d]=[];
+      map[d].push(g);
+    });
+    return map;
+  },[standardGroups]);
 
   const topRisk=useMemo(()=>{
     const statuses=[
@@ -559,9 +861,58 @@ export default function App(){
     if(inputRef.current) inputRef.current.focus();
   }
 
+  // Collapse / Expand all
+  function setAllExpanded(val){
+    const next={};
+    standardGroups.forEach(g=>{
+      const d=(g.directives&&g.directives[0])||"OTHER";
+      next[d+"::"+g.name]=val;
+    });
+    setExpandedStandards(next);
+  }
+
+  // Export
+  function handleExport(){
+    const txt=buildExportText(text,standardGroups,allDirectives,notes,toCheck);
+    navigator.clipboard.writeText(txt).then(()=>{
+      setCopied(true);
+      setTimeout(()=>setCopied(false),2000);
+    }).catch(()=>{
+      // Fallback
+      const el=document.createElement("textarea");
+      el.value=txt;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(()=>setCopied(false),2000);
+    });
+  }
+
+  // Load from history
+  function handleLoadHistory(entry){
+    setText(entry.text);
+    setResult(entry.result);
+    setActiveDirectiveFilter(null);
+    const initialExpanded={};
+    buildGroupsFromBackendItems(entry.result.standards||[],entry.result.review_items||[]).forEach(group=>{
+      const directive=(group.directives&&group.directives[0])||"OTHER";
+      initialExpanded[directive+"::"+group.name]=true;
+    });
+    setExpandedStandards(initialExpanded);
+    setTimeout(()=>topRef.current&&topRef.current.scrollIntoView({behavior:"smooth"}),50);
+  }
+
+  function handleNewAnalysis(){
+    topRef.current&&topRef.current.scrollIntoView({behavior:"smooth"});
+    setTimeout(()=>inputRef.current&&inputRef.current.focus(),300);
+  }
+
   const hasResults=!!result;
   const hasSidebar=hasResults&&toCheck.length>0;
   const hasLegislations=hasResults&&notes.length>0;
+  const allExpanded=Object.values(expandedStandards).every(Boolean);
 
   return(
     <div style={{
@@ -583,9 +934,18 @@ export default function App(){
         .run-btn:not(:disabled):hover{filter:brightness(1.06);}
         .mode-seg-btn:hover{background:rgba(255,255,255,0.18)!important;}
         .clear-btn:hover{background:rgba(255,255,255,0.95)!important;}
+        @keyframes skeletonShimmer{
+          0%{background-position:200% 0}
+          100%{background-position:-200% 0}
+        }
+        @keyframes fadeIn{
+          from{opacity:0;transform:translateY(6px)}
+          to{opacity:1;transform:translateY(0)}
+        }
+        .results-appear{animation:fadeIn 0.25s ease both;}
       `}</style>
 
-      <div style={{maxWidth:1120,margin:"0 auto",display:"grid",gap:14}}>
+      <div ref={topRef} style={{maxWidth:1120,margin:"0 auto",display:"grid",gap:14}}>
 
         {/* ── HEADER ── */}
         <header style={{
@@ -606,26 +966,43 @@ export default function App(){
               <div style={{fontSize:20,fontWeight:900,color:"#2a2520",letterSpacing:"-0.03em",lineHeight:1}}>RegCheck</div>
               <div style={{fontSize:12,fontWeight:700,color:"#9e9890",marginTop:1}}>EU Product Compliance Analyser</div>
             </div>
-            <span style={{fontSize:11,fontWeight:800,color:"#8c887f",background:"rgba(0,0,0,0.07)",borderRadius:99,padding:"2px 9px",alignSelf:"flex-start",marginTop:1}}>v3</span>
+            <span style={{fontSize:11,fontWeight:800,color:"#8c887f",background:"rgba(0,0,0,0.07)",borderRadius:99,padding:"2px 9px",alignSelf:"flex-start",marginTop:1}}>v4</span>
           </div>
 
-          {hasResults&&(
-            <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-              {DIR_ORDER.filter(d=>standardsByDirective[d]&&standardsByDirective[d].length).map(d=>(
-                <DirPill key={d} dirKey={d}/>
-              ))}
-            </div>
-          )}
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            {/* Clickable directive filter pills in header */}
+            {hasResults&&(
+              <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                {DIR_ORDER.filter(d=>allDirectives[d]&&allDirectives[d].length).map(d=>(
+                  <DirPill
+                    key={d}
+                    dirKey={d}
+                    active={activeDirectiveFilter===d}
+                    onClick={()=>setActiveDirectiveFilter(prev=>prev===d?null:d)}
+                  />
+                ))}
+              </div>
+            )}
+            {/* History button */}
+            <HistoryPanel
+              history={history}
+              onLoad={handleLoadHistory}
+              onDelete={id=>setHistory(prev=>{const next=prev.filter(h=>h.id!==id);saveHistory(next);return next;})}
+              onClear={()=>setHistory([])||saveHistory([])}
+            />
+          </div>
         </header>
 
         {/* ── SUMMARY BAR ── */}
         {hasResults&&(
-          <SummaryBar
-            topRisk={topRisk}
-            standardGroups={standardGroups}
-            standardsByDirective={standardsByDirective}
-            toCheck={toCheck}
-          />
+          <div className="results-appear">
+            <SummaryBar
+              topRisk={topRisk}
+              standardGroups={standardGroups}
+              standardsByDirective={allDirectives}
+              toCheck={toCheck}
+            />
+          </div>
         )}
 
         {/* ── INPUT PANEL ── */}
@@ -718,7 +1095,7 @@ export default function App(){
                 })}
               </div>
               <button type="button" className="clear-btn"
-                onClick={()=>{setText("");setResult(null);setError("");}}
+                onClick={()=>{setText("");setResult(null);setError("");setActiveDirectiveFilter(null);}}
                 style={{
                   padding:"8px 15px",borderRadius:11,
                   border:"1px solid rgba(197,190,180,0.7)",
@@ -752,9 +1129,12 @@ export default function App(){
           </div>
         )}
 
+        {/* Loading skeleton */}
+        {loading&&<LoadingSkeleton/>}
+
         {/* ── RESULTS ── */}
         {hasResults&&(
-          <div style={{display:"grid",gridTemplateColumns:hasSidebar?"1fr 272px":"1fr",gap:14,alignItems:"start"}}>
+          <div className="results-appear" style={{display:"grid",gridTemplateColumns:hasSidebar?"1fr 272px":"1fr",gap:14,alignItems:"start"}}>
 
             {/* LEFT: Standards panel */}
             <div style={{display:"grid",gap:14}}>
@@ -777,25 +1157,62 @@ export default function App(){
                       color:"#5b6862",fontWeight:900,fontSize:13,
                       display:"inline-flex",alignItems:"center",justifyContent:"center",
                     }}>{filteredStandardGroups.length}</span>
+                    {activeDirectiveFilter&&(
+                      <span style={{
+                        fontSize:11,fontWeight:800,color:"#5f8d8b",
+                        background:"rgba(95,141,139,0.1)",borderRadius:99,padding:"2px 8px",
+                        cursor:"pointer",
+                      }} onClick={()=>setActiveDirectiveFilter(null)}>
+                        {DIR_SHORT[activeDirectiveFilter]} ×
+                      </span>
+                    )}
                   </div>
-                  <input
-                    value={search}
-                    onChange={e=>setSearch(e.target.value)}
-                    placeholder="Filter standards…"
-                    style={{
-                      width:210,borderRadius:11,
-                      border:"1px solid rgba(198,189,177,0.7)",
-                      background:"rgba(255,255,255,0.8)",
-                      padding:"8px 13px",fontSize:14,
-                      color:"#46413a",fontFamily:"inherit",
-                    }}
-                  />
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    {/* Collapse/Expand all */}
+                    <button
+                      onClick={()=>setAllExpanded(!allExpanded)}
+                      style={{
+                        padding:"6px 12px",borderRadius:9,
+                        border:"1px solid rgba(197,190,180,0.7)",
+                        background:"rgba(255,255,255,0.6)",
+                        color:"#6f6a61",fontSize:12,fontWeight:800,
+                        cursor:"pointer",fontFamily:"inherit",transition:"all 0.12s",
+                        whiteSpace:"nowrap",
+                      }}>
+                      {allExpanded?"Collapse all":"Expand all"}
+                    </button>
+                    {/* Export */}
+                    <button
+                      onClick={handleExport}
+                      style={{
+                        padding:"6px 12px",borderRadius:9,
+                        border:"1px solid rgba(197,190,180,0.7)",
+                        background:copied?"rgba(106,144,104,0.15)":"rgba(255,255,255,0.6)",
+                        color:copied?"#566554":"#6f6a61",fontSize:12,fontWeight:800,
+                        cursor:"pointer",fontFamily:"inherit",transition:"all 0.2s",
+                        whiteSpace:"nowrap",
+                      }}>
+                      {copied?"✓ Copied!":"⎘ Export"}
+                    </button>
+                    <input
+                      value={search}
+                      onChange={e=>setSearch(e.target.value)}
+                      placeholder="Filter standards…"
+                      style={{
+                        width:180,borderRadius:11,
+                        border:"1px solid rgba(198,189,177,0.7)",
+                        background:"rgba(255,255,255,0.8)",
+                        padding:"7px 13px",fontSize:13,
+                        color:"#46413a",fontFamily:"inherit",
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {/* Standards lanes */}
                 <div style={{padding:"14px 14px",display:"grid",gap:10}}>
                   {!filteredStandardGroups.length
-                    ?<EmptyState title="No standards found" subtitle="Run analysis with a more detailed product description."/>
+                    ?<EmptyState title="No standards found" subtitle={activeDirectiveFilter?"Try removing the directive filter or run a more detailed analysis.":"Run analysis with a more detailed product description."}/>
                     :DIR_ORDER.filter(d=>standardsByDirective[d]&&standardsByDirective[d].length).map(directive=>(
                       <DirectiveLane
                         key={directive}
@@ -811,7 +1228,7 @@ export default function App(){
                 </div>
               </div>
 
-              {/* Applicable Legislations — full width below standards */}
+              {/* Applicable Legislations */}
               {hasLegislations&&(
                 <div style={{
                   borderRadius:22,border:"1px solid rgba(183,175,163,0.28)",
@@ -858,7 +1275,6 @@ export default function App(){
                 background:"rgba(255,255,255,0.62)",
                 backdropFilter:"blur(18px)",
               }}>
-                {/* Sidebar header */}
                 <div style={{
                   padding:"15px 16px 12px",
                   borderBottom:"1px solid "+DIR.ROHS.ring,
@@ -888,6 +1304,10 @@ export default function App(){
         )}
 
       </div>
+
+      {/* Sticky new analysis bar — only shown when results are visible */}
+      {hasResults&&<StickyBar onNewAnalysis={handleNewAnalysis}/>}
+
     </div>
   );
-} 
+}

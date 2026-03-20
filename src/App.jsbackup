@@ -4,1123 +4,890 @@ const API_URL =
   process.env.REACT_APP_REGCHECK_API_URL ||
   "https://regcheck-api.onrender.com/analyze";
 
-// ─── Directive metadata ───────────────────────────────────────────────────────
-
 const DIR_NAME = {
-  LVD: "Low Voltage",
-  EMC: "EMC",
-  RED: "RF / Radio",
-  RED_CYBER: "RED Cybersecurity",
-  CRA: "Cyber Resilience Act",
-  ROHS: "RoHS",
-  REACH: "REACH",
-  GDPR: "Data / Privacy",
-  AI_Act: "AI Act",
-  ESPR: "ESPR",
-  SYSTEM: "System",
-  OTHER: "Other",
+  LVD:      "Low Voltage Directive",
+  EMC:      "EMC Directive",
+  RED:      "RF / Radio Equipment",
+  RED_CYBER:"RED Cybersecurity DA",
+  CRA:      "Cyber Resilience Act",
+  ROHS:     "RoHS Directive",
+  REACH:    "REACH Regulation",
+  GDPR:     "Data & Privacy",
+  AI_Act:   "AI Act",
+  ESPR:     "ESPR / Ecodesign",
+  OTHER:    "Other",
+  SYSTEM:   "System",
+};
+
+const DIR_SHORT = {
+  LVD:      "LVD",
+  EMC:      "EMC",
+  RED:      "RED",
+  RED_CYBER:"RED-Cyber",
+  CRA:      "CRA",
+  ROHS:     "RoHS",
+  REACH:    "REACH",
+  GDPR:     "GDPR",
+  AI_Act:   "AI Act",
+  ESPR:     "ESPR",
+  OTHER:    "Other",
+  SYSTEM:   "System",
 };
 
 const DIR_ORDER = [
-  "LVD", "EMC", "RED", "RED_CYBER", "CRA", "ROHS", "REACH", "GDPR", "AI_Act", "ESPR", "OTHER",
+  "LVD","EMC","RED","RED_CYBER","CRA",
+  "ROHS","REACH","GDPR","AI_Act","ESPR","OTHER",
 ];
 
 const DIR = {
-  LVD:      { dot: "#0d2c3b", pill: "#d8e8ef", ring: "#9fc0cf", ink: "#0d2c3b" },
-  EMC:      { dot: "#13678A", pill: "#d8edf5", ring: "#8bbfd4", ink: "#0b4258" },
-  RED:      { dot: "#1f3c88", pill: "#dbe5ff", ring: "#a7bbe9", ink: "#1f3c88" },
-  RED_CYBER:{ dot: "#533483", pill: "#ece4fb", ring: "#c6b5ea", ink: "#41286a" },
-  CRA:      { dot: "#1c7c54", pill: "#daf3e5", ring: "#9ed1b5", ink: "#13533a" },
-  ROHS:     { dot: "#6f7f14", pill: "#f2f5d8", ring: "#d0d78a", ink: "#55610f" },
-  REACH:    { dot: "#8a5a13", pill: "#f8ecd9", ring: "#e0bf8d", ink: "#6a430d" },
-  GDPR:     { dot: "#4a7c59", pill: "#e3f3e8", ring: "#b8d6bf", ink: "#33573f" },
-  AI_Act:   { dot: "#6b4f9d", pill: "#ece5f8", ring: "#c5b5e4", ink: "#4b3770" },
-  ESPR:     { dot: "#7d6a0f", pill: "#f6f0d1", ring: "#dbcf8b", ink: "#62530d" },
-  OTHER:    { dot: "#627d8a", pill: "#e5edf1", ring: "#bfd0d8", ink: "#3f5862" },
-  SYSTEM:   { dot: "#627d8a", pill: "#e5edf1", ring: "#bfd0d8", ink: "#3f5862" },
+  LVD:       { dot:"#6f7566", pill:"#ece8dc", ring:"#cfc7b7", ink:"#505647", accent:"#8a9484", header:"#d8d3c8", stripe:"rgba(111,117,102,0.08)" },
+  EMC:       { dot:"#5f8d8b", pill:"#e6f0ef", ring:"#bbd1cf", ink:"#456a69", accent:"#5f8d8b", header:"#d0e4e3", stripe:"rgba(95,141,139,0.08)" },
+  RED:       { dot:"#2f5f69", pill:"#e3eef0", ring:"#b2c7cc", ink:"#294b53", accent:"#2f5f69", header:"#cde0e4", stripe:"rgba(47,95,105,0.08)" },
+  RED_CYBER: { dot:"#9f7084", pill:"#f1e7eb", ring:"#d8c0c9", ink:"#7a5667", accent:"#9f7084", header:"#e8d8df", stripe:"rgba(159,112,132,0.08)" },
+  CRA:       { dot:"#60795f", pill:"#e8efe7", ring:"#c1cec0", ink:"#4a6149", accent:"#60795f", header:"#d5e3d4", stripe:"rgba(96,121,95,0.08)" },
+  ROHS:      { dot:"#b7903e", pill:"#f7efd9", ring:"#e5d3a1", ink:"#8f6e2d", accent:"#b7903e", header:"#f0e5c3", stripe:"rgba(183,144,62,0.08)" },
+  REACH:     { dot:"#aa7868", pill:"#f5eae6", ring:"#e3cbc2", ink:"#83584a", accent:"#aa7868", header:"#e8d8d0", stripe:"rgba(170,120,104,0.08)" },
+  GDPR:      { dot:"#7f9995", pill:"#edf3f2", ring:"#cad9d8", ink:"#607773", accent:"#7f9995", header:"#daeaea", stripe:"rgba(127,153,149,0.08)" },
+  AI_Act:    { dot:"#9f7084", pill:"#f1e7eb", ring:"#d8c0c9", ink:"#7a5667", accent:"#9f7084", header:"#e8d8df", stripe:"rgba(159,112,132,0.08)" },
+  ESPR:      { dot:"#b7903e", pill:"#f7f0dd", ring:"#e5d7aa", ink:"#8f6e2d", accent:"#b7903e", header:"#f0e8ca", stripe:"rgba(183,144,62,0.08)" },
+  OTHER:     { dot:"#8d8779", pill:"#f0ece3", ring:"#d5cec0", ink:"#686356", accent:"#8d8779", header:"#e5e0d7", stripe:"rgba(141,135,121,0.08)" },
+  SYSTEM:    { dot:"#8d8779", pill:"#f0ece3", ring:"#d5cec0", ink:"#686356", accent:"#8d8779", header:"#e5e0d7", stripe:"rgba(141,135,121,0.08)" },
 };
 
 const STS = {
-  FAIL: { icon: "×", label: "FAIL", bg: "#e5eef3", border: "#9bb8c7", text: "#0d2c3b", stripe: "#2a6782" },
-  WARN: { icon: "!", label: "WARN", bg: "#e8f3f8", border: "#9dc7d8", text: "#104052", stripe: "#3c8ca9" },
-  PASS: { icon: "✓", label: "PASS", bg: "#e4f5ee", border: "#a6d2bf", text: "#134534", stripe: "#35a37d" },
-  INFO: { icon: "i", label: "INFO", bg: "#edf4f6", border: "#bfd0d8", text: "#32505b", stripe: "#7e98a3" },
+  FAIL:{ icon:"✕", label:"FAIL", bg:"#f8eef1", border:"#e6d0d6", text:"#8b6474", dot:"#c97a90" },
+  WARN:{ icon:"!", label:"WARN", bg:"#fbf5e8", border:"#ecdcae", text:"#9e7d36", dot:"#c9a040" },
+  PASS:{ icon:"✓", label:"PASS", bg:"#eef4ee", border:"#ccd7ca", text:"#566554", dot:"#6a9068" },
+  INFO:{ icon:"·", label:"INFO", bg:"#eff5f5", border:"#cadada", text:"#517674", dot:"#7fa8a6" },
 };
-
-// ─── Guided field definitions ─────────────────────────────────────────────────
-
-const GUIDED_FIELDS = [
-  {
-    id: "productType",
-    step: 1,
-    label: "What is the product?",
-    placeholder: "e.g. Smart kettle, robotic lawn mower, wall-mounted heat pump…",
-    hint: "Be as specific as possible — include the product family and any key mechanical or physical features.",
-    chips: [
-      "Electric kettle", "Coffee machine", "Vacuum cleaner", "Robotic lawnmower",
-      "Air purifier", "Heat pump", "Washing machine", "Tumble dryer",
-      "Toaster", "Fan heater", "Electric iron", "Dishwasher",
-      "Refrigerator", "Microwave oven", "Hair dryer", "Electric shaver",
-    ],
-  },
-  {
-    id: "connectivity",
-    step: 2,
-    label: "Connectivity & radio?",
-    placeholder: "e.g. Wi-Fi 802.11n, Bluetooth 5.0, no radio…",
-    hint: "List every wireless technology in the product. This drives the RED / EMC standard selection.",
-    chips: [
-      "Wi-Fi (2.4 GHz)", "Wi-Fi (5 GHz)", "Bluetooth", "Bluetooth LE",
-      "Zigbee", "Thread / Matter", "NFC", "Cellular / LTE",
-      "5G", "No radio",
-    ],
-  },
-  {
-    id: "power",
-    step: 3,
-    label: "Power supply?",
-    placeholder: "e.g. Mains 230 V AC, rechargeable Li-ion battery…",
-    hint: "State the exact supply method. Mains-powered products require LVD; battery-only products may not.",
-    chips: [
-      "Mains 230 V AC", "Mains 120 V AC", "Built-in Li-ion battery",
-      "AA / AAA batteries", "USB-C (5 V)", "USB-C PD", "Dual: mains + battery",
-    ],
-  },
-  {
-    id: "software",
-    step: 4,
-    label: "App, cloud & software?",
-    placeholder: "e.g. companion iOS/Android app, OTA firmware updates, AWS cloud…",
-    hint: "Connected features can trigger CRA, RED Cybersecurity, and GDPR obligations.",
-    chips: [
-      "Companion mobile app", "OTA firmware updates", "Cloud backend",
-      "User accounts / login", "Voice assistant", "Local only (no cloud)",
-      "No app or software",
-    ],
-  },
-  {
-    id: "audience",
-    step: 5,
-    label: "Who is it for?",
-    placeholder: "e.g. household consumer, commercial kitchen, children under 12…",
-    hint: "Target audience affects which 60335-2 part applies and whether GDPR child-data rules are in scope.",
-    chips: [
-      "Household / consumer", "Professional / commercial", "Children",
-      "Medical / healthcare", "Outdoor / garden", "Industrial",
-    ],
-  },
-  {
-    id: "features",
-    step: 6,
-    label: "Any special features?",
-    placeholder: "e.g. camera, AI, heating element, water contact, UV lamp…",
-    hint: "Special technologies often unlock additional standards — list anything unusual about this product.",
-    chips: [
-      "Camera", "Microphone", "AI / machine learning", "Heating element",
-      "Water contact", "High-pressure steam", "UV / IR lamp",
-      "Moving blades / cutters", "Refrigerant circuit",
-    ],
-  },
-];
-
-const SAMPLE_VALUES = {
-  productType: "Smart electric kettle",
-  connectivity: "Bluetooth LE",
-  power: "Mains 230 V AC",
-  software: "Companion mobile app, OTA firmware updates",
-  audience: "Household / consumer",
-  features: "Heating element, water contact",
-};
-
-// ─── Utility functions ────────────────────────────────────────────────────────
-
-function buildDescription(fields) {
-  return GUIDED_FIELDS
-    .map((f) => fields[f.id]?.trim())
-    .filter(Boolean)
-    .join(". ");
-}
-
-function unique(arr = []) {
-  return [...new Set(arr.filter(Boolean))];
-}
-
-function normalizeStdName(s = "") {
-  return s.replace(/\s+/g, " ").trim();
-}
-
-function getDirectiveListFromFinding(f) {
-  return (f.directive || "")
-    .split(",")
-    .map((x) => x.trim())
-    .filter(Boolean)
-    .map((d) => (d === "RF" ? "RED" : d));
-}
-
-function priorityStatus(statuses = []) {
-  if (statuses.includes("FAIL")) return "FAIL";
-  if (statuses.includes("WARN")) return "WARN";
-  if (statuses.includes("PASS")) return "PASS";
-  return "INFO";
-}
 
 const STD_RE = /^(EN|IEC|ISO|ETSI|EN IEC|EN ISO|IEC EN|UL|ASTM|CISPR|ITU|IEC\/EN)\b/i;
 
-function isStandardFinding(f) {
-  const article = (f.article || "").trim();
-  return STD_RE.test(article) || /review$/i.test(article);
-}
+const QUICK_CHIPS = [
+  { label:"Heating element", text:"heating element" },
+  { label:"Wi-Fi / BT",      text:"Wi-Fi and Bluetooth connectivity" },
+  { label:"OTA updates",     text:"OTA firmware updates" },
+  { label:"Battery",         text:"rechargeable lithium battery" },
+  { label:"Food-contact",    text:"food-contact materials" },
+  { label:"Cloud account",   text:"cloud account and user data storage" },
+  { label:"Motor / pump",    text:"motor and pump" },
+  { label:"Display / UI",    text:"display and touch UI" },
+];
 
-function splitFindings(findings = []) {
-  const bucket = { stds: [], missing: [], contra: [], other: [] };
-  findings.forEach((f, i) => {
-    const row = { ...f, _i: i };
-    const art = (f.article || "").trim();
-    if (isStandardFinding(f))         { bucket.stds.push(row); return; }
-    if (/Missing/i.test(art))         { bucket.missing.push(row); return; }
-    if (/Contradiction/i.test(art))   { bucket.contra.push(row); return; }
-    bucket.other.push(row);
-  });
-  return bucket;
-}
+const PRODUCT_TEMPLATES = [
+  { label:"Air fryer",      text:"Smart air fryer with Wi-Fi app control, mains powered, OTA updates, cloud recipe sync, and food-contact basket coating." },
+  { label:"Coffee machine", text:"Connected espresso machine with app control, mains powered, OTA updates, cloud brew profiles, water tank sensor, and food-contact brew path." },
+  { label:"Robot vacuum",   text:"Robot vacuum cleaner with Wi-Fi and Bluetooth, LiDAR navigation, OTA firmware updates, cloud cleaning schedule, rechargeable lithium battery, and camera." },
+  { label:"Air purifier",   text:"Smart air purifier with Wi-Fi control, PM2.5 sensor, OTA firmware updates, cloud air quality logging, and mains power." },
+];
 
-function inferDirectiveFromText(text = "") {
-  const t = text.toLowerCase();
-  if (/en\s*18031|18031-1|18031-2|18031-3|red da|delegated act|article 3\.3\(d\)|article 3\.3\(e\)|article 3\.3\(f\)|protect network|personal data.*radio|fraud.*radio/.test(t)) return "RED_CYBER";
-  if (/cyber resilience act|\bcra\b|secure development|vulnerability handling|sbom|post-market security update|coordinated vulnerability disclosure/.test(t)) return "CRA";
-  if (/rohs|2011\/65\/eu|en iec 63000|iec 63000|en 50581|hazardous substances|restricted substances|iec 62321/.test(t)) return "ROHS";
-  if (/\breach\b|ec 1907\/2006|svhc|substances of very high concern|candidate list/.test(t)) return "REACH";
-  if (/60335|60730|62233|60335-1|60335-2|household|appliance safety|electrical safety/.test(t)) return "LVD";
-  if (/55014|61000|emc|electromagnetic|cispr|harmonic|flicker|electrostatic|esd|surge|immunity|conducted emission|radiated emission/.test(t)) return "EMC";
-  if (/300 328|301 489|300 220|300 330|300 440|radio spectrum|wireless|bluetooth|wifi|wi-fi|lte|5g|zigbee|matter|nfc|rf exposure/.test(t)) return "RED";
-  if (/gdpr|privacy|personal data|data protection/.test(t)) return "GDPR";
-  if (/ai act|artificial intelligence|machine learning/.test(t)) return "AI_Act";
-  if (/ecodesign|espr|repairability|durability|energy/.test(t)) return "ESPR";
+/* ------------------------------------------------------------------ */
+/* Pure helpers                                                         */
+/* ------------------------------------------------------------------ */
+function unique(arr){ return [...new Set((arr||[]).filter(Boolean))]; }
+function normalizeStdName(s){ return (s||"").replace(/\s+/g," ").trim(); }
+function getDirectiveListFromFinding(f){
+  return (f.directive||"").split(",").map(x=>x.trim()).filter(Boolean).map(d=>d==="RF"?"RED":d);
+}
+function statusRank(s){ return {FAIL:4,WARN:3,PASS:2,INFO:1}[s]||1; }
+function priorityStatus(statuses){
+  if(!statuses||!statuses.length) return "INFO";
+  return [...statuses].sort((a,b)=>statusRank(b)-statusRank(a))[0];
+}
+function isStandardFinding(f){
+  const art=(f.article||"").trim();
+  return STD_RE.test(art)||/review$/i.test(art);
+}
+function titleCase(s){
+  return String(s||"").replace(/[_-]/g," ").replace(/\s+/g," ").trim().replace(/\b\w/g,m=>m.toUpperCase());
+}
+function prettyDirectiveName(key){ return DIR_NAME[key]||titleCase(key); }
+
+function inferDirectiveFromText(text){
+  const t=(text||"").toLowerCase();
+  if(/en\s*18031|18031-1|18031-2|18031-3|red da|delegated act|article 3\.3\(d\)|article 3\.3\(e\)|article 3\.3\(f\)/.test(t)) return "RED_CYBER";
+  if(/cyber resilience act|\bcra\b|sbom|vulnerability|secure development/.test(t)) return "CRA";
+  if(/rohs|2011\/65\/eu|iec 63000|en iec 63000|62321/.test(t)) return "ROHS";
+  if(/\breach\b|1907\/2006|svhc|article 33/.test(t)) return "REACH";
+  if(/60335|60730|62233|electrical safety|appliance safety/.test(t)) return "LVD";
+  if(/55014|61000|emc|electromagnetic|cispr|harmonic|flicker|esd|surge|immunity/.test(t)) return "EMC";
+  if(/300 328|301 489|300 220|300 330|wireless|bluetooth|wifi|wi-fi|zigbee|matter|nfc|lte|5g/.test(t)) return "RED";
+  if(/gdpr|privacy|personal data|data protection/.test(t)) return "GDPR";
+  if(/ai act|artificial intelligence|machine learning|model/.test(t)) return "AI_Act";
+  if(/ecodesign|espr|repairability|durability|energy/.test(t)) return "ESPR";
   return "OTHER";
 }
 
-function enrichDirectives(f) {
-  const combined = [f.article, f.finding, f.action].filter(Boolean).join(" ");
-  const inferred = inferDirectiveFromText(combined);
-  let explicit = getDirectiveListFromFinding(f).filter((d) => d !== "SYSTEM");
-  if (/en\s*18031|18031-1|18031-2|18031-3/i.test(combined.toLowerCase())) {
-    explicit = explicit.filter((d) => d !== "CRA" && d !== "RED");
+function enrichDirectives(f){
+  const combined=[f.article,f.finding,f.action].filter(Boolean).join(" ");
+  const inferred=inferDirectiveFromText(combined);
+  let explicit=getDirectiveListFromFinding(f).filter(d=>d!=="SYSTEM");
+  if(/en\s*18031|18031-1|18031-2|18031-3/i.test(combined.toLowerCase())){
+    explicit=explicit.filter(d=>d!=="CRA"&&d!=="RED");
     explicit.push("RED_CYBER");
   }
-  if (inferred === "RED_CYBER" && !explicit.includes("RED_CYBER")) explicit.push("RED_CYBER");
-  if (!explicit.length) explicit = inferred ? [inferred] : ["OTHER"];
+  if(inferred==="RED_CYBER"&&!explicit.includes("RED_CYBER")) explicit.push("RED_CYBER");
+  if(!explicit.length) explicit=inferred?[inferred]:["OTHER"];
   return unique(explicit);
 }
 
-function buildStandardGroups(stds = []) {
-  const map = new Map();
-  stds.forEach((f) => {
-    const name = normalizeStdName(f.article || "Unnamed standard");
-    const directives = enrichDirectives(f);
-    const key = name.toLowerCase();
-    if (!map.has(key)) {
-      map.set(key, { name, directives: [...directives], statuses: [f.status].filter(Boolean), findings: [f], actions: f.action ? [f.action] : [] });
-    } else {
-      const curr = map.get(key);
-      curr.directives = unique([...curr.directives, ...directives]);
-      curr.statuses = unique([...curr.statuses, f.status]);
-      curr.findings.push(f);
-      if (f.action) curr.actions = unique([...curr.actions, f.action]);
+function standardStatusFromItem(item){
+  return item.item_type==="review"?"WARN":"PASS";
+}
+
+function buildGroupsFromBackendItems(standards,reviewItems){
+  const all=[...(standards||[]),...(reviewItems||[])];
+  const map=new Map();
+  all.forEach(row=>{
+    const name=normalizeStdName(row.code||row.title||"Unnamed item");
+    const directive=row.directive||row.legislation_key||"OTHER";
+    const key=directive+"::"+name.toLowerCase();
+    const status=standardStatusFromItem(row);
+    const findingText=row.title||"";
+    const actionText=row.reason||row.notes||"";
+    if(!map.has(key)){
+      map.set(key,{name,directives:[directive],statuses:[status],findings:[{finding:findingText,action:actionText,status}],actions:actionText?[actionText]:[]});
+      return;
     }
+    const curr=map.get(key);
+    curr.directives=unique([...curr.directives,directive]);
+    curr.statuses=unique([...curr.statuses,status]);
+    if(actionText) curr.actions=unique([...curr.actions,actionText]);
+    curr.findings.push({finding:findingText,action:actionText,status});
   });
-  return [...map.values()];
+  return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name));
 }
 
-function copyText(text) {
-  if (!navigator?.clipboard) return false;
-  navigator.clipboard.writeText(text);
-  return true;
+function categoriseFindings(findings,knownStdNames){
+  const toCheck=[];
+  const notes=[];
+  const stdSet=knownStdNames||new Set();
+  (findings||[]).forEach((f,i)=>{
+    const row=Object.assign({},f,{_i:i});
+    const art=(f.article||"").trim();
+    const findingText=(f.finding||"").trim();
+    if(isStandardFinding(f)) return;
+    const artLow=art.toLowerCase();
+    const findLow=findingText.toLowerCase();
+    const coversKnownStd=[...stdSet].some(name=>{
+      const n=name.toLowerCase();
+      return artLow===n||(n.length>8&&(artLow.includes(n)||findLow.includes(n)));
+    });
+    if(coversKnownStd) return;
+    const isUncertain=
+      /Missing|unclear|not specified|confirm|check whether|verify|not confirmed/i.test(art)||
+      /Missing|unclear|not specified|confirm|check whether|verify|not confirmed/i.test(findingText);
+    if(isUncertain){ toCheck.push(row); } else { notes.push(row); }
+  });
+  return {toCheck,notes};
 }
 
-function downloadJson(filename, data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
+function tagToneForSignal(signal){
+  if(signal==="high")   return {bg:"#f8eef1",bd:"#e6d0d6",tx:"#8b6474"};
+  if(signal==="medium") return {bg:"#fbf5e8",bd:"#ecdcae",tx:"#9e7d36"};
+  if(signal==="good")   return {bg:"#eef4ee",bd:"#ccd7ca",tx:"#566554"};
+  return {bg:"#eff5f5",bd:"#cadada",tx:"#517674"};
 }
 
-function dirCodeLabel(code) {
-  if (code === "RED") return "RF";
-  if (code === "RED_CYBER") return "RED CYBER";
-  return code;
-}
+/* ------------------------------------------------------------------ */
+/* Atoms                                                                */
+/* ------------------------------------------------------------------ */
 
-// ─── Reusable UI components ───────────────────────────────────────────────────
-
-function DirBadge({ code }) {
-  const d = DIR[code] || DIR.OTHER;
-  return (
-    <span className="dir-badge" style={{ "--dot": d.dot, "--pill": d.pill, "--ring": d.ring, "--ink": d.ink }}>
-      <span className="dir-badge__dot" />
-      <span className="dir-badge__code">{dirCodeLabel(code)}</span>
-      <span className="dir-badge__name">{DIR_NAME[code] || code}</span>
+function DirPill({dirKey,size="sm"}){
+  const tone=DIR[dirKey]||DIR.OTHER;
+  const fs=size==="sm"?11:13;
+  return(
+    <span style={{
+      display:"inline-flex",alignItems:"center",gap:5,
+      padding:size==="sm"?"2px 9px 2px 7px":"3px 11px 3px 9px",
+      borderRadius:999,border:"1px solid "+tone.ring,
+      background:tone.pill,color:tone.ink,
+      fontSize:fs,fontWeight:800,letterSpacing:"0.04em",whiteSpace:"nowrap",
+    }}>
+      <span style={{width:6,height:6,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+      {DIR_SHORT[dirKey]||dirKey}
     </span>
   );
 }
 
-function StatusPill({ status }) {
-  const s = STS[status] || STS.INFO;
-  return (
-    <span className="status-pill" style={{ "--fbg": s.bg, "--fborder": s.border, "--ftext": s.text }}>
-      <span className="status-pill__n">{s.icon}</span>
-      <span>{s.label}</span>
+function StatusBadge({status,small}){
+  const s=STS[status]||STS.INFO;
+  const fs=small?12:13;
+  return(
+    <span style={{
+      display:"inline-flex",alignItems:"center",gap:5,
+      padding:small?"3px 9px":"4px 11px",
+      borderRadius:999,border:"1px solid "+s.border,
+      background:s.bg,color:s.text,
+      fontSize:fs,fontWeight:900,lineHeight:1,whiteSpace:"nowrap",
+    }}>
+      <span style={{width:6,height:6,borderRadius:999,background:s.dot,flexShrink:0}}/>
+      {s.label}
     </span>
   );
 }
 
-function StandardCard({ item }) {
-  const mainStatus = priorityStatus(item.statuses);
-  const s = STS[mainStatus] || STS.INFO;
-  return (
-    <div className="std-card" style={{ "--fbg": s.bg, "--fborder": s.border, "--ftext": s.text }}>
-      <div className="std-card__top">
-        <div className="std-card__name">{item.name}</div>
-        <StatusPill status={mainStatus} />
+/* ------------------------------------------------------------------ */
+/* StandardRow                                                          */
+/* ------------------------------------------------------------------ */
+
+function StandardRow({group,expanded,onToggle}){
+  const topStatus=priorityStatus(group.statuses);
+  const d=(group.directives&&group.directives[0])||"OTHER";
+  const tone=DIR[d]||DIR.OTHER;
+
+  return(
+    <div style={{borderBottom:"1px solid rgba(188,178,165,0.15)"}}>
+      <div
+        onClick={onToggle}
+        style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px 11px 0",cursor:"pointer",transition:"background 0.12s"}}
+        onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.4)";}}
+        onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}
+      >
+        <span style={{width:3,alignSelf:"stretch",borderRadius:99,background:tone.accent,flexShrink:0,minHeight:24,marginLeft:0}}/>
+        <span style={{flex:1,fontSize:15,fontWeight:700,color:"#2c2925",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",paddingLeft:8}}>
+          {group.name}
+        </span>
+        <StatusBadge status={topStatus} small={true}/>
+        <span style={{
+          fontSize:11,color:"#9e9890",marginLeft:4,
+          transition:"transform 0.2s",
+          transform:expanded?"rotate(180deg)":"rotate(0deg)",
+          display:"inline-block",flexShrink:0,fontWeight:900,
+        }}>▾</span>
       </div>
-      <div className="std-card__chips">
-        {item.directives.map((d) => <DirBadge key={d} code={d} />)}
-      </div>
-      {item.findings?.[0]?.finding && (
-        <div className="std-card__finding">{item.findings[0].finding}</div>
-      )}
-      {item.actions.length > 0 && (
-        <div className="std-card__actions">
-          <div className="std-card__actions-title">Action</div>
-          <ul>
-            {item.actions.slice(0, 2).map((a, idx) => <li key={idx}>{a}</li>)}
-          </ul>
+
+      {expanded&&(
+        <div style={{marginLeft:4,marginBottom:12,borderLeft:"2px solid "+tone.ring,paddingLeft:16,marginRight:8,display:"grid",gap:8}}>
+          {group.findings.map((f,idx)=>{
+            const rowStatus=f.status||topStatus;
+            const signal=rowStatus==="FAIL"?"high":rowStatus==="WARN"?"medium":rowStatus==="PASS"?"good":"neutral";
+            const tagTone=tagToneForSignal(signal);
+            return(
+              <div key={group.name+"-"+idx} style={{borderRadius:10,border:"1px solid "+tagTone.bd,background:tagTone.bg,padding:"11px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
+                  <StatusBadge status={rowStatus} small={true}/>
+                </div>
+                {f.finding&&<div style={{fontSize:14,fontWeight:700,color:"#2f2c28",lineHeight:1.5}}>{f.finding}</div>}
+                {f.action&&<div style={{marginTop:5,fontSize:13,color:"#7a746b",lineHeight:1.6}}>{f.action}</div>}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-function FindingRow({ f }) {
-  const s = STS[f.status] || STS.INFO;
-  return (
-    <div className="frow" style={{ "--fbg": s.bg, "--fborder": s.border, "--ftext": s.text, "--fstripe": s.stripe }}>
-      <div className="frow__left">
-        <span className="frow__icon">{s.icon}</span>
-        <span className="frow__label">{s.label}</span>
+/* ------------------------------------------------------------------ */
+/* DirectiveLane                                                        */
+/* ------------------------------------------------------------------ */
+
+function DirectiveLane({dirKey,groups,expandedStandards,onToggleStandard}){
+  const [open,setOpen]=useState(true);
+  const tone=DIR[dirKey]||DIR.OTHER;
+
+  return(
+    <div style={{borderRadius:16,border:"1px solid "+tone.ring,overflow:"hidden",background:"rgba(255,255,255,0.72)"}}>
+      <div
+        onClick={()=>setOpen(o=>!o)}
+        style={{
+          display:"flex",alignItems:"center",gap:10,
+          padding:"13px 16px",cursor:"pointer",
+          background:tone.header,
+          borderBottom:open?"1px solid "+tone.ring:"none",
+        }}
+      >
+        <span style={{width:10,height:10,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+        <span style={{fontSize:14,fontWeight:900,color:tone.ink,flex:1,letterSpacing:"0.02em"}}>
+          {prettyDirectiveName(dirKey)}
+        </span>
+        <span style={{
+          minWidth:24,height:24,padding:"0 8px",borderRadius:999,
+          background:tone.ring,color:tone.ink,
+          fontWeight:900,fontSize:12,
+          display:"inline-flex",alignItems:"center",justifyContent:"center",
+        }}>
+          {groups.length}
+        </span>
+        <span style={{
+          fontSize:11,color:tone.ink,opacity:0.7,
+          transform:open?"rotate(180deg)":"rotate(0deg)",
+          display:"inline-block",transition:"transform 0.2s",fontWeight:900,
+        }}>▾</span>
       </div>
-      <div className="frow__body">
-        <div className="frow__art">{f.article || ""}</div>
-        <div className="frow__text">{f.finding}</div>
-        {f.action && <div className="frow__action">{f.action}</div>}
-      </div>
+
+      {open&&(
+        <div style={{padding:"0 0 4px"}}>
+          {groups.map(group=>{
+            const key=dirKey+"::"+group.name;
+            return(
+              <StandardRow
+                key={key}
+                group={group}
+                expanded={!!expandedStandards[key]}
+                onToggle={()=>onToggleStandard(key)}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-function Section({ title, count, children, right }) {
-  return (
-    <section className="card section">
-      <div className="section__head">
-        <div className="section__titleWrap">
-          <h2 className="section__title">{title}</h2>
-          {typeof count === "number" && <span className="count-pill">{count}</span>}
-        </div>
-        {right}
+/* ------------------------------------------------------------------ */
+/* CheckItem                                                            */
+/* ------------------------------------------------------------------ */
+
+function CheckItem({finding,index}){
+  const directives=enrichDirectives(finding);
+  const tone=DIR[directives[0]||"OTHER"]||DIR.OTHER;
+  const rawLabel=(finding.article||finding.finding||"").trim();
+  const label=rawLabel.replace(/^Missing[:\s]*/i,"").replace(/^Check[:\s]*/i,"").trim();
+  const shortLabel=label.length>72?label.slice(0,70)+"…":label;
+  const body=(finding.action||(finding.article?finding.finding:"")||"").trim();
+
+  return(
+    <div style={{
+      padding:"12px 14px",borderRadius:12,
+      border:"1px solid "+tone.ring,
+      background:"rgba(255,255,255,0.8)",
+      display:"grid",gap:7,
+    }}>
+      <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
+        <span style={{
+          width:22,height:22,borderRadius:999,flexShrink:0,
+          background:tone.accent,color:"#fff",
+          fontSize:11,fontWeight:900,
+          display:"inline-flex",alignItems:"center",justifyContent:"center",
+        }}>{index+1}</span>
+        {directives.map(d=><DirPill key={d} dirKey={d}/>)}
       </div>
-      {children}
-    </section>
+      <div style={{fontSize:14,fontWeight:800,color:"#2c2925",lineHeight:1.45}}>
+        {shortLabel||"Confirm applicability"}
+      </div>
+      {body&&body!==shortLabel&&(
+        <div style={{fontSize:13,color:"#7a746b",lineHeight:1.55}}>{body}</div>
+      )}
+    </div>
   );
 }
 
-// ─── Guided input field ───────────────────────────────────────────────────────
+/* ------------------------------------------------------------------ */
+/* LegislationItem — for Applicable Legislations panel                 */
+/* ------------------------------------------------------------------ */
 
-function GuidedField({ field, value, onChange, isActive, onActivate }) {
-  const isFilled = value.trim().length > 0;
+function LegislationItem({finding}){
+  const status=finding.status||"INFO";
+  const directives=enrichDirectives(finding);
+  const s=STS[status]||STS.INFO;
+  const d=directives[0]||"OTHER";
+  const tone=DIR[d]||DIR.OTHER;
 
-  const toggleChip = (chip) => {
-    const current = value.trim();
-    if (current.includes(chip)) {
-      onChange(current.replace(chip, "").replace(/,\s*,/g, ",").replace(/^,\s*|,\s*$/g, "").trim());
-    } else {
-      onChange(current ? `${current}, ${chip}` : chip);
-    }
-  };
-
-  return (
-    <div
-      className={`gfield ${isActive ? "gfield--active" : ""} ${isFilled ? "gfield--filled" : ""}`}
-      onClick={!isActive ? onActivate : undefined}
-    >
-      <div className="gfield__header">
-        <div className="gfield__meta">
-          <span className="gfield__step">{field.step}</span>
-          <span className="gfield__label">{field.label}</span>
+  return(
+    <div style={{
+      display:"flex",gap:12,alignItems:"flex-start",
+      padding:"12px 14px",borderRadius:12,
+      background:"rgba(255,255,255,0.72)",
+      border:"1px solid "+tone.ring,
+    }}>
+      <div style={{
+        width:32,height:32,borderRadius:8,flexShrink:0,
+        background:tone.pill,border:"1px solid "+tone.ring,
+        display:"flex",alignItems:"center",justifyContent:"center",
+        color:tone.ink,fontSize:14,fontWeight:900,
+      }}>{s.icon}</div>
+      <div style={{minWidth:0,flex:1}}>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:5}}>
+          {directives.map(d=><DirPill key={d} dirKey={d}/>)}
+          <StatusBadge status={status} small={true}/>
         </div>
-        {isFilled && !isActive && (
-          <div className="gfield__preview" title={value}>{value.length > 55 ? value.slice(0, 55) + "…" : value}</div>
+        <div style={{fontSize:14,fontWeight:700,color:"#2f2c28",lineHeight:1.45}}>
+          {finding.finding||finding.article||"Legislation note"}
+        </div>
+        {finding.action&&(
+          <div style={{marginTop:4,fontSize:13,color:"#7a746b",lineHeight:1.55}}>{finding.action}</div>
         )}
-        <span className={`gfield__check ${isFilled ? "gfield__check--on" : ""}`}>✓</span>
       </div>
+    </div>
+  );
+}
 
-      {isActive && (
-        <div className="gfield__body">
-          <p className="gfield__hint">{field.hint}</p>
-          <input
-            className="gfield__input"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={field.placeholder}
-            autoFocus
-          />
-          <div className="gfield__chips">
-            {field.chips.map((chip) => {
-              const active = value.includes(chip);
-              return (
-                <button
-                  key={chip}
-                  type="button"
-                  className={`chip ${active ? "chip--on" : ""}`}
-                  onClick={(e) => { e.stopPropagation(); toggleChip(chip); }}
-                >
-                  {active && <span className="chip__tick">✓</span>}
-                  {chip}
-                </button>
-              );
-            })}
-          </div>
+/* ------------------------------------------------------------------ */
+/* EmptyState                                                           */
+/* ------------------------------------------------------------------ */
+
+function EmptyState({title,subtitle}){
+  return(
+    <div style={{
+      borderRadius:12,border:"1px dashed rgba(186,176,160,0.7)",
+      background:"rgba(250,247,242,0.6)",padding:"24px 20px",
+      color:"#807b73",textAlign:"center",
+    }}>
+      <div style={{fontSize:16,fontWeight:800,color:"#59544c"}}>{title}</div>
+      {subtitle&&<div style={{marginTop:6,fontSize:14,lineHeight:1.55}}>{subtitle}</div>}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* SummaryBar                                                           */
+/* ------------------------------------------------------------------ */
+
+function SummaryBar({topRisk,standardGroups,standardsByDirective,toCheck}){
+  const riskColor=topRisk==="FAIL"?DIR.RED_CYBER:topRisk==="WARN"?DIR.ROHS:topRisk==="PASS"?DIR.CRA:DIR.EMC;
+  const items=[
+    {label:"Overall Risk",value:topRisk,c:riskColor,big:true},
+    {label:"Standards",value:standardGroups.length,c:DIR.LVD},
+    {label:"Directives",value:Object.keys(standardsByDirective).length,c:DIR.EMC},
+    ...(toCheck.length>0?[{label:"To Verify",value:toCheck.length,c:DIR.ROHS}]:[]),
+  ];
+  return(
+    <div style={{
+      display:"flex",gap:0,borderRadius:18,
+      border:"1px solid rgba(183,175,163,0.3)",
+      overflow:"hidden",background:"rgba(255,255,255,0.55)",
+      backdropFilter:"blur(16px)",flexWrap:"wrap",
+    }}>
+      {items.map((item,i)=>(
+        <div key={item.label} style={{
+          flex:"1 1 auto",padding:"14px 20px",
+          borderRight:i<items.length-1?"1px solid rgba(183,175,163,0.25)":"none",
+          background:i===0?item.c.pill:"transparent",
+        }}>
+          <div style={{fontSize:11,fontWeight:800,letterSpacing:"0.1em",color:item.c.ink,opacity:0.7,marginBottom:3,textTransform:"uppercase"}}>{item.label}</div>
+          <div style={{fontSize:item.big?24:22,fontWeight:900,color:item.c.ink,lineHeight:1}}>{item.value}</div>
         </div>
-      )}
+      ))}
     </div>
   );
 }
 
-// ─── Progress bar ─────────────────────────────────────────────────────────────
+/* ------------------------------------------------------------------ */
+/* App                                                                  */
+/* ------------------------------------------------------------------ */
 
-function ProgressBar({ fields }) {
-  const filled = GUIDED_FIELDS.filter((f) => fields[f.id]?.trim()).length;
-  const pct = Math.round((filled / GUIDED_FIELDS.length) * 100);
-  return (
-    <div className="progress">
-      <div className="progress__track">
-        <div className="progress__fill" style={{ width: `${pct}%` }} />
-      </div>
-      <span className="progress__label">{filled} of {GUIDED_FIELDS.length} fields filled</span>
-    </div>
-  );
-}
+export default function App(){
+  const [mode,setMode]=useState("standard");
+  const [text,setText]=useState("");
+  const [result,setResult]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState("");
+  const [expandedStandards,setExpandedStandards]=useState({});
+  const [search,setSearch]=useState("");
+  const [legsOpen,setLegsOpen]=useState(true);
+  const inputRef=useRef(null);
 
-// ─── Main App ─────────────────────────────────────────────────────────────────
+  const runAnalysis=useCallback(function(payloadText){
+    const trimmed=((payloadText!==undefined?payloadText:text)||"").trim();
+    if(!trimmed) return Promise.resolve();
+    setLoading(true);
+    setError("");
+    return fetch(API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({description:trimmed,depth:mode,category:"",directives:[]}),
+    })
+    .then(res=>res.json().then(data=>{
+      if(!res.ok) throw new Error((data&&data.detail)||"Analysis failed");
+      setResult(data);
+      const initialExpanded={};
+      buildGroupsFromBackendItems(data.standards||[],data.review_items||[]).forEach(group=>{
+        const directive=(group.directives&&group.directives[0])||"OTHER";
+        initialExpanded[directive+"::"+group.name]=true;
+      });
+      setExpandedStandards(initialExpanded);
+    }))
+    .catch(err=>{
+      setError((err&&err.message)||"Analysis failed");
+      setResult(null);
+    })
+    .finally(()=>setLoading(false));
+  },[mode,text]);
 
-const EMPTY_FIELDS = Object.fromEntries(GUIDED_FIELDS.map((f) => [f.id, ""]));
+  useEffect(()=>{
+    if(inputRef.current&&window.innerWidth>900) inputRef.current.focus();
+  },[]);
 
-export default function App() {
-  const [fields, setFields] = useState(EMPTY_FIELDS);
-  const [activeField, setActiveField] = useState(GUIDED_FIELDS[0].id);
-  const [showPreview, setShowPreview] = useState(false);
-
-  const [depth, setDepth] = useState("standard");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-
-  const [search, setSearch] = useState("");
-  const [selectedDir, setSelectedDir] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [toast, setToast] = useState("");
-
-  const abortRef = useRef(null);
-
-  useEffect(() => { return () => abortRef.current?.abort(); }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(""), 1600);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const setField = useCallback((id, val) => {
-    setFields((prev) => ({ ...prev, [id]: val }));
-  }, []);
-
-  const description = useMemo(() => buildDescription(fields), [fields]);
-  const ready = fields.productType.trim().length >= 3;
-
-  const sections = useMemo(
-    () => (result?.findings ? splitFindings(result.findings) : null),
+  const standardGroups=useMemo(()=>
+    buildGroupsFromBackendItems((result&&result.standards)||[],(result&&result.review_items)||[]),
     [result]
   );
 
-  const standards = useMemo(
-    () => buildStandardGroups(sections?.stds || []),
-    [sections]
-  );
+  const categorised=useMemo(()=>{
+    const knownStdNames=new Set(standardGroups.map(g=>g.name));
+    return categoriseFindings((result&&result.findings)||[],knownStdNames);
+  },[result,standardGroups]);
 
-  const standardsFiltered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return standards.filter((s) => {
-      const topStatus = priorityStatus(s.statuses);
-      const text = [s.name, s.directives.join(" "), s.actions.join(" "), s.findings.map((f) => [f.finding, f.action].join(" ")).join(" ")].join(" ").toLowerCase();
-      return (
-        (!q || text.includes(q)) &&
-        (selectedDir === "ALL" || s.directives.includes(selectedDir)) &&
-        (statusFilter === "ALL" || topStatus === statusFilter)
-      );
+  const toCheck=categorised.toCheck;
+  const notes=categorised.notes;
+
+  const filteredStandardGroups=useMemo(()=>{
+    const q=search.trim().toLowerCase();
+    if(!q) return standardGroups;
+    return standardGroups.filter(g=>{
+      const hay=[g.name,...(g.directives||[]),...(g.actions||[]),...(g.findings||[]).map(f=>(f.finding||"")+" "+(f.action||""))].join(" ").toLowerCase();
+      return hay.includes(q);
     });
-  }, [standards, search, selectedDir, statusFilter]);
+  },[search,standardGroups]);
 
-  const standardsByDirective = useMemo(() => {
-    const map = new Map();
-    DIR_ORDER.forEach((d) => map.set(d, []));
-    standardsFiltered.forEach((s) => {
-      const dirs = s.directives.length ? s.directives : ["OTHER"];
-      const first = dirs.find((d) => DIR_ORDER.includes(d) && d !== "OTHER") || dirs[0] || "OTHER";
-      const bucket = DIR_ORDER.includes(first) ? first : "OTHER";
-      map.get(bucket).push(s);
+  const standardsByDirective=useMemo(()=>{
+    const groups={};
+    filteredStandardGroups.forEach(g=>{
+      const d=(g.directives&&g.directives[0])||"OTHER";
+      if(!groups[d]) groups[d]=[];
+      groups[d].push(g);
     });
-    return map;
-  }, [standardsFiltered]);
+    return groups;
+  },[filteredStandardGroups]);
 
-  const availableDirs = useMemo(() => {
-    const found = new Set();
-    standards.forEach((s) => s.directives.forEach((d) => found.add(d)));
-    return DIR_ORDER.filter((d) => found.has(d) && d !== "OTHER").concat(found.has("OTHER") ? ["OTHER"] : []);
-  }, [standards]);
+  const topRisk=useMemo(()=>{
+    const statuses=[
+      ...((result&&result.findings)||[]).map(f=>f.status).filter(Boolean),
+      ...standardGroups.flatMap(g=>g.statuses||[]),
+    ];
+    return priorityStatus(statuses);
+  },[result,standardGroups]);
 
-  const loadSample = () => {
-    setFields(SAMPLE_VALUES);
-    setActiveField(null);
-  };
+  function appendChip(chipText){
+    setText(t=>{
+      const trimmed=t.trimEnd();
+      if(!trimmed) return chipText.charAt(0).toUpperCase()+chipText.slice(1);
+      return /[.!?]$/.test(trimmed)?trimmed+" "+chipText:trimmed+", "+chipText;
+    });
+    if(inputRef.current) inputRef.current.focus();
+  }
 
-  const clearAll = () => {
-    setFields(EMPTY_FIELDS);
-    setActiveField(GUIDED_FIELDS[0].id);
-  };
+  const hasResults=!!result;
+  const hasSidebar=hasResults&&toCheck.length>0;
+  const hasLegislations=hasResults&&notes.length>0;
 
-  const run = useCallback(async () => {
-    if (!ready || loading) return;
-    abortRef.current?.abort();
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 30000);
-    abortRef.current = ctrl;
+  return(
+    <div style={{
+      minHeight:"100vh",
+      background:"radial-gradient(ellipse at top left, rgba(133,176,190,0.25), transparent 30%), radial-gradient(ellipse at top right, rgba(204,189,148,0.2), transparent 28%), linear-gradient(180deg,#ddd7cf 0%,#d4cdc4 100%)",
+      padding:"24px 20px 100px",
+      fontFamily:"'DM Sans','Helvetica Neue',Arial,sans-serif",
+      color:"#3d3832",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800;9..40,900&display=swap');
+        *{box-sizing:border-box;}
+        ::placeholder{color:#b0a89d;}
+        ::-webkit-scrollbar{width:5px;}
+        ::-webkit-scrollbar-thumb{background:rgba(150,140,128,0.35);border-radius:99px;}
+        textarea:focus,input:focus{outline:none;}
+        .chip-btn:hover{background:rgba(255,255,255,0.95)!important;border-color:#b0a89d!important;}
+        .tmpl-btn:hover{background:rgba(255,255,255,0.9)!important;}
+        .run-btn:not(:disabled):hover{filter:brightness(1.06);}
+        .mode-seg-btn:hover{background:rgba(255,255,255,0.18)!important;}
+        .clear-btn:hover{background:rgba(255,255,255,0.95)!important;}
+      `}</style>
 
-    setLoading(true);
-    setError(null);
-    setResult(null);
-    setSearch("");
-    setSelectedDir("ALL");
-    setStatusFilter("ALL");
+      <div style={{maxWidth:1120,margin:"0 auto",display:"grid",gap:14}}>
 
-    try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description, category: "", directives: [], depth }),
-        signal: ctrl.signal,
-      });
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      setResult(await res.json());
-    } catch (e) {
-      setError(e.name === "AbortError" ? "Request timed out — please try again." : e.message || "Unexpected error.");
-    } finally {
-      clearTimeout(timer);
-      setLoading(false);
-    }
-  }, [description, depth, ready, loading]);
-
-  const reset = useCallback(() => {
-    abortRef.current?.abort();
-    setLoading(false);
-    setError(null);
-    setResult(null);
-    setSearch("");
-    setSelectedDir("ALL");
-    setStatusFilter("ALL");
-  }, []);
-
-  const copyStandards = () => { copyText(standardsFiltered.map((s) => s.name).join("\n")); setToast("Standards copied"); };
-  const copySummary = () => {
-    const txt = [`Product: ${description}`, `Standards found: ${standards.length}`,
-      ...DIR_ORDER.flatMap((dir) => {
-        const rows = standardsByDirective.get(dir) || [];
-        if (!rows.length) return [];
-        return ["", `${dirCodeLabel(dir)} (${rows.length})`, ...rows.map((r) => `- ${r.name}`)];
-      })].join("\n");
-    copyText(txt);
-    setToast("Summary copied");
-  };
-  const exportJson = () => { if (result) { downloadJson("rulegrid-analysis.json", result); setToast("JSON exported"); } };
-
-  return (
-    <div className="shell">
-      <AppCSS />
-
-      <nav className="nav">
-        <div className="container nav__inner">
-          <div className="nav__brand">
-            <span className="nav__logo">RG</span>
-            <span className="nav__name">RuleGrid</span>
+        {/* ── HEADER ── */}
+        <header style={{
+          display:"flex",alignItems:"center",justifyContent:"space-between",
+          padding:"16px 22px",borderRadius:20,
+          background:"rgba(255,255,255,0.55)",
+          border:"1px solid rgba(183,175,163,0.3)",
+          backdropFilter:"blur(20px)",flexWrap:"wrap",gap:12,
+        }}>
+          <div style={{display:"flex",alignItems:"center",gap:13}}>
+            <div style={{
+              width:40,height:40,borderRadius:12,
+              background:"linear-gradient(135deg,#8fb6c1,#5d848f)",
+              display:"grid",placeItems:"center",
+              color:"white",fontWeight:900,fontSize:14,letterSpacing:"-0.02em",
+            }}>RC</div>
+            <div>
+              <div style={{fontSize:20,fontWeight:900,color:"#2a2520",letterSpacing:"-0.03em",lineHeight:1}}>RegCheck</div>
+              <div style={{fontSize:12,fontWeight:700,color:"#9e9890",marginTop:1}}>EU Product Compliance Analyser</div>
+            </div>
+            <span style={{fontSize:11,fontWeight:800,color:"#8c887f",background:"rgba(0,0,0,0.07)",borderRadius:99,padding:"2px 9px",alignSelf:"flex-start",marginTop:1}}>v3</span>
           </div>
-          <span className="nav__tag">Standards-first compliance view</span>
-        </div>
-      </nav>
 
-      <main className="container page">
-        <header className="hero">
-          <div>
-            <p className="hero__eyebrow">EU Compliance Scoping</p>
-            <h1 className="hero__title">Standards first. Faster review.</h1>
-            <p className="hero__sub">
-              Answer a few guided questions and get the applicable EU standards
-              grouped by LVD, EMC, RED, RED Cybersecurity, CRA, RoHS, REACH,
-              GDPR and more.
-            </p>
-          </div>
+          {hasResults&&(
+            <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+              {DIR_ORDER.filter(d=>standardsByDirective[d]&&standardsByDirective[d].length).map(d=>(
+                <DirPill key={d} dirKey={d}/>
+              ))}
+            </div>
+          )}
         </header>
 
-        {/* ── Input form ── */}
-        {!result && !loading && (
-          <div className="card input-card">
-            {/* Header */}
-            <div className="input-card__head">
-              <div>
-                <h2 className="section__title">Product questionnaire</h2>
-                <p className="input-card__hint">
-                  Fill in as many fields as you can — more detail means more accurate results.
-                </p>
-              </div>
-              <div className="input-card__controls">
-                <div className="depth">
-                  {["standard", "deep"].map((v) => (
-                    <button key={v} type="button"
-                      className={"seg-btn" + (depth === v ? " seg-btn--on" : "")}
-                      onClick={() => setDepth(v)}>
-                      {v}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+        {/* ── SUMMARY BAR ── */}
+        {hasResults&&(
+          <SummaryBar
+            topRisk={topRisk}
+            standardGroups={standardGroups}
+            standardsByDirective={standardsByDirective}
+            toCheck={toCheck}
+          />
+        )}
 
-            {/* Progress */}
-            <div className="input-card__progress">
-              <ProgressBar fields={fields} />
-            </div>
+        {/* ── INPUT PANEL ── */}
+        <div style={{
+          borderRadius:22,border:"1px solid rgba(183,175,163,0.3)",
+          background:"rgba(255,255,255,0.65)",
+          backdropFilter:"blur(20px)",overflow:"hidden",
+        }}>
+          {/* Textarea */}
+          <div style={{padding:"18px 20px 0"}}>
+            <textarea
+              ref={inputRef}
+              value={text}
+              onChange={e=>setText(e.target.value)}
+              onKeyDown={e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter") runAnalysis();}}
+              placeholder="Describe the product — e.g. Smart air fryer with Wi-Fi, mains powered, OTA updates, food-contact basket coating..."
+              style={{
+                width:"100%",minHeight:96,resize:"vertical",
+                border:"none",background:"transparent",
+                fontSize:16,lineHeight:1.65,color:"#2e2b27",fontFamily:"inherit",
+              }}
+            />
+          </div>
 
-            {/* Guided fields */}
-            <div className="gfields">
-              {GUIDED_FIELDS.map((f) => (
-                <GuidedField
-                  key={f.id}
-                  field={f}
-                  value={fields[f.id]}
-                  onChange={(val) => setField(f.id, val)}
-                  isActive={activeField === f.id}
-                  onActivate={() => setActiveField(f.id)}
-                />
+          {/* Quick chips */}
+          <div style={{padding:"10px 20px",borderTop:"1px solid rgba(188,178,165,0.18)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
+              <span style={{fontSize:11,fontWeight:800,color:"#b0a89d",letterSpacing:"0.1em",marginRight:2,textTransform:"uppercase"}}>Add</span>
+              {QUICK_CHIPS.map(chip=>(
+                <button key={chip.label} type="button" className="chip-btn"
+                  onClick={()=>appendChip(chip.text)}
+                  style={{
+                    padding:"5px 12px",borderRadius:99,
+                    border:"1px solid rgba(200,192,182,0.7)",
+                    background:"rgba(255,255,255,0.65)",
+                    color:"#5c5750",fontWeight:700,fontSize:13,
+                    cursor:"pointer",transition:"all 0.12s",fontFamily:"inherit",
+                  }}>
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Controls row */}
+          <div style={{
+            padding:"12px 20px 16px",
+            borderTop:"1px solid rgba(188,178,165,0.18)",
+            display:"flex",alignItems:"center",
+            justifyContent:"space-between",gap:12,flexWrap:"wrap",
+          }}>
+            {/* Templates */}
+            <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
+              <span style={{fontSize:11,fontWeight:800,color:"#b0a89d",letterSpacing:"0.1em",marginRight:2,textTransform:"uppercase"}}>Template</span>
+              {PRODUCT_TEMPLATES.map(tpl=>(
+                <button key={tpl.label} type="button" className="tmpl-btn"
+                  onClick={()=>{setText(tpl.text);if(inputRef.current) inputRef.current.focus();}}
+                  style={{
+                    padding:"5px 12px",borderRadius:99,
+                    border:"1px solid rgba(200,192,182,0.7)",
+                    background:text===tpl.text?"rgba(143,182,193,0.2)":"rgba(255,255,255,0.55)",
+                    color:text===tpl.text?"#3e7080":"#5c5750",
+                    fontWeight:700,fontSize:13,cursor:"pointer",
+                    transition:"all 0.12s",fontFamily:"inherit",
+                  }}>
+                  {tpl.label}
+                </button>
               ))}
             </div>
 
-            {/* Preview toggle */}
-            <div className="input-card__preview-row">
-              <button type="button" className="ghost-btn ghost-btn--sm"
-                onClick={() => setShowPreview((p) => !p)}>
-                {showPreview ? "Hide" : "Preview"} description
-              </button>
-              {showPreview && description && (
-                <div className="desc-preview">{description || "—"}</div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="input-card__foot">
-              <div className="input-card__actions input-card__actions--left">
-                <button type="button" className="ghost-btn" onClick={loadSample}>Load sample</button>
-                <button type="button" className="ghost-btn" onClick={clearAll}>Clear all</button>
-              </div>
-              <div className="input-card__actions">
-                <button type="button" className="run-btn" onClick={run} disabled={!ready}
-                  title={!ready ? "Fill in product type to start" : ""}>
-                  {ready ? "Analyse →" : "Enter product type to start"}
-                </button>
-              </div>
-            </div>
-
-            {error && <div className="err-bar">{error}</div>}
-          </div>
-        )}
-
-        {/* ── Loading ── */}
-        {loading && (
-          <div className="loading">
-            <div className="card loading__card">
-              <span className="spinner" />
-              <div>
-                <div className="section__title">Analysing</div>
-                <p className="loading__text">Building the standards view and grouping by directive family.</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Results ── */}
-        {result && (
-          <>
-            {/* Result hero strip */}
-            <div className="card result-strip">
-              <div className="result-strip__text">
-                <div className="result-strip__product">{fields.productType || "Product"}</div>
-                <div className="result-strip__desc">{description}</div>
-              </div>
-              <button type="button" className="ghost-btn" onClick={reset}>← Edit</button>
-            </div>
-
-            {/* Toolbar */}
-            <div className="toolbar card">
-              <div className="toolbar__left">
-                <div className="search-wrap">
-                  <input className="search-input" value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search standards, notes, actions…" />
-                </div>
-                <select className="select" value={selectedDir} onChange={(e) => setSelectedDir(e.target.value)}>
-                  <option value="ALL">All buckets</option>
-                  {availableDirs.map((d) => <option key={d} value={d}>{dirCodeLabel(d)}</option>)}
-                </select>
-                <select className="select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="ALL">All statuses</option>
-                  <option value="FAIL">FAIL</option>
-                  <option value="WARN">WARN</option>
-                  <option value="PASS">PASS</option>
-                  <option value="INFO">INFO</option>
-                </select>
-              </div>
-              <div className="toolbar__right">
-                <button type="button" className="ghost-btn" onClick={copySummary}>Copy summary</button>
-                <button type="button" className="ghost-btn" onClick={copyStandards}>Copy standards</button>
-                <button type="button" className="ghost-btn" onClick={exportJson}>Export JSON</button>
-              </div>
-            </div>
-
-            <Section title="Standards" count={standardsFiltered.length}
-              right={<div className="section__helper">Primary review view</div>}>
-              <div className="group-stack">
-                {DIR_ORDER.map((dir) => {
-                  const rows = standardsByDirective.get(dir) || [];
-                  if (!rows.length) return null;
-                  return (
-                    <div key={dir} className="std-group">
-                      <div className="std-group__head">
-                        <div className="std-group__title"><DirBadge code={dir} /></div>
-                        <span className="count-pill">{rows.length}</span>
-                      </div>
-                      <div className="std-grid">
-                        {rows.map((item) => <StandardCard key={dir + item.name} item={item} />)}
-                      </div>
-                    </div>
+            {/* Action group */}
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              {/* Mode selector */}
+              <div style={{display:"flex",borderRadius:12,border:"1px solid rgba(197,190,180,0.7)",overflow:"hidden",background:"rgba(255,255,255,0.45)"}}>
+                {[["quick","Quick"],["standard","Standard"],["deep","Deep"]].map(([val,lbl])=>{
+                  const active=mode===val;
+                  return(
+                    <button key={val} type="button" className="mode-seg-btn"
+                      onClick={()=>setMode(val)}
+                      style={{
+                        padding:"7px 15px",border:"none",
+                        borderRight:val!=="deep"?"1px solid rgba(197,190,180,0.5)":"none",
+                        background:active?"linear-gradient(180deg,#6f9199,#567a82)":"transparent",
+                        color:active?"#fffdf8":"#7f7a71",
+                        fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"inherit",
+                      }}>
+                      {lbl}
+                    </button>
                   );
                 })}
               </div>
-            </Section>
+              <button type="button" className="clear-btn"
+                onClick={()=>{setText("");setResult(null);setError("");}}
+                style={{
+                  padding:"8px 15px",borderRadius:11,
+                  border:"1px solid rgba(197,190,180,0.7)",
+                  background:"rgba(255,255,255,0.72)",
+                  color:"#6f6a61",fontWeight:700,fontSize:13,
+                  cursor:"pointer",fontFamily:"inherit",transition:"all 0.12s",
+                }}>Clear</button>
+              <button type="button" disabled={loading||!text.trim()} className="run-btn"
+                onClick={()=>runAnalysis()}
+                style={{
+                  padding:"8px 22px",borderRadius:11,
+                  border:"1px solid #5a8188",
+                  background:loading||!text.trim()
+                    ?"linear-gradient(180deg,#a7b7bb,#95a4a8)"
+                    :"linear-gradient(180deg,#6f9199,#567a82)",
+                  color:"#fffdf8",fontWeight:900,fontSize:14,
+                  cursor:loading||!text.trim()?"not-allowed":"pointer",
+                  boxShadow:loading||!text.trim()?"none":"0 6px 20px rgba(86,122,130,0.25)",
+                  transition:"all 0.14s",fontFamily:"inherit",letterSpacing:"-0.01em",
+                }}>
+                {loading?"Analysing…":"Run analysis →"}
+              </button>
+            </div>
+          </div>
+        </div>
 
-            {sections?.missing?.length > 0 && (
-              <Section title="Missing information" count={sections.missing.length}>
-                <div className="list-pad">{sections.missing.map((f) => <FindingRow key={f._i} f={f} />)}</div>
-              </Section>
-            )}
-            {sections?.contra?.length > 0 && (
-              <Section title="Contradictions" count={sections.contra.length}>
-                <div className="list-pad">{sections.contra.map((f) => <FindingRow key={f._i} f={f} />)}</div>
-              </Section>
-            )}
-            {sections?.other?.length > 0 && (
-              <Section title="Other findings" count={sections.other.length}>
-                <div className="list-pad">{sections.other.map((f) => <FindingRow key={f._i} f={f} />)}</div>
-              </Section>
-            )}
-          </>
+        {/* Error */}
+        {error&&(
+          <div style={{borderRadius:14,border:"1px solid #e3c7cf",background:"#f9edf1",color:"#906878",padding:"13px 16px",fontSize:14}}>
+            {error}
+          </div>
         )}
-      </main>
 
-      {toast && <div className="toast">{toast}</div>}
+        {/* ── RESULTS ── */}
+        {hasResults&&(
+          <div style={{display:"grid",gridTemplateColumns:hasSidebar?"1fr 272px":"1fr",gap:14,alignItems:"start"}}>
+
+            {/* LEFT: Standards panel */}
+            <div style={{display:"grid",gap:14}}>
+              <div style={{
+                borderRadius:22,border:"1px solid rgba(183,175,163,0.28)",
+                background:"rgba(255,255,255,0.62)",backdropFilter:"blur(18px)",overflow:"hidden",
+              }}>
+                {/* Standards header */}
+                <div style={{
+                  padding:"16px 20px 14px",
+                  borderBottom:"1px solid rgba(188,178,165,0.22)",
+                  display:"flex",alignItems:"center",justifyContent:"space-between",
+                  gap:12,flexWrap:"wrap",
+                }}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:17,fontWeight:900,color:"#3a3630",letterSpacing:"-0.02em"}}>Applicable Standards</span>
+                    <span style={{
+                      minWidth:26,height:24,padding:"0 9px",borderRadius:99,
+                      background:"#eef2f0",border:"1px solid #d6ddd8",
+                      color:"#5b6862",fontWeight:900,fontSize:13,
+                      display:"inline-flex",alignItems:"center",justifyContent:"center",
+                    }}>{filteredStandardGroups.length}</span>
+                  </div>
+                  <input
+                    value={search}
+                    onChange={e=>setSearch(e.target.value)}
+                    placeholder="Filter standards…"
+                    style={{
+                      width:210,borderRadius:11,
+                      border:"1px solid rgba(198,189,177,0.7)",
+                      background:"rgba(255,255,255,0.8)",
+                      padding:"8px 13px",fontSize:14,
+                      color:"#46413a",fontFamily:"inherit",
+                    }}
+                  />
+                </div>
+
+                {/* Standards lanes */}
+                <div style={{padding:"14px 14px",display:"grid",gap:10}}>
+                  {!filteredStandardGroups.length
+                    ?<EmptyState title="No standards found" subtitle="Run analysis with a more detailed product description."/>
+                    :DIR_ORDER.filter(d=>standardsByDirective[d]&&standardsByDirective[d].length).map(directive=>(
+                      <DirectiveLane
+                        key={directive}
+                        dirKey={directive}
+                        groups={standardsByDirective[directive]}
+                        expandedStandards={expandedStandards}
+                        onToggleStandard={key=>setExpandedStandards(prev=>{
+                          const next={...prev};next[key]=!prev[key];return next;
+                        })}
+                      />
+                    ))
+                  }
+                </div>
+              </div>
+
+              {/* Applicable Legislations — full width below standards */}
+              {hasLegislations&&(
+                <div style={{
+                  borderRadius:22,border:"1px solid rgba(183,175,163,0.28)",
+                  background:"rgba(255,255,255,0.62)",backdropFilter:"blur(18px)",overflow:"hidden",
+                }}>
+                  <div
+                    onClick={()=>setLegsOpen(o=>!o)}
+                    style={{
+                      padding:"16px 20px 14px",cursor:"pointer",
+                      borderBottom:legsOpen?"1px solid rgba(188,178,165,0.22)":"none",
+                      display:"flex",alignItems:"center",gap:10,
+                      background:"rgba(255,255,255,0.3)",
+                    }}
+                  >
+                    <span style={{fontSize:17,fontWeight:900,color:"#3a3630",flex:1,letterSpacing:"-0.02em"}}>Applicable Legislations</span>
+                    <span style={{
+                      minWidth:26,height:24,padding:"0 9px",borderRadius:99,
+                      background:"#eef2f0",border:"1px solid #d6ddd8",
+                      color:"#5b6862",fontWeight:900,fontSize:13,
+                      display:"inline-flex",alignItems:"center",justifyContent:"center",
+                    }}>{notes.length}</span>
+                    <span style={{
+                      fontSize:11,color:"#9e9890",fontWeight:900,
+                      transform:legsOpen?"rotate(180deg)":"rotate(0deg)",
+                      display:"inline-block",transition:"transform 0.2s",
+                    }}>▾</span>
+                  </div>
+                  {legsOpen&&(
+                    <div style={{padding:"14px",display:"grid",gap:10}}>
+                      {notes.map((f,i)=>(
+                        <LegislationItem key={f._i+"-"+i} finding={f}/>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* RIGHT: Things to check sidebar */}
+            {hasSidebar&&(
+              <div style={{
+                borderRadius:20,overflow:"hidden",
+                border:"1px solid "+DIR.ROHS.ring,
+                background:"rgba(255,255,255,0.62)",
+                backdropFilter:"blur(18px)",
+              }}>
+                {/* Sidebar header */}
+                <div style={{
+                  padding:"15px 16px 12px",
+                  borderBottom:"1px solid "+DIR.ROHS.ring,
+                  background:DIR.ROHS.header,
+                }}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:16,fontWeight:900,color:DIR.ROHS.ink,flex:1,letterSpacing:"-0.01em"}}>Things to Check</span>
+                    <span style={{
+                      minWidth:24,height:24,padding:"0 8px",borderRadius:99,
+                      background:DIR.ROHS.ring,color:DIR.ROHS.ink,
+                      fontWeight:900,fontSize:12,
+                      display:"inline-flex",alignItems:"center",justifyContent:"center",
+                    }}>{toCheck.length}</span>
+                  </div>
+                  <div style={{marginTop:6,fontSize:13,color:"#7a6030",lineHeight:1.5}}>
+                    Potentially applicable — verify before scoping out.
+                  </div>
+                </div>
+                <div style={{padding:"12px",display:"grid",gap:9}}>
+                  {toCheck.map((f,i)=>(
+                    <CheckItem key={f._i+"-"+i} finding={f} index={i}/>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
     </div>
   );
-}
-
-// ─── All CSS ──────────────────────────────────────────────────────────────────
-
-function AppCSS() {
-  return (
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body, #root { min-height: 100%; }
-      button, input, select, textarea { font: inherit; }
-      button { cursor: pointer; border: none; }
-
-      body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        font-size: 14px;
-        line-height: 1.6;
-        -webkit-font-smoothing: antialiased;
-        background:
-          radial-gradient(ellipse 60% 35% at 0% 0%, rgba(19,103,138,.08) 0%, transparent 60%),
-          radial-gradient(ellipse 55% 30% at 100% 100%, rgba(53,163,125,.08) 0%, transparent 60%),
-          #f4fafc;
-        color: #0d2c3b;
-      }
-
-      .shell { min-height: 100vh; }
-      .container { max-width: 1280px; margin: 0 auto; padding: 0 22px; }
-
-      /* Nav */
-      .nav {
-        position: sticky; top: 0; z-index: 40;
-        background: rgba(13,44,59,.94);
-        border-bottom: 1px solid rgba(255,255,255,.08);
-        backdrop-filter: blur(12px);
-      }
-      .nav__inner { height: 58px; display: flex; align-items: center; justify-content: space-between; }
-      .nav__brand { display: flex; align-items: center; gap: 10px; }
-      .nav__logo {
-        width: 30px; height: 30px; border-radius: 8px;
-        display: grid; place-items: center;
-        background: linear-gradient(135deg, #13678A, #35a37d);
-        color: #fff; font-size: 12px; font-weight: 800;
-      }
-      .nav__name { color: #eff8fb; font-weight: 800; letter-spacing: -.02em; }
-      .nav__tag {
-        font-size: 11px; color: #cbe2ea;
-        padding: 5px 10px; border-radius: 999px;
-        background: rgba(255,255,255,.08);
-        border: 1px solid rgba(255,255,255,.10);
-      }
-
-      /* Page */
-      .page { padding: 28px 22px 52px; }
-
-      /* Hero */
-      .hero { margin-bottom: 20px; }
-      .hero__eyebrow {
-        font-size: 11px; font-weight: 800; letter-spacing: .12em;
-        text-transform: uppercase; color: #2a6782; margin-bottom: 8px;
-      }
-      .hero__title {
-        font-size: clamp(24px, 3vw, 36px); line-height: 1.08;
-        letter-spacing: -.04em; font-weight: 800; color: #0d2c3b;
-      }
-      .hero__sub { margin-top: 12px; max-width: 62ch; color: #42616e; line-height: 1.8; }
-
-      /* Card */
-      .card {
-        background: rgba(255,255,255,.88);
-        border: 1px solid #cfe0e8; border-radius: 16px;
-        box-shadow: 0 2px 6px rgba(13,44,59,.04), 0 12px 32px rgba(13,44,59,.05);
-        backdrop-filter: blur(8px);
-      }
-
-      /* Input card */
-      .input-card { overflow: hidden; margin-bottom: 14px; }
-      .input-card__head {
-        padding: 18px 20px 14px;
-        display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-        border-bottom: 1px solid #dce9ef;
-      }
-      .input-card__hint { margin-top: 4px; color: #577582; font-size: 13px; }
-      .input-card__controls { display: flex; align-items: center; gap: 8px; }
-
-      .input-card__progress { padding: 14px 20px 10px; border-bottom: 1px solid #dce9ef; }
-
-      .input-card__preview-row {
-        padding: 10px 20px;
-        border-top: 1px solid #dce9ef;
-        display: flex; flex-direction: column; gap: 8px;
-      }
-      .desc-preview {
-        padding: 10px 14px; border-radius: 10px;
-        background: #f0f7fa; border: 1px solid #c6d9e2;
-        font-size: 13px; color: #3d5a64; line-height: 1.7;
-      }
-
-      .input-card__foot {
-        padding: 12px 16px;
-        display: flex; align-items: center; justify-content: space-between; gap: 10px;
-        background: #f1f8fb; border-top: 1px solid #dce9ef;
-        flex-wrap: wrap;
-      }
-      .input-card__actions { display: flex; gap: 8px; flex-wrap: wrap; }
-      .input-card__actions--left { flex: 1; }
-
-      /* Depth selector */
-      .depth { display: flex; gap: 8px; }
-      .seg-btn {
-        padding: 7px 12px; border-radius: 10px;
-        border: 1px solid #c6d9e2; background: #fff;
-        color: #496673; font-weight: 700; text-transform: capitalize;
-      }
-      .seg-btn--on { background: #e8f3f8; border-color: #96bfd1; color: #0f4256; }
-
-      /* Progress bar */
-      .progress { display: flex; align-items: center; gap: 12px; }
-      .progress__track {
-        flex: 1; height: 6px; border-radius: 999px; background: #dce9ef; overflow: hidden;
-      }
-      .progress__fill {
-        height: 100%; border-radius: 999px;
-        background: linear-gradient(90deg, #13678A, #35a37d);
-        transition: width .35s ease;
-      }
-      .progress__label { font-size: 12px; color: #627d8a; white-space: nowrap; font-weight: 600; }
-
-      /* Guided fields */
-      .gfields { border-bottom: 1px solid #dce9ef; }
-
-      .gfield {
-        border-bottom: 1px solid #edf4f6;
-        transition: background .15s;
-        cursor: pointer;
-      }
-      .gfield:last-child { border-bottom: none; }
-      .gfield:hover:not(.gfield--active) { background: #f8fbfc; }
-      .gfield--active {
-        background: #f0f8fb;
-        border-left: 3px solid #13678A;
-        cursor: default;
-      }
-      .gfield--filled .gfield__check--on { opacity: 1; }
-
-      .gfield__header {
-        padding: 14px 20px;
-        display: flex; align-items: center; gap: 12px;
-      }
-      .gfield--active .gfield__header { padding-bottom: 0; }
-
-      .gfield__meta { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-
-      .gfield__step {
-        width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-        display: grid; place-items: center;
-        background: #e1edf2; color: #2a6782;
-        font-size: 11px; font-weight: 800;
-      }
-      .gfield--active .gfield__step { background: #13678A; color: #fff; }
-
-      .gfield__label {
-        font-size: 13.5px; font-weight: 700; color: #0d2c3b;
-        white-space: nowrap;
-      }
-
-      .gfield__preview {
-        flex: 1; min-width: 0;
-        font-size: 12px; color: #5a7a87;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        text-align: right;
-      }
-
-      .gfield__check {
-        width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
-        display: grid; place-items: center;
-        font-size: 11px; font-weight: 800;
-        background: #edf4f6; color: #b0c8d2;
-        opacity: 0;
-        transition: opacity .2s, background .2s, color .2s;
-      }
-      .gfield__check--on { opacity: 1; background: #d6f0e5; color: #35a37d; }
-
-      .gfield__body { padding: 8px 20px 18px 20px; }
-
-      .gfield__hint {
-        font-size: 12.5px; color: #577582; line-height: 1.65;
-        margin-bottom: 12px;
-      }
-
-      .gfield__input {
-        width: 100%; padding: 10px 14px;
-        border: 1px solid #c6d9e2; border-radius: 10px;
-        background: #fff; color: #0d2c3b; outline: none;
-        font-size: 13.5px; line-height: 1.6;
-        margin-bottom: 12px;
-        transition: border-color .15s, box-shadow .15s;
-      }
-      .gfield__input:focus { border-color: #13678A; box-shadow: 0 0 0 3px rgba(19,103,138,.1); }
-      .gfield__input::placeholder { color: #96b4be; }
-
-      /* Chips */
-      .gfield__chips { display: flex; flex-wrap: wrap; gap: 7px; }
-
-      .chip {
-        display: inline-flex; align-items: center; gap: 5px;
-        padding: 6px 11px; border-radius: 999px;
-        border: 1px solid #c6d9e2; background: #fff;
-        color: #496673; font-size: 12px; font-weight: 600;
-        transition: all .12s;
-        user-select: none;
-      }
-      .chip:hover { background: #edf4f6; border-color: #9dc7d8; }
-      .chip--on { background: #e0f2fa; border-color: #7bbcd6; color: #0d2c3b; }
-      .chip__tick { font-size: 10px; color: #13678A; font-weight: 800; }
-
-      /* Buttons */
-      .ghost-btn {
-        padding: 8px 13px; border-radius: 10px;
-        background: #fff; border: 1px solid #c6d9e2;
-        color: #35515e; font-weight: 700;
-      }
-      .ghost-btn:hover { background: #f4fafc; }
-      .ghost-btn--sm { padding: 5px 10px; font-size: 12px; width: fit-content; }
-
-      .run-btn {
-        padding: 10px 22px; border-radius: 10px; font-weight: 800;
-        background: linear-gradient(135deg, #0d2c3b, #13678A);
-        color: #fff; box-shadow: 0 6px 20px rgba(19,103,138,.22);
-        font-size: 14px;
-      }
-      .run-btn:disabled {
-        background: #c8d8df; color: #7d98a4;
-        box-shadow: none; cursor: not-allowed;
-      }
-
-      .err-bar {
-        margin: 0 16px 16px; padding: 12px 14px; border-radius: 10px;
-        background: #edf4f6; border: 1px solid #c6d9e2; color: #0d2c3b;
-      }
-
-      /* Result strip */
-      .result-strip {
-        padding: 16px 20px;
-        display: flex; align-items: center; justify-content: space-between; gap: 16px;
-        margin-bottom: 14px;
-      }
-      .result-strip__product { font-size: 16px; font-weight: 800; color: #0d2c3b; margin-bottom: 4px; }
-      .result-strip__desc { font-size: 13px; color: #577582; line-height: 1.6; }
-
-      /* Loading */
-      .loading__card { padding: 18px 20px; display: flex; align-items: center; gap: 14px; }
-      .loading__text { margin-top: 4px; color: #5b7885; }
-      .spinner {
-        width: 24px; height: 24px; border-radius: 50%;
-        border: 2.5px solid #c6d9e2; border-top-color: #13678A;
-        animation: spin .7s linear infinite;
-      }
-      @keyframes spin { to { transform: rotate(360deg); } }
-
-      /* Toolbar */
-      .toolbar {
-        padding: 14px 16px;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        margin-bottom: 14px; flex-wrap: wrap;
-      }
-      .toolbar__left, .toolbar__right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-      .search-wrap { min-width: 280px; }
-      .search-input, .select {
-        height: 40px; border-radius: 10px;
-        border: 1px solid #c6d9e2; background: #fff;
-        color: #0d2c3b; padding: 0 12px; outline: none;
-      }
-      .search-input { width: 100%; }
-      .search-input:focus, .select:focus { border-color: #96bfd1; box-shadow: 0 0 0 3px rgba(19,103,138,.08); }
-
-      /* Section */
-      .section { overflow: hidden; margin-bottom: 14px; }
-      .section__head {
-        padding: 16px 18px;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        border-bottom: 1px solid #dce9ef;
-      }
-      .section__titleWrap { display: flex; align-items: center; gap: 10px; }
-      .section__title { font-size: 15px; font-weight: 800; letter-spacing: -.02em; color: #0d2c3b; }
-      .section__helper { font-size: 12px; color: #627d8a; }
-
-      .count-pill {
-        min-width: 28px; padding: 4px 8px; border-radius: 999px;
-        display: inline-flex; align-items: center; justify-content: center;
-        background: #edf4f6; border: 1px solid #c6d9e2;
-        color: #2a6782; font-size: 11px; font-weight: 800;
-      }
-
-      /* Standards */
-      .group-stack { padding: 16px; display: flex; flex-direction: column; gap: 22px; }
-      .std-group__head {
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        margin-bottom: 12px;
-      }
-      .std-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
-
-      .std-card {
-        border: 1px solid var(--fborder);
-        background: linear-gradient(180deg, #fff 0%, var(--fbg) 100%);
-        border-radius: 14px; padding: 14px;
-      }
-      .std-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-      .std-card__name { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.55; font-weight: 600; color: #0d2c3b; }
-      .std-card__chips { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
-      .std-card__finding { margin-top: 12px; color: #36515d; line-height: 1.75; font-size: 12.5px; }
-      .std-card__actions { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,.7); border: 1px solid rgba(13,44,59,.09); }
-      .std-card__actions-title { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5a7480; margin-bottom: 6px; }
-      .std-card__actions ul { padding-left: 18px; }
-      .std-card__actions li { font-size: 12px; line-height: 1.65; color: #36515d; }
-
-      /* Dir badge */
-      .dir-badge {
-        display: inline-flex; align-items: center; gap: 8px;
-        border-radius: 999px; border: 1px solid var(--ring);
-        background: var(--pill); color: var(--ink);
-        padding: 7px 12px 7px 9px; min-height: 34px;
-      }
-      .dir-badge__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot); flex-shrink: 0; }
-      .dir-badge__code { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; }
-      .dir-badge__name { font-size: 12px; font-weight: 700; }
-
-      /* Status pill */
-      .status-pill {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 10px; border-radius: 999px;
-        background: var(--fbg); border: 1px solid var(--fborder);
-        color: var(--ftext); font-size: 11px; font-weight: 800;
-      }
-
-      /* Finding row */
-      .list-pad { padding: 8px 8px 12px; }
-      .frow {
-        display: grid; grid-template-columns: 48px 1fr;
-        border-radius: 12px; overflow: hidden;
-        border: 1px solid var(--fborder); background: var(--fbg);
-        margin-bottom: 8px;
-      }
-      .frow__left { background: var(--fstripe); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; padding: 12px 0; }
-      .frow__icon { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,.22); display: grid; place-items: center; color: #fff; font-weight: 800; }
-      .frow__label { font-size: 8px; color: rgba(255,255,255,.9); font-weight: 800; letter-spacing: .12em; }
-      .frow__body { padding: 12px 14px; }
-      .frow__art { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #64808c; margin-bottom: 4px; }
-      .frow__text { color: #24404d; line-height: 1.75; }
-      .frow__action { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,.68); border: 1px solid rgba(13,44,59,.08); color: #35515e; font-size: 12px; }
-
-      /* Toast */
-      .toast {
-        position: fixed; right: 18px; bottom: 18px; z-index: 60;
-        padding: 10px 14px; border-radius: 10px;
-        background: #0d2c3b; color: #fff;
-        box-shadow: 0 10px 24px rgba(13,44,59,.22);
-        font-size: 12.5px; font-weight: 700;
-      }
-
-      /* Responsive */
-      @media (max-width: 980px) {
-        .toolbar { flex-direction: column; align-items: stretch; }
-        .toolbar__left, .toolbar__right { width: 100%; }
-        .search-wrap { min-width: 0; flex: 1; }
-      }
-      @media (max-width: 720px) {
-        .container { padding: 0 14px; }
-        .page { padding: 18px 14px 40px; }
-        .input-card__head, .input-card__foot { flex-direction: column; align-items: stretch; }
-        .input-card__actions, .input-card__actions--left { flex-direction: column; align-items: stretch; }
-        .ghost-btn, .run-btn, .select, .search-input { width: 100%; }
-        .nav__tag { display: none; }
-        .gfield__label { font-size: 13px; }
-        .gfield__preview { display: none; }
-      }
-    `}</style>
-  );
-}
+} 
