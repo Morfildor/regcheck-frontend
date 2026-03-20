@@ -25,22 +25,7 @@ const THEME = {
   danger: "#b06779",
 };
 
-const DIR_NAME = {
-  LVD: "Low Voltage Directive",
-  EMC: "EMC Directive",
-  RED: "Radio Equipment Directive",
-  RED_CYBER: "RED Cybersecurity DA",
-  CRA: "Cyber Resilience Act",
-  ROHS: "RoHS Directive",
-  REACH: "REACH Regulation",
-  GDPR: "GDPR",
-  AI_Act: "AI Act",
-  ESPR: "ESPR",
-  ECO: "Ecodesign",
-  BATTERY: "Batteries Regulation",
-  FCM: "Food Contact",
-  OTHER: "Other",
-};
+
 
 const DIR_SHORT = {
   LVD: "LVD",
