@@ -197,34 +197,6 @@ function enrichDirectives(f) {
   return unique(explicit);
 }
 
-function buildStandardGroups(stds = []) {
-  const map = new Map();
-
-  stds.forEach((f) => {
-    const name = normalizeStdName(f.article || "Unnamed standard");
-    const directives = enrichDirectives(f);
-    const key = name.toLowerCase();
-
-    if (!map.has(key)) {
-      map.set(key, {
-        name,
-        directives: [...directives],
-        statuses: [f.status].filter(Boolean),
-        findings: [f],
-        actions: f.action ? [f.action] : [],
-      });
-    } else {
-      const curr = map.get(key);
-      curr.directives = unique([...curr.directives, ...directives]);
-      curr.statuses = unique([...curr.statuses, f.status]);
-      curr.findings.push(f);
-      if (f.action) curr.actions = unique([...curr.actions, f.action]);
-    }
-  });
-
-  return [...map.values()];
-}
-
 function standardStatusFromItem(item) {
   if (item.item_type === "review") return "WARN";
   return "PASS";
@@ -711,7 +683,12 @@ export default function App() {
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: trimmed, mode }),
+        body: JSON.stringify({
+          description: trimmed,
+          depth: mode,
+          category: "",
+          directives: [],
+        }),
       });
 
       const data = await res.json();
@@ -775,7 +752,11 @@ export default function App() {
   const summaryCards = [
     { title: "Applicable buckets", count: Object.keys(standardsByDirective).length, colorKey: "SYSTEM" },
     { title: "Applicable standards", count: standardGroups.length, colorKey: "LVD" },
-    { title: "Other findings", count: findingsBucket.other.length + findingsBucket.missing.length + findingsBucket.contra.length, colorKey: topRisk === "FAIL" ? "RED_CYBER" : topRisk === "WARN" ? "ROHS" : "EMC" },
+    {
+      title: "Other findings",
+      count: findingsBucket.other.length + findingsBucket.missing.length + findingsBucket.contra.length,
+      colorKey: topRisk === "FAIL" ? "RED_CYBER" : topRisk === "WARN" ? "ROHS" : "EMC",
+    },
   ];
 
   return (
@@ -828,7 +809,6 @@ export default function App() {
                   RC
                 </div>
                 <div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#f7f6f3" }}></div>
                   <div style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: "#fffdf8" }}>RegCheck</div>
                   <div style={{ marginTop: 6, fontSize: 16, color: "rgba(255,253,248,0.88)" }}>
                     Modern compliance scoping workspace
