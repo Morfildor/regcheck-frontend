@@ -922,13 +922,13 @@ function StandardCard({ item, sectionKey }) {
           }}
         >
           <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>Standard Reference</div>
+            <div style={miniTitleStyle}>Standard Flag</div>
             <div style={{ ...metaValueStyle, fontWeight: 900, fontSize: 16, color: dirTone.text }}>
               {prettyValue(item.code)}
             </div>
           </div>
           <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>Harmonized Reference</div>
+            <div style={miniTitleStyle}>Harmonized Standard Reference</div>
             <div style={metaValueStyle}>{prettyValue(item.harmonized_reference)}</div>
           </div>
           <div style={softBoxStyle}>
@@ -936,11 +936,11 @@ function StandardCard({ item, sectionKey }) {
             <div style={metaValueStyle}>{prettyValue(evidence || "—")}</div>
           </div>
           <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>EU Latest Version</div>
+            <div style={miniTitleStyle}>EU State-of-the-art Reference</div>
             <div style={metaValueStyle}>{prettyValue(item.version)}</div>
           </div>
           <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>Harmonized Version</div>
+            <div style={miniTitleStyle}>EU Legislation</div>
             <div style={metaValueStyle}>{prettyValue(item.dated_version)}</div>
           </div>
           <div style={softBoxStyle}>
