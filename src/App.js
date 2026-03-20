@@ -376,11 +376,7 @@ function Label({ children }){
   );
 }
 
-function Value({ children }){
-  return (
-    <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{children}</div>
-  );
-}
+
 
 // ─── Buttons ──────────────────────────────────────────────────────────────────
 
