@@ -1,893 +1,1166 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const API_URL =
+const ANALYZE_URL =
   process.env.REACT_APP_REGCHECK_API_URL ||
   "https://regcheck-api.onrender.com/analyze";
+const METADATA_URL = ANALYZE_URL.replace(/\/analyze$/, "/metadata/options");
 
-const DIR_NAME = {
-  LVD:      "Low Voltage Directive",
-  EMC:      "EMC Directive",
-  RED:      "RF / Radio Equipment",
-  RED_CYBER:"RED Cybersecurity DA",
-  CRA:      "Cyber Resilience Act",
-  ROHS:     "RoHS Directive",
-  REACH:    "REACH Regulation",
-  GDPR:     "Data & Privacy",
-  AI_Act:   "AI Act",
-  ESPR:     "ESPR / Ecodesign",
-  OTHER:    "Other",
-  SYSTEM:   "System",
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const T = {
+  // Page backgrounds (kept dark)
+  bg:          "#0d0f14",
+  bgPanel:     "#161820",
+
+  // Card backgrounds — lifted for readability
+  bgCard:      "#22263a",       // outer card
+  bgCardInner: "#2a2e44",       // inner soft-box inside cards
+  bgCardDeep:  "#1e2133",       // card header band
+
+  // Borders
+  line:        "rgba(255,255,255,0.08)",
+  lineStrong:  "rgba(255,255,255,0.14)",
+  lineFocus:   "rgba(99,172,255,0.5)",
+
+  // Text — noticeably brighter than before
+  text:        "#eef0f8",       // primary
+  textSub:     "#b0b6d0",       // secondary — was #8b90a8
+  textMuted:   "#7880a0",       // tertiary  — was #555a72
+  textLabel:   "#9098b8",       // label / caps
+
+  // Accents
+  blue:        "#63acff",
+  teal:        "#38c9b0",
+  violet:      "#9b87f5",
+  rose:        "#f87171",
+  amber:       "#fbbf24",
+  green:       "#4ade80",
+
+  // Shadows
+  shadow:      "0 4px 24px rgba(0,0,0,0.45)",
+  shadowLg:    "0 8px 40px rgba(0,0,0,0.55)",
 };
 
+// ─── Directive metadata ───────────────────────────────────────────────────────
 const DIR_SHORT = {
-  LVD:      "LVD",
-  EMC:      "EMC",
-  RED:      "RED",
-  RED_CYBER:"RED-Cyber",
-  CRA:      "CRA",
-  ROHS:     "RoHS",
-  REACH:    "REACH",
-  GDPR:     "GDPR",
-  AI_Act:   "AI Act",
-  ESPR:     "ESPR",
-  OTHER:    "Other",
-  SYSTEM:   "System",
+  LVD:"LVD", EMC:"EMC", RED:"RED", RED_CYBER:"RED Cyber", CRA:"CRA",
+  ROHS:"RoHS", REACH:"REACH", GDPR:"GDPR", AI_Act:"AI Act", ESPR:"ESPR",
+  ECO:"Ecodesign", BATTERY:"Battery", FCM:"FCM", FCM_PLASTIC:"FCM Plastic",
+  MD:"MD", MACH_REG:"Machinery Reg.", OTHER:"Other",
 };
 
 const DIR_ORDER = [
-  "LVD","EMC","RED","RED_CYBER","CRA",
-  "ROHS","REACH","GDPR","AI_Act","ESPR","OTHER",
+  "LVD","EMC","RED","RED_CYBER","ROHS","REACH","GDPR","FCM","FCM_PLASTIC",
+  "BATTERY","ECO","ESPR","CRA","AI_Act","MD","MACH_REG","OTHER",
 ];
 
-const DIR = {
-  LVD:       { dot:"#6f7566", pill:"#ece8dc", ring:"#cfc7b7", ink:"#505647", accent:"#8a9484", header:"#d8d3c8", stripe:"rgba(111,117,102,0.08)" },
-  EMC:       { dot:"#5f8d8b", pill:"#e6f0ef", ring:"#bbd1cf", ink:"#456a69", accent:"#5f8d8b", header:"#d0e4e3", stripe:"rgba(95,141,139,0.08)" },
-  RED:       { dot:"#2f5f69", pill:"#e3eef0", ring:"#b2c7cc", ink:"#294b53", accent:"#2f5f69", header:"#cde0e4", stripe:"rgba(47,95,105,0.08)" },
-  RED_CYBER: { dot:"#9f7084", pill:"#f1e7eb", ring:"#d8c0c9", ink:"#7a5667", accent:"#9f7084", header:"#e8d8df", stripe:"rgba(159,112,132,0.08)" },
-  CRA:       { dot:"#60795f", pill:"#e8efe7", ring:"#c1cec0", ink:"#4a6149", accent:"#60795f", header:"#d5e3d4", stripe:"rgba(96,121,95,0.08)" },
-  ROHS:      { dot:"#b7903e", pill:"#f7efd9", ring:"#e5d3a1", ink:"#8f6e2d", accent:"#b7903e", header:"#f0e5c3", stripe:"rgba(183,144,62,0.08)" },
-  REACH:     { dot:"#aa7868", pill:"#f5eae6", ring:"#e3cbc2", ink:"#83584a", accent:"#aa7868", header:"#e8d8d0", stripe:"rgba(170,120,104,0.08)" },
-  GDPR:      { dot:"#7f9995", pill:"#edf3f2", ring:"#cad9d8", ink:"#607773", accent:"#7f9995", header:"#daeaea", stripe:"rgba(127,153,149,0.08)" },
-  AI_Act:    { dot:"#9f7084", pill:"#f1e7eb", ring:"#d8c0c9", ink:"#7a5667", accent:"#9f7084", header:"#e8d8df", stripe:"rgba(159,112,132,0.08)" },
-  ESPR:      { dot:"#b7903e", pill:"#f7f0dd", ring:"#e5d7aa", ink:"#8f6e2d", accent:"#b7903e", header:"#f0e8ca", stripe:"rgba(183,144,62,0.08)" },
-  OTHER:     { dot:"#8d8779", pill:"#f0ece3", ring:"#d5cec0", ink:"#686356", accent:"#8d8779", header:"#e5e0d7", stripe:"rgba(141,135,121,0.08)" },
-  SYSTEM:    { dot:"#8d8779", pill:"#f0ece3", ring:"#d5cec0", ink:"#686356", accent:"#8d8779", header:"#e5e0d7", stripe:"rgba(141,135,121,0.08)" },
+const DIR_TONES = {
+  LVD:         { dot:"#6ee7b7", bg:"rgba(110,231,183,0.10)", bd:"rgba(110,231,183,0.22)", text:"#6ee7b7" },
+  EMC:         { dot:"#67e8f9", bg:"rgba(103,232,249,0.10)", bd:"rgba(103,232,249,0.22)", text:"#67e8f9" },
+  RED:         { dot:"#63acff", bg:"rgba(99,172,255,0.10)",  bd:"rgba(99,172,255,0.22)",  text:"#63acff" },
+  RED_CYBER:   { dot:"#c084fc", bg:"rgba(192,132,252,0.10)", bd:"rgba(192,132,252,0.22)", text:"#c084fc" },
+  CRA:         { dot:"#86efac", bg:"rgba(134,239,172,0.10)", bd:"rgba(134,239,172,0.22)", text:"#86efac" },
+  ROHS:        { dot:"#fcd34d", bg:"rgba(252,211,77,0.10)",  bd:"rgba(252,211,77,0.22)",  text:"#fcd34d" },
+  REACH:       { dot:"#fdba74", bg:"rgba(253,186,116,0.10)", bd:"rgba(253,186,116,0.22)", text:"#fdba74" },
+  GDPR:        { dot:"#38c9b0", bg:"rgba(56,201,176,0.10)",  bd:"rgba(56,201,176,0.22)",  text:"#38c9b0" },
+  AI_Act:      { dot:"#a78bfa", bg:"rgba(167,139,250,0.10)", bd:"rgba(167,139,250,0.22)", text:"#a78bfa" },
+  ESPR:        { dot:"#fb923c", bg:"rgba(251,146,60,0.10)",  bd:"rgba(251,146,60,0.22)",  text:"#fb923c" },
+  ECO:         { dot:"#4ade80", bg:"rgba(74,222,128,0.10)",  bd:"rgba(74,222,128,0.22)",  text:"#4ade80" },
+  BATTERY:     { dot:"#a3e635", bg:"rgba(163,230,53,0.10)",  bd:"rgba(163,230,53,0.22)",  text:"#a3e635" },
+  FCM:         { dot:"#f9a8d4", bg:"rgba(249,168,212,0.10)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
+  FCM_PLASTIC: { dot:"#f9a8d4", bg:"rgba(249,168,212,0.10)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
+  MD:          { dot:"#93c5fd", bg:"rgba(147,197,253,0.10)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
+  MACH_REG:    { dot:"#93c5fd", bg:"rgba(147,197,253,0.10)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
+  OTHER:       { dot:"#94a3b8", bg:"rgba(148,163,184,0.10)", bd:"rgba(148,163,184,0.22)", text:"#94a3b8" },
 };
 
-const STS = {
-  FAIL:{ icon:"✕", label:"FAIL", bg:"#f8eef1", border:"#e6d0d6", text:"#8b6474", dot:"#c97a90" },
-  WARN:{ icon:"!", label:"WARN", bg:"#fbf5e8", border:"#ecdcae", text:"#9e7d36", dot:"#c9a040" },
-  PASS:{ icon:"✓", label:"PASS", bg:"#eef4ee", border:"#ccd7ca", text:"#566554", dot:"#6a9068" },
-  INFO:{ icon:"·", label:"INFO", bg:"#eff5f5", border:"#cadada", text:"#517674", dot:"#7fa8a6" },
+const STATUS = {
+  LOW:      { bg:"rgba(74,222,128,0.12)",  bd:"rgba(74,222,128,0.28)",  text:"#4ade80" },
+  MEDIUM:   { bg:"rgba(251,191,36,0.12)",  bd:"rgba(251,191,36,0.28)",  text:"#fbbf24" },
+  HIGH:     { bg:"rgba(251,113,133,0.12)", bd:"rgba(251,113,133,0.28)", text:"#fb7185" },
+  CRITICAL: { bg:"rgba(248,113,113,0.15)", bd:"rgba(248,113,113,0.32)", text:"#f87171" },
 };
 
-const STD_RE = /^(EN|IEC|ISO|ETSI|EN IEC|EN ISO|IEC EN|UL|ASTM|CISPR|ITU|IEC\/EN)\b/i;
+const IMPORTANCE = {
+  high:   { bg:"rgba(248,113,113,0.10)", bd:"rgba(248,113,113,0.24)", text:"#fb7185", dot:"#fb7185" },
+  medium: { bg:"rgba(251,191,36,0.10)",  bd:"rgba(251,191,36,0.24)",  text:"#fbbf24", dot:"#fbbf24" },
+  low:    { bg:"rgba(74,222,128,0.08)",  bd:"rgba(74,222,128,0.22)",  text:"#4ade80", dot:"#4ade80" },
+};
 
-const QUICK_CHIPS = [
-  { label:"Heating element", text:"heating element" },
-  { label:"Wi-Fi / BT",      text:"Wi-Fi and Bluetooth connectivity" },
-  { label:"OTA updates",     text:"OTA firmware updates" },
-  { label:"Battery",         text:"rechargeable lithium battery" },
-  { label:"Food-contact",    text:"food-contact materials" },
-  { label:"Cloud account",   text:"cloud account and user data storage" },
-  { label:"Motor / pump",    text:"motor and pump" },
-  { label:"Display / UI",    text:"display and touch UI" },
+const SECTION_TONES = {
+  harmonized:       { bg:"rgba(99,172,255,0.07)",  bd:"rgba(99,172,255,0.16)",  tag:"rgba(99,172,255,0.14)",  tagText:"#63acff", icon:"⬡" },
+  state_of_the_art: { bg:"rgba(251,146,60,0.07)",  bd:"rgba(251,146,60,0.16)",  tag:"rgba(251,146,60,0.14)",  tagText:"#fb923c", icon:"◈" },
+  review:           { bg:"rgba(248,113,133,0.07)", bd:"rgba(248,113,133,0.16)", tag:"rgba(248,113,133,0.14)", tagText:"#fb7185", icon:"◉" },
+  unknown:          { bg:"rgba(148,163,184,0.05)", bd:"rgba(148,163,184,0.13)", tag:"rgba(148,163,184,0.11)", tagText:"#94a3b8", icon:"○" },
+};
+
+const DEFAULT_TEMPLATES = [
+  { label:"Coffee machine",  text:"Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path." },
+  { label:"Electric kettle", text:"Electric kettle with mains power, liquid heating, food-contact water path, electronic controls, and optional Wi-Fi control." },
+  { label:"Air purifier",    text:"Smart air purifier with mains power, motorized fan, electronic controls, Wi-Fi app control, networked standby, and OTA firmware updates." },
+  { label:"Robot vacuum",    text:"Robot vacuum cleaner with rechargeable lithium battery, Wi-Fi and Bluetooth, cloud account, OTA firmware updates, LiDAR navigation, and camera." },
 ];
 
-const PRODUCT_TEMPLATES = [
-  { label:"Air fryer",      text:"Smart air fryer with Wi-Fi app control, mains powered, OTA updates, cloud recipe sync, and food-contact basket coating." },
-  { label:"Coffee machine", text:"Connected espresso machine with app control, mains powered, OTA updates, cloud brew profiles, water tank sensor, and food-contact brew path." },
-  { label:"Robot vacuum",   text:"Robot vacuum cleaner with Wi-Fi and Bluetooth, LiDAR navigation, OTA firmware updates, cloud cleaning schedule, rechargeable lithium battery, and camera." },
-  { label:"Air purifier",   text:"Smart air purifier with Wi-Fi control, PM2.5 sensor, OTA firmware updates, cloud air quality logging, and mains power." },
-];
-
-/* ------------------------------------------------------------------ */
-/* Pure helpers                                                         */
-/* ------------------------------------------------------------------ */
-function unique(arr){ return [...new Set((arr||[]).filter(Boolean))]; }
-function normalizeStdName(s){ return (s||"").replace(/\s+/g," ").trim(); }
-function getDirectiveListFromFinding(f){
-  return (f.directive||"").split(",").map(x=>x.trim()).filter(Boolean).map(d=>d==="RF"?"RED":d);
+// ─── Utility functions (logic unchanged) ─────────────────────────────────────
+function titleCase(input) {
+  return String(input||"").replace(/[_-]+/g," ").replace(/\s+/g," ").trim().replace(/\b\w/g,m=>m.toUpperCase());
 }
-function statusRank(s){ return {FAIL:4,WARN:3,PASS:2,INFO:1}[s]||1; }
-function priorityStatus(statuses){
-  if(!statuses||!statuses.length) return "INFO";
-  return [...statuses].sort((a,b)=>statusRank(b)-statusRank(a))[0];
-}
-function isStandardFinding(f){
-  const art=(f.article||"").trim();
-  return STD_RE.test(art)||/review$/i.test(art);
-}
-function titleCase(s){
-  return String(s||"").replace(/[_-]/g," ").replace(/\s+/g," ").trim().replace(/\b\w/g,m=>m.toUpperCase());
-}
-function prettyDirectiveName(key){ return DIR_NAME[key]||titleCase(key); }
-
-function inferDirectiveFromText(text){
-  const t=(text||"").toLowerCase();
-  if(/en\s*18031|18031-1|18031-2|18031-3|red da|delegated act|article 3\.3\(d\)|article 3\.3\(e\)|article 3\.3\(f\)/.test(t)) return "RED_CYBER";
-  if(/cyber resilience act|\bcra\b|sbom|vulnerability|secure development/.test(t)) return "CRA";
-  if(/rohs|2011\/65\/eu|iec 63000|en iec 63000|62321/.test(t)) return "ROHS";
-  if(/\breach\b|1907\/2006|svhc|article 33/.test(t)) return "REACH";
-  if(/60335|60730|62233|electrical safety|appliance safety/.test(t)) return "LVD";
-  if(/55014|61000|emc|electromagnetic|cispr|harmonic|flicker|esd|surge|immunity/.test(t)) return "EMC";
-  if(/300 328|301 489|300 220|300 330|wireless|bluetooth|wifi|wi-fi|zigbee|matter|nfc|lte|5g/.test(t)) return "RED";
-  if(/gdpr|privacy|personal data|data protection/.test(t)) return "GDPR";
-  if(/ai act|artificial intelligence|machine learning|model/.test(t)) return "AI_Act";
-  if(/ecodesign|espr|repairability|durability|energy/.test(t)) return "ESPR";
-  return "OTHER";
+function gapLabel(key){
+  const labels={
+    product_type:"Product type",
+    power_source:"Power source",
+    radio_scope_confirmation:"Radio scope",
+    radio_technology:"Radio technology",
+    wifi_band:"Wi-Fi band",
+    food_contact_materials:"Food-contact materials",
+    connectivity_architecture:"Connected design",
+    redcyber_auth_scope:"Login / authentication",
+    redcyber_transaction_scope:"Payments / subscriptions",
+    contradictions:"Contradictions",
+  };
+  return labels[key]||titleCase(key);
 }
 
-function enrichDirectives(f){
-  const combined=[f.article,f.finding,f.action].filter(Boolean).join(" ");
-  const inferred=inferDirectiveFromText(combined);
-  let explicit=getDirectiveListFromFinding(f).filter(d=>d!=="SYSTEM");
-  if(/en\s*18031|18031-1|18031-2|18031-3/i.test(combined.toLowerCase())){
-    explicit=explicit.filter(d=>d!=="CRA"&&d!=="RED");
-    explicit.push("RED_CYBER");
-  }
-  if(inferred==="RED_CYBER"&&!explicit.includes("RED_CYBER")) explicit.push("RED_CYBER");
-  if(!explicit.length) explicit=inferred?[inferred]:["OTHER"];
-  return unique(explicit);
+function sentenceCaseList(values){ return (values||[]).map(v=>titleCase(String(v))); }
+function directiveTone(key){ return DIR_TONES[key]||DIR_TONES.OTHER; }
+function directiveShort(key){ return DIR_SHORT[key]||titleCase(key); }
+function directiveRank(key){ const r=DIR_ORDER.indexOf(key||"OTHER"); return r===-1?999:r; }
+function normalizeStandardDirective(item){
+  const code=String(item?.code||"").toUpperCase();
+  if(code.startsWith("EN 18031-")) return "RED_CYBER";
+  return item?.directive||item?.legislation_key||"OTHER";
 }
-
-function standardStatusFromItem(item){
-  return item.item_type==="review"?"WARN":"PASS";
+function joinText(base,addition){
+  const a=String(base||"").trim(), b=String(addition||"").trim();
+  if(!b) return a; if(!a) return b;
+  if(a.toLowerCase().includes(b.toLowerCase())) return a;
+  const sep=/[\s,;:]$/.test(a)?" ":a.endsWith(".")?" ":", ";
+  return `${a}${sep}${b}`;
 }
-
-function buildGroupsFromBackendItems(standards,reviewItems){
-  const all=[...(standards||[]),...(reviewItems||[])];
+function uniqueBy(items,getKey){
   const map=new Map();
-  all.forEach(row=>{
-    const name=normalizeStdName(row.code||row.title||"Unnamed item");
-    const directive=row.directive||row.legislation_key||"OTHER";
-    const key=directive+"::"+name.toLowerCase();
-    const status=standardStatusFromItem(row);
-    const findingText=row.title||"";
-    const actionText=row.reason||row.notes||"";
-    if(!map.has(key)){
-      map.set(key,{name,directives:[directive],statuses:[status],findings:[{finding:findingText,action:actionText,status}],actions:actionText?[actionText]:[]});
-      return;
-    }
-    const curr=map.get(key);
-    curr.directives=unique([...curr.directives,directive]);
-    curr.statuses=unique([...curr.statuses,status]);
-    if(actionText) curr.actions=unique([...curr.actions,actionText]);
-    curr.findings.push({finding:findingText,action:actionText,status});
+  (items||[]).forEach(item=>{ const k=getKey(item); if(!map.has(k)) map.set(k,item); });
+  return Array.from(map.values());
+}
+function prettyValue(value){
+  if(value===null||value===undefined||value==="") return "—";
+  if(Array.isArray(value)) return value.join(", ");
+  return String(value);
+}
+
+function buildDynamicTemplates(products){
+  const lookup=new Map((products||[]).map(p=>[p.id,p]));
+  const templates=[];
+  function addTemplate(productId,suffix,labelOverride){
+    const product=lookup.get(productId);
+    if(!product) return;
+    templates.push({ label:labelOverride||product.label, text:`${product.label} with ${suffix}.` });
+  }
+  addTemplate("coffee_machine","mains power, heating, water tank, grinder, food-contact brew path, Wi-Fi radio, app control, cloud account, and OTA updates","Coffee machine");
+  addTemplate("electric_kettle","mains power, liquid heating, food-contact water path, electronic controls, and optional Wi-Fi radio control","Electric kettle");
+  addTemplate("air_purifier","mains power, motorized fan, sensor electronics, Wi-Fi radio, app control, and OTA updates","Air purifier");
+  addTemplate("robot_vacuum","rechargeable battery, Wi-Fi and Bluetooth radio, cloud account, OTA updates, and LiDAR navigation","Robot vacuum");
+  addTemplate("robot_vacuum_cleaner","rechargeable battery, Wi-Fi and Bluetooth radio, cloud account, OTA updates, and LiDAR navigation","Robot vacuum");
+  return uniqueBy(templates.length?templates:DEFAULT_TEMPLATES, item=>item.label).slice(0,4);
+}
+
+function buildGuidedChips(metadata,result){
+  const productId=result?.product_type;
+  const product=(metadata?.products||[]).find(item=>item.id===productId);
+  const traits=new Set(result?.all_traits||[]);
+  const missingItems=result?.missing_information_items||[];
+  const chips=[];
+  const push=(label,text)=>{ if(!label||!text) return; if(!chips.some(item=>item.text===text)) chips.push({label,text}); };
+  missingItems.forEach(item=>(item.examples||[]).slice(0,2).forEach(ex=>push(gapLabel(item.key),ex)));
+  if(product?.implied_traits?.includes("food_contact")||traits.has("food_contact")){
+    push("Food contact","food-contact plastics, coatings, silicone, rubber, and metal parts");
+    push("Water path","wetted path materials, seals, and water tank");
+  }
+  if(product?.implied_traits?.includes("motorized")||traits.has("motorized")){
+    push("Motor","motorized function");
+    push("Pump","pump or fluid transfer function");
+  }
+  if(traits.has("radio")){
+    push("Wi-Fi","Wi-Fi radio");
+    push("Bluetooth","Bluetooth LE radio");
+    push("OTA","OTA firmware updates");
+  }
+  if(!traits.has("radio")&&(traits.has("app_control")||traits.has("cloud")||traits.has("ota"))){
+    push("Wi-Fi","Wi-Fi radio");
+    push("Bluetooth","Bluetooth LE radio");
+  }
+  if(traits.has("cloud")||traits.has("app_control")||traits.has("internet")){
+    push("Cloud","cloud account required");
+    push("Local control","local LAN control without cloud dependency");
+    push("Patching","security and firmware patching over the air");
+  }
+  if(traits.has("food_contact"))
+    push("Food contact","food-contact plastics, coatings, silicone, rubber, and metal parts");
+  if(traits.has("battery_powered")) push("Battery","rechargeable lithium battery");
+  if(traits.has("camera")) push("Camera","integrated camera");
+  if(traits.has("microphone")) push("Microphone","microphone or voice input");
+  if(!chips.length){
+    push("Mains","230 V mains powered");
+    push("Consumer","consumer household use");
+    push("App control","mobile app control");
+    push("Wi-Fi","Wi-Fi radio");
+    push("Food contact","food-contact plastics or coatings");
+  }
+  return chips.slice(0,10);
+}
+
+function buildGuidanceItems(result){
+  const traits=new Set(result?.all_traits||[]);
+  const rawItems=result?.input_gaps_panel?.items||result?.missing_information_items||[];
+  const items=[], seen=new Set();
+  const add=(key,title,why,importance,choices=[])=>{
+    if(seen.has(key)) return; seen.add(key);
+    items.push({key,title,why,importance,choices:choices.filter(Boolean).slice(0,3)});
+  };
+  if(traits.has("radio"))
+    add("radio_stack","Confirm radios","Changes RED and RF scope.","high",["Wi-Fi radio","Bluetooth LE radio","NFC radio"]);
+  if(traits.has("cloud")||traits.has("internet")||traits.has("app_control")||traits.has("ota")||traits.has("wifi"))
+    add("connected_architecture","Confirm connected design","Changes EN 18031 and cybersecurity route.","high",["cloud account required","local LAN control without cloud dependency","OTA firmware updates"]);
+  if(traits.has("food_contact"))
+    add("food_contact","Confirm wetted materials","Changes food-contact obligations.","medium",["food-contact plastics","silicone seal","metal wetted path"]);
+  if(traits.has("battery_powered"))
+    add("battery","Confirm battery setup","Changes Battery Regulation scope.","medium",["rechargeable lithium battery","replaceable battery","battery supplied with the product"]);
+  if(traits.has("camera")||traits.has("microphone")||traits.has("personal_data_likely"))
+    add("data_functions","Confirm sensitive functions","Changes cybersecurity/privacy expectations.","high",["integrated camera","microphone or voice input","user account and profile data"]);
+  rawItems.forEach(item=>add(item.key,gapLabel(item.key),item.message,item.importance||"medium",item.examples||[]));
+  return items.slice(0,6);
+}
+
+function buildCompactLegislationItems(result){
+  const sections=result?.legislation_sections||[];
+  const allItems=sections.flatMap(section=>(section.items||[]).map(item=>({...item,section_key:section.key,section_title:section.title})));
+  return uniqueBy(
+    [...allItems].sort((a,b)=>directiveRank(a.directive_key)-directiveRank(b.directive_key)||String(a.code).localeCompare(String(b.code))),
+    item=>`${item.code}-${item.directive_key}`
+  );
+}
+
+function compactLegislationGroupLabel(item){
+  const k=item.section_key;
+  if(k==="framework") return "Additional";
+  if(k==="non_ce") return "Parallel";
+  if(k==="future") return "Future";
+  if(k==="ce") return "CE";
+  return titleCase(k);
+}
+
+function sortStandardItems(items){
+  return [...(items||[])].sort((a,b)=>{
+    const aDir=normalizeStandardDirective(a), bDir=normalizeStandardDirective(b);
+    return directiveRank(aDir)-directiveRank(bDir)||String(a.code||"").localeCompare(String(b.code||""));
   });
-  return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name));
 }
 
-function categoriseFindings(findings,knownStdNames){
-  const toCheck=[];
-  const notes=[];
-  const stdSet=knownStdNames||new Set();
-  (findings||[]).forEach((f,i)=>{
-    const row=Object.assign({},f,{_i:i});
-    const art=(f.article||"").trim();
-    const findingText=(f.finding||"").trim();
-    if(isStandardFinding(f)) return;
-    const artLow=art.toLowerCase();
-    const findLow=findingText.toLowerCase();
-    const coversKnownStd=[...stdSet].some(name=>{
-      const n=name.toLowerCase();
-      return artLow===n||(n.length>8&&(artLow.includes(n)||findLow.includes(n)));
-    });
-    if(coversKnownStd) return;
-    const isUncertain=
-      /Missing|unclear|not specified|confirm|check whether|verify|not confirmed/i.test(art)||
-      /Missing|unclear|not specified|confirm|check whether|verify|not confirmed/i.test(findingText);
-    if(isUncertain){ toCheck.push(row); } else { notes.push(row); }
+function buildSectionsFromFlatResult(result){
+  const standardRows=(result?.standards||[]).map(item=>({...item,item_type:item.item_type||"standard"}));
+  const reviewRows=(result?.review_items||[]).map(item=>({...item,item_type:"review"}));
+  const grouped={};
+  [...standardRows,...reviewRows].forEach(item=>{
+    let key=item.harmonization_status||(item.item_type==="review"?"review":"unknown");
+    if(!["harmonized","state_of_the_art","review","unknown"].includes(key)) key="unknown";
+    if(!grouped[key]) grouped[key]={ key, title:
+      key==="harmonized"?"Harmonized standards":
+      key==="state_of_the_art"?"State of the art / latest technical route":
+      key==="review"?"Review-required routes":"Other standards",
+      count:0, items:[] };
+    grouped[key].items.push(item);
   });
-  return {toCheck,notes};
+  return ["harmonized","state_of_the_art","review","unknown"]
+    .filter(k=>grouped[k])
+    .map(key=>({ ...grouped[key], items:sortStandardItems(grouped[key].items), count:grouped[key].items.length }));
 }
 
-function tagToneForSignal(signal){
-  if(signal==="high")   return {bg:"#f8eef1",bd:"#e6d0d6",tx:"#8b6474"};
-  if(signal==="medium") return {bg:"#fbf5e8",bd:"#ecdcae",tx:"#9e7d36"};
-  if(signal==="good")   return {bg:"#eef4ee",bd:"#ccd7ca",tx:"#566554"};
-  return {bg:"#eff5f5",bd:"#cadada",tx:"#517674"};
+function buildDirectiveBreakdown(result){
+  const sections=result?.standard_sections?.length?result.standard_sections:buildSectionsFromFlatResult(result);
+  const counts={};
+  sections.forEach(section=>(section.items||[]).forEach(item=>{ const dir=normalizeStandardDirective(item); counts[dir]=(counts[dir]||0)+1; }));
+  return Object.entries(counts).sort((a,b)=>directiveRank(a[0])-directiveRank(b[0])).map(([key,count])=>({key,count}));
 }
 
-/* ------------------------------------------------------------------ */
-/* Atoms                                                                */
-/* ------------------------------------------------------------------ */
+// ─── Primitive UI components ──────────────────────────────────────────────────
 
-function DirPill({dirKey,size="sm"}){
-  const tone=DIR[dirKey]||DIR.OTHER;
-  const fs=size==="sm"?11:13;
-  return(
+function DirPill({ dirKey, large=false }){
+  const tone=directiveTone(dirKey);
+  return (
     <span style={{
-      display:"inline-flex",alignItems:"center",gap:5,
-      padding:size==="sm"?"2px 9px 2px 7px":"3px 11px 3px 9px",
-      borderRadius:999,border:"1px solid "+tone.ring,
-      background:tone.pill,color:tone.ink,
-      fontSize:fs,fontWeight:800,letterSpacing:"0.04em",whiteSpace:"nowrap",
+      display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,
+      border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
+      padding:large?"5px 11px":"3px 9px", fontSize:large?12:11, fontWeight:700,
+      whiteSpace:"nowrap",letterSpacing:"0.03em",
     }}>
       <span style={{width:6,height:6,borderRadius:999,background:tone.dot,flexShrink:0}}/>
-      {DIR_SHORT[dirKey]||dirKey}
+      {directiveShort(dirKey)}
     </span>
   );
 }
 
-function StatusBadge({status,small}){
-  const s=STS[status]||STS.INFO;
-  const fs=small?12:13;
-  return(
+function RiskBadge({ value }){
+  const tone=STATUS[value]||STATUS.MEDIUM;
+  return (
     <span style={{
-      display:"inline-flex",alignItems:"center",gap:5,
-      padding:small?"3px 9px":"4px 11px",
-      borderRadius:999,border:"1px solid "+s.border,
-      background:s.bg,color:s.text,
-      fontSize:fs,fontWeight:900,lineHeight:1,whiteSpace:"nowrap",
+      display:"inline-flex",alignItems:"center",gap:7,borderRadius:6,
+      border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
+      padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:"0.08em",textTransform:"uppercase",
     }}>
-      <span style={{width:6,height:6,borderRadius:999,background:s.dot,flexShrink:0}}/>
-      {s.label}
+      <span style={{width:5,height:5,borderRadius:999,background:tone.text}}/>
+      {value} Risk
     </span>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* StandardRow                                                          */
-/* ------------------------------------------------------------------ */
-
-function StandardRow({group,expanded,onToggle}){
-  const topStatus=priorityStatus(group.statuses);
-  const d=(group.directives&&group.directives[0])||"OTHER";
-  const tone=DIR[d]||DIR.OTHER;
-
-  return(
-    <div style={{borderBottom:"1px solid rgba(188,178,165,0.15)"}}>
-      <div
-        onClick={onToggle}
-        style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px 11px 0",cursor:"pointer",transition:"background 0.12s"}}
-        onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.4)";}}
-        onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}
-      >
-        <span style={{width:3,alignSelf:"stretch",borderRadius:99,background:tone.accent,flexShrink:0,minHeight:24,marginLeft:0}}/>
-        <span style={{flex:1,fontSize:15,fontWeight:700,color:"#2c2925",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",paddingLeft:8}}>
-          {group.name}
-        </span>
-        <StatusBadge status={topStatus} small={true}/>
-        <span style={{
-          fontSize:11,color:"#9e9890",marginLeft:4,
-          transition:"transform 0.2s",
-          transform:expanded?"rotate(180deg)":"rotate(0deg)",
-          display:"inline-block",flexShrink:0,fontWeight:900,
-        }}>▾</span>
-      </div>
-
-      {expanded&&(
-        <div style={{marginLeft:4,marginBottom:12,borderLeft:"2px solid "+tone.ring,paddingLeft:16,marginRight:8,display:"grid",gap:8}}>
-          {group.findings.map((f,idx)=>{
-            const rowStatus=f.status||topStatus;
-            const signal=rowStatus==="FAIL"?"high":rowStatus==="WARN"?"medium":rowStatus==="PASS"?"good":"neutral";
-            const tagTone=tagToneForSignal(signal);
-            return(
-              <div key={group.name+"-"+idx} style={{borderRadius:10,border:"1px solid "+tagTone.bd,background:tagTone.bg,padding:"11px 14px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
-                  <StatusBadge status={rowStatus} small={true}/>
-                </div>
-                {f.finding&&<div style={{fontSize:14,fontWeight:700,color:"#2f2c28",lineHeight:1.5}}>{f.finding}</div>}
-                {f.action&&<div style={{marginTop:5,fontSize:13,color:"#7a746b",lineHeight:1.6}}>{f.action}</div>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+function Chip({ children, tone="neutral" }){
+  const s = tone==="neutral"
+    ? {bg:"rgba(255,255,255,0.07)", bd:T.lineStrong, text:T.textSub}
+    : tone==="blue"
+    ? {bg:"rgba(99,172,255,0.12)", bd:"rgba(99,172,255,0.24)", text:T.blue}
+    : {bg:"rgba(56,201,176,0.10)", bd:"rgba(56,201,176,0.22)", text:T.teal};
+  return (
+    <span style={{
+      display:"inline-flex",alignItems:"center",borderRadius:6,
+      border:`1px solid ${s.bd}`,background:s.bg,color:s.text,
+      padding:"3px 9px",fontSize:11,fontWeight:600,
+    }}>{children}</span>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* DirectiveLane                                                        */
-/* ------------------------------------------------------------------ */
-
-function DirectiveLane({dirKey,groups,expandedStandards,onToggleStandard}){
-  const [open,setOpen]=useState(true);
-  const tone=DIR[dirKey]||DIR.OTHER;
-
-  return(
-    <div style={{borderRadius:16,border:"1px solid "+tone.ring,overflow:"hidden",background:"rgba(255,255,255,0.72)"}}>
-      <div
-        onClick={()=>setOpen(o=>!o)}
-        style={{
-          display:"flex",alignItems:"center",gap:10,
-          padding:"13px 16px",cursor:"pointer",
-          background:tone.header,
-          borderBottom:open?"1px solid "+tone.ring:"none",
-        }}
-      >
-        <span style={{width:10,height:10,borderRadius:999,background:tone.dot,flexShrink:0}}/>
-        <span style={{fontSize:14,fontWeight:900,color:tone.ink,flex:1,letterSpacing:"0.02em"}}>
-          {prettyDirectiveName(dirKey)}
-        </span>
-        <span style={{
-          minWidth:24,height:24,padding:"0 8px",borderRadius:999,
-          background:tone.ring,color:tone.ink,
-          fontWeight:900,fontSize:12,
-          display:"inline-flex",alignItems:"center",justifyContent:"center",
-        }}>
-          {groups.length}
-        </span>
-        <span style={{
-          fontSize:11,color:tone.ink,opacity:0.7,
-          transform:open?"rotate(180deg)":"rotate(0deg)",
-          display:"inline-block",transition:"transform 0.2s",fontWeight:900,
-        }}>▾</span>
-      </div>
-
-      {open&&(
-        <div style={{padding:"0 0 4px"}}>
-          {groups.map(group=>{
-            const key=dirKey+"::"+group.name;
-            return(
-              <StandardRow
-                key={key}
-                group={group}
-                expanded={!!expandedStandards[key]}
-                onToggle={()=>onToggleStandard(key)}
-              />
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* CheckItem                                                            */
-/* ------------------------------------------------------------------ */
-
-function CheckItem({finding,index}){
-  const directives=enrichDirectives(finding);
-  const tone=DIR[directives[0]||"OTHER"]||DIR.OTHER;
-  const rawLabel=(finding.article||finding.finding||"").trim();
-  const label=rawLabel.replace(/^Missing[:\s]*/i,"").replace(/^Check[:\s]*/i,"").trim();
-  const shortLabel=label.length>72?label.slice(0,70)+"…":label;
-  const body=(finding.action||(finding.article?finding.finding:"")||"").trim();
-
-  return(
+function Card({ children, style }){
+  return (
     <div style={{
-      padding:"12px 14px",borderRadius:12,
-      border:"1px solid "+tone.ring,
-      background:"rgba(255,255,255,0.8)",
-      display:"grid",gap:7,
+      borderRadius:18,border:`1px solid ${T.lineStrong}`,
+      background:T.bgCard, boxShadow:T.shadow, overflow:"hidden",
+      ...style,
+    }}>{children}</div>
+  );
+}
+
+function CardHeader({ title, subtitle, right }){
+  return (
+    <div style={{
+      padding:"16px 20px 13px",
+      borderBottom:`1px solid ${T.line}`,
+      background:T.bgCardDeep,
+      display:"flex",gap:14,alignItems:"flex-start",justifyContent:"space-between",
     }}>
-      <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
-        <span style={{
-          width:22,height:22,borderRadius:999,flexShrink:0,
-          background:tone.accent,color:"#fff",
-          fontSize:11,fontWeight:900,
-          display:"inline-flex",alignItems:"center",justifyContent:"center",
-        }}>{index+1}</span>
-        {directives.map(d=><DirPill key={d} dirKey={d}/>)}
+      <div>
+        {title&&<div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>{title}</div>}
+        {subtitle&&<div style={{marginTop:4,fontSize:12,color:T.textMuted,lineHeight:1.5}}>{subtitle}</div>}
       </div>
-      <div style={{fontSize:14,fontWeight:800,color:"#2c2925",lineHeight:1.45}}>
-        {shortLabel||"Confirm applicability"}
-      </div>
-      {body&&body!==shortLabel&&(
-        <div style={{fontSize:13,color:"#7a746b",lineHeight:1.55}}>{body}</div>
-      )}
+      {right&&<div style={{flexShrink:0}}>{right}</div>}
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* LegislationItem — for Applicable Legislations panel                 */
-/* ------------------------------------------------------------------ */
-
-function LegislationItem({finding}){
-  const status=finding.status||"INFO";
-  const directives=enrichDirectives(finding);
-  const s=STS[status]||STS.INFO;
-  const d=directives[0]||"OTHER";
-  const tone=DIR[d]||DIR.OTHER;
-
-  return(
+// Inner meta box — now uses a noticeably lighter background
+function SoftBox({ children, style }){
+  return (
     <div style={{
-      display:"flex",gap:12,alignItems:"flex-start",
-      padding:"12px 14px",borderRadius:12,
-      background:"rgba(255,255,255,0.72)",
-      border:"1px solid "+tone.ring,
-    }}>
-      <div style={{
-        width:32,height:32,borderRadius:8,flexShrink:0,
-        background:tone.pill,border:"1px solid "+tone.ring,
-        display:"flex",alignItems:"center",justifyContent:"center",
-        color:tone.ink,fontSize:14,fontWeight:900,
-      }}>{s.icon}</div>
-      <div style={{minWidth:0,flex:1}}>
-        <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:5}}>
-          {directives.map(d=><DirPill key={d} dirKey={d}/>)}
-          <StatusBadge status={status} small={true}/>
-        </div>
-        <div style={{fontSize:14,fontWeight:700,color:"#2f2c28",lineHeight:1.45}}>
-          {finding.finding||finding.article||"Legislation note"}
-        </div>
-        {finding.action&&(
-          <div style={{marginTop:4,fontSize:13,color:"#7a746b",lineHeight:1.55}}>{finding.action}</div>
-        )}
-      </div>
-    </div>
+      borderRadius:10,
+      border:`1px solid rgba(255,255,255,0.10)`,
+      background:"rgba(255,255,255,0.07)",
+      padding:"11px 13px",
+      ...style,
+    }}>{children}</div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* EmptyState                                                           */
-/* ------------------------------------------------------------------ */
-
-function EmptyState({title,subtitle}){
-  return(
+function Label({ children }){
+  return (
     <div style={{
-      borderRadius:12,border:"1px dashed rgba(186,176,160,0.7)",
-      background:"rgba(250,247,242,0.6)",padding:"24px 20px",
-      color:"#807b73",textAlign:"center",
-    }}>
-      <div style={{fontSize:16,fontWeight:800,color:"#59544c"}}>{title}</div>
-      {subtitle&&<div style={{marginTop:6,fontSize:14,lineHeight:1.55}}>{subtitle}</div>}
-    </div>
+      fontSize:10,fontWeight:700,color:T.textLabel,
+      textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:5,
+    }}>{children}</div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* SummaryBar                                                           */
-/* ------------------------------------------------------------------ */
-
-function SummaryBar({topRisk,standardGroups,standardsByDirective,toCheck}){
-  const riskColor=topRisk==="FAIL"?DIR.RED_CYBER:topRisk==="WARN"?DIR.ROHS:topRisk==="PASS"?DIR.CRA:DIR.EMC;
-  const items=[
-    {label:"Overall Risk",value:topRisk,c:riskColor,big:true},
-    {label:"Standards",value:standardGroups.length,c:DIR.LVD},
-    {label:"Directives",value:Object.keys(standardsByDirective).length,c:DIR.EMC},
-    ...(toCheck.length>0?[{label:"To Verify",value:toCheck.length,c:DIR.ROHS}]:[]),
-  ];
-  return(
-    <div style={{
-      display:"flex",gap:0,borderRadius:18,
-      border:"1px solid rgba(183,175,163,0.3)",
-      overflow:"hidden",background:"rgba(255,255,255,0.55)",
-      backdropFilter:"blur(16px)",flexWrap:"wrap",
-    }}>
-      {items.map((item,i)=>(
-        <div key={item.label} style={{
-          flex:"1 1 auto",padding:"14px 20px",
-          borderRight:i<items.length-1?"1px solid rgba(183,175,163,0.25)":"none",
-          background:i===0?item.c.pill:"transparent",
-        }}>
-          <div style={{fontSize:11,fontWeight:800,letterSpacing:"0.1em",color:item.c.ink,opacity:0.7,marginBottom:3,textTransform:"uppercase"}}>{item.label}</div>
-          <div style={{fontSize:item.big?24:22,fontWeight:900,color:item.c.ink,lineHeight:1}}>{item.value}</div>
-        </div>
-      ))}
-    </div>
+function Value({ children }){
+  return (
+    <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{children}</div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* App                                                                  */
-/* ------------------------------------------------------------------ */
+// ─── Buttons ──────────────────────────────────────────────────────────────────
 
-export default function App(){
-  const [mode,setMode]=useState("standard");
-  const [text,setText]=useState("");
-  const [result,setResult]=useState(null);
-  const [loading,setLoading]=useState(false);
-  const [error,setError]=useState("");
-  const [expandedStandards,setExpandedStandards]=useState({});
-  const [search,setSearch]=useState("");
-  const [legsOpen,setLegsOpen]=useState(true);
-  const inputRef=useRef(null);
-
-  const runAnalysis=useCallback(function(payloadText){
-    const trimmed=((payloadText!==undefined?payloadText:text)||"").trim();
-    if(!trimmed) return Promise.resolve();
-    setLoading(true);
-    setError("");
-    return fetch(API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({description:trimmed,depth:mode,category:"",directives:[]}),
-    })
-    .then(res=>res.json().then(data=>{
-      if(!res.ok) throw new Error((data&&data.detail)||"Analysis failed");
-      setResult(data);
-      const initialExpanded={};
-      buildGroupsFromBackendItems(data.standards||[],data.review_items||[]).forEach(group=>{
-        const directive=(group.directives&&group.directives[0])||"OTHER";
-        initialExpanded[directive+"::"+group.name]=true;
-      });
-      setExpandedStandards(initialExpanded);
-    }))
-    .catch(err=>{
-      setError((err&&err.message)||"Analysis failed");
-      setResult(null);
-    })
-    .finally(()=>setLoading(false));
-  },[mode,text]);
-
-  useEffect(()=>{
-    if(inputRef.current&&window.innerWidth>900) inputRef.current.focus();
-  },[]);
-
-  const standardGroups=useMemo(()=>
-    buildGroupsFromBackendItems((result&&result.standards)||[],(result&&result.review_items)||[]),
-    [result]
+function PrimaryBtn({ onClick, disabled, children }){
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      appearance:"none",cursor:disabled?"not-allowed":"pointer",
+      opacity:disabled?0.4:1,borderRadius:10,border:"none",
+      background:disabled?"rgba(99,172,255,0.25)":`linear-gradient(135deg,${T.blue},${T.teal})`,
+      color:"#000",padding:"10px 20px",fontWeight:700,fontSize:13,
+      boxShadow:disabled?"none":"0 0 28px rgba(99,172,255,0.28)",
+      transition:"all 0.2s",letterSpacing:"0.01em",whiteSpace:"nowrap",
+    }}>{children}</button>
   );
+}
 
-  const categorised=useMemo(()=>{
-    const knownStdNames=new Set(standardGroups.map(g=>g.name));
-    return categoriseFindings((result&&result.findings)||[],knownStdNames);
-  },[result,standardGroups]);
+function SecondaryBtn({ onClick, disabled, children, style }){
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      appearance:"none",cursor:disabled?"not-allowed":"pointer",
+      opacity:disabled?0.45:1,borderRadius:10,
+      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.05)",
+      color:T.textSub,padding:"9px 16px",fontWeight:600,fontSize:13,
+      transition:"all 0.2s",...style,
+    }}>{children}</button>
+  );
+}
 
-  const toCheck=categorised.toCheck;
-  const notes=categorised.notes;
+function GhostBtn({ onClick, children }){
+  return (
+    <button onClick={onClick} style={{
+      appearance:"none",cursor:"pointer",borderRadius:8,
+      border:`1px solid ${T.line}`,background:"transparent",
+      color:T.textMuted,padding:"6px 12px",fontWeight:600,fontSize:12,
+      transition:"all 0.2s",
+    }}>{children}</button>
+  );
+}
 
-  const filteredStandardGroups=useMemo(()=>{
-    const q=search.trim().toLowerCase();
-    if(!q) return standardGroups;
-    return standardGroups.filter(g=>{
-      const hay=[g.name,...(g.directives||[]),...(g.actions||[]),...(g.findings||[]).map(f=>(f.finding||"")+" "+(f.action||""))].join(" ").toLowerCase();
-      return hay.includes(q);
-    });
-  },[search,standardGroups]);
+function AddChipBtn({ onClick, children }){
+  return (
+    <button onClick={onClick} style={{
+      appearance:"none",cursor:"pointer",borderRadius:8,
+      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.05)",
+      color:T.textSub,padding:"5px 11px",fontWeight:600,fontSize:12,
+      transition:"background 0.15s,color 0.15s",
+    }}>{children}</button>
+  );
+}
 
-  const standardsByDirective=useMemo(()=>{
-    const groups={};
-    filteredStandardGroups.forEach(g=>{
-      const d=(g.directives&&g.directives[0])||"OTHER";
-      if(!groups[d]) groups[d]=[];
-      groups[d].push(g);
-    });
-    return groups;
-  },[filteredStandardGroups]);
+// ─── Char counter ─────────────────────────────────────────────────────────────
+function CharCounter({ value, max=1200 }){
+  const len=value.length, pct=Math.min(len/max,1);
+  const color=pct>0.9?T.rose:pct>0.7?T.amber:T.textMuted;
+  return (
+    <span style={{fontSize:11,color,fontWeight:500,fontVariantNumeric:"tabular-nums"}}>
+      {len} / {max}
+    </span>
+  );
+}
 
-  const topRisk=useMemo(()=>{
-    const statuses=[
-      ...((result&&result.findings)||[]).map(f=>f.status).filter(Boolean),
-      ...standardGroups.flatMap(g=>g.statuses||[]),
-    ];
-    return priorityStatus(statuses);
-  },[result,standardGroups]);
+// ─── Topbar ───────────────────────────────────────────────────────────────────
+function Topbar({ result }){
+  const totalStandards=result
+    ?(result?.standard_sections?.length
+      ?result.standard_sections.reduce((n,s)=>n+(s.items||[]).length,0)
+      :(result?.standards||[]).length+(result?.review_items||[]).length)
+    :null;
 
-  function appendChip(chipText){
-    setText(t=>{
-      const trimmed=t.trimEnd();
-      if(!trimmed) return chipText.charAt(0).toUpperCase()+chipText.slice(1);
-      return /[.!?]$/.test(trimmed)?trimmed+" "+chipText:trimmed+", "+chipText;
-    });
-    if(inputRef.current) inputRef.current.focus();
-  }
-
-  const hasResults=!!result;
-  const hasSidebar=hasResults&&toCheck.length>0;
-  const hasLegislations=hasResults&&notes.length>0;
-
-  return(
+  return (
     <div style={{
-      minHeight:"100vh",
-      background:"radial-gradient(ellipse at top left, rgba(133,176,190,0.25), transparent 30%), radial-gradient(ellipse at top right, rgba(204,189,148,0.2), transparent 28%), linear-gradient(180deg,#ddd7cf 0%,#d4cdc4 100%)",
-      padding:"24px 20px 100px",
-      fontFamily:"'DM Sans','Helvetica Neue',Arial,sans-serif",
-      color:"#3d3832",
+      borderBottom:`1px solid ${T.line}`,
+      background:`${T.bgPanel}e0`,
+      backdropFilter:"blur(18px)",
+      padding:"0 24px",
+      display:"flex",alignItems:"center",gap:12,height:52,
+      position:"sticky",top:0,zIndex:100,
     }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800;9..40,900&display=swap');
-        *{box-sizing:border-box;}
-        ::placeholder{color:#b0a89d;}
-        ::-webkit-scrollbar{width:5px;}
-        ::-webkit-scrollbar-thumb{background:rgba(150,140,128,0.35);border-radius:99px;}
-        textarea:focus,input:focus{outline:none;}
-        .chip-btn:hover{background:rgba(255,255,255,0.95)!important;border-color:#b0a89d!important;}
-        .tmpl-btn:hover{background:rgba(255,255,255,0.9)!important;}
-        .run-btn:not(:disabled):hover{filter:brightness(1.06);}
-        .mode-seg-btn:hover{background:rgba(255,255,255,0.18)!important;}
-        .clear-btn:hover{background:rgba(255,255,255,0.95)!important;}
-      `}</style>
-
-      <div style={{maxWidth:1120,margin:"0 auto",display:"grid",gap:14}}>
-
-        {/* ── HEADER ── */}
-        <header style={{
-          display:"flex",alignItems:"center",justifyContent:"space-between",
-          padding:"16px 22px",borderRadius:20,
-          background:"rgba(255,255,255,0.55)",
-          border:"1px solid rgba(183,175,163,0.3)",
-          backdropFilter:"blur(20px)",flexWrap:"wrap",gap:12,
-        }}>
-          <div style={{display:"flex",alignItems:"center",gap:13}}>
-            <div style={{
-              width:40,height:40,borderRadius:12,
-              background:"linear-gradient(135deg,#8fb6c1,#5d848f)",
-              display:"grid",placeItems:"center",
-              color:"white",fontWeight:900,fontSize:14,letterSpacing:"-0.02em",
-            }}>RC</div>
-            <div>
-              <div style={{fontSize:20,fontWeight:900,color:"#2a2520",letterSpacing:"-0.03em",lineHeight:1}}>RegCheck</div>
-              <div style={{fontSize:12,fontWeight:700,color:"#9e9890",marginTop:1}}>EU Product Compliance Analyser</div>
-            </div>
-            <span style={{fontSize:11,fontWeight:800,color:"#8c887f",background:"rgba(0,0,0,0.07)",borderRadius:99,padding:"2px 9px",alignSelf:"flex-start",marginTop:1}}>v3</span>
-          </div>
-
-          {hasResults&&(
-            <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-              {DIR_ORDER.filter(d=>standardsByDirective[d]&&standardsByDirective[d].length).map(d=>(
-                <DirPill key={d} dirKey={d}/>
-              ))}
-            </div>
-          )}
-        </header>
-
-        {/* ── SUMMARY BAR ── */}
-        {hasResults&&(
-          <SummaryBar
-            topRisk={topRisk}
-            standardGroups={standardGroups}
-            standardsByDirective={standardsByDirective}
-            toCheck={toCheck}
-          />
-        )}
-
-        {/* ── INPUT PANEL ── */}
+      <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
         <div style={{
-          borderRadius:22,border:"1px solid rgba(183,175,163,0.3)",
-          background:"rgba(255,255,255,0.65)",
-          backdropFilter:"blur(20px)",overflow:"hidden",
-        }}>
-          {/* Textarea */}
-          <div style={{padding:"18px 20px 0"}}>
-            <textarea
-              ref={inputRef}
-              value={text}
-              onChange={e=>setText(e.target.value)}
-              onKeyDown={e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter") runAnalysis();}}
-              placeholder="Describe the product — e.g. Smart air fryer with Wi-Fi, mains powered, OTA updates, food-contact basket coating..."
-              style={{
-                width:"100%",minHeight:96,resize:"vertical",
-                border:"none",background:"transparent",
-                fontSize:16,lineHeight:1.65,color:"#2e2b27",fontFamily:"inherit",
-              }}
-            />
-          </div>
+          width:28,height:28,borderRadius:8,
+          background:`linear-gradient(135deg,${T.blue},${T.teal})`,
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:13,fontWeight:900,color:"#000",
+        }}>⬡</div>
+        <span style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:18,color:T.text,letterSpacing:"-0.01em"}}>
+          RuleGrid
+        </span>
+      </div>
+      <div style={{width:1,height:20,background:T.line,margin:"0 2px"}}/>
+      <span style={{fontSize:11,color:T.textMuted,fontWeight:500}}>EU Regulatory Scoping</span>
 
-          {/* Quick chips */}
-          <div style={{padding:"10px 20px",borderTop:"1px solid rgba(188,178,165,0.18)"}}>
-            <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
-              <span style={{fontSize:11,fontWeight:800,color:"#b0a89d",letterSpacing:"0.1em",marginRight:2,textTransform:"uppercase"}}>Add</span>
-              {QUICK_CHIPS.map(chip=>(
-                <button key={chip.label} type="button" className="chip-btn"
-                  onClick={()=>appendChip(chip.text)}
-                  style={{
-                    padding:"5px 12px",borderRadius:99,
-                    border:"1px solid rgba(200,192,182,0.7)",
-                    background:"rgba(255,255,255,0.65)",
-                    color:"#5c5750",fontWeight:700,fontSize:13,
-                    cursor:"pointer",transition:"all 0.12s",fontFamily:"inherit",
-                  }}>
-                  {chip.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Controls row */}
-          <div style={{
-            padding:"12px 20px 16px",
-            borderTop:"1px solid rgba(188,178,165,0.18)",
-            display:"flex",alignItems:"center",
-            justifyContent:"space-between",gap:12,flexWrap:"wrap",
-          }}>
-            {/* Templates */}
-            <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
-              <span style={{fontSize:11,fontWeight:800,color:"#b0a89d",letterSpacing:"0.1em",marginRight:2,textTransform:"uppercase"}}>Template</span>
-              {PRODUCT_TEMPLATES.map(tpl=>(
-                <button key={tpl.label} type="button" className="tmpl-btn"
-                  onClick={()=>{setText(tpl.text);if(inputRef.current) inputRef.current.focus();}}
-                  style={{
-                    padding:"5px 12px",borderRadius:99,
-                    border:"1px solid rgba(200,192,182,0.7)",
-                    background:text===tpl.text?"rgba(143,182,193,0.2)":"rgba(255,255,255,0.55)",
-                    color:text===tpl.text?"#3e7080":"#5c5750",
-                    fontWeight:700,fontSize:13,cursor:"pointer",
-                    transition:"all 0.12s",fontFamily:"inherit",
-                  }}>
-                  {tpl.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Action group */}
-            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-              {/* Mode selector */}
-              <div style={{display:"flex",borderRadius:12,border:"1px solid rgba(197,190,180,0.7)",overflow:"hidden",background:"rgba(255,255,255,0.45)"}}>
-                {[["quick","Quick"],["standard","Standard"],["deep","Deep"]].map(([val,lbl])=>{
-                  const active=mode===val;
-                  return(
-                    <button key={val} type="button" className="mode-seg-btn"
-                      onClick={()=>setMode(val)}
-                      style={{
-                        padding:"7px 15px",border:"none",
-                        borderRight:val!=="deep"?"1px solid rgba(197,190,180,0.5)":"none",
-                        background:active?"linear-gradient(180deg,#6f9199,#567a82)":"transparent",
-                        color:active?"#fffdf8":"#7f7a71",
-                        fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"inherit",
-                      }}>
-                      {lbl}
-                    </button>
-                  );
-                })}
-              </div>
-              <button type="button" className="clear-btn"
-                onClick={()=>{setText("");setResult(null);setError("");}}
-                style={{
-                  padding:"8px 15px",borderRadius:11,
-                  border:"1px solid rgba(197,190,180,0.7)",
-                  background:"rgba(255,255,255,0.72)",
-                  color:"#6f6a61",fontWeight:700,fontSize:13,
-                  cursor:"pointer",fontFamily:"inherit",transition:"all 0.12s",
-                }}>Clear</button>
-              <button type="button" disabled={loading||!text.trim()} className="run-btn"
-                onClick={()=>runAnalysis()}
-                style={{
-                  padding:"8px 22px",borderRadius:11,
-                  border:"1px solid #5a8188",
-                  background:loading||!text.trim()
-                    ?"linear-gradient(180deg,#a7b7bb,#95a4a8)"
-                    :"linear-gradient(180deg,#6f9199,#567a82)",
-                  color:"#fffdf8",fontWeight:900,fontSize:14,
-                  cursor:loading||!text.trim()?"not-allowed":"pointer",
-                  boxShadow:loading||!text.trim()?"none":"0 6px 20px rgba(86,122,130,0.25)",
-                  transition:"all 0.14s",fontFamily:"inherit",letterSpacing:"-0.01em",
-                }}>
-                {loading?"Analysing…":"Run analysis →"}
-              </button>
-            </div>
-          </div>
+      {result&&(
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+          <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
+          {totalStandards!==null&&(
+            <span style={{
+              fontSize:11,color:T.textMuted,fontWeight:600,
+              background:"rgba(255,255,255,0.05)",border:`1px solid ${T.line}`,
+              borderRadius:6,padding:"3px 9px",
+            }}>
+              {totalStandards} standard{totalStandards!==1?"s":""}
+            </span>
+          )}
         </div>
+      )}
+    </div>
+  );
+}
 
-        {/* Error */}
-        {error&&(
-          <div style={{borderRadius:14,border:"1px solid #e3c7cf",background:"#f9edf1",color:"#906878",padding:"13px 16px",fontSize:14}}>
-            {error}
+// ─── Hero ─────────────────────────────────────────────────────────────────────
+function Hero({ result }){
+  const hero=result?.hero_summary||{};
+  const primaryRegimes=hero.primary_regimes||[];
+  const showMeta=Boolean(result);
+
+  return (
+    <div style={{
+      borderRadius:20,border:`1px solid ${T.lineStrong}`,
+      background:"linear-gradient(145deg,#1e2236,#1a1d2e 55%,#1d2238)",
+      boxShadow:`${T.shadowLg},0 0 80px rgba(99,172,255,0.06)`,
+      padding:"32px 28px",position:"relative",overflow:"hidden",
+    }}>
+      <div style={{position:"absolute",inset:0,pointerEvents:"none",backgroundImage:`linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)`,backgroundSize:"40px 40px"}}/>
+      <div style={{position:"absolute",top:-80,left:"50%",transform:"translateX(-50%)",width:500,height:240,background:"radial-gradient(ellipse,rgba(99,172,255,0.09),transparent 70%)",pointerEvents:"none"}}/>
+
+      <div style={{position:"relative",display:"grid",gap:16,justifyItems:"center",textAlign:"center"}}>
+        {showMeta&&(
+          <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
+            <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
+            <Chip tone="blue">{titleCase(hero.confidence||result?.product_match_confidence||"low")} Confidence</Chip>
           </div>
         )}
+        <div>
+          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:400,color:T.text,lineHeight:1.08,letterSpacing:"-0.02em",marginBottom:12}}>
+            {hero.title||"RuleGrid Regulatory Scoping"}
+          </div>
+          <div style={{fontSize:14,color:T.textSub,lineHeight:1.75,maxWidth:600,margin:"0 auto"}}>
+            {hero.subtitle||"Describe the product clearly to generate the standards route and the applicable legislation path."}
+          </div>
+        </div>
+        {showMeta&&primaryRegimes.length>0&&(
+          <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
+            {primaryRegimes.map(dirKey=><DirPill key={dirKey} dirKey={dirKey} large/>)}
+          </div>
+        )}
+        {showMeta&&result?.summary&&(
+          <div style={{
+            maxWidth:680,padding:"12px 18px",borderRadius:12,
+            background:"rgba(99,172,255,0.07)",border:`1px solid rgba(99,172,255,0.16)`,
+            fontSize:13,color:T.textSub,lineHeight:1.7,textAlign:"left",
+          }}>{result.summary}</div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-        {/* ── RESULTS ── */}
-        {hasResults&&(
-          <div style={{display:"grid",gridTemplateColumns:hasSidebar?"1fr 272px":"1fr",gap:14,alignItems:"start"}}>
-
-            {/* LEFT: Standards panel */}
-            <div style={{display:"grid",gap:14}}>
-              <div style={{
-                borderRadius:22,border:"1px solid rgba(183,175,163,0.28)",
-                background:"rgba(255,255,255,0.62)",backdropFilter:"blur(18px)",overflow:"hidden",
-              }}>
-                {/* Standards header */}
-                <div style={{
-                  padding:"16px 20px 14px",
-                  borderBottom:"1px solid rgba(188,178,165,0.22)",
-                  display:"flex",alignItems:"center",justifyContent:"space-between",
-                  gap:12,flexWrap:"wrap",
-                }}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:17,fontWeight:900,color:"#3a3630",letterSpacing:"-0.02em"}}>Applicable Standards</span>
-                    <span style={{
-                      minWidth:26,height:24,padding:"0 9px",borderRadius:99,
-                      background:"#eef2f0",border:"1px solid #d6ddd8",
-                      color:"#5b6862",fontWeight:900,fontSize:13,
-                      display:"inline-flex",alignItems:"center",justifyContent:"center",
-                    }}>{filteredStandardGroups.length}</span>
-                  </div>
-                  <input
-                    value={search}
-                    onChange={e=>setSearch(e.target.value)}
-                    placeholder="Filter standards…"
-                    style={{
-                      width:210,borderRadius:11,
-                      border:"1px solid rgba(198,189,177,0.7)",
-                      background:"rgba(255,255,255,0.8)",
-                      padding:"8px 13px",fontSize:14,
-                      color:"#46413a",fontFamily:"inherit",
-                    }}
-                  />
+// ─── Sidebar rail ─────────────────────────────────────────────────────────────
+function SidebarRail({ result }){
+  if(!result) return null;
+  const items=buildCompactLegislationItems(result);
+  const confidence=result?.confidence_panel?.confidence||result?.product_match_confidence||"low";
+  return (
+    <aside className="left-rail" style={{display:"grid",gap:12,position:"sticky",top:68,alignSelf:"start"}}>
+      <Card>
+        <CardHeader title="Applicable legislation" subtitle="All detected legislation"/>
+        <div style={{padding:"12px 14px",display:"grid",gap:7}}>
+          {items.map(item=>{
+            const tone=directiveTone(item.directive_key||"OTHER");
+            return (
+              <div key={`${item.code}-${item.directive_key}-${item.section_key}`}
+                style={{borderRadius:10,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"9px 11px",display:"grid",gap:4}}>
+                <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
+                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot}}/>
+                  <span style={{fontSize:12,fontWeight:700,color:tone.text}}>{item.code}</span>
+                  <span style={{fontSize:10,opacity:0.75,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:tone.text}}>
+                    {compactLegislationGroupLabel(item)}
+                  </span>
                 </div>
-
-                {/* Standards lanes */}
-                <div style={{padding:"14px 14px",display:"grid",gap:10}}>
-                  {!filteredStandardGroups.length
-                    ?<EmptyState title="No standards found" subtitle="Run analysis with a more detailed product description."/>
-                    :DIR_ORDER.filter(d=>standardsByDirective[d]&&standardsByDirective[d].length).map(directive=>(
-                      <DirectiveLane
-                        key={directive}
-                        dirKey={directive}
-                        groups={standardsByDirective[directive]}
-                        expandedStandards={expandedStandards}
-                        onToggleStandard={key=>setExpandedStandards(prev=>{
-                          const next={...prev};next[key]=!prev[key];return next;
-                        })}
-                      />
-                    ))
-                  }
-                </div>
+                <div style={{fontSize:11,lineHeight:1.45,color:T.textSub,fontWeight:500}}>{item.title}</div>
               </div>
+            );
+          })}
+        </div>
+      </Card>
 
-              {/* Applicable Legislations — full width below standards */}
-              {hasLegislations&&(
-                <div style={{
-                  borderRadius:22,border:"1px solid rgba(183,175,163,0.28)",
-                  background:"rgba(255,255,255,0.62)",backdropFilter:"blur(18px)",overflow:"hidden",
-                }}>
-                  <div
-                    onClick={()=>setLegsOpen(o=>!o)}
-                    style={{
-                      padding:"16px 20px 14px",cursor:"pointer",
-                      borderBottom:legsOpen?"1px solid rgba(188,178,165,0.22)":"none",
-                      display:"flex",alignItems:"center",gap:10,
-                      background:"rgba(255,255,255,0.3)",
-                    }}
-                  >
-                    <span style={{fontSize:17,fontWeight:900,color:"#3a3630",flex:1,letterSpacing:"-0.02em"}}>Applicable Legislations</span>
-                    <span style={{
-                      minWidth:26,height:24,padding:"0 9px",borderRadius:99,
-                      background:"#eef2f0",border:"1px solid #d6ddd8",
-                      color:"#5b6862",fontWeight:900,fontSize:13,
-                      display:"inline-flex",alignItems:"center",justifyContent:"center",
-                    }}>{notes.length}</span>
-                    <span style={{
-                      fontSize:11,color:"#9e9890",fontWeight:900,
-                      transform:legsOpen?"rotate(180deg)":"rotate(0deg)",
-                      display:"inline-block",transition:"transform 0.2s",
-                    }}>▾</span>
-                  </div>
-                  {legsOpen&&(
-                    <div style={{padding:"14px",display:"grid",gap:10}}>
-                      {notes.map((f,i)=>(
-                        <LegislationItem key={f._i+"-"+i} finding={f}/>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+      <Card>
+        <CardHeader title="Detection" subtitle="Product identification"/>
+        <div style={{padding:"12px 14px",display:"grid",gap:8}}>
+          <SoftBox>
+            <Label>Detected product</Label>
+            <div style={{fontSize:16,fontWeight:700,color:T.text}}>{titleCase(result?.product_type||"Unclear")}</div>
+          </SoftBox>
+          <SoftBox>
+            <Label>Confidence</Label>
+            <Chip tone="blue">{titleCase(confidence)}</Chip>
+          </SoftBox>
+          {result?.overall_risk&&(
+            <SoftBox>
+              <Label>Overall risk</Label>
+              <RiskBadge value={result.overall_risk}/>
+            </SoftBox>
+          )}
+        </div>
+      </Card>
+    </aside>
+  );
+}
+
+// ─── Input composer ───────────────────────────────────────────────────────────
+function InputComposer({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }){
+  const [focused,setFocused]=useState(false);
+  const charMax=1200;
+  const wordCount=description.trim()?description.trim().split(/\s+/).length:0;
+
+  return (
+    <Card>
+      <CardHeader
+        title="Product description"
+        subtitle="Product type · connectivity · power source · key functions · sensors · materials · battery"
+      />
+      <div style={{padding:"16px 18px",display:"grid",gap:14}}>
+        <div>
+          <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Quick fill</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {templates.slice(0,4).map(template=>(
+              <button key={template.label} onClick={()=>{ setDescription(template.text); onDirty(true); }} style={{
+                appearance:"none",cursor:"pointer",borderRadius:8,
+                border:`1px solid rgba(99,172,255,0.22)`,background:"rgba(99,172,255,0.08)",
+                color:T.blue,padding:"6px 14px",fontSize:12,fontWeight:600,transition:"all 0.15s",
+              }}>{template.label}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{position:"relative"}}>
+          <textarea
+            value={description}
+            onChange={e=>{ setDescription(e.target.value); onDirty(true); }}
+            onFocus={()=>setFocused(true)}
+            onBlur={()=>setFocused(false)}
+            placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
+            rows={7}
+            maxLength={charMax}
+            style={{
+              width:"100%",borderRadius:12,resize:"vertical",minHeight:160,lineHeight:1.75,
+              border:`1px solid ${focused?T.lineFocus:T.lineStrong}`,
+              background:"rgba(0,0,0,0.28)",padding:"13px 15px 32px",
+              color:T.text,outline:"none",fontSize:14,
+              boxShadow:focused?"0 0 0 3px rgba(99,172,255,0.09)":"none",
+              transition:"border-color 0.2s,box-shadow 0.2s",
+              boxSizing:"border-box",
+            }}
+          />
+          <div style={{position:"absolute",bottom:10,right:12,pointerEvents:"none"}}>
+            <CharCounter value={description} max={charMax}/>
+          </div>
+        </div>
+        {chips.length>0&&(
+          <div>
+            <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Add detail</div>
+            <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+              {chips.map(chip=>(
+                <AddChipBtn key={chip.label+chip.text} onClick={()=>{ setDescription(cur=>joinText(cur,chip.text)); onDirty(true); }}>
+                  + {chip.label}
+                </AddChipBtn>
+              ))}
             </div>
+          </div>
+        )}
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+            <PrimaryBtn onClick={onAnalyze} disabled={busy||!description.trim()}>
+              {busy?(<span style={{display:"flex",alignItems:"center",gap:8}}><span className="spin">◌</span> Analyzing…</span>):("Analyze product")}
+            </PrimaryBtn>
+            <SecondaryBtn onClick={()=>{ setDescription(""); onDirty(true); }} disabled={!description}>Clear</SecondaryBtn>
+          </div>
+          {wordCount>0&&!busy&&(
+            <span style={{fontSize:11,color:T.textMuted,fontStyle:"italic"}}>{wordCount} word{wordCount!==1?"s":""}</span>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
 
-            {/* RIGHT: Things to check sidebar */}
-            {hasSidebar&&(
-              <div style={{
-                borderRadius:20,overflow:"hidden",
-                border:"1px solid "+DIR.ROHS.ring,
-                background:"rgba(255,255,255,0.62)",
-                backdropFilter:"blur(18px)",
-              }}>
-                {/* Sidebar header */}
-                <div style={{
-                  padding:"15px 16px 12px",
-                  borderBottom:"1px solid "+DIR.ROHS.ring,
-                  background:DIR.ROHS.header,
-                }}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:16,fontWeight:900,color:DIR.ROHS.ink,flex:1,letterSpacing:"-0.01em"}}>Things to Check</span>
-                    <span style={{
-                      minWidth:24,height:24,padding:"0 8px",borderRadius:99,
-                      background:DIR.ROHS.ring,color:DIR.ROHS.ink,
-                      fontWeight:900,fontSize:12,
-                      display:"inline-flex",alignItems:"center",justifyContent:"center",
-                    }}>{toCheck.length}</span>
-                  </div>
-                  <div style={{marginTop:6,fontSize:13,color:"#7a6030",lineHeight:1.5}}>
-                    Potentially applicable — verify before scoping out.
-                  </div>
+// ─── Guidance strip ───────────────────────────────────────────────────────────
+function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
+  const items=buildGuidanceItems(result);
+  if(!items.length) return null;
+  return (
+    <Card>
+      <CardHeader
+        title="Clarify these first"
+        subtitle="Compact input gaps that can materially change the standards route."
+        right={<PrimaryBtn onClick={onReanalyze} disabled={!dirty||busy}>{busy?"Analyzing…":dirty?"Refresh route →":"Route current"}</PrimaryBtn>}
+      />
+      <div style={{padding:"14px 16px",display:"grid",gap:10}}>
+        <div className="guidance-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10}}>
+          {items.map(item=>{
+            const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
+            return (
+              <div key={item.key} style={{borderRadius:12,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"12px 13px",display:"grid",gap:8}}>
+                <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"space-between"}}>
+                  <div style={{fontSize:12,fontWeight:700,color:tone.text}}>{item.title}</div>
+                  <span style={{width:6,height:6,borderRadius:999,background:tone.text,flexShrink:0}}/>
                 </div>
-                <div style={{padding:"12px",display:"grid",gap:9}}>
-                  {toCheck.map((f,i)=>(
-                    <CheckItem key={f._i+"-"+i} finding={f} index={i}/>
+                <div style={{fontSize:12,color:"rgba(255,255,255,0.68)",lineHeight:1.5}}>{item.why}</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {item.choices.map(choice=>(
+                    <button key={choice} onClick={()=>onApply(choice)} style={{
+                      appearance:"none",cursor:"pointer",borderRadius:6,
+                      border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.2)",
+                      color:tone.text,padding:"4px 9px",fontSize:11,fontWeight:600,
+                    }}>+ {choice}</button>
                   ))}
                 </div>
               </div>
-            )}
+            );
+          })}
+        </div>
+        {dirty&&(
+          <div style={{fontSize:12,color:T.amber,fontWeight:600,display:"flex",alignItems:"center",gap:7,paddingTop:2}}>
+            <span style={{width:5,height:5,borderRadius:999,background:T.amber,display:"inline-block"}}/>
+            Input updated — refresh route to apply changes.
           </div>
         )}
+      </div>
+    </Card>
+  );
+}
 
+// ─── Route snapshot ───────────────────────────────────────────────────────────
+function StandardsOverview({ result }){
+  const breakdown=buildDirectiveBreakdown(result);
+  if(!breakdown.length) return null;
+  const total=breakdown.reduce((n,{count})=>n+count,0);
+  return (
+    <Card>
+      <CardHeader title="Route snapshot" subtitle={`${total} standards across ${breakdown.length} directive${breakdown.length!==1?"s":""}.`}/>
+      <div style={{padding:"14px 16px"}}>
+        <div className="snapshot-grid" style={{display:"grid",gridTemplateColumns:"repeat(6,minmax(0,1fr))",gap:8}}>
+          {breakdown.map(({key,count})=>{
+            const tone=directiveTone(key);
+            const barPct=Math.max(12,Math.round((count/total)*100));
+            return (
+              <div key={key} style={{borderRadius:12,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"12px 10px",display:"grid",gap:6}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot}}/>
+                  <div style={{fontSize:11,fontWeight:700,color:tone.text}}>{directiveShort(key)}</div>
+                </div>
+                <div style={{fontSize:28,lineHeight:1,fontWeight:800,color:T.text}}>{count}</div>
+                <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,0.08)",overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${barPct}%`,borderRadius:999,background:tone.dot,transition:"width 0.6s ease"}}/>
+                </div>
+                <div style={{fontSize:10,color:T.textMuted,letterSpacing:"0.04em"}}>standard{count!==1?"s":""}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ─── Standard card ────────────────────────────────────────────────────────────
+function StandardCard({ item, sectionKey }){
+  const dirKey=normalizeStandardDirective(item);
+  const dirTone=directiveTone(dirKey);
+  const sectionTone=SECTION_TONES[sectionKey]||SECTION_TONES.unknown;
+  const evidence=sentenceCaseList(item.evidence_hint||[]).join(" · ");
+  const summary=item.standard_summary||item.reason||item.notes||item.title;
+
+  const metaFields=[
+    {label:"Harmonized Reference", value:prettyValue(item.harmonized_reference)},
+    {label:"Evidence Expected",    value:prettyValue(evidence||"—")},
+    {label:"Harmonized Version",   value:prettyValue(item.dated_version)},
+    {label:"EU Latest Version",    value:prettyValue(item.version)},
+  ];
+
+  return (
+    <div style={{
+      borderRadius:14,border:`1px solid ${dirTone.bd}`,
+      background:"rgba(255,255,255,0.04)",
+      overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.25)",
+    }}>
+      <div style={{
+        padding:"13px 15px 11px",
+        background:`linear-gradient(135deg,${dirTone.bg},transparent)`,
+        borderBottom:`1px solid ${T.line}`,display:"grid",gap:10,
+      }}>
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",justifyContent:"space-between"}}>
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <DirPill dirKey={dirKey}/>
+            <span style={{
+              display:"inline-flex",alignItems:"center",borderRadius:6,
+              background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
+              color:sectionTone.tagText,padding:"2px 8px",fontSize:10,fontWeight:700,
+              textTransform:"uppercase",letterSpacing:"0.08em",
+            }}>{titleCase(item.harmonization_status||"unknown")}</span>
+          </div>
+          <span style={{
+            display:"inline-flex",alignItems:"center",borderRadius:8,
+            background:dirTone.dot,color:"#000",
+            padding:"7px 13px",fontSize:14,fontWeight:800,
+            letterSpacing:"-0.02em",whiteSpace:"nowrap",flexShrink:0,
+          }}>{item.code}</span>
+        </div>
+        <div>
+          <div style={{fontSize:14,fontWeight:700,color:T.text,lineHeight:1.35}}>{item.title}</div>
+          <div style={{marginTop:5,fontSize:12,color:T.textSub,lineHeight:1.7}}>{summary}</div>
+        </div>
+      </div>
+
+      <div className="standard-meta-grid" style={{padding:14,display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8}}>
+        {metaFields.map(({label,value})=>(
+          <SoftBox key={label}>
+            <Label>{label}</Label>
+            <Value>{value}</Value>
+          </SoftBox>
+        ))}
       </div>
     </div>
   );
-} 
+}
+
+// ─── Collapsible section wrapper ──────────────────────────────────────────────
+
+
+// ─── Standards section ────────────────────────────────────────────────────────
+function StandardsSection({ result }){
+  const sections=(result?.standard_sections||[])
+    .map(section=>({
+      ...section,
+      items:sortStandardItems((section.items||[]).map(item=>({ ...item, directive:normalizeStandardDirective(item) }))),
+    }))
+    .sort((a,b)=>directiveRank(a.key)-directiveRank(b.key));
+
+  if(!sections.length) return null;
+
+  return (
+    <Card>
+      <CardHeader title="Standards route" subtitle="Primary output · ordered LVD → EMC → RED → RED Cyber."/>
+      <div style={{padding:"14px 16px",display:"grid",gap:14}}>
+        {sections.map((section,i)=>{
+          const tone=directiveTone(section.key);
+          return (
+            <div key={section.key} style={{borderRadius:14,border:`1px solid ${tone.bd}`,background:`linear-gradient(135deg,${tone.bg},transparent)`,overflow:"hidden"}}>
+              <div style={{padding:"12px 14px",borderBottom:`1px solid ${tone.bd}`,display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:T.text}}>{section.title||directiveShort(section.key)}</div>
+                  <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>{section.count||0} item{(section.count||0)!==1?"s":""}</div>
+                </div>
+                <DirPill dirKey={section.key}/>
+              </div>
+              <div style={{padding:14,display:"grid",gap:12}}>
+                {(section.items||[]).map(item=>(
+                  <StandardCard key={`${section.key}-${item.code}-${item.title}-${i}`} item={item} sectionKey={item.harmonization_status||"unknown"}/>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+// ─── Diagnostics panel ────────────────────────────────────────────────────────
+function DiagnosticsPanel({ result }){
+  const [open,setOpen]=useState(false);
+  const diagnostics=result?.diagnostics||[];
+  const traits=result?.all_traits||[];
+  if(!diagnostics.length&&!traits.length) return null;
+  return (
+    <Card>
+      <CardHeader
+        title="Advanced diagnostics"
+        subtitle="Trait detection and engine output."
+        right={<GhostBtn onClick={()=>setOpen(v=>!v)}>{open?"Hide diagnostics":"Show diagnostics"}</GhostBtn>}
+      />
+      {open&&(
+        <div style={{padding:"12px 16px 16px",display:"grid",gap:12}}>
+          {traits.length>0&&(
+            <SoftBox>
+              <Label>All traits detected</Label>
+              <div style={{display:"flex",gap:7,flexWrap:"wrap",marginTop:8}}>
+                {traits.map(trait=><Chip key={trait}>{titleCase(trait)}</Chip>)}
+              </div>
+            </SoftBox>
+          )}
+          {diagnostics.length>0&&(
+            <SoftBox>
+              <Label>Engine diagnostics</Label>
+              <div style={{marginTop:8,display:"grid",gap:6}}>
+                {diagnostics.map((line,i)=>(
+                  <div key={line+i} style={{fontSize:12,color:T.textSub,lineHeight:1.65,paddingLeft:12,borderLeft:`2px solid ${T.line}`}}>{line}</div>
+                ))}
+              </div>
+            </SoftBox>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─── Copy button ──────────────────────────────────────────────────────────────
+function CopyResultsButton({ result, description }){
+  const [copied,setCopied]=useState(false);
+  const handleCopy=async()=>{
+    const sections=result?.standard_sections?.length?result.standard_sections:buildSectionsFromFlatResult(result);
+    const text=[
+      "RuleGrid compliance summary","",
+      `Input: ${description}`,"",
+      `Detected product: ${titleCase(result?.product_type||"Unclear")}`,
+      `Confidence: ${titleCase(result?.product_match_confidence||"low")}`,
+      `Overall risk: ${result?.overall_risk||"MEDIUM"}`,"",
+      `Summary: ${result?.summary||""}`,"",
+      "Standards route:",
+      ...sections.flatMap(section=>[
+        `- ${section.title} (${section.count})`,
+        ...sortStandardItems(section.items||[]).map(item=>`  • ${item.code} — ${item.title}`),
+      ]),"",
+      "Applicable legislation:",
+      ...buildCompactLegislationItems(result).map(item=>`- ${item.code} — ${item.title}`),
+    ].join("\n");
+    try{ await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2200); }catch(_){}
+  };
+  return (
+    <SecondaryBtn onClick={handleCopy} style={copied?{color:T.green,borderColor:"rgba(74,222,128,0.3)"}:{}}>
+      {copied?"✓ Copied to clipboard":"Copy summary"}
+    </SecondaryBtn>
+  );
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+function EmptyState(){
+  const steps=[
+    {icon:"01",label:"Describe the product",text:"Product type, power source, connectivity, key functions."},
+    {icon:"02",label:"Add detail",text:"Materials (food-contact), sensors, battery, certifications needed."},
+    {icon:"03",label:"Refine iteratively",text:"Use the guidance strip to clarify traits and refresh the route."},
+  ];
+  return (
+    <Card style={{border:`1px dashed ${T.line}`}}>
+      <div style={{padding:"36px 28px",display:"grid",gap:24,justifyItems:"center",textAlign:"center"}}>
+        <div style={{
+          width:60,height:60,borderRadius:18,
+          border:`1px solid rgba(99,172,255,0.2)`,background:"rgba(99,172,255,0.07)",
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,
+        }}>⬡</div>
+        <div>
+          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:22,color:T.text,marginBottom:8}}>Ready for analysis</div>
+          <div style={{fontSize:13,color:T.textSub,lineHeight:1.75,maxWidth:440}}>
+            Enter a product description above to generate the standards route and legislation overview.
+          </div>
+        </div>
+        <div style={{display:"grid",gap:10,width:"100%",maxWidth:480,textAlign:"left"}}>
+          {steps.map(step=>(
+            <div key={step.icon} style={{
+              display:"flex",gap:14,alignItems:"flex-start",
+              padding:"10px 14px",borderRadius:12,
+              background:"rgba(255,255,255,0.03)",border:`1px solid ${T.line}`,
+            }}>
+              <span style={{
+                fontSize:10,fontWeight:800,color:T.blue,letterSpacing:"0.08em",
+                background:"rgba(99,172,255,0.10)",border:`1px solid rgba(99,172,255,0.18)`,
+                borderRadius:6,padding:"3px 7px",flexShrink:0,marginTop:1,
+              }}>{step.icon}</span>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:T.text,marginBottom:2}}>{step.label}</div>
+                <div style={{fontSize:12,color:T.textSub,lineHeight:1.6}}>{step.text}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ─── Error card ───────────────────────────────────────────────────────────────
+function ErrorCard({ message }){
+  return (
+    <div style={{
+      borderRadius:14,border:`1px solid rgba(248,113,113,0.28)`,
+      background:"rgba(248,113,113,0.07)",padding:"14px 18px",
+      display:"flex",gap:12,alignItems:"flex-start",
+    }}>
+      <span style={{fontSize:16,flexShrink:0,marginTop:1,color:T.rose}}>⚠</span>
+      <div>
+        <div style={{fontSize:13,fontWeight:700,color:"#fb7185",marginBottom:4}}>Analysis error</div>
+        <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{message}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Scroll-to-top ────────────────────────────────────────────────────────────
+function ScrollTopBtn({ visible }){
+  return (
+    <button
+      onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}
+      style={{
+        position:"fixed",bottom:28,right:28,zIndex:200,
+        width:40,height:40,borderRadius:12,
+        border:`1px solid ${T.lineStrong}`,background:T.bgCard,
+        color:T.textSub,fontSize:16,cursor:"pointer",
+        boxShadow:T.shadow,display:"flex",alignItems:"center",justifyContent:"center",
+        opacity:visible?1:0,pointerEvents:visible?"auto":"none",
+        transition:"opacity 0.3s",
+      }}
+      title="Back to top"
+    >↑</button>
+  );
+}
+
+// ─── Root app ─────────────────────────────────────────────────────────────────
+export default function App(){
+  const [description,setDescription]=useState("");
+  const [result,setResult]=useState(null);
+  const [metadata,setMetadata]=useState(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState("");
+  const [clarifyDirty,setClarifyDirty]=useState(false);
+  const [scrolled,setScrolled]=useState(false);
+  const resultsRef=useRef(null);
+
+  useEffect(()=>{
+    const onScroll=()=>setScrolled(window.scrollY>400);
+    window.addEventListener("scroll",onScroll,{passive:true});
+    return()=>window.removeEventListener("scroll",onScroll);
+  },[]);
+
+  useEffect(()=>{
+    let active=true;
+    fetch(METADATA_URL)
+      .then(res=>{ if(!res.ok) throw new Error(`Metadata failed (${res.status})`); return res.json(); })
+      .then(data=>{ if(active) setMetadata(data); })
+      .catch(()=>{ if(active) setMetadata({traits:[],products:[],legislations:[]}); });
+    return()=>{ active=false; };
+  },[]);
+
+  const templates=useMemo(()=>{
+    const dynamic=buildDynamicTemplates(metadata?.products||[]);
+    return dynamic.length?dynamic:DEFAULT_TEMPLATES;
+  },[metadata]);
+
+  const chips=useMemo(()=>{
+    const backend=(result?.suggested_quick_adds||[]).map(item=>({ label:titleCase(item.label), text:item.text }));
+    const frontend=buildGuidedChips(metadata,result);
+    return uniqueBy([...backend,...frontend], item=>item.text).slice(0,12);
+  },[metadata,result]);
+
+  useEffect(()=>{
+    if(!result||!resultsRef.current) return;
+    const timer=window.setTimeout(()=>resultsRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),80);
+    return()=>window.clearTimeout(timer);
+  },[result]);
+
+  const runAnalysis=useCallback(async()=>{
+    const payloadDescription=String(description||"").trim();
+    if(!payloadDescription) return;
+    setBusy(true); setError("");
+    try{
+      const response=await fetch(ANALYZE_URL,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ description:payloadDescription, depth:"deep" }),
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data?.detail||`Analysis failed (${response.status})`);
+      setResult(data); setClarifyDirty(false);
+    }catch(err){
+      setError(err?.message||"Analysis failed.");
+    }finally{
+      setBusy(false);
+    }
+  },[description]);
+
+  return (
+    <div style={{minHeight:"100vh",background:T.bg}}>
+      <style>{globalCss}</style>
+      <Topbar result={result}/>
+
+      <div style={{maxWidth:1380,margin:"0 auto",padding:"22px 20px 72px"}}>
+        <div className="app-shell-grid">
+          <div className="left-rail-slot">{result?<SidebarRail result={result}/>:null}</div>
+
+          <main style={{display:"grid",gap:14,minWidth:0}}>
+            <Hero result={result}/>
+
+            <InputComposer
+              description={description}
+              setDescription={setDescription}
+              templates={templates}
+              chips={chips}
+              onAnalyze={runAnalysis}
+              busy={busy}
+              onDirty={setClarifyDirty}
+            />
+
+            {error&&<ErrorCard message={error}/>}
+            <div ref={resultsRef}/>
+
+            {!result?(
+              <EmptyState/>
+            ):(
+              <>
+                <GuidanceStrip
+                  result={result}
+                  dirty={clarifyDirty}
+                  busy={busy}
+                  onReanalyze={runAnalysis}
+                  onApply={text=>{
+                    setDescription(cur=>{ const next=joinText(cur,text); if(next!==cur) setClarifyDirty(true); return next; });
+                  }}
+                />
+                <StandardsOverview result={result}/>
+                <StandardsSection result={result}/>
+                <DiagnosticsPanel result={result}/>
+
+                <div style={{display:"flex",justifyContent:"flex-end",gap:10,flexWrap:"wrap"}}>
+                  <CopyResultsButton result={result} description={description}/>
+                  <SecondaryBtn onClick={runAnalysis} disabled={busy||!description.trim()}>Re-run analysis</SecondaryBtn>
+                </div>
+              </>
+            )}
+          </main>
+        </div>
+      </div>
+
+      <ScrollTopBtn visible={scrolled}/>
+    </div>
+  );
+}
+
+// ─── Global CSS ───────────────────────────────────────────────────────────────
+const globalCss=`
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body,#root{
+    min-height:100%;
+    font-family:'DM Sans',ui-sans-serif,system-ui,sans-serif;
+    color:${T.text};
+    background:${T.bg};
+    -webkit-font-smoothing:antialiased;
+  }
+  button,input,select,textarea{ font:inherit; color:inherit; }
+  textarea::placeholder{ color:${T.textMuted}; }
+  textarea::-webkit-scrollbar{ width:5px; }
+  textarea::-webkit-scrollbar-track{ background:transparent; }
+  textarea::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.12); border-radius:3px; }
+
+  .app-shell-grid{
+    display:grid;
+    grid-template-columns:260px minmax(0,1fr);
+    gap:16px;
+    align-items:start;
+  }
+  .left-rail-slot{ min-width:0; }
+
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .spin{ animation:spin 0.75s linear infinite; }
+
+  button:not(:disabled):hover{ filter:brightness(1.12); }
+  button:not(:disabled):active{ filter:brightness(0.95); transform:scale(0.99); }
+
+  @media(max-width:1120px){
+    .snapshot-grid{ grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+  }
+  @media(max-width:1040px){
+    .app-shell-grid{ grid-template-columns:1fr; }
+    .left-rail,.left-rail-slot{ position:static !important; top:auto !important; }
+    .snapshot-grid{ grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+  }
+  @media(max-width:960px){
+    .guidance-grid{ grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+    .snapshot-grid{ grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+  }
+  @media(max-width:680px){
+    .guidance-grid,.snapshot-grid,.standard-meta-grid{ grid-template-columns:1fr !important; }
+  }
+`;
