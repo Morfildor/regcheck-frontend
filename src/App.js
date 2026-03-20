@@ -5,45 +5,47 @@ const ANALYZE_URL =
   "https://regcheck-api.onrender.com/analyze";
 const METADATA_URL = ANALYZE_URL.replace(/\/analyze$/, "/metadata/options");
 
-// ─── Design tokens ─────────────────────────────────────────────────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const T = {
-  bg:          "#0c0e18",
-  bgPanel:     "#13151f",
-  bgCard:      "#1a1d2c",
-  bgCardInner: "#20243a",
-  bgCardDeep:  "#161928",
-  line:        "rgba(255,255,255,0.07)",
-  lineStrong:  "rgba(255,255,255,0.12)",
-  lineFocus:   "rgba(99,172,255,0.48)",
-  text:        "#eef0f8",
-  textSub:     "#b4bbd4",
-  textMuted:   "#6a729a",
-  textLabel:   "#8892b8",
+  // Page backgrounds (kept dark)
+  bg:          "#0d0f14",
+  bgPanel:     "#161820",
+
+  // Card backgrounds — lifted for readability
+  bgCard:      "#22263a",       // outer card
+  bgCardInner: "#2a2e44",       // inner soft-box inside cards
+  bgCardDeep:  "#1e2133",       // card header band
+
+  // Borders
+  line:        "rgba(255,255,255,0.08)",
+  lineStrong:  "rgba(255,255,255,0.14)",
+  lineFocus:   "rgba(99,172,255,0.5)",
+
+  // Text — noticeably brighter than before
+  text:        "#eef0f8",       // primary
+  textSub:     "#b0b6d0",       // secondary — was #8b90a8
+  textMuted:   "#7880a0",       // tertiary  — was #555a72
+  textLabel:   "#9098b8",       // label / caps
+
+  // Accents
   blue:        "#63acff",
   teal:        "#38c9b0",
   violet:      "#9b87f5",
   rose:        "#f87171",
   amber:       "#fbbf24",
   green:       "#4ade80",
-  shadow:      "0 4px 28px rgba(0,0,0,0.5)",
-  shadowLg:    "0 8px 48px rgba(0,0,0,0.6)",
+
+  // Shadows
+  shadow:      "0 4px 24px rgba(0,0,0,0.45)",
+  shadowLg:    "0 8px 40px rgba(0,0,0,0.55)",
 };
 
-// ─── Directive metadata ──────────────────────────────────────────────────────
+// ─── Directive metadata ───────────────────────────────────────────────────────
 const DIR_SHORT = {
   LVD:"LVD", EMC:"EMC", RED:"RED", RED_CYBER:"RED Cyber", CRA:"CRA",
   ROHS:"RoHS", REACH:"REACH", GDPR:"GDPR", AI_Act:"AI Act", ESPR:"ESPR",
   ECO:"Ecodesign", BATTERY:"Battery", FCM:"FCM", FCM_PLASTIC:"FCM Plastic",
   MD:"MD", MACH_REG:"Machinery Reg.", OTHER:"Other",
-};
-
-const DIR_LABEL = {
-  LVD:"Low Voltage Directive", EMC:"EMC Directive", RED:"Radio Equipment Directive",
-  RED_CYBER:"RED delegated cybersecurity route", CRA:"Cyber Resilience Act",
-  ROHS:"RoHS Directive", REACH:"REACH Regulation", GDPR:"GDPR", AI_Act:"AI Act",
-  ESPR:"ESPR", ECO:"Ecodesign", BATTERY:"Battery Regulation",
-  FCM:"Food Contact Materials", FCM_PLASTIC:"Plastic FCM",
-  MD:"Machinery Directive", MACH_REG:"Machinery Regulation", OTHER:"Other",
 };
 
 const DIR_ORDER = [
@@ -52,126 +54,132 @@ const DIR_ORDER = [
 ];
 
 const DIR_TONES = {
-  LVD:        {dot:"#6ee7b7",bg:"rgba(110,231,183,0.09)",bd:"rgba(110,231,183,0.20)",text:"#6ee7b7"},
-  EMC:        {dot:"#67e8f9",bg:"rgba(103,232,249,0.09)",bd:"rgba(103,232,249,0.20)",text:"#67e8f9"},
-  RED:        {dot:"#63acff",bg:"rgba(99,172,255,0.09)", bd:"rgba(99,172,255,0.20)", text:"#63acff"},
-  RED_CYBER:  {dot:"#c084fc",bg:"rgba(192,132,252,0.09)",bd:"rgba(192,132,252,0.20)",text:"#c084fc"},
-  CRA:        {dot:"#86efac",bg:"rgba(134,239,172,0.09)",bd:"rgba(134,239,172,0.20)",text:"#86efac"},
-  ROHS:       {dot:"#fcd34d",bg:"rgba(252,211,77,0.09)", bd:"rgba(252,211,77,0.20)", text:"#fcd34d"},
-  REACH:      {dot:"#fdba74",bg:"rgba(253,186,116,0.09)",bd:"rgba(253,186,116,0.20)",text:"#fdba74"},
-  GDPR:       {dot:"#38c9b0",bg:"rgba(56,201,176,0.09)", bd:"rgba(56,201,176,0.20)", text:"#38c9b0"},
-  AI_Act:     {dot:"#a78bfa",bg:"rgba(167,139,250,0.09)",bd:"rgba(167,139,250,0.20)",text:"#a78bfa"},
-  ESPR:       {dot:"#fb923c",bg:"rgba(251,146,60,0.09)", bd:"rgba(251,146,60,0.20)", text:"#fb923c"},
-  ECO:        {dot:"#4ade80",bg:"rgba(74,222,128,0.09)", bd:"rgba(74,222,128,0.20)", text:"#4ade80"},
-  BATTERY:    {dot:"#a3e635",bg:"rgba(163,230,53,0.09)", bd:"rgba(163,230,53,0.20)", text:"#a3e635"},
-  FCM:        {dot:"#f9a8d4",bg:"rgba(249,168,212,0.09)",bd:"rgba(249,168,212,0.20)",text:"#f9a8d4"},
-  FCM_PLASTIC:{dot:"#f9a8d4",bg:"rgba(249,168,212,0.09)",bd:"rgba(249,168,212,0.20)",text:"#f9a8d4"},
-  MD:         {dot:"#93c5fd",bg:"rgba(147,197,253,0.09)",bd:"rgba(147,197,253,0.20)",text:"#93c5fd"},
-  MACH_REG:   {dot:"#93c5fd",bg:"rgba(147,197,253,0.09)",bd:"rgba(147,197,253,0.20)",text:"#93c5fd"},
-  OTHER:      {dot:"#94a3b8",bg:"rgba(148,163,184,0.07)",bd:"rgba(148,163,184,0.16)",text:"#94a3b8"},
+  LVD:         { dot:"#6ee7b7", bg:"rgba(110,231,183,0.10)", bd:"rgba(110,231,183,0.22)", text:"#6ee7b7" },
+  EMC:         { dot:"#67e8f9", bg:"rgba(103,232,249,0.10)", bd:"rgba(103,232,249,0.22)", text:"#67e8f9" },
+  RED:         { dot:"#63acff", bg:"rgba(99,172,255,0.10)",  bd:"rgba(99,172,255,0.22)",  text:"#63acff" },
+  RED_CYBER:   { dot:"#c084fc", bg:"rgba(192,132,252,0.10)", bd:"rgba(192,132,252,0.22)", text:"#c084fc" },
+  CRA:         { dot:"#86efac", bg:"rgba(134,239,172,0.10)", bd:"rgba(134,239,172,0.22)", text:"#86efac" },
+  ROHS:        { dot:"#fcd34d", bg:"rgba(252,211,77,0.10)",  bd:"rgba(252,211,77,0.22)",  text:"#fcd34d" },
+  REACH:       { dot:"#fdba74", bg:"rgba(253,186,116,0.10)", bd:"rgba(253,186,116,0.22)", text:"#fdba74" },
+  GDPR:        { dot:"#38c9b0", bg:"rgba(56,201,176,0.10)",  bd:"rgba(56,201,176,0.22)",  text:"#38c9b0" },
+  AI_Act:      { dot:"#a78bfa", bg:"rgba(167,139,250,0.10)", bd:"rgba(167,139,250,0.22)", text:"#a78bfa" },
+  ESPR:        { dot:"#fb923c", bg:"rgba(251,146,60,0.10)",  bd:"rgba(251,146,60,0.22)",  text:"#fb923c" },
+  ECO:         { dot:"#4ade80", bg:"rgba(74,222,128,0.10)",  bd:"rgba(74,222,128,0.22)",  text:"#4ade80" },
+  BATTERY:     { dot:"#a3e635", bg:"rgba(163,230,53,0.10)",  bd:"rgba(163,230,53,0.22)",  text:"#a3e635" },
+  FCM:         { dot:"#f9a8d4", bg:"rgba(249,168,212,0.10)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
+  FCM_PLASTIC: { dot:"#f9a8d4", bg:"rgba(249,168,212,0.10)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
+  MD:          { dot:"#93c5fd", bg:"rgba(147,197,253,0.10)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
+  MACH_REG:    { dot:"#93c5fd", bg:"rgba(147,197,253,0.10)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
+  OTHER:       { dot:"#94a3b8", bg:"rgba(148,163,184,0.10)", bd:"rgba(148,163,184,0.22)", text:"#94a3b8" },
 };
 
 const STATUS = {
-  LOW:     {bg:"rgba(74,222,128,0.10)", bd:"rgba(74,222,128,0.26)", text:"#4ade80"},
-  MEDIUM:  {bg:"rgba(251,191,36,0.10)", bd:"rgba(251,191,36,0.26)", text:"#fbbf24"},
-  HIGH:    {bg:"rgba(251,113,133,0.10)",bd:"rgba(251,113,133,0.26)",text:"#fb7185"},
-  CRITICAL:{bg:"rgba(248,113,113,0.14)",bd:"rgba(248,113,113,0.30)",text:"#f87171"},
+  LOW:      { bg:"rgba(74,222,128,0.12)",  bd:"rgba(74,222,128,0.28)",  text:"#4ade80" },
+  MEDIUM:   { bg:"rgba(251,191,36,0.12)",  bd:"rgba(251,191,36,0.28)",  text:"#fbbf24" },
+  HIGH:     { bg:"rgba(251,113,133,0.12)", bd:"rgba(251,113,133,0.28)", text:"#fb7185" },
+  CRITICAL: { bg:"rgba(248,113,113,0.15)", bd:"rgba(248,113,113,0.32)", text:"#f87171" },
 };
 
 const IMPORTANCE = {
-  high:  {bg:"rgba(248,113,113,0.09)",bd:"rgba(248,113,113,0.22)",text:"#fb7185",dot:"#fb7185"},
-  medium:{bg:"rgba(251,191,36,0.09)", bd:"rgba(251,191,36,0.22)", text:"#fbbf24",dot:"#fbbf24"},
-  low:   {bg:"rgba(74,222,128,0.07)", bd:"rgba(74,222,128,0.20)", text:"#4ade80",dot:"#4ade80"},
+  high:   { bg:"rgba(248,113,113,0.10)", bd:"rgba(248,113,113,0.24)", text:"#fb7185", dot:"#fb7185" },
+  medium: { bg:"rgba(251,191,36,0.10)",  bd:"rgba(251,191,36,0.24)",  text:"#fbbf24", dot:"#fbbf24" },
+  low:    { bg:"rgba(74,222,128,0.08)",  bd:"rgba(74,222,128,0.22)",  text:"#4ade80", dot:"#4ade80" },
 };
 
 const SECTION_TONES = {
-  harmonized:      {bg:"rgba(99,172,255,0.06)", bd:"rgba(99,172,255,0.15)", tag:"rgba(99,172,255,0.13)", tagText:"#63acff", icon:"⬡"},
-  state_of_the_art:{bg:"rgba(251,146,60,0.06)", bd:"rgba(251,146,60,0.15)", tag:"rgba(251,146,60,0.13)", tagText:"#fb923c", icon:"◈"},
-  review:          {bg:"rgba(248,113,133,0.06)",bd:"rgba(248,113,133,0.15)",tag:"rgba(248,113,133,0.13)",tagText:"#fb7185",icon:"◉"},
-  unknown:         {bg:"rgba(148,163,184,0.04)",bd:"rgba(148,163,184,0.12)",tag:"rgba(148,163,184,0.10)",tagText:"#94a3b8",icon:"○"},
+  harmonized:       { bg:"rgba(99,172,255,0.07)",  bd:"rgba(99,172,255,0.16)",  tag:"rgba(99,172,255,0.14)",  tagText:"#63acff", icon:"⬡" },
+  state_of_the_art: { bg:"rgba(251,146,60,0.07)",  bd:"rgba(251,146,60,0.16)",  tag:"rgba(251,146,60,0.14)",  tagText:"#fb923c", icon:"◈" },
+  review:           { bg:"rgba(248,113,133,0.07)", bd:"rgba(248,113,133,0.16)", tag:"rgba(248,113,133,0.14)", tagText:"#fb7185", icon:"◉" },
+  unknown:          { bg:"rgba(148,163,184,0.05)", bd:"rgba(148,163,184,0.13)", tag:"rgba(148,163,184,0.11)", tagText:"#94a3b8", icon:"○" },
 };
 
 const DEFAULT_TEMPLATES = [
-  {label:"Coffee machine", text:"Connected espresso machine with mains power, Wi-Fi radio, app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path."},
-  {label:"Electric kettle", text:"Electric kettle with mains power, liquid heating, food-contact water path, electronic controls, and optional Wi-Fi radio control."},
-  {label:"Air purifier",   text:"Smart air purifier with mains power, motorized fan, electronic controls, Wi-Fi radio, app control, networked standby, and OTA firmware updates."},
-  {label:"Robot vacuum",   text:"Robot vacuum cleaner with rechargeable lithium battery, Wi-Fi and Bluetooth radio, cloud account, OTA firmware updates, LiDAR navigation, and camera."},
+  { label:"Coffee machine",  text:"Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path." },
+  { label:"Electric kettle", text:"Electric kettle with mains power, liquid heating, food-contact water path, electronic controls, and optional Wi-Fi control." },
+  { label:"Air purifier",    text:"Smart air purifier with mains power, motorized fan, electronic controls, Wi-Fi app control, networked standby, and OTA firmware updates." },
+  { label:"Robot vacuum",    text:"Robot vacuum cleaner with rechargeable lithium battery, Wi-Fi and Bluetooth, cloud account, OTA firmware updates, LiDAR navigation, and camera." },
 ];
 
-// ─── Utility functions ───────────────────────────────────────────────────────
+// ─── Utility functions (logic unchanged) ─────────────────────────────────────
 function titleCase(input) {
   return String(input||"").replace(/[_-]+/g," ").replace(/\s+/g," ").trim().replace(/\b\w/g,m=>m.toUpperCase());
 }
-function directiveTone(key) { return DIR_TONES[key]||DIR_TONES.OTHER; }
-function directiveShort(key) { return DIR_SHORT[key]||titleCase(key); }
-function directiveLabel(key) { return DIR_LABEL[key]||titleCase(key); }
-function directiveRank(key) { const r=DIR_ORDER.indexOf(key||"OTHER"); return r===-1?999:r; }
-function normalizeStandardDirective(item) {
+function sentenceCaseList(values){ return (values||[]).map(v=>titleCase(String(v))); }
+function directiveTone(key){ return DIR_TONES[key]||DIR_TONES.OTHER; }
+function directiveShort(key){ return DIR_SHORT[key]||titleCase(key); }
+function directiveRank(key){ const r=DIR_ORDER.indexOf(key||"OTHER"); return r===-1?999:r; }
+function normalizeStandardDirective(item){
   const code=String(item?.code||"").toUpperCase();
   if(code.startsWith("EN 18031-")) return "RED_CYBER";
   return item?.directive||item?.legislation_key||"OTHER";
 }
-function joinText(base,addition) {
-  const a=String(base||"").trim(),b=String(addition||"").trim();
+function joinText(base,addition){
+  const a=String(base||"").trim(), b=String(addition||"").trim();
   if(!b) return a; if(!a) return b;
   if(a.toLowerCase().includes(b.toLowerCase())) return a;
   const sep=/[\s,;:]$/.test(a)?" ":a.endsWith(".")?" ":", ";
   return `${a}${sep}${b}`;
 }
-function uniqueBy(items,getKey) {
+function uniqueBy(items,getKey){
   const map=new Map();
   (items||[]).forEach(item=>{ const k=getKey(item); if(!map.has(k)) map.set(k,item); });
   return Array.from(map.values());
 }
-function prettyValue(value) {
+function prettyValue(value){
   if(value===null||value===undefined||value==="") return "—";
   if(Array.isArray(value)) return value.join(", ");
   return String(value);
 }
-function standardCardTags(item) {
-  return uniqueBy([
-    ...(item.display_tags||[]),
-    item.category ? titleCase(item.category) : null,
-    item.standard_family||null,
-  ].filter(Boolean),(v)=>v).slice(0,5);
+
+function standardCardTags(item){
+  return uniqueBy(
+    [
+      ...(item.display_tags||[]),
+      item.category ? titleCase(item.category) : null,
+      item.standard_family || null,
+    ].filter(Boolean),
+    value=>value,
+  ).slice(0,5);
 }
 
-function buildDynamicTemplates(products) {
+function buildDynamicTemplates(products){
   const lookup=new Map((products||[]).map(p=>[p.id,p]));
   const templates=[];
-  function addT(productId,suffix,label) {
-    const p=lookup.get(productId); if(!p) return;
-    templates.push({label,text:`${p.label} with ${suffix}.`});
+  function addTemplate(productId,suffix,labelOverride){
+    const product=lookup.get(productId);
+    if(!product) return;
+    templates.push({ label:labelOverride||product.label, text:`${product.label} with ${suffix}.` });
   }
-  addT("coffee_machine","mains power, heating, water tank, grinder, food-contact brew path, Wi-Fi radio, app control, cloud account, and OTA updates","Coffee machine");
-  addT("electric_kettle","mains power, liquid heating, food-contact water path, electronic controls, and optional Wi-Fi radio control","Electric kettle");
-  addT("air_purifier","mains power, motorized fan, sensor electronics, Wi-Fi radio, app control, and OTA updates","Air purifier");
-  addT("robot_vacuum","rechargeable battery, Wi-Fi and Bluetooth radio, cloud account, OTA updates, camera, and LiDAR navigation","Robot vacuum");
-  addT("robot_vacuum_cleaner","rechargeable battery, Wi-Fi and Bluetooth radio, cloud account, OTA updates, camera, and LiDAR navigation","Robot vacuum");
-  return uniqueBy(templates.length?templates:DEFAULT_TEMPLATES,item=>item.label).slice(0,4);
+  addTemplate("coffee_machine","mains power, heating, water tank, grinder, food-contact brew path, app control, and OTA updates","Coffee machine");
+  addTemplate("electric_kettle","mains power, liquid heating, food-contact water path, and optional Wi-Fi control","Electric kettle");
+  addTemplate("air_purifier","mains power, motorized fan, sensor electronics, app control, and OTA updates","Air purifier");
+  addTemplate("robot_vacuum","rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation","Robot vacuum");
+  addTemplate("robot_vacuum_cleaner","rechargeable battery, app control, Wi-Fi and Bluetooth, cloud account, OTA updates, and LiDAR navigation","Robot vacuum");
+  return uniqueBy(templates.length?templates:DEFAULT_TEMPLATES, item=>item.label).slice(0,4);
 }
 
-function buildGuidedChips(metadata,result) {
+function buildGuidedChips(metadata,result){
   const productId=result?.product_type;
   const product=(metadata?.products||[]).find(item=>item.id===productId);
   const traits=new Set(result?.all_traits||[]);
   const missingItems=result?.missing_information_items||[];
   const chips=[];
-  const push=(label,text)=>{ if(!label||!text) return; if(!chips.some(c=>c.text===text)) chips.push({label,text}); };
+  const push=(label,text)=>{ if(!label||!text) return; if(!chips.some(item=>item.text===text)) chips.push({label,text}); };
   missingItems.forEach(item=>(item.examples||[]).slice(0,2).forEach(ex=>push(titleCase(item.key),ex)));
-  if(product?.implied_traits?.includes("food_contact")||traits.has("food_contact")) {
-    push("Food contact","food-contact plastics, coatings, silicone, rubber, and metal parts");
+  if(product?.implied_traits?.includes("food_contact")||traits.has("food_contact")){
+    push("Food contact","food-contact plastics, coatings, silicone, or rubber");
     push("Water path","wetted path materials, seals, and water tank");
   }
-  if(product?.implied_traits?.includes("motorized")||traits.has("motorized")) {
+  if(product?.implied_traits?.includes("motorized")||traits.has("motorized")){
     push("Motor","motorized function");
     push("Pump","pump or fluid transfer function");
   }
-  if(traits.has("radio")) { push("Wi-Fi","Wi-Fi radio"); push("Bluetooth","Bluetooth LE radio"); push("OTA","OTA firmware updates"); }
-  if(!traits.has("radio")&&(traits.has("app_control")||traits.has("cloud")||traits.has("ota"))) {
-    push("Wi-Fi","Wi-Fi radio"); push("Bluetooth","Bluetooth LE radio");
+  if(traits.has("radio")){
+    push("Wi-Fi","Wi-Fi radio");
+    push("Bluetooth","Bluetooth LE radio");
+    push("OTA","OTA firmware updates");
   }
-  if(traits.has("cloud")||traits.has("app_control")||traits.has("internet")) {
+  if(traits.has("cloud")||traits.has("app_control")||traits.has("internet")){
     push("Cloud","cloud account required");
     push("Local control","local LAN control without cloud dependency");
     push("Patching","security and firmware patching over the air");
@@ -179,21 +187,30 @@ function buildGuidedChips(metadata,result) {
   if(traits.has("battery_powered")) push("Battery","rechargeable lithium battery");
   if(traits.has("camera")) push("Camera","integrated camera");
   if(traits.has("microphone")) push("Microphone","microphone or voice input");
-  if(!chips.length) {
-    push("Mains","230 V mains powered"); push("Consumer","consumer household use");
-    push("App control","mobile app control"); push("Wi-Fi","Wi-Fi radio");
+  if(!chips.length){
+    push("Mains","230 V mains powered");
+    push("Consumer","consumer household use");
+    push("App control","mobile app control");
     push("Food contact","food-contact plastics or coatings");
   }
-  return chips.slice(0,10);
+  return chips.slice(0,8);
 }
 
-function buildGuidanceItems(result) {
+function buildGuidanceItems(result){
+  const backend=(result?.input_gaps_panel?.items||result?.missing_information_items||[]).map(item=>({
+    key:item.key,
+    title:titleCase(item.key),
+    why:item.message||item.why||"Clarify this detail before freezing the route.",
+    importance:item.importance||"medium",
+    choices:(item.examples||item.choices||[]).filter(Boolean).slice(0,3),
+  }));
+
   const traits=new Set(result?.all_traits||[]);
-  const rawItems=result?.input_gaps_panel?.items||result?.missing_information_items||[];
-  const items=[],seen=new Set();
+  const rawItems=result?.missing_information_items||[];
+  const derived=[], seen=new Set();
   const add=(key,title,why,importance,choices=[])=>{
     if(seen.has(key)) return; seen.add(key);
-    items.push({key,title,why,importance,choices:choices.filter(Boolean).slice(0,3)});
+    derived.push({key,title,why,importance,choices:choices.filter(Boolean).slice(0,3)});
   };
   if(traits.has("radio"))
     add("radio_stack","Confirm radios","Changes RED and RF scope.","high",["Wi-Fi radio","Bluetooth LE radio","NFC radio"]);
@@ -206,19 +223,20 @@ function buildGuidanceItems(result) {
   if(traits.has("camera")||traits.has("microphone")||traits.has("personal_data_likely"))
     add("data_functions","Confirm sensitive functions","Changes cybersecurity/privacy expectations.","high",["integrated camera","microphone or voice input","user account and profile data"]);
   rawItems.forEach(item=>add(item.key,titleCase(item.key),item.message,item.importance||"medium",item.examples||[]));
-  return items.slice(0,4);
+
+  return uniqueBy([...backend,...derived], item=>item.key).slice(0,6);
 }
 
-function buildCompactLegislationItems(result) {
+function buildCompactLegislationItems(result){
   const sections=result?.legislation_sections||[];
-  const allItems=sections.flatMap(s=>(s.items||[]).map(item=>({...item,section_key:s.key,section_title:s.title})));
+  const allItems=sections.flatMap(section=>(section.items||[]).map(item=>({...item,section_key:section.key,section_title:section.title})));
   return uniqueBy(
     [...allItems].sort((a,b)=>directiveRank(a.directive_key)-directiveRank(b.directive_key)||String(a.code).localeCompare(String(b.code))),
     item=>`${item.code}-${item.directive_key}`
   );
 }
 
-function compactLegislationGroupLabel(item) {
+function compactLegislationGroupLabel(item){
   const k=item.section_key;
   if(k==="framework") return "Additional";
   if(k==="non_ce") return "Parallel";
@@ -227,75 +245,48 @@ function compactLegislationGroupLabel(item) {
   return titleCase(k);
 }
 
-function sortStandardItems(items) {
+function sortStandardItems(items){
   return [...(items||[])].sort((a,b)=>{
-    const aD=normalizeStandardDirective(a),bD=normalizeStandardDirective(b);
-    return directiveRank(aD)-directiveRank(bD)||String(a.code||"").localeCompare(String(b.code||""));
+    const aDir=normalizeStandardDirective(a), bDir=normalizeStandardDirective(b);
+    return directiveRank(aDir)-directiveRank(bDir)||String(a.code||"").localeCompare(String(b.code||""));
   });
 }
 
-function buildSectionsFromFlatResult(result) {
+function buildSectionsFromFlatResult(result){
   const standardRows=(result?.standards||[]).map(item=>({...item,item_type:item.item_type||"standard"}));
   const reviewRows=(result?.review_items||[]).map(item=>({...item,item_type:"review"}));
   const grouped={};
   [...standardRows,...reviewRows].forEach(item=>{
     let key=item.harmonization_status||(item.item_type==="review"?"review":"unknown");
     if(!["harmonized","state_of_the_art","review","unknown"].includes(key)) key="unknown";
-    if(!grouped[key]) grouped[key]={key,title:
+    if(!grouped[key]) grouped[key]={ key, title:
       key==="harmonized"?"Harmonized standards":
       key==="state_of_the_art"?"State of the art / latest technical route":
       key==="review"?"Review-required routes":"Other standards",
-      count:0,items:[]};
+      count:0, items:[] };
     grouped[key].items.push(item);
   });
   return ["harmonized","state_of_the_art","review","unknown"]
     .filter(k=>grouped[k])
-    .map(key=>({...grouped[key],items:sortStandardItems(grouped[key].items),count:grouped[key].items.length}));
+    .map(key=>({ ...grouped[key], items:sortStandardItems(grouped[key].items), count:grouped[key].items.length }));
 }
 
-function buildDirectiveBreakdown(result) {
+function buildDirectiveBreakdown(result){
   const sections=result?.standard_sections?.length?result.standard_sections:buildSectionsFromFlatResult(result);
   const counts={};
-  sections.forEach(s=>(s.items||[]).forEach(item=>{ const dir=normalizeStandardDirective(item); counts[dir]=(counts[dir]||0)+1; }));
+  sections.forEach(section=>(section.items||[]).forEach(item=>{ const dir=normalizeStandardDirective(item); counts[dir]=(counts[dir]||0)+1; }));
   return Object.entries(counts).sort((a,b)=>directiveRank(a[0])-directiveRank(b[0])).map(([key,count])=>({key,count}));
 }
 
-function orderStandardSections(sections) {
-  return [...(sections||[])].sort((a,b)=>directiveRank(a.key)-directiveRank(b.key));
-}
+// ─── Primitive UI components ──────────────────────────────────────────────────
 
-function buildCopyText(result,description) {
-  const sections=result?.standard_sections?.length?result.standard_sections:buildSectionsFromFlatResult(result);
-  const lines=[
-    "RuleGrid compliance analysis","",
-    `Input: ${description||result?.product_summary||"—"}`,
-    `Detected product: ${titleCase(result?.product_type||"unclear")}`,
-    `Confidence: ${titleCase(result?.product_match_confidence||"low")}`,
-    `Overall risk: ${result?.overall_risk||"—"}`,
-    `Summary: ${result?.summary||""}`,
-    "","Standards route:",
-    ...sections.flatMap(s=>[
-      `\n${s.title} (${s.count})`,
-      ...sortStandardItems(s.items||[]).map(item=>`  • ${item.code} — ${item.title}`),
-    ]),
-    "","Applicable legislation:",
-    ...buildCompactLegislationItems(result).map(item=>`- ${item.code} — ${item.title}`),
-    "","Current path:",
-    ...(result?.current_path||[]).map(l=>`- ${l}`),
-    "","Future watchlist:",
-    ...(result?.future_watchlist||[]).map(l=>`- ${l}`),
-  ];
-  return lines.join("\n");
-}
-
-// ─── Primitive components ────────────────────────────────────────────────────
-function DirPill({dirKey,large=false}) {
+function DirPill({ dirKey, large=false }){
   const tone=directiveTone(dirKey);
   return (
     <span style={{
       display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,
       border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
-      padding:large?"5px 12px":"3px 9px",fontSize:large?12:11,fontWeight:700,
+      padding:large?"5px 11px":"3px 9px", fontSize:large?12:11, fontWeight:700,
       whiteSpace:"nowrap",letterSpacing:"0.03em",
     }}>
       <span style={{width:6,height:6,borderRadius:999,background:tone.dot,flexShrink:0}}/>
@@ -304,7 +295,7 @@ function DirPill({dirKey,large=false}) {
   );
 }
 
-function RiskBadge({value}) {
+function RiskBadge({ value }){
   const tone=STATUS[value]||STATUS.MEDIUM;
   return (
     <span style={{
@@ -318,12 +309,12 @@ function RiskBadge({value}) {
   );
 }
 
-function Chip({children,tone="neutral"}) {
-  const s=tone==="neutral"
-    ?{bg:"rgba(255,255,255,0.06)",bd:T.lineStrong,text:T.textSub}
-    :tone==="blue"
-    ?{bg:"rgba(99,172,255,0.11)",bd:"rgba(99,172,255,0.22)",text:T.blue}
-    :{bg:"rgba(56,201,176,0.09)",bd:"rgba(56,201,176,0.20)",text:T.teal};
+function Chip({ children, tone="neutral" }){
+  const s = tone==="neutral"
+    ? {bg:"rgba(255,255,255,0.07)", bd:T.lineStrong, text:T.textSub}
+    : tone==="blue"
+    ? {bg:"rgba(99,172,255,0.12)", bd:"rgba(99,172,255,0.24)", text:T.blue}
+    : {bg:"rgba(56,201,176,0.10)", bd:"rgba(56,201,176,0.22)", text:T.teal};
   return (
     <span style={{
       display:"inline-flex",alignItems:"center",borderRadius:6,
@@ -333,41 +324,47 @@ function Chip({children,tone="neutral"}) {
   );
 }
 
-function Card({children,style}) {
+function Card({ children, style }){
   return (
     <div style={{
       borderRadius:18,border:`1px solid ${T.lineStrong}`,
-      background:T.bgCard,boxShadow:T.shadow,overflow:"hidden",...style,
+      background:T.bgCard, boxShadow:T.shadow, overflow:"hidden",
+      ...style,
     }}>{children}</div>
   );
 }
 
-function CardHeader({title,subtitle,right}) {
+function CardHeader({ title, subtitle, right }){
   return (
     <div style={{
-      padding:"15px 20px 12px",borderBottom:`1px solid ${T.line}`,
+      padding:"16px 20px 13px",
+      borderBottom:`1px solid ${T.line}`,
       background:T.bgCardDeep,
       display:"flex",gap:14,alignItems:"flex-start",justifyContent:"space-between",
     }}>
-      <div style={{minWidth:0}}>
+      <div>
         {title&&<div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>{title}</div>}
         {subtitle&&<div style={{marginTop:4,fontSize:12,color:T.textMuted,lineHeight:1.5}}>{subtitle}</div>}
       </div>
-      {right&&<div style={{flexShrink:0,marginTop:1}}>{right}</div>}
+      {right&&<div style={{flexShrink:0}}>{right}</div>}
     </div>
   );
 }
 
-function SoftBox({children,style}) {
+// Inner meta box — now uses a noticeably lighter background
+function SoftBox({ children, style }){
   return (
     <div style={{
-      borderRadius:10,border:`1px solid rgba(255,255,255,0.09)`,
-      background:"rgba(255,255,255,0.06)",padding:"11px 13px",...style,
+      borderRadius:10,
+      border:`1px solid rgba(255,255,255,0.10)`,
+      background:"rgba(255,255,255,0.07)",
+      padding:"11px 13px",
+      ...style,
     }}>{children}</div>
   );
 }
 
-function Label({children}) {
+function Label({ children }){
   return (
     <div style={{
       fontSize:10,fontWeight:700,color:T.textLabel,
@@ -376,96 +373,95 @@ function Label({children}) {
   );
 }
 
-function Value({children}) {
-  return <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{children}</div>;
+function Value({ children }){
+  return (
+    <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{children}</div>
+  );
 }
 
-// ─── Buttons ─────────────────────────────────────────────────────────────────
-function PrimaryBtn({onClick,disabled,children}) {
+// ─── Buttons ──────────────────────────────────────────────────────────────────
+
+function PrimaryBtn({ onClick, disabled, children }){
   return (
     <button onClick={onClick} disabled={disabled} style={{
       appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.38:1,borderRadius:10,border:"none",
-      background:disabled?"rgba(99,172,255,0.20)":`linear-gradient(135deg,${T.blue},${T.teal})`,
-      color:"#030a14",padding:"10px 22px",fontWeight:700,fontSize:13,
-      boxShadow:disabled?"none":"0 0 32px rgba(99,172,255,0.26)",
-      transition:"all 0.18s",letterSpacing:"0.01em",whiteSpace:"nowrap",
+      opacity:disabled?0.4:1,borderRadius:10,border:"none",
+      background:disabled?"rgba(99,172,255,0.25)":`linear-gradient(135deg,${T.blue},${T.teal})`,
+      color:"#000",padding:"10px 20px",fontWeight:700,fontSize:13,
+      boxShadow:disabled?"none":"0 0 28px rgba(99,172,255,0.28)",
+      transition:"all 0.2s",letterSpacing:"0.01em",whiteSpace:"nowrap",
     }}>{children}</button>
   );
 }
 
-function SecondaryBtn({onClick,disabled,children,style}) {
+function SecondaryBtn({ onClick, disabled, children, style }){
   return (
     <button onClick={onClick} disabled={disabled} style={{
       appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.4:1,borderRadius:10,
-      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.04)",
-      color:T.textSub,padding:"9px 18px",fontWeight:600,fontSize:13,
-      transition:"all 0.18s",...style,
+      opacity:disabled?0.45:1,borderRadius:10,
+      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.05)",
+      color:T.textSub,padding:"9px 16px",fontWeight:600,fontSize:13,
+      transition:"all 0.2s",...style,
     }}>{children}</button>
   );
 }
 
-function GhostBtn({onClick,children}) {
+function GhostBtn({ onClick, children }){
   return (
     <button onClick={onClick} style={{
       appearance:"none",cursor:"pointer",borderRadius:8,
       border:`1px solid ${T.line}`,background:"transparent",
-      color:T.textMuted,padding:"5px 12px",fontWeight:600,fontSize:12,
-      transition:"all 0.18s",
+      color:T.textMuted,padding:"6px 12px",fontWeight:600,fontSize:12,
+      transition:"all 0.2s",
     }}>{children}</button>
   );
 }
 
-function TemplateBtn({onClick,children}) {
+function AddChipBtn({ onClick, children }){
   return (
     <button onClick={onClick} style={{
       appearance:"none",cursor:"pointer",borderRadius:8,
-      border:`1px solid rgba(99,172,255,0.20)`,background:"rgba(99,172,255,0.07)",
-      color:T.blue,padding:"6px 14px",fontSize:12,fontWeight:600,
-      transition:"all 0.15s",
-    }}>{children}</button>
-  );
-}
-
-function AddChipBtn({onClick,children}) {
-  return (
-    <button onClick={onClick} style={{
-      appearance:"none",cursor:"pointer",borderRadius:8,
-      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.04)",
+      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.05)",
       color:T.textSub,padding:"5px 11px",fontWeight:600,fontSize:12,
       transition:"background 0.15s,color 0.15s",
     }}>{children}</button>
   );
 }
 
-function CharCounter({value,max=1200}) {
-  const len=value.length,pct=Math.min(len/max,1);
+// ─── Char counter ─────────────────────────────────────────────────────────────
+function CharCounter({ value, max=1200 }){
+  const len=value.length, pct=Math.min(len/max,1);
   const color=pct>0.9?T.rose:pct>0.7?T.amber:T.textMuted;
-  return <span style={{fontSize:11,color,fontWeight:500,fontVariantNumeric:"tabular-nums"}}>{len} / {max}</span>;
+  return (
+    <span style={{fontSize:11,color,fontWeight:500,fontVariantNumeric:"tabular-nums"}}>
+      {len} / {max}
+    </span>
+  );
 }
 
-// ─── Topbar ──────────────────────────────────────────────────────────────────
-function Topbar({result}) {
-  const totalStandards=result?(
-    result?.standard_sections?.length
+// ─── Topbar ───────────────────────────────────────────────────────────────────
+function Topbar({ result }){
+  const totalStandards=result
+    ?(result?.standard_sections?.length
       ?result.standard_sections.reduce((n,s)=>n+(s.items||[]).length,0)
-      :(result?.standards||[]).length+(result?.review_items||[]).length
-  ):null;
+      :(result?.standards||[]).length+(result?.review_items||[]).length)
+    :null;
 
   return (
     <div style={{
       borderBottom:`1px solid ${T.line}`,
-      background:`${T.bgPanel}e8`,backdropFilter:"blur(20px)",
-      padding:"0 24px",display:"flex",alignItems:"center",gap:12,height:52,
+      background:`${T.bgPanel}e0`,
+      backdropFilter:"blur(18px)",
+      padding:"0 24px",
+      display:"flex",alignItems:"center",gap:12,height:52,
       position:"sticky",top:0,zIndex:100,
     }}>
-      <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+      <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
         <div style={{
           width:28,height:28,borderRadius:8,
           background:`linear-gradient(135deg,${T.blue},${T.teal})`,
           display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:13,fontWeight:900,color:"#030a14",
+          fontSize:13,fontWeight:900,color:"#000",
         }}>⬡</div>
         <span style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:18,color:T.text,letterSpacing:"-0.01em"}}>
           RuleGrid
@@ -473,13 +469,14 @@ function Topbar({result}) {
       </div>
       <div style={{width:1,height:20,background:T.line,margin:"0 2px"}}/>
       <span style={{fontSize:11,color:T.textMuted,fontWeight:500}}>EU Regulatory Scoping</span>
+
       {result&&(
         <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
           <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
           {totalStandards!==null&&(
             <span style={{
               fontSize:11,color:T.textMuted,fontWeight:600,
-              background:"rgba(255,255,255,0.04)",border:`1px solid ${T.line}`,
+              background:"rgba(255,255,255,0.05)",border:`1px solid ${T.line}`,
               borderRadius:6,padding:"3px 9px",
             }}>
               {totalStandards} standard{totalStandards!==1?"s":""}
@@ -492,70 +489,47 @@ function Topbar({result}) {
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
-function Hero({result}) {
+function Hero({ result }){
   const hero=result?.hero_summary||{};
-  const stats=hero.stats||[];
-  const primaryRegimes=uniqueBy(hero.primary_regimes||[],k=>k);
+  const primaryRegimes=hero.primary_regimes||[];
   const showMeta=Boolean(result);
 
   return (
     <div style={{
       borderRadius:20,border:`1px solid ${T.lineStrong}`,
-      background:"linear-gradient(145deg,#1b1f33,#161929 55%,#1c2036)",
-      boxShadow:`${T.shadowLg},0 0 80px rgba(99,172,255,0.05)`,
+      background:"linear-gradient(145deg,#1e2236,#1a1d2e 55%,#1d2238)",
+      boxShadow:`${T.shadowLg},0 0 80px rgba(99,172,255,0.06)`,
       padding:"32px 28px",position:"relative",overflow:"hidden",
     }}>
-      {/* Subtle grid overlay */}
-      <div style={{position:"absolute",inset:0,pointerEvents:"none",backgroundImage:`linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)`,backgroundSize:"40px 40px"}}/>
-      {/* Glow */}
-      <div style={{position:"absolute",top:-80,left:"50%",transform:"translateX(-50%)",width:500,height:220,background:"radial-gradient(ellipse,rgba(99,172,255,0.08),transparent 70%)",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",inset:0,pointerEvents:"none",backgroundImage:`linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)`,backgroundSize:"40px 40px"}}/>
+      <div style={{position:"absolute",top:-80,left:"50%",transform:"translateX(-50%)",width:500,height:240,background:"radial-gradient(ellipse,rgba(99,172,255,0.09),transparent 70%)",pointerEvents:"none"}}/>
 
-      <div style={{position:"relative",display:"grid",gap:18,justifyItems:"center",textAlign:"center"}}>
+      <div style={{position:"relative",display:"grid",gap:16,justifyItems:"center",textAlign:"center"}}>
         {showMeta&&(
           <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
             <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
             <Chip tone="blue">{titleCase(hero.confidence||result?.product_match_confidence||"low")} Confidence</Chip>
           </div>
         )}
-
         <div>
-          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:"clamp(24px,4vw,38px)",fontWeight:400,color:T.text,lineHeight:1.08,letterSpacing:"-0.02em",marginBottom:12}}>
+          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:400,color:T.text,lineHeight:1.08,letterSpacing:"-0.02em",marginBottom:12}}>
             {hero.title||"RuleGrid Regulatory Scoping"}
           </div>
-          <div style={{fontSize:14,color:T.textSub,lineHeight:1.78,maxWidth:600,margin:"0 auto"}}>
+          <div style={{fontSize:14,color:T.textSub,lineHeight:1.75,maxWidth:600,margin:"0 auto"}}>
             {hero.subtitle||"Describe the product clearly to generate the standards route and the applicable legislation path."}
           </div>
         </div>
-
         {showMeta&&primaryRegimes.length>0&&(
           <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
             {primaryRegimes.map(dirKey=><DirPill key={dirKey} dirKey={dirKey} large/>)}
           </div>
         )}
-
         {showMeta&&result?.summary&&(
           <div style={{
-            maxWidth:700,padding:"13px 18px",borderRadius:12,
-            background:"rgba(99,172,255,0.06)",border:`1px solid rgba(99,172,255,0.14)`,
-            fontSize:13,color:T.textSub,lineHeight:1.72,textAlign:"left",
+            maxWidth:680,padding:"12px 18px",borderRadius:12,
+            background:"rgba(99,172,255,0.07)",border:`1px solid rgba(99,172,255,0.16)`,
+            fontSize:13,color:T.textSub,lineHeight:1.7,textAlign:"left",
           }}>{result.summary}</div>
-        )}
-
-        {/* Stats grid — from App.js */}
-        {showMeta&&!!stats.length&&(
-          <div className="hero-stats-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:10,width:"100%",maxWidth:700}}>
-            {stats.map(item=>(
-              <div key={item.label} style={{
-                borderRadius:14,border:`1px solid ${T.line}`,
-                background:"rgba(255,255,255,0.04)",padding:"14px 12px",textAlign:"center",
-              }}>
-                <div style={{fontSize:10,fontWeight:800,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>
-                  {item.label}
-                </div>
-                <div style={{fontSize:26,fontWeight:900,color:T.text}}>{item.value}</div>
-              </div>
-            ))}
-          </div>
         )}
       </div>
     </div>
@@ -563,15 +537,14 @@ function Hero({result}) {
 }
 
 // ─── Sidebar rail ─────────────────────────────────────────────────────────────
-function SidebarRail({result}) {
+function SidebarRail({ result }){
   if(!result) return null;
   const items=buildCompactLegislationItems(result);
   const confidence=result?.confidence_panel?.confidence||result?.product_match_confidence||"low";
-
   return (
     <aside className="left-rail" style={{display:"grid",gap:12,position:"sticky",top:68,alignSelf:"start"}}>
       <Card>
-        <CardHeader title="Applicable legislation" subtitle="All detected obligations"/>
+        <CardHeader title="Applicable legislation" subtitle="All detected legislation"/>
         <div style={{padding:"12px 14px",display:"grid",gap:7}}>
           {items.map(item=>{
             const tone=directiveTone(item.directive_key||"OTHER");
@@ -579,9 +552,9 @@ function SidebarRail({result}) {
               <div key={`${item.code}-${item.directive_key}-${item.section_key}`}
                 style={{borderRadius:10,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"9px 11px",display:"grid",gap:4}}>
                 <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
-                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot}}/>
                   <span style={{fontSize:12,fontWeight:700,color:tone.text}}>{item.code}</span>
-                  <span style={{fontSize:9,opacity:0.75,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:tone.text}}>
+                  <span style={{fontSize:10,opacity:0.75,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:tone.text}}>
                     {compactLegislationGroupLabel(item)}
                   </span>
                 </div>
@@ -609,12 +582,6 @@ function SidebarRail({result}) {
               <RiskBadge value={result.overall_risk}/>
             </SoftBox>
           )}
-          {!!result?.contradictions?.length&&(
-            <SoftBox>
-              <Label>Contradictions</Label>
-              <Value>{result.contradictions[0]}</Value>
-            </SoftBox>
-          )}
         </div>
       </Card>
     </aside>
@@ -622,7 +589,7 @@ function SidebarRail({result}) {
 }
 
 // ─── Input composer ───────────────────────────────────────────────────────────
-function InputComposer({description,setDescription,templates,chips,onAnalyze,busy,onDirty}) {
+function InputComposer({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }){
   const [focused,setFocused]=useState(false);
   const charMax=1200;
   const wordCount=description.trim()?description.trim().split(/\s+/).length:0;
@@ -634,33 +601,36 @@ function InputComposer({description,setDescription,templates,chips,onAnalyze,bus
         subtitle="Product type · connectivity · power source · key functions · sensors · materials · battery"
       />
       <div style={{padding:"16px 18px",display:"grid",gap:14}}>
-        {/* Quick-fill templates */}
         <div>
           <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Quick fill</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {templates.slice(0,4).map(t=>(
-              <TemplateBtn key={t.label} onClick={()=>{ setDescription(t.text); onDirty(false); }}>{t.label}</TemplateBtn>
+            {templates.slice(0,4).map(template=>(
+              <button key={template.label} type="button" onClick={()=>{ setDescription(template.text); onDirty(true); }} style={{
+                appearance:"none",cursor:"pointer",borderRadius:8,
+                border:`1px solid rgba(99,172,255,0.22)`,background:"rgba(99,172,255,0.08)",
+                color:T.blue,padding:"6px 14px",fontSize:12,fontWeight:600,transition:"all 0.15s",
+              }}>{template.label}</button>
             ))}
           </div>
         </div>
 
-        {/* Textarea */}
         <div style={{position:"relative"}}>
           <textarea
             value={description}
-            onChange={e=>{ setDescription(e.target.value); onDirty(false); }}
+            onChange={e=>{ setDescription(e.target.value); onDirty(true); }}
             onFocus={()=>setFocused(true)}
             onBlur={()=>setFocused(false)}
-            placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
+            placeholder="Example: Connected espresso machine with Wi-Fi, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
             rows={7}
             maxLength={charMax}
             style={{
               width:"100%",borderRadius:12,resize:"vertical",minHeight:160,lineHeight:1.75,
               border:`1px solid ${focused?T.lineFocus:T.lineStrong}`,
-              background:"rgba(0,0,0,0.28)",padding:"13px 15px 34px",
+              background:"rgba(0,0,0,0.28)",padding:"13px 15px 32px",
               color:T.text,outline:"none",fontSize:14,
-              boxShadow:focused?"0 0 0 3px rgba(99,172,255,0.08)":"none",
-              transition:"border-color 0.2s,box-shadow 0.2s",boxSizing:"border-box",
+              boxShadow:focused?"0 0 0 3px rgba(99,172,255,0.09)":"none",
+              transition:"border-color 0.2s,box-shadow 0.2s",
+              boxSizing:"border-box",
             }}
           />
           <div style={{position:"absolute",bottom:10,right:12,pointerEvents:"none"}}>
@@ -668,7 +638,6 @@ function InputComposer({description,setDescription,templates,chips,onAnalyze,bus
           </div>
         </div>
 
-        {/* Add-detail chips */}
         {chips.length>0&&(
           <div>
             <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Add detail</div>
@@ -682,13 +651,12 @@ function InputComposer({description,setDescription,templates,chips,onAnalyze,bus
           </div>
         )}
 
-        {/* Action row */}
         <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
             <PrimaryBtn onClick={onAnalyze} disabled={busy||!description.trim()}>
               {busy?(
                 <span style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span className="spin" style={{display:"inline-block",width:12,height:12,border:"2px solid rgba(3,10,20,0.3)",borderTopColor:"#030a14",borderRadius:999}}/>
+                  <span className="spin" style={{display:"inline-block",width:12,height:12,border:"2px solid rgba(0,0,0,0.3)",borderTopColor:"#000",borderRadius:999}}/>
                   Analyzing…
                 </span>
               ):"Analyze product"}
@@ -705,15 +673,14 @@ function InputComposer({description,setDescription,templates,chips,onAnalyze,bus
 }
 
 // ─── Guidance strip ───────────────────────────────────────────────────────────
-function GuidanceStrip({result,dirty,busy,onReanalyze,onApply}) {
+function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
   const items=buildGuidanceItems(result);
   if(!items.length) return null;
-
   return (
     <Card>
       <CardHeader
         title="Refinement guidance"
-        subtitle="Clarifications that can materially change the standards route."
+        subtitle="Clarifications that can change the standards route."
         right={<PrimaryBtn onClick={onReanalyze} disabled={!dirty||busy}>{busy?"Analyzing…":dirty?"Refresh route →":"Route current"}</PrimaryBtn>}
       />
       <div style={{padding:"14px 16px",display:"grid",gap:10}}>
@@ -726,7 +693,7 @@ function GuidanceStrip({result,dirty,busy,onReanalyze,onApply}) {
                   <div style={{fontSize:12,fontWeight:700,color:tone.text}}>{item.title}</div>
                   <span style={{width:6,height:6,borderRadius:999,background:tone.dot,flexShrink:0}}/>
                 </div>
-                <div style={{fontSize:12,color:"rgba(255,255,255,0.52)",lineHeight:1.5}}>{item.why}</div>
+                <div style={{fontSize:12,color:"rgba(255,255,255,0.55)",lineHeight:1.5}}>{item.why}</div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                   {item.choices.map(choice=>(
                     <button key={choice} onClick={()=>onApply(choice)} style={{
@@ -751,34 +718,46 @@ function GuidanceStrip({result,dirty,busy,onReanalyze,onApply}) {
   );
 }
 
-// ─── Route snapshot (breakdown by directive) ──────────────────────────────────
-function StandardsOverview({result}) {
+// ─── Route snapshot ───────────────────────────────────────────────────────────
+function StandardsOverview({ result }){
   const breakdown=buildDirectiveBreakdown(result);
-  // Also show current path and watchlist (from App.js)
-  const path=result?.current_path||[];
+  const currentPath=result?.current_path||[];
   const watchlist=result?.future_watchlist||[];
-  const questions=(result?.suggested_questions||[]).slice(0,6);
-  if(!breakdown.length) return null;
+  const questions=result?.suggested_questions||[];
+
+  if(!breakdown.length && !currentPath.length && !watchlist.length && !questions.length) return null;
+
   const total=breakdown.reduce((n,{count})=>n+count,0);
+  const listRow=(items, emptyText)=>items.length ? (
+    <div style={{display:"grid",gap:8}}>
+      {items.map((line,index)=>(
+        <div key={`${line}-${index}`} style={{display:"grid",gridTemplateColumns:"10px minmax(0,1fr)",gap:10,alignItems:"start"}}>
+          <span style={{width:6,height:6,borderRadius:999,background:T.blue,marginTop:6}}/>
+          <span style={{fontSize:12,color:T.textSub,lineHeight:1.6}}>{line}</span>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div style={{fontSize:12,color:T.textMuted,lineHeight:1.6}}>{emptyText}</div>
+  );
 
   return (
-    <div style={{display:"grid",gap:14}}>
-      {/* Directive tile breakdown */}
-      <Card>
-        <CardHeader title="Route snapshot" subtitle={`${total} standard${total!==1?"s":""} across ${breakdown.length} directive${breakdown.length!==1?"s":""}.`}/>
-        <div style={{padding:"14px 16px"}}>
+    <Card>
+      <CardHeader title="Route snapshot" subtitle={total?`${total} standards across ${breakdown.length} directive${breakdown.length!==1?"s":""}.`:"Current path, input focus, and future watchlist."}/>
+      <div style={{padding:"14px 16px",display:"grid",gap:14}}>
+        {breakdown.length>0&&(
           <div className="snapshot-grid" style={{display:"grid",gridTemplateColumns:"repeat(6,minmax(0,1fr))",gap:8}}>
             {breakdown.map(({key,count})=>{
               const tone=directiveTone(key);
-              const barPct=Math.max(10,Math.round((count/total)*100));
+              const barPct=Math.max(12,Math.round((count/Math.max(total,1))*100));
               return (
                 <div key={key} style={{borderRadius:12,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"12px 10px",display:"grid",gap:6}}>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     <span style={{width:6,height:6,borderRadius:999,background:tone.dot}}/>
                     <div style={{fontSize:11,fontWeight:700,color:tone.text}}>{directiveShort(key)}</div>
                   </div>
-                  <div style={{fontSize:26,lineHeight:1,fontWeight:800,color:T.text}}>{count}</div>
-                  <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,0.07)",overflow:"hidden"}}>
+                  <div style={{fontSize:28,lineHeight:1,fontWeight:800,color:T.text}}>{count}</div>
+                  <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,0.08)",overflow:"hidden"}}>
                     <div style={{height:"100%",width:`${barPct}%`,borderRadius:999,background:tone.dot,transition:"width 0.6s ease"}}/>
                   </div>
                   <div style={{fontSize:10,color:T.textMuted,letterSpacing:"0.04em"}}>standard{count!==1?"s":""}</div>
@@ -786,70 +765,51 @@ function StandardsOverview({result}) {
               );
             })}
           </div>
+        )}
+
+        <div className="guidance-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10}}>
+          <SoftBox>
+            <Label>Current path</Label>
+            <div style={{marginTop:8}}>{listRow(currentPath, "No current path summary available.")}</div>
+          </SoftBox>
+          <SoftBox>
+            <Label>Input focus</Label>
+            <div style={{marginTop:8,display:"flex",gap:7,flexWrap:"wrap"}}>
+              {questions.length ? questions.slice(0,6).map(item=><Chip key={item}>{item}</Chip>) : <span style={{fontSize:12,color:T.textMuted}}>No guided questions available.</span>}
+            </div>
+          </SoftBox>
+          <SoftBox>
+            <Label>Future watchlist</Label>
+            <div style={{marginTop:8}}>{listRow(watchlist, "No future watchlist items.")}</div>
+          </SoftBox>
         </div>
-      </Card>
-
-      {/* Three-column summary strip — current path, input focus, watchlist */}
-      <div className="tri-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:14}}>
-        <Card>
-          <CardHeader title="Current path" subtitle="Immediate compliance route"/>
-          <div style={{padding:"14px 16px",display:"grid",gap:8}}>
-            {path.length ? path.map((line,i)=>(
-              <div key={i} style={{display:"grid",gridTemplateColumns:"8px minmax(0,1fr)",gap:10,alignItems:"start",fontSize:13,color:T.textSub,lineHeight:1.55}}>
-                <span style={{width:7,height:7,borderRadius:999,background:T.blue,marginTop:5,flexShrink:0,display:"block"}}/>
-                <span>{line}</span>
-              </div>
-            )) : <Value>No current path summary available.</Value>}
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader title="Input focus" subtitle="Most useful next details"/>
-          <div style={{padding:"14px 16px",display:"flex",gap:8,flexWrap:"wrap"}}>
-            {questions.length ? questions.map(q=><Chip key={q} tone="blue">{q}</Chip>) : <Value>No suggestions at this time.</Value>}
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader title="Future watchlist" subtitle="Track separately from current CE"/>
-          <div style={{padding:"14px 16px",display:"grid",gap:8}}>
-            {watchlist.length ? watchlist.map((line,i)=>(
-              <div key={i} style={{display:"grid",gridTemplateColumns:"8px minmax(0,1fr)",gap:10,alignItems:"start",fontSize:13,color:T.textSub,lineHeight:1.55}}>
-                <span style={{width:7,height:7,borderRadius:999,background:T.amber,marginTop:5,flexShrink:0,display:"block"}}/>
-                <span>{line}</span>
-              </div>
-            )) : <Value>No future watchlist triggered.</Value>}
-          </div>
-        </Card>
       </div>
-    </div>
+    </Card>
   );
 }
 
 // ─── Standard card ────────────────────────────────────────────────────────────
-function StandardCard({item,sectionKey}) {
+function StandardCard({ item, sectionKey }){
   const dirKey=normalizeStandardDirective(item);
   const dirTone=directiveTone(dirKey);
   const sectionTone=SECTION_TONES[sectionKey]||SECTION_TONES.unknown;
-  const evidenceList=(item.evidence_hint||[]);
-  const evidence=evidenceList.join(" · ") || "—";
+  const evidence=sentenceCaseList(item.evidence_hint||[]).join(" · ");
   const summary=item.standard_summary||item.reason||item.notes||item.title;
   const tags=standardCardTags(item);
 
   const metaFields=[
-    {label:"Harmonized Reference",value:prettyValue(item.harmonized_reference)},
-    {label:"Evidence Expected",   value:prettyValue(evidence)},
-    {label:"Harmonized Version",  value:prettyValue(item.dated_version)},
-    {label:"EU Latest Version",   value:prettyValue(item.version)},
+    {label:"Harmonized Reference", value:prettyValue(item.harmonized_reference)},
+    {label:"Evidence Expected",    value:prettyValue(evidence||"—")},
+    {label:"Harmonized Version",   value:prettyValue(item.dated_version)},
+    {label:"EU Latest Version",    value:prettyValue(item.version)},
   ];
 
   return (
     <div style={{
       borderRadius:14,border:`1px solid ${dirTone.bd}`,
-      background:"rgba(255,255,255,0.03)",overflow:"hidden",
-      boxShadow:"0 2px 14px rgba(0,0,0,0.28)",
+      background:"rgba(255,255,255,0.04)",
+      overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.25)",
     }}>
-      {/* Header band */}
       <div style={{
         padding:"13px 15px 11px",
         background:`linear-gradient(135deg,${dirTone.bg},transparent)`,
@@ -864,19 +824,11 @@ function StandardCard({item,sectionKey}) {
               color:sectionTone.tagText,padding:"2px 8px",fontSize:10,fontWeight:700,
               textTransform:"uppercase",letterSpacing:"0.08em",
             }}>{titleCase(item.harmonization_status||"unknown")}</span>
-            {item.item_type==="review"&&(
-              <span style={{
-                display:"inline-flex",alignItems:"center",borderRadius:6,
-                background:"rgba(248,113,133,0.10)",border:"1px solid rgba(248,113,133,0.22)",
-                color:"#fb7185",padding:"2px 8px",fontSize:10,fontWeight:700,
-                textTransform:"uppercase",letterSpacing:"0.08em",
-              }}>Review</span>
-            )}
           </div>
           <span style={{
             display:"inline-flex",alignItems:"center",borderRadius:8,
-            background:dirTone.dot,color:"#030a14",
-            padding:"6px 13px",fontSize:13,fontWeight:800,
+            background:dirTone.dot,color:"#000",
+            padding:"7px 13px",fontSize:14,fontWeight:800,
             letterSpacing:"-0.02em",whiteSpace:"nowrap",flexShrink:0,
           }}>{item.code}</span>
         </div>
@@ -884,19 +836,19 @@ function StandardCard({item,sectionKey}) {
           <div style={{fontSize:14,fontWeight:700,color:T.text,lineHeight:1.35}}>{item.title}</div>
           <div style={{marginTop:5,fontSize:12,color:T.textSub,lineHeight:1.7}}>{summary}</div>
         </div>
+        {tags.length>0&&(
+          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+            {tags.map(tag=><Chip key={`${item.code}-${tag}`}>{tag}</Chip>)}
+          </div>
+        )}
       </div>
 
-      {/* Tags row */}
-      {!!tags.length&&(
-        <div style={{padding:"10px 14px 6px",display:"flex",gap:7,flexWrap:"wrap",borderBottom:`1px solid ${T.line}`}}>
-          {tags.map(tag=><Chip key={tag}>{tag}</Chip>)}
-        </div>
-      )}
-
-      {/* Meta grid */}
       <div className="standard-meta-grid" style={{padding:14,display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8}}>
         {metaFields.map(({label,value})=>(
-          <SoftBox key={label}><Label>{label}</Label><Value>{value}</Value></SoftBox>
+          <SoftBox key={label}>
+            <Label>{label}</Label>
+            <Value>{value}</Value>
+          </SoftBox>
         ))}
       </div>
     </div>
@@ -904,25 +856,20 @@ function StandardCard({item,sectionKey}) {
 }
 
 // ─── Collapsible section wrapper ──────────────────────────────────────────────
-function CollapsibleSection({section,defaultOpen=true}) {
+function CollapsibleSection({ section, defaultOpen=true }){
   const [open,setOpen]=useState(defaultOpen);
   const sectionTone=SECTION_TONES[section.key]||SECTION_TONES.unknown;
-  const dirKey=section.key;
-
   return (
     <div style={{borderRadius:14,border:`1px solid ${sectionTone.bd}`,background:`linear-gradient(135deg,${sectionTone.bg},transparent)`,overflow:"hidden"}}>
       <button onClick={()=>setOpen(v=>!v)} style={{
         appearance:"none",cursor:"pointer",width:"100%",
-        padding:"12px 15px",borderBottom:open?`1px solid ${sectionTone.bd}`:"none",
+        padding:"12px 14px",borderBottom:open?`1px solid ${sectionTone.bd}`:"none",
         background:"transparent",textAlign:"left",
         display:"flex",gap:12,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",
       }}>
-        <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:700,color:T.text}}>{section.title||directiveLabel(dirKey)}</div>
-            <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>{section.count} item{section.count!==1?"s":""}</div>
-          </div>
-          <DirPill dirKey={dirKey}/>
+        <div>
+          <div style={{fontSize:13,fontWeight:700,color:T.text}}>{section.title}</div>
+          <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>{section.count} item{section.count!==1?"s":""}</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{
@@ -948,18 +895,13 @@ function CollapsibleSection({section,defaultOpen=true}) {
 }
 
 // ─── Standards section ────────────────────────────────────────────────────────
-function StandardsSection({result}) {
-  // Prefer standard_sections from API; fall back to flat result re-grouping
-  const rawSections=result?.standard_sections?.length
-    ?orderStandardSections(result.standard_sections).map(s=>({
-        ...s,
-        items:sortStandardItems(s.items||[]).map(item=>({...item,directive:normalizeStandardDirective(item)})),
-      }))
+function StandardsSection({ result }){
+  const sourceSections=result?.standard_sections?.length
+    ?result.standard_sections.map(section=>({...section,items:sortStandardItems(section.items||[]).map(item=>({...item,directive:normalizeStandardDirective(item)}))}))
     :buildSectionsFromFlatResult(result);
 
-  // Render in canonical harmonized → state_of_the_art → review → unknown order
   const ordered=["harmonized","state_of_the_art","review","unknown"]
-    .map(key=>rawSections.find(s=>s.key===key))
+    .map(key=>sourceSections.find(s=>s.key===key))
     .filter(Boolean);
 
   if(!ordered.length) return null;
@@ -977,12 +919,11 @@ function StandardsSection({result}) {
 }
 
 // ─── Diagnostics panel ────────────────────────────────────────────────────────
-function DiagnosticsPanel({result}) {
+function DiagnosticsPanel({ result }){
   const [open,setOpen]=useState(false);
   const diagnostics=result?.diagnostics||[];
   const traits=result?.all_traits||[];
   if(!diagnostics.length&&!traits.length) return null;
-
   return (
     <Card>
       <CardHeader
@@ -1004,7 +945,7 @@ function DiagnosticsPanel({result}) {
             <SoftBox>
               <Label>Engine diagnostics</Label>
               <div style={{marginTop:8,display:"grid",gap:6}}>
-                {diagnostics.slice(0,40).map((line,i)=>(
+                {diagnostics.map((line,i)=>(
                   <div key={line+i} style={{fontSize:12,color:T.textSub,lineHeight:1.65,paddingLeft:12,borderLeft:`2px solid ${T.line}`}}>{line}</div>
                 ))}
               </div>
@@ -1016,29 +957,40 @@ function DiagnosticsPanel({result}) {
   );
 }
 
-// ─── Copy results button ──────────────────────────────────────────────────────
-function CopyResultsButton({result,description}) {
+// ─── Copy button ──────────────────────────────────────────────────────────────
+function CopyResultsButton({ result, description }){
   const [copied,setCopied]=useState(false);
-  const onCopy=useCallback(async()=>{
-    try {
-      await navigator.clipboard.writeText(buildCopyText(result,description));
-      setCopied(true);
-      window.setTimeout(()=>setCopied(false),2200);
-    } catch(e){ console.error(e); }
-  },[result,description]);
-
+  const handleCopy=async()=>{
+    const sections=result?.standard_sections?.length?result.standard_sections:buildSectionsFromFlatResult(result);
+    const text=[
+      "RuleGrid compliance summary","",
+      `Input: ${description}`,"",
+      `Detected product: ${titleCase(result?.product_type||"Unclear")}`,
+      `Confidence: ${titleCase(result?.product_match_confidence||"low")}`,
+      `Overall risk: ${result?.overall_risk||"MEDIUM"}`,"",
+      `Summary: ${result?.summary||""}`,"",
+      "Standards route:",
+      ...sections.flatMap(section=>[
+        `- ${section.title} (${section.count})`,
+        ...sortStandardItems(section.items||[]).map(item=>`  • ${item.code} — ${item.title}`),
+      ]),"",
+      "Applicable legislation:",
+      ...buildCompactLegislationItems(result).map(item=>`- ${item.code} — ${item.title}`),
+    ].join("\n");
+    try{ await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2200); }catch(_){}
+  };
   return (
-    <SecondaryBtn onClick={onCopy} style={copied?{color:T.green,borderColor:"rgba(74,222,128,0.28)"}:{}}>
+    <SecondaryBtn onClick={handleCopy} style={copied?{color:T.green,borderColor:"rgba(74,222,128,0.3)"}:{}}>
       {copied?"✓ Copied to clipboard":"Copy summary"}
     </SecondaryBtn>
   );
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
-function EmptyState() {
+function EmptyState(){
   const steps=[
     {icon:"01",label:"Describe the product",text:"Product type, power source, connectivity, key functions."},
-    {icon:"02",label:"Add detail",text:"Materials (food-contact), sensors, battery, certifications."},
+    {icon:"02",label:"Add detail",text:"Materials (food-contact), sensors, battery, certifications needed."},
     {icon:"03",label:"Refine iteratively",text:"Use the guidance strip to clarify traits and refresh the route."},
   ];
   return (
@@ -1046,7 +998,7 @@ function EmptyState() {
       <div style={{padding:"36px 28px",display:"grid",gap:24,justifyItems:"center",textAlign:"center"}}>
         <div style={{
           width:60,height:60,borderRadius:18,
-          border:"1px solid rgba(99,172,255,0.18)",background:"rgba(99,172,255,0.06)",
+          border:`1px solid rgba(99,172,255,0.2)`,background:"rgba(99,172,255,0.07)",
           display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,
         }}>⬡</div>
         <div>
@@ -1060,11 +1012,11 @@ function EmptyState() {
             <div key={step.icon} style={{
               display:"flex",gap:14,alignItems:"flex-start",
               padding:"10px 14px",borderRadius:12,
-              background:"rgba(255,255,255,0.025)",border:`1px solid ${T.line}`,
+              background:"rgba(255,255,255,0.03)",border:`1px solid ${T.line}`,
             }}>
               <span style={{
                 fontSize:10,fontWeight:800,color:T.blue,letterSpacing:"0.08em",
-                background:"rgba(99,172,255,0.09)",border:"1px solid rgba(99,172,255,0.18)",
+                background:"rgba(99,172,255,0.10)",border:`1px solid rgba(99,172,255,0.18)`,
                 borderRadius:6,padding:"3px 7px",flexShrink:0,marginTop:1,
               }}>{step.icon}</span>
               <div>
@@ -1080,11 +1032,11 @@ function EmptyState() {
 }
 
 // ─── Error card ───────────────────────────────────────────────────────────────
-function ErrorCard({message}) {
+function ErrorCard({ message }){
   return (
     <div style={{
-      borderRadius:14,border:"1px solid rgba(248,113,113,0.26)",
-      background:"rgba(248,113,113,0.06)",padding:"14px 18px",
+      borderRadius:14,border:`1px solid rgba(248,113,113,0.28)`,
+      background:"rgba(248,113,113,0.07)",padding:"14px 18px",
       display:"flex",gap:12,alignItems:"flex-start",
     }}>
       <span style={{fontSize:16,flexShrink:0,marginTop:1,color:T.rose}}>⚠</span>
@@ -1097,7 +1049,7 @@ function ErrorCard({message}) {
 }
 
 // ─── Scroll-to-top ────────────────────────────────────────────────────────────
-function ScrollTopBtn({visible}) {
+function ScrollTopBtn({ visible }){
   return (
     <button
       onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}
@@ -1115,8 +1067,8 @@ function ScrollTopBtn({visible}) {
   );
 }
 
-// ─── Root App ─────────────────────────────────────────────────────────────────
-export default function App() {
+// ─── Root app ─────────────────────────────────────────────────────────────────
+export default function App(){
   const [description,setDescription]=useState("");
   const [result,setResult]=useState(null);
   const [metadata,setMetadata]=useState(null);
@@ -1135,23 +1087,24 @@ export default function App() {
   useEffect(()=>{
     let active=true;
     fetch(METADATA_URL)
-      .then(res=>{ if(!res.ok) throw new Error(); return res.json(); })
+      .then(res=>{ if(!res.ok) throw new Error(`Metadata failed (${res.status})`); return res.json(); })
       .then(data=>{ if(active) setMetadata(data); })
       .catch(()=>{ if(active) setMetadata({traits:[],products:[],legislations:[]}); });
     return()=>{ active=false; };
   },[]);
 
   const templates=useMemo(()=>{
-    const d=buildDynamicTemplates(metadata?.products||[]);
-    return d.length?d:DEFAULT_TEMPLATES;
+    const dynamic=buildDynamicTemplates(metadata?.products||[]);
+    return dynamic.length?dynamic:DEFAULT_TEMPLATES;
   },[metadata]);
 
   const chips=useMemo(()=>{
     const backend=(result?.suggested_quick_adds||[]).map(item=>({
-      label:titleCase(item.label),text:item.text,
+      label:titleCase(item.label),
+      text:item.text,
     }));
     const frontend=buildGuidedChips(metadata,result);
-    return uniqueBy([...backend,...frontend],item=>item.text).slice(0,12);
+    return uniqueBy([...backend,...frontend], item=>item.text).slice(0,12);
   },[metadata,result]);
 
   useEffect(()=>{
@@ -1161,20 +1114,20 @@ export default function App() {
   },[result]);
 
   const runAnalysis=useCallback(async()=>{
-    const payload=String(description||"").trim();
-    if(!payload) return;
+    const payloadDescription=String(description||"").trim();
+    if(!payloadDescription) return;
     setBusy(true); setError("");
-    try {
+    try{
       const response=await fetch(ANALYZE_URL,{
         method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({description:payload,depth:"deep"}),
+        body:JSON.stringify({description:payloadDescription, depth:"deep"}),
       });
       const data=await response.json().catch(()=>({}));
       if(!response.ok) throw new Error(data?.detail||`Analysis failed (${response.status})`);
       setResult(data); setClarifyDirty(false);
-    } catch(err) {
+    }catch(err){
       setError(err?.message||"Analysis failed.");
-    } finally {
+    }finally{
       setBusy(false);
     }
   },[description]);
@@ -1204,12 +1157,15 @@ export default function App() {
             {error&&<ErrorCard message={error}/>}
             <div ref={resultsRef}/>
 
-            {!result ? (
+            {!result?(
               <EmptyState/>
-            ) : (
+            ):(
               <>
                 <GuidanceStrip
-                  result={result} dirty={clarifyDirty} busy={busy} onReanalyze={runAnalysis}
+                  result={result}
+                  dirty={clarifyDirty}
+                  busy={busy}
+                  onReanalyze={runAnalysis}
                   onApply={text=>{
                     setDescription(cur=>{ const next=joinText(cur,text); if(next!==cur) setClarifyDirty(true); return next; });
                   }}
@@ -1235,7 +1191,7 @@ export default function App() {
 
 // ─── Global CSS ───────────────────────────────────────────────────────────────
 const globalCss=`
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
   *{ box-sizing:border-box; margin:0; padding:0; }
   html,body,#root{
     min-height:100%;
@@ -1248,11 +1204,11 @@ const globalCss=`
   textarea::placeholder{ color:${T.textMuted}; }
   textarea::-webkit-scrollbar{ width:5px; }
   textarea::-webkit-scrollbar-track{ background:transparent; }
-  textarea::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.11); border-radius:3px; }
+  textarea::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.12); border-radius:3px; }
 
   .app-shell-grid{
     display:grid;
-    grid-template-columns:268px minmax(0,1fr);
+    grid-template-columns:260px minmax(0,1fr);
     gap:16px;
     align-items:start;
   }
@@ -1261,26 +1217,22 @@ const globalCss=`
   @keyframes spin{ to{ transform:rotate(360deg); } }
   .spin{ animation:spin 0.75s linear infinite; }
 
-  button:not(:disabled):hover{ filter:brightness(1.10); }
+  button:not(:disabled):hover{ filter:brightness(1.12); }
   button:not(:disabled):active{ filter:brightness(0.95); transform:scale(0.99); }
 
-  @media(max-width:1200px){
+  @media(max-width:1120px){
     .snapshot-grid{ grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
-    .hero-stats-grid{ grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
   }
   @media(max-width:1040px){
     .app-shell-grid{ grid-template-columns:1fr; }
     .left-rail,.left-rail-slot{ position:static !important; top:auto !important; }
     .snapshot-grid{ grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
-    .tri-grid{ grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
   }
   @media(max-width:960px){
     .guidance-grid{ grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
     .snapshot-grid{ grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
   }
   @media(max-width:680px){
-    .guidance-grid,.snapshot-grid,.standard-meta-grid,.hero-stats-grid,.tri-grid{
-      grid-template-columns:1fr !important;
-    }
+    .guidance-grid,.snapshot-grid,.standard-meta-grid{ grid-template-columns:1fr !important; }
   }
 `;
