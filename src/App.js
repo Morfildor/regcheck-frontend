@@ -285,7 +285,7 @@ export default function App(){
           <div style={{display:"flex",gap:14,alignItems:"center"}}>
             <div style={{width:42,height:42,borderRadius:14,bg:"linear-gradient(135deg,#7fa4af,#5f7f87)",background:"linear-gradient(135deg,#7fa4af,#5f7f87)",display:"grid",placeItems:"center",color:"white",fontSize:14,fontWeight:900}}>RC</div>
             <div>
-              <div style={{fontSize:22,fontWeight:900,color:"#26221e"}}>RuleGrid</div>
+              <div style={{fontSize:22,fontWeight:900,color:"#26221e"}}>RegCheck</div>
               <div style={{fontSize:13,color:"#857d73",marginTop:2}}>Backend-aligned compliance scoping</div>
             </div>
           </div>
