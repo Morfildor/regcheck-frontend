@@ -8,8 +8,8 @@ const METADATA_URL = ANALYZE_URL.replace(/\/analyze$/, "/metadata/options");
 const THEME = {
   bg: "#f3ede4",
   bg2: "#e7ddd1",
-  panel: "rgba(255,255,255,0.82)",
-  panelStrong: "rgba(255,255,255,0.92)",
+  panel: "rgba(255,255,255,0.84)",
+  panelStrong: "rgba(255,255,255,0.94)",
   line: "rgba(54, 42, 56, 0.10)",
   lineStrong: "rgba(54, 42, 56, 0.18)",
   text: "#211a20",
@@ -23,13 +23,9 @@ const THEME = {
   accent4: "#b48b43",
   deep: "#241c28",
   deep2: "#302537",
-  deep3: "#203847",
   success: "#5d7f66",
   warning: "#a77b37",
   danger: "#b06a7c",
-  lavender: "#74679a",
-  blush: "#efe6ec",
-  mint: "#e7f1ef",
 };
 
 const DIR_SHORT = {
@@ -273,6 +269,123 @@ function buildGuidedChips(metadata, result) {
   return chips.slice(0, 8);
 }
 
+function buildClarificationQuestions(result) {
+  const traits = new Set(result?.all_traits || []);
+  const questions = [];
+  const existing = new Set();
+
+  const push = (key, title, why, importance, choices = []) => {
+    if (existing.has(key)) return;
+    existing.add(key);
+    questions.push({ key, title, why, importance, choices });
+  };
+
+  if (traits.has("radio")) {
+    push(
+      "radio_technology",
+      "Which radio technologies are actually present?",
+      "Needed to confirm RED scope, radio route, RF exposure, and whether RED cybersecurity stays in scope.",
+      "high",
+      [
+        "Wi-Fi radio",
+        "Bluetooth LE radio",
+        "Thread radio",
+        "Zigbee radio",
+        "Cellular radio",
+        "NFC radio",
+      ],
+    );
+  }
+
+  if (traits.has("cloud") || traits.has("internet") || traits.has("app_control") || traits.has("ota")) {
+    push(
+      "connectivity_architecture",
+      "How is the connected architecture designed?",
+      "Needed to confirm EN 18031 applicability, cybersecurity scoping, and whether the product depends on internet or cloud services.",
+      "high",
+      [
+        "cloud account required",
+        "local LAN control without cloud dependency",
+        "OTA firmware updates",
+        "remote control from outside home network",
+        "user login or authentication",
+      ],
+    );
+  }
+
+  if (traits.has("food_contact")) {
+    push(
+      "food_contact_materials",
+      "Which food or wetted-path materials are present?",
+      "Needed to refine food-contact obligations and evidence expectations.",
+      "medium",
+      [
+        "food-contact plastics",
+        "silicone seal",
+        "rubber gasket",
+        "non-stick coating",
+        "metal wetted path",
+      ],
+    );
+  }
+
+  if (traits.has("battery_powered")) {
+    push(
+      "battery_details",
+      "What battery configuration applies?",
+      "Needed to confirm Battery Regulation relevance and supporting documentation.",
+      "medium",
+      [
+        "rechargeable lithium battery",
+        "replaceable battery",
+        "battery supplied with the product",
+      ],
+    );
+  }
+
+  if (traits.has("camera") || traits.has("microphone") || traits.has("location") || traits.has("personal_data_likely")) {
+    push(
+      "sensitive_functions",
+      "Does the product capture or process sensitive user-related data?",
+      "Needed to refine RED delegated-act and privacy-related scoping.",
+      "high",
+      [
+        "integrated camera",
+        "microphone or voice input",
+        "location tracking",
+        "user account and profile data",
+      ],
+    );
+  }
+
+  if (!traits.has("mains_powered") && !traits.has("battery_powered") && !traits.has("usb_powered")) {
+    push(
+      "power_source",
+      "What is the actual power source?",
+      "Needed to confirm the main electrical route and relevant standard families.",
+      "high",
+      [
+        "230 V mains powered",
+        "rechargeable lithium battery",
+        "USB-C powered",
+        "external power supply",
+      ],
+    );
+  }
+
+  (result?.missing_information_items || []).forEach((item) => {
+    push(
+      `missing_${item.key}`,
+      titleCase(item.key),
+      item.message,
+      item.importance || "medium",
+      (item.examples || []).slice(0, 5),
+    );
+  });
+
+  return questions.slice(0, 6);
+}
+
 function buildCompactLegislationItems(result) {
   const sections = result?.legislation_sections || [];
   const allItems = sections.flatMap((section) =>
@@ -306,6 +419,48 @@ function sortStandardItems(items) {
       String(a.code || "").localeCompare(String(b.code || ""))
     );
   });
+}
+
+function buildSectionsFromFlatResult(result) {
+  const standardRows = (result?.standards || []).map((item) => ({
+    ...item,
+    item_type: item.item_type || "standard",
+  }));
+  const reviewRows = (result?.review_items || []).map((item) => ({
+    ...item,
+    item_type: "review",
+  }));
+
+  const grouped = {};
+  [...standardRows, ...reviewRows].forEach((item) => {
+    let key = item.harmonization_status || (item.item_type === "review" ? "review" : "unknown");
+    if (!["harmonized", "state_of_the_art", "review", "unknown"].includes(key)) key = "unknown";
+
+    if (!grouped[key]) {
+      grouped[key] = {
+        key,
+        title:
+          key === "harmonized"
+            ? "Harmonized standards"
+            : key === "state_of_the_art"
+              ? "State of the art / latest technical route"
+              : key === "review"
+                ? "Review-required routes"
+                : "Other standards",
+        count: 0,
+        items: [],
+      };
+    }
+    grouped[key].items.push(item);
+  });
+
+  return ["harmonized", "state_of_the_art", "review", "unknown"]
+    .filter((key) => grouped[key])
+    .map((key) => ({
+      ...grouped[key],
+      items: sortStandardItems(grouped[key].items),
+      count: grouped[key].items.length,
+    }));
 }
 
 function DirPill({ dirKey, large = false }) {
@@ -467,9 +622,17 @@ function Hero({ result }) {
           "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(249,244,239,0.94) 54%, rgba(235,239,244,0.92))",
         boxShadow: THEME.shadowLg,
         padding: 26,
+        maxWidth: "100%",
       }}
     >
-      <div style={{ display: "grid", gap: 18 }}>
+      <div
+        style={{
+          display: "grid",
+          gap: 18,
+          justifyItems: "center",
+          textAlign: "center",
+        }}
+      >
         {showResultMeta ? (
           <div
             style={{
@@ -477,6 +640,7 @@ function Hero({ result }) {
               flexWrap: "wrap",
               gap: 10,
               alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <RiskPill value={result?.overall_risk || "MEDIUM"} />
@@ -484,7 +648,7 @@ function Hero({ result }) {
           </div>
         ) : null}
 
-        <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ display: "grid", gap: 6, maxWidth: 980 }}>
           <div
             style={{
               fontSize: 32,
@@ -501,7 +665,6 @@ function Hero({ result }) {
               fontSize: 15,
               color: THEME.subtext,
               lineHeight: 1.72,
-              maxWidth: 920,
             }}
           >
             {hero.subtitle ||
@@ -510,7 +673,7 @@ function Hero({ result }) {
         </div>
 
         {showResultMeta && primaryRegimes.length ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
             {primaryRegimes.map((dirKey) => (
               <DirPill key={dirKey} dirKey={dirKey} large />
             ))}
@@ -718,15 +881,24 @@ function InputComposer({
   );
 }
 
-function InputGapsPanel({ result, onApply }) {
-  const rawItems = result?.missing_information_items || [];
-  const items = rawItems.slice(0, 6);
-  if (!items.length) return null;
+function InputGapsPanel({ result, onApply, onReanalyze, dirty, busy }) {
+  const questions = buildClarificationQuestions(result);
+  if (!questions.length) return null;
 
   return (
     <SectionCard
       title="Clarify these first"
-      subtitle="These inputs materially affect the route."
+      subtitle="These are the questions that meaningfully change scope, route, or evidence."
+      right={
+        <button
+          type="button"
+          onClick={onReanalyze}
+          disabled={!dirty || busy}
+          style={primaryButtonStyle(!dirty || busy)}
+        >
+          {busy ? "Analyzing..." : dirty ? "Re-analyze with updates" : "No updates yet"}
+        </button>
+      }
     >
       <div
         className="two-col-grid"
@@ -736,7 +908,7 @@ function InputGapsPanel({ result, onApply }) {
           gap: 12,
         }}
       >
-        {items.map((item) => {
+        {questions.map((item) => {
           const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
           return (
             <div
@@ -761,7 +933,7 @@ function InputGapsPanel({ result, onApply }) {
                 <div
                   style={{ fontSize: 14, fontWeight: 900, color: tone.text }}
                 >
-                  {titleCase(item.key)}
+                  {item.title}
                 </div>
                 <Tag>{titleCase(item.importance)}</Tag>
               </div>
@@ -773,19 +945,19 @@ function InputGapsPanel({ result, onApply }) {
                   lineHeight: 1.65,
                 }}
               >
-                {item.message}
+                {item.why}
               </div>
 
-              {item.examples?.length ? (
+              {item.choices?.length ? (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {item.examples.slice(0, 3).map((example) => (
+                  {item.choices.map((choice) => (
                     <button
-                      key={example}
+                      key={choice}
                       type="button"
-                      onClick={() => onApply(example)}
+                      onClick={() => onApply(choice)}
                       style={chipButtonStyle}
                     >
-                      + {example}
+                      + {choice}
                     </button>
                   ))}
                 </div>
@@ -794,6 +966,19 @@ function InputGapsPanel({ result, onApply }) {
           );
         })}
       </div>
+
+      {dirty ? (
+        <div
+          style={{
+            marginTop: 14,
+            fontSize: 12,
+            color: THEME.accent2,
+            fontWeight: 800,
+          }}
+        >
+          New clarification details were added to the prompt. Re-analyze to refresh the route.
+        </div>
+      ) : null}
     </SectionCard>
   );
 }
@@ -803,26 +988,14 @@ function StandardCard({ item, sectionKey }) {
   const dirTone = directiveTone(dirKey);
   const sectionTone = SECTION_TONES[sectionKey] || SECTION_TONES.unknown;
   const evidence = sentenceCaseList(item.evidence_hint || []).join(" · ");
-  const tags = uniqueBy(
-    [
-      item.category ? titleCase(item.category) : null,
-      item.standard_family || null,
-      ...(item.test_focus || []).map((t) => titleCase(t)),
-    ]
-      .filter(Boolean)
-      .slice(0, 4),
-    (value) => value,
-  );
+  const summary = item.standard_summary || item.reason || item.notes || item.title;
 
   return (
     <div
       style={{
         borderRadius: 22,
         border: `1px solid ${dirTone.bd}`,
-        background: "rgba(255,255,255,0.92)",
-        padding: 0,
-        display: "grid",
-        gap: 0,
+        background: "rgba(255,255,255,0.93)",
         overflow: "hidden",
         boxShadow: `0 12px 24px ${dirTone.glow}`,
       }}
@@ -830,7 +1003,7 @@ function StandardCard({ item, sectionKey }) {
       <div
         style={{
           padding: "14px 16px 12px",
-          background: `linear-gradient(135deg, ${dirTone.bg}, rgba(255,255,255,0.92))`,
+          background: `linear-gradient(135deg, ${dirTone.bg}, rgba(255,255,255,0.94))`,
           borderBottom: `1px solid ${dirTone.bd}`,
           display: "grid",
           gap: 10,
@@ -875,10 +1048,11 @@ function StandardCard({ item, sectionKey }) {
               background: dirTone.dot,
               color: "white",
               padding: "9px 13px",
-              fontSize: 19,
+              fontSize: 18,
               fontWeight: 900,
               letterSpacing: "-0.02em",
               boxShadow: `0 0 0 4px ${dirTone.glow}`,
+              whiteSpace: "nowrap",
             }}
           >
             {item.code}
@@ -889,66 +1063,43 @@ function StandardCard({ item, sectionKey }) {
           <div style={{ fontSize: 15, fontWeight: 900, color: THEME.text }}>
             {item.title}
           </div>
-          {(item.reason || item.notes) ? (
-            <div
-              style={{
-                marginTop: 6,
-                fontSize: 13,
-                color: THEME.subtext,
-                lineHeight: 1.65,
-              }}
-            >
-              {item.reason || item.notes}
-            </div>
-          ) : null}
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 13,
+              color: THEME.subtext,
+              lineHeight: 1.65,
+            }}
+          >
+            {summary}
+          </div>
         </div>
       </div>
 
-      <div style={{ padding: 16, display: "grid", gap: 12 }}>
-        {tags.length ? (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {tags.map((tag) => (
-              <Tag key={tag}>{tag}</Tag>
-            ))}
-          </div>
-        ) : null}
-
-        <div
-          className="standard-meta-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-            gap: 10,
-          }}
-        >
-          <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>Standard Reference</div>
-            <div style={{ ...metaValueStyle, fontWeight: 900, fontSize: 16, color: dirTone.text }}>
-              {prettyValue(item.code)}
-            </div>
-          </div>
-          <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>Harmonized Reference</div>
-            <div style={metaValueStyle}>{prettyValue(item.harmonized_reference)}</div>
-          </div>
-          <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>Evidence Expected</div>
-            <div style={metaValueStyle}>{prettyValue(evidence || "—")}</div>
-          </div>
-          <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>EU Latest Version</div>
-            <div style={metaValueStyle}>{prettyValue(item.version)}</div>
-          </div>
-          <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>Harmonized Version</div>
-            <div style={metaValueStyle}>{prettyValue(item.dated_version)}</div>
-          </div>
-          <div style={softBoxStyle}>
-            <div style={miniTitleStyle}>Category</div>
-            <div style={metaValueStyle}>
-              {prettyValue(item.category ? titleCase(item.category) : "—")}
-            </div>
-          </div>
+      <div
+        className="standard-meta-grid"
+        style={{
+          padding: 16,
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 10,
+        }}
+      >
+        <div style={softBoxStyle}>
+          <div style={miniTitleStyle}>Harmonized Reference</div>
+          <div style={metaValueStyle}>{prettyValue(item.harmonized_reference)}</div>
+        </div>
+        <div style={softBoxStyle}>
+          <div style={miniTitleStyle}>Evidence Expected</div>
+          <div style={metaValueStyle}>{prettyValue(evidence || "—")}</div>
+        </div>
+        <div style={softBoxStyle}>
+          <div style={miniTitleStyle}>Harmonized Version</div>
+          <div style={metaValueStyle}>{prettyValue(item.dated_version)}</div>
+        </div>
+        <div style={softBoxStyle}>
+          <div style={miniTitleStyle}>EU Latest Version</div>
+          <div style={metaValueStyle}>{prettyValue(item.version)}</div>
         </div>
       </div>
     </div>
@@ -956,21 +1107,24 @@ function StandardCard({ item, sectionKey }) {
 }
 
 function StandardsSection({ result }) {
-  const sections = result?.standard_sections || [];
-  if (!sections.length) return null;
+  const sourceSections =
+    result?.standard_sections?.length
+      ? result.standard_sections.map((section) => ({
+          ...section,
+          items: sortStandardItems(section.items || []),
+        }))
+      : buildSectionsFromFlatResult(result);
 
   const ordered = ["harmonized", "state_of_the_art", "review", "unknown"]
-    .map((key) => sections.find((section) => section.key === key))
-    .filter(Boolean)
-    .map((section) => ({
-      ...section,
-      items: sortStandardItems(section.items || []),
-    }));
+    .map((key) => sourceSections.find((section) => section.key === key))
+    .filter(Boolean);
+
+  if (!ordered.length) return null;
 
   return (
     <SectionCard
       title="Standards route"
-      subtitle="Ordered to show LVD first, then EMC, RED, RED cybersecurity, and RoHS-related routes. Standard reference is visually prioritised."
+      subtitle="Card content is tightened to the key compliance fields. Standard reference stays only on the card header."
     >
       <div style={{ display: "grid", gap: 18 }}>
         {ordered.map((section) => {
@@ -981,7 +1135,7 @@ function StandardsSection({ result }) {
               style={{
                 borderRadius: 22,
                 border: `1px solid ${sectionTone.bd}`,
-                background: "rgba(255,255,255,0.74)",
+                background: "rgba(255,255,255,0.76)",
                 overflow: "hidden",
               }}
             >
@@ -1129,10 +1283,15 @@ function CopyResultsButton({ result, description }) {
       `Summary: ${result?.summary || ""}`,
       "",
       "Standards route:",
-      ...(result?.standard_sections || []).flatMap((section) => [
-        `- ${section.title} (${section.count})`,
-        ...sortStandardItems(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
-      ]),
+      ...(result?.standard_sections?.length
+        ? result.standard_sections.flatMap((section) => [
+            `- ${section.title} (${section.count})`,
+            ...sortStandardItems(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
+          ])
+        : buildSectionsFromFlatResult(result).flatMap((section) => [
+            `- ${section.title} (${section.count})`,
+            ...sortStandardItems(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
+          ])),
       "",
       "Applicable legislation:",
       ...buildCompactLegislationItems(result).map(
@@ -1143,7 +1302,7 @@ function CopyResultsButton({ result, description }) {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // ignore clipboard errors
+      // no-op
     }
   };
 
@@ -1179,19 +1338,20 @@ function EmptyState() {
         </div>
         <div style={listRowStyle}>
           <span style={bulletStyle} />
-          After analysis, refine the input using the clarification chips.
+          Use the clarification block after analysis to refine scope and refresh the route.
         </div>
       </div>
     </SectionCard>
   );
 }
 
-function App() {
+export default function App() {
   const [description, setDescription] = useState("");
   const [result, setResult] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [clarifyDirty, setClarifyDirty] = useState(false);
 
   const resultsRef = useRef(null);
 
@@ -1256,6 +1416,7 @@ function App() {
       }
 
       setResult(data);
+      setClarifyDirty(false);
     } catch (err) {
       setError(err.message || "Analysis failed.");
     } finally {
@@ -1264,7 +1425,11 @@ function App() {
   }, [description]);
 
   const applyText = useCallback((text) => {
-    setDescription((current) => joinText(current, text));
+    setDescription((current) => {
+      const next = joinText(current, text);
+      if (next !== current) setClarifyDirty(true);
+      return next;
+    });
   }, []);
 
   return (
@@ -1296,7 +1461,10 @@ function App() {
             <main style={{ display: "grid", gap: 18, minWidth: 0 }}>
               <InputComposer
                 description={description}
-                setDescription={setDescription}
+                setDescription={(value) => {
+                  setDescription(value);
+                  setClarifyDirty(false);
+                }}
                 templates={templates}
                 chips={chips}
                 onAnalyze={runAnalysis}
@@ -1315,7 +1483,13 @@ function App() {
                 <EmptyState />
               ) : (
                 <>
-                  <InputGapsPanel result={result} onApply={applyText} />
+                  <InputGapsPanel
+                    result={result}
+                    onApply={applyText}
+                    onReanalyze={runAnalysis}
+                    dirty={clarifyDirty}
+                    busy={busy}
+                  />
                   <StandardsSection result={result} />
                   <DiagnosticsPanel result={result} />
 
@@ -1479,5 +1653,3 @@ const bulletStyle = {
   marginTop: 8,
   flexShrink: 0,
 };
-
-export default App;
