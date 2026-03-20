@@ -171,6 +171,11 @@ function directiveShort(key) {
   return DIR_SHORT[key] || titleCase(key);
 }
 
+function directiveRank(key) {
+  const rank = DIR_ORDER.indexOf(key || "OTHER");
+  return rank === -1 ? 999 : rank;
+}
+
 function joinText(base, addition) {
   const a = String(base || "").trim();
   const b = String(addition || "").trim();
@@ -194,17 +199,6 @@ function prettyValue(value) {
   if (value === null || value === undefined || value === "") return "—";
   if (Array.isArray(value)) return value.join(", ");
   return String(value);
-}
-
-function getHeroStats(heroSummary, result) {
-  const stats = heroSummary?.stats || [];
-  const fallback = [
-    { label: "Current CE", value: result?.stats?.current_legislation_count || 0 },
-    { label: "Standards", value: result?.stats?.standards_count || 0 },
-    { label: "Review Items", value: result?.stats?.review_items_count || 0 },
-    { label: "Input Gaps", value: result?.stats?.missing_information_count || 0 },
-  ];
-  return stats.length ? stats : fallback;
 }
 
 function buildDynamicTemplates(products) {
@@ -290,11 +284,7 @@ function buildCompactLegislationItems(result) {
   );
 
   const sorted = [...allItems].sort((a, b) => {
-    const aDir = DIR_ORDER.indexOf(a.directive_key || "OTHER");
-    const bDir = DIR_ORDER.indexOf(b.directive_key || "OTHER");
-    const aRank = aDir === -1 ? 999 : aDir;
-    const bRank = bDir === -1 ? 999 : bDir;
-    return aRank - bRank || String(a.code).localeCompare(String(b.code));
+    return directiveRank(a.directive_key) - directiveRank(b.directive_key) || String(a.code).localeCompare(String(b.code));
   });
 
   return uniqueBy(sorted, (item) => `${item.code}-${item.directive_key}`);
@@ -307,6 +297,15 @@ function compactLegislationGroupLabel(item) {
   if (sectionKey === "future") return "Future";
   if (sectionKey === "ce") return "CE";
   return titleCase(sectionKey);
+}
+
+function sortStandardItems(items) {
+  return [...(items || [])].sort((a, b) => {
+    return (
+      directiveRank(a.directive || a.legislation_key) - directiveRank(b.directive || b.legislation_key) ||
+      String(a.code || "").localeCompare(String(b.code || ""))
+    );
+  });
 }
 
 function DirPill({ dirKey, large = false }) {
@@ -458,8 +457,8 @@ function SectionCard({ title, subtitle, right, children, style }) {
 
 function Hero({ result }) {
   const hero = result?.hero_summary || {};
-  const stats = getHeroStats(hero, result);
   const primaryRegimes = hero.primary_regimes || [];
+  const showResultMeta = Boolean(result);
 
   return (
     <SectionCard
@@ -470,20 +469,20 @@ function Hero({ result }) {
         padding: 26,
       }}
     >
-      <div style={{ display: "grid", gap: 20 }}>
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 10,
-            alignItems: "center",
-          }}
-        >
-          <RiskPill value={result?.overall_risk || "MEDIUM"} />
-          <Tag>
-            {titleCase(hero.confidence || result?.product_match_confidence || "low")} Confidence
-          </Tag>
-        </div>
+      <div style={{ display: "grid", gap: 18 }}>
+        {showResultMeta ? (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+              alignItems: "center",
+            }}
+          >
+            <RiskPill value={result?.overall_risk || "MEDIUM"} />
+            <Tag>{titleCase(hero.confidence || result?.product_match_confidence || "low")} Confidence</Tag>
+          </div>
+        ) : null}
 
         <div style={{ display: "grid", gap: 6 }}>
           <div
@@ -495,7 +494,7 @@ function Hero({ result }) {
               letterSpacing: "-0.03em",
             }}
           >
-            {hero.title || "Compliance route analysis"}
+            {hero.title || "RuleGrid regulatory scoping"}
           </div>
           <div
             style={{
@@ -505,60 +504,18 @@ function Hero({ result }) {
               maxWidth: 920,
             }}
           >
-            {hero.subtitle || result?.summary}
+            {hero.subtitle ||
+              "Describe the product clearly to generate the standards route and the applicable legislation path."}
           </div>
         </div>
 
-        {primaryRegimes.length ? (
+        {showResultMeta && primaryRegimes.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {primaryRegimes.map((dirKey) => (
               <DirPill key={dirKey} dirKey={dirKey} large />
             ))}
           </div>
         ) : null}
-
-        <div
-          className="hero-stats-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 12,
-          }}
-        >
-          {stats.map((item) => (
-            <div
-              key={item.label}
-              style={{
-                borderRadius: 18,
-                border: `1px solid ${THEME.line}`,
-                background: "rgba(255,255,255,0.74)",
-                padding: "14px 15px 13px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  color: THEME.soft,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                }}
-              >
-                {item.label}
-              </div>
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 26,
-                  fontWeight: 900,
-                  color: THEME.text,
-                }}
-              >
-                {item.value}
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </SectionCard>
   );
@@ -861,8 +818,8 @@ function StandardCard({ item, sectionKey }) {
     <div
       style={{
         borderRadius: 22,
-        border: `1px solid ${sectionTone.bd}`,
-        background: "rgba(255,255,255,0.90)",
+        border: `1px solid ${dirTone.bd}`,
+        background: "rgba(255,255,255,0.92)",
         padding: 0,
         display: "grid",
         gap: 0,
@@ -873,8 +830,8 @@ function StandardCard({ item, sectionKey }) {
       <div
         style={{
           padding: "14px 16px 12px",
-          background: sectionTone.bg,
-          borderBottom: `1px solid ${sectionTone.bd}`,
+          background: `linear-gradient(135deg, ${dirTone.bg}, rgba(255,255,255,0.92))`,
+          borderBottom: `1px solid ${dirTone.bd}`,
           display: "grid",
           gap: 10,
         }}
@@ -895,9 +852,9 @@ function StandardCard({ item, sectionKey }) {
                 display: "inline-flex",
                 alignItems: "center",
                 borderRadius: 999,
-                background: "rgba(255,255,255,0.72)",
-                border: `1px solid ${dirTone.bd}`,
-                color: dirTone.text,
+                background: sectionTone.tagBg,
+                border: `1px solid ${sectionTone.bd}`,
+                color: sectionTone.tagText,
                 padding: "5px 10px",
                 fontSize: 11,
                 fontWeight: 900,
@@ -915,14 +872,13 @@ function StandardCard({ item, sectionKey }) {
               display: "inline-flex",
               alignItems: "center",
               borderRadius: 12,
-              background: "rgba(255,255,255,0.90)",
-              border: `1px solid ${dirTone.bd}`,
-              color: dirTone.text,
-              padding: "8px 12px",
-              fontSize: 18,
+              background: dirTone.dot,
+              color: "white",
+              padding: "9px 13px",
+              fontSize: 19,
               fontWeight: 900,
               letterSpacing: "-0.02em",
-              boxShadow: `0 0 0 3px ${dirTone.glow}`,
+              boxShadow: `0 0 0 4px ${dirTone.glow}`,
             }}
           >
             {item.code}
@@ -1005,12 +961,16 @@ function StandardsSection({ result }) {
 
   const ordered = ["harmonized", "state_of_the_art", "review", "unknown"]
     .map((key) => sections.find((section) => section.key === key))
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((section) => ({
+      ...section,
+      items: sortStandardItems(section.items || []),
+    }));
 
   return (
     <SectionCard
       title="Standards route"
-      subtitle="Standard reference is prioritised visually. Harmonized standards first, then state-of-the-art and review-required routes."
+      subtitle="Ordered to show LVD first, then EMC, RED, RED cybersecurity, and RoHS-related routes. Standard reference is visually prioritised."
     >
       <div style={{ display: "grid", gap: 18 }}>
         {ordered.map((section) => {
@@ -1171,7 +1131,7 @@ function CopyResultsButton({ result, description }) {
       "Standards route:",
       ...(result?.standard_sections || []).flatMap((section) => [
         `- ${section.title} (${section.count})`,
-        ...(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
+        ...sortStandardItems(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
       ]),
       "",
       "Applicable legislation:",
@@ -1328,14 +1288,7 @@ function App() {
         }}
       >
         <div style={{ display: "grid", gap: 18 }}>
-          <Hero
-            result={
-              result || {
-                overall_risk: "MEDIUM",
-                hero_summary: { title: "RuleGrid regulatory scoping" },
-              }
-            }
-          />
+          <Hero result={result} />
 
           <div className="app-shell-grid">
             {result ? <SidebarRail result={result} /> : <div />}
@@ -1419,15 +1372,9 @@ const globalCss = `
       top: auto !important;
     }
   }
-  @media (max-width: 920px) {
-    .hero-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-  }
   @media (max-width: 760px) {
     .two-col-grid { grid-template-columns: 1fr !important; }
     .standard-meta-grid { grid-template-columns: 1fr !important; }
-  }
-  @media (max-width: 540px) {
-    .hero-stats-grid { grid-template-columns: 1fr !important; }
   }
 `;
 
