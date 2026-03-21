@@ -1166,7 +1166,7 @@ function EmptyState() {
       text: "Include power, radios, control model, updates, materials, and any sensitive functions.",
     },
     {
-      icon: <Waypoints size={16} />,
+      icon: <ListChecks size={16} />,
       title: "2. Review the route first",
       text: "The overview and route grouping are designed to make the first pass fast.",
     },
