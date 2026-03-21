@@ -17,10 +17,10 @@ const T = {
   lineStrong:  "rgba(255,255,255,0.12)",   // was 0.10
   lineFocus:   "rgba(99,172,255,0.45)",    // was 0.50 — slightly softer
 
-  text:        "#e4e9f5",          // slightly brighter than muted pass
-  textSub:     "#99a6c0",          // was #8e9ab8 — lifted a touch
-  textMuted:   "#546070",
-  textLabel:   "#6878a0",
+  text:        "#dde2f0",          // was #f0f2fa — softer white
+  textSub:     "#8e9ab8",          // was #a8b2cc — less bright
+  textMuted:   "#515f7a",          // was #5a6585
+  textLabel:   "#606f8e",          // was #6e7da0
 
   blue:        "#5ba8ff",
   teal:        "#22d3c4",
@@ -48,23 +48,23 @@ const DIR_ORDER = [
 ];
 
 const DIR_TONES = {
-  LVD:         { dot:"#6ee7b7", bg:"rgba(110,231,183,0.09)", bd:"rgba(110,231,183,0.22)", text:"#6ee7b7" },
-  EMC:         { dot:"#67e8f9", bg:"rgba(103,232,249,0.09)", bd:"rgba(103,232,249,0.22)", text:"#67e8f9" },
-  RED:         { dot:"#63acff", bg:"rgba(99,172,255,0.09)",  bd:"rgba(99,172,255,0.22)",  text:"#63acff" },
-  RED_CYBER:   { dot:"#c084fc", bg:"rgba(192,132,252,0.09)", bd:"rgba(192,132,252,0.22)", text:"#c084fc" },
-  CRA:         { dot:"#86efac", bg:"rgba(134,239,172,0.09)", bd:"rgba(134,239,172,0.22)", text:"#86efac" },
-  ROHS:        { dot:"#fcd34d", bg:"rgba(252,211,77,0.09)",  bd:"rgba(252,211,77,0.22)",  text:"#fcd34d" },
-  REACH:       { dot:"#fdba74", bg:"rgba(253,186,116,0.09)", bd:"rgba(253,186,116,0.22)", text:"#fdba74" },
-  GDPR:        { dot:"#2dd4bf", bg:"rgba(45,212,191,0.09)",  bd:"rgba(45,212,191,0.22)",  text:"#2dd4bf" },
-  AI_Act:      { dot:"#a78bfa", bg:"rgba(167,139,250,0.09)", bd:"rgba(167,139,250,0.22)", text:"#a78bfa" },
-  ESPR:        { dot:"#fb923c", bg:"rgba(251,146,60,0.09)",  bd:"rgba(251,146,60,0.22)",  text:"#fb923c" },
-  ECO:         { dot:"#4ade80", bg:"rgba(74,222,128,0.09)",  bd:"rgba(74,222,128,0.22)",  text:"#4ade80" },
-  BATTERY:     { dot:"#a3e635", bg:"rgba(163,230,53,0.09)",  bd:"rgba(163,230,53,0.22)",  text:"#a3e635" },
-  FCM:         { dot:"#f9a8d4", bg:"rgba(249,168,212,0.09)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
-  FCM_PLASTIC: { dot:"#f9a8d4", bg:"rgba(249,168,212,0.09)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
-  MD:          { dot:"#93c5fd", bg:"rgba(147,197,253,0.09)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
-  MACH_REG:    { dot:"#93c5fd", bg:"rgba(147,197,253,0.09)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
-  OTHER:       { dot:"#94a3b8", bg:"rgba(148,163,184,0.09)", bd:"rgba(148,163,184,0.22)", text:"#94a3b8" },
+  LVD:         { dot:"#6ee7b7", bg:"rgba(110,231,183,0.07)", bd:"rgba(110,231,183,0.16)", text:"#6ee7b7" },
+  EMC:         { dot:"#67e8f9", bg:"rgba(103,232,249,0.07)", bd:"rgba(103,232,249,0.16)", text:"#67e8f9" },
+  RED:         { dot:"#63acff", bg:"rgba(99,172,255,0.07)",  bd:"rgba(99,172,255,0.16)",  text:"#63acff" },
+  RED_CYBER:   { dot:"#c084fc", bg:"rgba(192,132,252,0.07)", bd:"rgba(192,132,252,0.16)", text:"#c084fc" },
+  CRA:         { dot:"#86efac", bg:"rgba(134,239,172,0.07)", bd:"rgba(134,239,172,0.16)", text:"#86efac" },
+  ROHS:        { dot:"#fcd34d", bg:"rgba(252,211,77,0.07)",  bd:"rgba(252,211,77,0.16)",  text:"#fcd34d" },
+  REACH:       { dot:"#fdba74", bg:"rgba(253,186,116,0.07)", bd:"rgba(253,186,116,0.16)", text:"#fdba74" },
+  GDPR:        { dot:"#2dd4bf", bg:"rgba(45,212,191,0.07)",  bd:"rgba(45,212,191,0.16)",  text:"#2dd4bf" },
+  AI_Act:      { dot:"#a78bfa", bg:"rgba(167,139,250,0.07)", bd:"rgba(167,139,250,0.16)", text:"#a78bfa" },
+  ESPR:        { dot:"#fb923c", bg:"rgba(251,146,60,0.07)",  bd:"rgba(251,146,60,0.16)",  text:"#fb923c" },
+  ECO:         { dot:"#4ade80", bg:"rgba(74,222,128,0.07)",  bd:"rgba(74,222,128,0.16)",  text:"#4ade80" },
+  BATTERY:     { dot:"#a3e635", bg:"rgba(163,230,53,0.07)",  bd:"rgba(163,230,53,0.16)",  text:"#a3e635" },
+  FCM:         { dot:"#f9a8d4", bg:"rgba(249,168,212,0.07)", bd:"rgba(249,168,212,0.16)", text:"#f9a8d4" },
+  FCM_PLASTIC: { dot:"#f9a8d4", bg:"rgba(249,168,212,0.07)", bd:"rgba(249,168,212,0.16)", text:"#f9a8d4" },
+  MD:          { dot:"#93c5fd", bg:"rgba(147,197,253,0.07)", bd:"rgba(147,197,253,0.16)", text:"#93c5fd" },
+  MACH_REG:    { dot:"#93c5fd", bg:"rgba(147,197,253,0.07)", bd:"rgba(147,197,253,0.16)", text:"#93c5fd" },
+  OTHER:       { dot:"#94a3b8", bg:"rgba(148,163,184,0.07)", bd:"rgba(148,163,184,0.16)", text:"#94a3b8" },
 };
 
 const STATUS = {
@@ -390,16 +390,7 @@ function SecondaryBtn({ onClick, disabled, children, style }){
   );
 }
 
-function GhostBtn({ onClick, children }){
-  return (
-    <button onClick={onClick} style={{
-      appearance:"none",cursor:"pointer",borderRadius:8,
-      border:`1px solid ${T.line}`,background:"transparent",
-      color:T.textMuted,padding:"5px 12px",fontWeight:600,fontSize:11.5,
-      transition:"all 0.18s",whiteSpace:"nowrap",letterSpacing:"0.01em",
-    }}>{children}</button>
-  );
-}
+
 
 function AddChipBtn({ onClick, children }){
   return (
@@ -506,16 +497,16 @@ function Hero({ result }){
     }}>
       {/* Grid texture */}
       <div style={{position:"absolute",inset:0,pointerEvents:"none",
-        backgroundImage:`linear-gradient(rgba(255,255,255,0.040) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.040) 1px,transparent 1px)`,
-        backgroundSize:"48px 48px"}}/>
-      {/* Glow */}
+        backgroundImage:`linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px)`,
+        backgroundSize:"56px 56px"}}/>
+      {/* Glow — softened */}
       <div style={{position:"absolute",top:-80,left:"40%",transform:"translateX(-50%)",
         width:480,height:240,
-        background:"radial-gradient(ellipse,rgba(91,168,255,0.07),transparent 68%)",
+        background:"radial-gradient(ellipse,rgba(91,168,255,0.045),transparent 68%)",
         pointerEvents:"none"}}/>
       <div style={{position:"absolute",bottom:-60,right:"20%",
         width:320,height:160,
-        background:"radial-gradient(ellipse,rgba(34,211,196,0.045),transparent 68%)",
+        background:"radial-gradient(ellipse,rgba(34,211,196,0.030),transparent 68%)",
         pointerEvents:"none"}}/>
 
       <div style={{position:"relative",display:"grid",gap:16,justifyItems:"center",textAlign:"center"}}>
@@ -858,9 +849,9 @@ function StandardCard({ item, sectionKey }){
 
       {/* Header */}
       <div style={{
-        padding:"14px 16px 12px",
-        background:`linear-gradient(140deg,${dirTone.bg} 0%,rgba(255,255,255,0.018) 65%)`,
-        borderBottom:`1px solid rgba(255,255,255,0.07)`,
+        padding:"13px 16px 11px",
+        background:`linear-gradient(140deg,${dirTone.bg} 0%,transparent 65%)`,
+        borderBottom:`1px solid rgba(255,255,255,0.04)`,
       }}>
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10,marginBottom:9}}>
           <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",flex:1,minWidth:0}}>
@@ -981,7 +972,7 @@ function DirectiveGroup({ section, index }){
         </div>
       </div>
       {open&&(
-        <div style={{padding:"16px",display:"grid",gap:14}}>
+        <div style={{padding:"13px",display:"grid",gap:11}}>
           {(section.items||[]).map(item=>(
             <StandardCard
               key={`${section.key}-${item.code}-${item.title}`}
@@ -1022,7 +1013,7 @@ function StandardsSection({ result }){
         <RoutePills result={result}/>
       </div>
 
-      <div style={{padding:"16px 16px 20px",display:"grid",gap:16}}>
+      <div style={{padding:"14px 14px 18px",display:"grid",gap:12}}>
         {sections.map((section,i)=>(
           <DirectiveGroup key={section.key} section={section} index={i}/>
         ))}
@@ -1327,7 +1318,7 @@ export default function App(){
         <div className="app-shell-grid">
           <div className="left-rail-slot">{result?<SidebarRail result={result}/>:null}</div>
 
-          <main style={{display:"grid",gap:14,minWidth:0}}>
+          <main style={{display:"grid",gap:12,minWidth:0}}>
             <Hero result={result}/>
             <InputComposer
               description={description}
@@ -1343,7 +1334,7 @@ export default function App(){
             {!result?(
               <EmptyState/>
             ):(
-              <div style={{display:"grid",gap:14,animation:"fadeIn 0.3s ease both"}}>
+              <div style={{display:"grid",gap:12,animation:"fadeIn 0.3s ease both"}}>
                 <GuidanceStrip
                   result={result}
                   dirty={clarifyDirty}
@@ -1358,7 +1349,7 @@ export default function App(){
                 <div style={{
                   display:"flex",justifyContent:"space-between",alignItems:"center",
                   gap:8,flexWrap:"wrap",paddingTop:2,
-                  borderTop:`1px solid ${T.line}`,paddingTop:12,
+                  borderTop:`1px solid ${T.line}`,
                 }}>
                   <span style={{fontSize:11,color:T.textMuted}}>
                     {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})} · RuleGrid
