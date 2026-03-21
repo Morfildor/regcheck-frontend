@@ -1,5 +1,5 @@
 /* ================================================================
-   RULEGRID v2 — Refined Dark Intelligence
+   RULEGRID v3 — Input-First, Precision Dark
    ================================================================ */
 
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap");
@@ -10,7 +10,7 @@
   --bg:             #0c1521;
   --bg-alt:         #0f1b2c;
 
-  /* Surfaces — lighter than v1, more breathable */
+  /* Surfaces */
   --surface-0:      rgba(14, 23, 38, 0.98);
   --surface-1:      rgba(19, 31, 48, 0.90);
   --surface-2:      rgba(24, 38, 58, 0.94);
@@ -39,6 +39,9 @@
   /* Shadows */
   --shadow:         0 1px 6px rgba(0, 0, 0, 0.20), 0 4px 20px rgba(0, 0, 0, 0.12);
   --shadow-lg:      0 2px 14px rgba(0, 0, 0, 0.24), 0 10px 44px rgba(0, 0, 0, 0.18);
+
+  /* Landing composer */
+  --composer-radius: 20px;
 }
 
 /* ── Base Reset ───────────────────────────────────────────── */
@@ -88,7 +91,6 @@ code {
   position: relative;
 }
 
-/* Subtle grid overlay, fades quickly */
 .app-shell::before {
   content: "";
   position: fixed;
@@ -110,6 +112,12 @@ code {
   padding: 22px 0 80px;
   display: grid;
   gap: 14px;
+}
+
+/* Landing mode: narrower content column to focus the eye */
+.page-main--landing {
+  width: min(760px, calc(100% - 32px));
+  gap: 20px;
 }
 
 /* ── Topbar ───────────────────────────────────────────────── */
@@ -185,7 +193,6 @@ code {
   position: relative;
 }
 
-/* Inner highlight edge */
 .panel::after {
   content: "";
   position: absolute;
@@ -217,7 +224,6 @@ code {
   border-color: var(--border-sm);
 }
 
-/* ★ Standards panel — premium treatment, the primary product */
 .panel--standards {
   background:
     radial-gradient(ellipse at 2% 40%, rgba(125, 185, 255, 0.05), transparent 52%),
@@ -270,7 +276,7 @@ code {
   padding: 20px 24px 24px;
 }
 
-/* ── Hero Grid ────────────────────────────────────────────── */
+/* ── Hero Grid (result state) ─────────────────────────────── */
 .hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.44fr) minmax(268px, 0.70fr);
@@ -286,6 +292,247 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
+}
+
+/* ── Landing Strip — compact heading, no panel box ────────── */
+.landing-strip {
+  padding: 32px 0 8px;
+  animation: fadeSlideIn 0.4s ease both;
+}
+
+.landing-strip__inner {
+  display: grid;
+  gap: 14px;
+}
+
+.landing-strip__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.72;
+}
+
+.landing-strip__title {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+  color: var(--text-strong);
+}
+
+.landing-strip__title--accent {
+  background: linear-gradient(135deg, var(--accent), var(--accent-teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-strip__sub {
+  font-size: 1.02rem;
+  line-height: 1.72;
+  color: var(--text-muted);
+  max-width: 58ch;
+}
+
+/* ── Landing Composer — input is the hero ─────────────────── */
+.landing-composer {
+  display: grid;
+  gap: 0;
+  border-radius: var(--composer-radius);
+  border: 1px solid rgba(125, 185, 255, 0.13);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(125, 185, 255, 0.05) 0%, transparent 60%),
+    linear-gradient(160deg, rgba(18, 30, 50, 0.96), rgba(12, 20, 34, 0.98));
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px rgba(125, 185, 255, 0.04) inset,
+    0 1px 0 rgba(255,255,255,0.04) inset;
+  overflow: hidden;
+  animation: fadeSlideIn 0.45s 0.05s ease both;
+}
+
+.landing-composer__quickstart {
+  display: grid;
+  gap: 10px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border-sm);
+}
+
+.landing-composer__quickstart .micro-label {
+  color: var(--text-soft);
+}
+
+.landing-composer__field {
+  display: grid;
+  gap: 0;
+}
+
+.landing-composer__textarea {
+  width: 100%;
+  resize: none;
+  padding: 20px 22px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  line-height: 1.78;
+  font-size: 0.96rem;
+  outline: none;
+  min-height: 200px;
+  transition: background 0.2s ease;
+}
+
+.landing-composer__textarea:focus {
+  background: rgba(125, 185, 255, 0.018);
+}
+
+.landing-composer__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 0 22px 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Input Hints — contextual, discreet ───────────────────── */
+.input-hints {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--border-sm);
+}
+
+.input-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 18px;
+  font-size: 0.80rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+  border-right: 1px solid var(--border-sm);
+  transition: background 0.14s ease;
+}
+
+.input-hint:last-child {
+  border-right: none;
+}
+
+.input-hint strong {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.input-hint__icon {
+  margin-top: 1px;
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: 0.55;
+  display: flex;
+  align-items: center;
+}
+
+.landing-composer__chips {
+  display: grid;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-sm);
+}
+
+/* ── Landing CTA button ───────────────────────────────────── */
+.button--landing-cta {
+  width: 100%;
+  padding: 15px 24px;
+  font-size: 0.97rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border-radius: 0 0 var(--composer-radius) var(--composer-radius);
+  border-top: 1px solid rgba(125, 185, 255, 0.15);
+  background: rgba(125, 185, 255, 0.10);
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  color: var(--text-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  position: relative;
+}
+
+.button--landing-cta:hover:not(:disabled) {
+  background: rgba(125, 185, 255, 0.17);
+  color: #fff;
+}
+
+.button--landing-cta:disabled {
+  opacity: 0.36;
+  cursor: not-allowed;
+}
+
+.cta-hint {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-family: "IBM Plex Mono", monospace;
+  opacity: 0.38;
+  letter-spacing: 0;
+}
+
+/* ── Empty State — compact 3-step guide ──────────────────── */
+.empty-state-compact {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-sm);
+  background: var(--border-sm);
+  overflow: hidden;
+  animation: fadeIn 0.4s 0.2s ease both;
+}
+
+.empty-state-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.018);
+  transition: background 0.14s ease;
+}
+
+.empty-state-step__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: rgba(125, 185, 255, 0.07);
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.empty-state-step__title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  letter-spacing: -0.01em;
+}
+
+.empty-state-step__text {
+  margin-top: 3px;
+  font-size: 0.82rem;
+  line-height: 1.58;
+  color: var(--text-soft);
 }
 
 /* ── Pills & Tags ─────────────────────────────────────────── */
@@ -325,9 +572,10 @@ code {
   height: 6px;
   border-radius: 999px;
   background: var(--pill-dot);
+  flex-shrink: 0;
 }
 
-/* ── Support List (Hero Panel) ────────────────────────────── */
+/* ── Support List (result hero panel) ────────────────────── */
 .support-list__item {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -350,7 +598,7 @@ code {
   flex-shrink: 0;
 }
 
-/* Text hierarchy — shared across many components */
+/* Text hierarchy */
 .support-list__title,
 .detail-card__title,
 .route-section__title-row h3,
@@ -379,7 +627,7 @@ code {
   color: var(--text-muted);
 }
 
-/* ── Composer ─────────────────────────────────────────────── */
+/* ── Composer (refinement / post-result variant) ─────────── */
 .composer__field {
   display: grid;
   gap: 10px;
@@ -537,7 +785,6 @@ code {
   color: var(--text);
 }
 
-/* Horizontal metric strip — 5 cards in a row */
 .metric-grid {
   display: flex;
   border-radius: var(--radius);
@@ -641,10 +888,9 @@ code {
 
 .legislation-group__items { display: grid; gap: 0; }
 
-/* Each legislation row: directive badge | title + code */
 .legislation-item {
   display: grid;
-  grid-template-columns: 44px 1fr;
+  grid-template-columns: auto 1fr;   /* ✦ was 44px; now auto so badge sizes to content */
   gap: 0 10px;
   align-items: start;
   padding: 8px 0;
@@ -660,13 +906,16 @@ code {
   padding-top: 0;
 }
 
-/* Short directive badge: LVD / EMC / RED etc — always same width */
+/* ✦ Fixed: auto-width badge — no more overflow on "RED Cyber", "FCM Plastic" etc. */
 .legislation-item__badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
+  width: auto;            /* ✦ was fixed 36px — now content-driven */
+  min-width: 32px;
+  max-width: 72px;        /* prevent extreme long strings from breaking layout */
   height: 20px;
+  padding: 0 6px;         /* ✦ horizontal breathing room */
   border-radius: 5px;
   border: 1px solid var(--legislation-dot-border, rgba(255,255,255,0.10));
   background: var(--legislation-dot-bg, rgba(255,255,255,0.04));
@@ -674,13 +923,15 @@ code {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.60rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   flex-shrink: 0;
   margin-top: 1px;
+  box-sizing: border-box;
 }
 
-/* Right column: title + code number stacked */
 .legislation-item__copy {
   display: grid;
   gap: 1px;
@@ -737,10 +988,7 @@ code {
   font-family: "IBM Plex Mono", monospace;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   STANDARDS ROUTE — The primary output, deserves the spotlight
-   ═══════════════════════════════════════════════════════════ */
-
+/* ── Standards Route ──────────────────────────────────────── */
 .route-section {
   padding: 0;
   overflow: hidden;
@@ -814,9 +1062,9 @@ code {
   border-top: 1px solid var(--border-sm);
 }
 
-/* ── Standard Items — clean, scannable, well-structured ─── */
+/* ── Standard Items ───────────────────────────────────────── */
 .standard-item {
-  padding: 14px 16px 14px 20px; /* extra left for accent bar */
+  padding: 14px 16px 14px 20px;
   border-radius: var(--radius);
   border: 1px solid rgba(255, 255, 255, 0.055);
   background: rgba(255, 255, 255, 0.026);
@@ -884,7 +1132,6 @@ code {
   color: var(--text-muted);
 }
 
-/* Meta fields: locked 3-column grid — labels and values always aligned */
 .standard-item__meta-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -920,7 +1167,6 @@ code {
   font-size: 0.73rem;
   line-height: 1.55;
   color: var(--text-muted);
-  /* Truncate extremely long version strings gracefully */
   overflow-wrap: break-word;
   word-break: break-all;
 }
@@ -1110,22 +1356,6 @@ code {
   color: #fbbdb8;
 }
 
-/* ── Empty State ──────────────────────────────────────────── */
-.empty-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.empty-card {
-  padding: 14px;
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.026);
-  border: 1px solid var(--border-sm);
-  display: grid;
-  gap: 10px;
-}
-
 /* ── Footer ───────────────────────────────────────────────── */
 .footer-note {
   display: flex;
@@ -1166,11 +1396,27 @@ code {
   pointer-events: auto;
 }
 
-/* ── Animation ────────────────────────────────────────────── */
+/* ── Animations ───────────────────────────────────────────── */
 .spin { animation: spin 0.8s linear infinite; }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
@@ -1189,11 +1435,17 @@ code {
 
 @media (max-width: 860px) {
   .page-shell { width: calc(100% - 20px); }
+  .page-main--landing { width: calc(100% - 20px); }
 
-  .detail-grid,
-  .empty-grid {
-    grid-template-columns: 1fr;
-  }
+  .detail-grid { grid-template-columns: 1fr; }
+
+  .input-hints { grid-template-columns: 1fr; }
+
+  .input-hint { border-right: none; border-bottom: 1px solid var(--border-sm); }
+
+  .input-hint:last-child { border-bottom: none; }
+
+  .empty-state-compact { grid-template-columns: 1fr; }
 
   .panel__header,
   .panel__body {
@@ -1206,8 +1458,6 @@ code {
 }
 
 @media (max-width: 680px) {
-  .empty-grid { grid-template-columns: 1fr; }
-
   .metric-grid { flex-direction: column; }
 
   .metric-card {
@@ -1216,6 +1466,10 @@ code {
   }
 
   .metric-card:last-child { border-bottom: none; }
+
+  .landing-strip__title {
+    font-size: clamp(1.7rem, 8vw, 2.4rem);
+  }
 }
 
 @media (max-width: 600px) {
@@ -1232,6 +1486,7 @@ code {
   .clarification-card__header,
   .detail-card__header,
   .composer__field-footer,
+  .landing-composer__footer,
   .footer-note {
     flex-direction: column;
     align-items: stretch;
@@ -1261,6 +1516,8 @@ code {
     border-bottom: none;
     padding-bottom: 0;
   }
+
+  .cta-hint { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -13,6 +13,9 @@ import {
   Sparkles,
   TriangleAlert,
   Waypoints,
+  Zap,
+  Radio,
+  FlaskConical,
 } from "lucide-react";
 import "./App.css";
 import {
@@ -158,85 +161,69 @@ function TopBar({ result, totalStandards, onReset }) {
   );
 }
 
+/* ──────────────────────────────────────────────────────────
+   HeroPanel — compact strip on landing, full panel on result
+   ────────────────────────────────────────────────────────── */
 function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
-  const title = result
-    ? hero.title || `${formatUiLabel(result?.product_type || "Product")} regulatory route`
-    : "Professional regulatory scoping for complex product decisions";
-  const subtitle = result
-    ? result?.summary || hero.subtitle || ""
-    : "Describe the real operating configuration and RuleGrid returns a standards route, legislation context, and the scope-changing questions.";
   const primaryRegimes = hero.primary_regimes || [];
 
-  const supportItems = result
-    ? [
-        {
-          icon: <ListChecks size={14} />,
-          title: `${routeSections.length} route sections`,
-          text: "Standards grouped by regime for a faster first pass.",
-        },
-        {
-          icon: <ShieldCheck size={14} />,
-          title: `${legislationItems.length} legislation items`,
-          text: "Applicable frameworks pinned in the side rail.",
-        },
-        {
-          icon: <Search size={14} />,
-          title: `${guidanceItems.length} clarifications`,
-          text: "Details most likely to shift scope.",
-        },
-      ]
-    : [
-        {
-          icon: <Search size={14} />,
-          title: "Power and major function",
-          text: "Mains, battery, heating, motors, pumps, sensors, cameras.",
-        },
-        {
-          icon: <Waypoints size={14} />,
-          title: "Connectivity and updates",
-          text: "Wi-Fi, Bluetooth, cloud dependency, app control, OTA.",
-        },
-        {
-          icon: <ShieldCheck size={14} />,
-          title: "Materials and contact paths",
-          text: "Wetted paths, food-contact parts, battery chemistry.",
-        },
-      ];
+  /* ── Empty / Landing state: compact strip ── */
+  if (!result) {
+    return (
+      <div className="landing-strip">
+        <div className="landing-strip__inner">
+          <div className="landing-strip__eyebrow">
+            <Sparkles size={11} />
+            Guided Workspace
+          </div>
+          <h1 className="landing-strip__title">
+            EU regulatory scoping,<br />
+            <span className="landing-strip__title--accent">instantly</span>
+          </h1>
+          <p className="landing-strip__sub">
+            Describe the product below and get the applicable standards route, legislation context, and scope-changing clarifications.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Result state: full two-column hero ── */
+  const title = hero.title || `${formatUiLabel(result?.product_type || "Product")} regulatory route`;
+  const subtitle = result?.summary || hero.subtitle || "";
+
+  const supportItems = [
+    {
+      icon: <ListChecks size={14} />,
+      title: `${routeSections.length} route sections`,
+      text: "Standards grouped by regime for a faster first pass.",
+    },
+    {
+      icon: <ShieldCheck size={14} />,
+      title: `${legislationItems.length} legislation items`,
+      text: "Applicable frameworks pinned in the side rail.",
+    },
+    {
+      icon: <Search size={14} />,
+      title: `${guidanceItems.length} clarifications`,
+      text: "Details most likely to shift scope.",
+    },
+  ];
 
   return (
     <div className="hero-grid">
       <Panel className="panel--hero" eyebrow="Guided Workspace" title={title} subtitle={subtitle}>
         <div className="hero-panel__content">
           <div className="hero-panel__tags">
-            {result ? (
-              <>
-                <RiskPill value={result?.overall_risk || "MEDIUM"} />
-                <span className="soft-tag">Confidence: {formatUiLabel(confidence)}</span>
-                {result?.product_type ? (
-                  <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <span className="soft-tag">
-                  <Sparkles size={13} />
-                  Guided clarifications
-                </span>
-                <span className="soft-tag">
-                  <ListChecks size={13} />
-                  Standards route
-                </span>
-                <span className="soft-tag">
-                  <ShieldCheck size={13} />
-                  Legislation context
-                </span>
-              </>
-            )}
+            <RiskPill value={result?.overall_risk || "MEDIUM"} />
+            <span className="soft-tag">Confidence: {formatUiLabel(confidence)}</span>
+            {result?.product_type ? (
+              <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
+            ) : null}
           </div>
-
           {primaryRegimes.length ? (
             <div className="tag-row">
               {primaryRegimes.map((dirKey) => (
@@ -249,8 +236,8 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
 
       <Panel
         className="panel--support"
-        eyebrow={result ? "This output" : "What to include"}
-        title={result ? "What's covered" : "For a precise route"}
+        eyebrow="This output"
+        title="What's covered"
       >
         <div className="support-list">
           {supportItems.map((item) => (
@@ -268,7 +255,10 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   );
 }
 
-function ComposerPanel({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }) {
+/* ──────────────────────────────────────────────────────────
+   ComposerPanel — landing variant is large & input-first
+   ────────────────────────────────────────────────────────── */
+function ComposerPanel({ description, setDescription, templates, chips, onAnalyze, busy, onDirty, isLanding }) {
   const charMax = 1200;
   const wordCount = description.trim() ? description.trim().split(/\s+/).length : 0;
   const usageState =
@@ -278,11 +268,136 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
         ? "counter--warn"
         : "";
 
+  const textareaRef = useRef(null);
+
+  /* Landing: focus textarea on mount */
+  useEffect(() => {
+    if (isLanding && textareaRef.current) {
+      const t = setTimeout(() => textareaRef.current?.focus(), 120);
+      return () => clearTimeout(t);
+    }
+  }, [isLanding]);
+
+  const sharedTextarea = (
+    <label className={isLanding ? "landing-composer__field" : "composer__field"}>
+      <textarea
+        ref={textareaRef}
+        value={description}
+        onChange={(event) => {
+          setDescription(event.target.value);
+          onDirty(true);
+        }}
+        onKeyDown={(event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+            event.preventDefault();
+            onAnalyze();
+          }
+        }}
+        placeholder="e.g. Connected espresso machine with Wi-Fi, OTA updates, cloud account, mains power, grinder, pressure system, food-contact brew path."
+        rows={isLanding ? 8 : 7}
+        maxLength={charMax}
+        spellCheck={false}
+        className={isLanding ? "landing-composer__textarea" : "composer__textarea"}
+      />
+      <div className={isLanding ? "landing-composer__footer" : "composer__field-footer"}>
+        <div className="composer__helper">
+          Include: power source · radios · cloud/OTA · core functions · sensors · food-contact or wetted paths
+        </div>
+        <div className={`counter ${usageState}`.trim()}>
+          {wordCount ? <span>{wordCount}w</span> : null}
+          <span>{description.length} / {charMax}</span>
+        </div>
+      </div>
+    </label>
+  );
+
+  /* ── Landing variant ── */
+  if (isLanding) {
+    return (
+      <div className="landing-composer">
+        {/* Quick start chips */}
+        <div className="landing-composer__quickstart">
+          <span className="micro-label">Quick start</span>
+          <div className="template-row">
+            {templates.slice(0, 5).map((template) => (
+              <button
+                key={template.label}
+                type="button"
+                className="chip-button"
+                onClick={() => {
+                  setDescription(template.text);
+                  onDirty(true);
+                  textareaRef.current?.focus();
+                }}
+              >
+                {template.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Textarea */}
+        {sharedTextarea}
+
+        {/* Contextual "what to include" hints — discreet, right where you need them */}
+        <div className="input-hints">
+          <div className="input-hint">
+            <span className="input-hint__icon"><Zap size={12} /></span>
+            <span><strong>Power & function</strong> — mains, battery, heating, motors, sensors</span>
+          </div>
+          <div className="input-hint">
+            <span className="input-hint__icon"><Radio size={12} /></span>
+            <span><strong>Connectivity</strong> — Wi-Fi, Bluetooth, cloud, OTA updates</span>
+          </div>
+          <div className="input-hint">
+            <span className="input-hint__icon"><FlaskConical size={12} /></span>
+            <span><strong>Materials</strong> — wetted paths, food-contact, battery chemistry</span>
+          </div>
+        </div>
+
+        {/* Guided chips if available */}
+        {chips.length ? (
+          <div className="landing-composer__chips">
+            <div className="micro-label">Add detail</div>
+            <div className="template-row">
+              {chips.map((chip) => (
+                <button
+                  key={`${chip.label}-${chip.text}`}
+                  type="button"
+                  className="chip-button chip-button--soft"
+                  onClick={() => {
+                    setDescription((current) => joinText(current, chip.text));
+                    onDirty(true);
+                  }}
+                >
+                  + {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Analyze CTA — prominent, full width */}
+        <button
+          type="button"
+          className="button button--primary button--landing-cta"
+          onClick={onAnalyze}
+          disabled={busy || !description.trim()}
+        >
+          {busy ? <LoaderCircle size={16} className="spin" /> : <Search size={16} />}
+          {busy ? "Analyzing…" : "Analyze product"}
+          {!busy && <span className="cta-hint">⌘↩</span>}
+        </button>
+      </div>
+    );
+  }
+
+  /* ── Refinement variant (post-result) ── */
   return (
     <Panel
       eyebrow="Input"
-      title="Describe the product"
-      subtitle="Use the real operating setup, not marketing copy. Technical detail produces a more accurate route."
+      title="Refine description"
+      subtitle="Add missing detail and re-run to tighten the route."
       action={<span className="keyboard-hint">⌘ + Enter to analyze</span>}
     >
       <div className="composer">
@@ -305,35 +420,7 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
           </div>
         </div>
 
-        <label className="composer__field">
-          <textarea
-            value={description}
-            onChange={(event) => {
-              setDescription(event.target.value);
-              onDirty(true);
-            }}
-            onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                event.preventDefault();
-                onAnalyze();
-              }
-            }}
-            placeholder="e.g. Connected espresso machine with Wi-Fi, OTA updates, cloud account, mains power, grinder, pressure system, food-contact brew path."
-            rows={7}
-            maxLength={charMax}
-            spellCheck={false}
-            className="composer__textarea"
-          />
-          <div className="composer__field-footer">
-            <div className="composer__helper">
-              Include: power source · radios · cloud/OTA · core functions · sensors · food-contact or wetted paths
-            </div>
-            <div className={`counter ${usageState}`.trim()}>
-              {wordCount ? <span>{wordCount}w</span> : null}
-              <span>{description.length} / {charMax}</span>
-            </div>
-          </div>
-        </label>
+        {sharedTextarea}
 
         {chips.length ? (
           <div className="composer__block">
@@ -601,9 +688,9 @@ function StandardItem({ item, sectionKey }) {
   const evidenceList = sentenceCaseList(item.evidence_hint || []);
   const summary = item.standard_summary || item.reason || item.notes || "";
   const metaFields = [
-    { label: "Legislation",           value: prettyValue(item.harmonized_reference) },
-    { label: "EU Harmonized",         value: prettyValue(item.dated_version) },
-    { label: "EU Latest",             value: prettyValue(item.version) },
+    { label: "Legislation",   value: prettyValue(item.harmonized_reference) },
+    { label: "EU Harmonized", value: prettyValue(item.dated_version) },
+    { label: "EU Latest",     value: prettyValue(item.version) },
   ].filter((field) => field.value && field.value !== "—");
 
   return (
@@ -688,9 +775,7 @@ function RouteSection({ section }) {
               <h3>{title}</h3>
               <DirectivePill dirKey={section.key} />
             </div>
-            {subtitle ? (
-              <p>{subtitle}</p>
-            ) : null}
+            {subtitle ? <p>{subtitle}</p> : null}
           </div>
         </div>
 
@@ -997,22 +1082,17 @@ function EmptyState() {
   ];
 
   return (
-    <Panel
-      className="panel--empty"
-      eyebrow="Workflow"
-      title="A precise route starts with a specific description"
-      subtitle="The UI expands into guided sections once output is ready — not before."
-    >
-      <div className="empty-grid">
-        {items.map((item) => (
-          <div key={item.title} className="empty-card">
-            <div className="empty-card__icon">{item.icon}</div>
-            <div className="empty-card__title">{item.title}</div>
-            <div className="empty-card__text">{item.text}</div>
+    <div className="empty-state-compact">
+      {items.map((item) => (
+        <div key={item.title} className="empty-state-step">
+          <div className="empty-state-step__icon">{item.icon}</div>
+          <div>
+            <div className="empty-state-step__title">{item.title}</div>
+            <div className="empty-state-step__text">{item.text}</div>
           </div>
-        ))}
-      </div>
-    </Panel>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1136,7 +1216,7 @@ export default function App() {
     <div className="app-shell">
       <TopBar result={result} totalStandards={totalStandards} onReset={resetAnalysis} />
 
-      <main className="page-shell page-main">
+      <main className={`page-shell page-main ${!result ? "page-main--landing" : ""}`.trim()}>
         <HeroPanel
           result={result}
           routeSections={routeSections}
@@ -1152,7 +1232,10 @@ export default function App() {
           onAnalyze={runAnalysis}
           busy={busy}
           onDirty={setClarifyDirty}
+          isLanding={!result}
         />
+
+        {!result && <EmptyState />}
 
         {error ? <ErrorBanner message={error} /> : null}
 
@@ -1205,9 +1288,7 @@ export default function App() {
               description={description}
             />
           </div>
-        ) : (
-          <EmptyState />
-        )}
+        ) : null}
       </main>
 
       <ScrollTopButton visible={scrolled} />
