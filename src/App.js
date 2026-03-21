@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
   ArrowUp,
   Check,
   ChevronDown,
@@ -49,18 +50,13 @@ import {
 
 /* ================================================================
    SMART SUGGESTION ENGINE v2
-   Detects traits from free text, surfaces high-impact missing ones.
-   Grounded in traits.yaml + legislation_catalog.yaml triggers.
    ================================================================ */
 
-// Text → trait signal map (order matters — more specific first)
 const TEXT_SIGNALS = [
-  // Power
   { re: /\b(mains|230v|240v|plug.?in|corded|wall.?socket|ac.?power)\b/i,  trait: "mains_powered" },
   { re: /\b(battery|rechargeable|cordless|lithium)\b/i,                    trait: "battery_powered" },
   { re: /\b(usb.?c?|usb.powered)\b/i,                                      trait: "usb_powered" },
   { re: /\b(external.*(psu|adapter|adaptor)|power.?supply|charger.?brick)\b/i, trait: "external_psu" },
-  // Radio / connectivity
   { re: /\b(wi.?fi|wireless.*connect|802\.11)\b/i,                         trait: "wifi" },
   { re: /\b(bluetooth|ble\b)\b/i,                                           trait: "bluetooth" },
   { re: /\b(app.?control|mobile.?app|smartphone.?app|ios.*android|android.*ios)\b/i, trait: "app_control" },
@@ -74,10 +70,8 @@ const TEXT_SIGNALS = [
   { re: /\b(thread.?protocol|thread.?mesh)\b/i,                            trait: "thread" },
   { re: /\b(matter.?protocol|matter.?smart)\b/i,                           trait: "matter" },
   { re: /\b(nfc)\b/i,                                                       trait: "nfc" },
-  // Food / materials
   { re: /\b(food.?contact|wetted.?path|brew.?path|in.?contact.?with.?food)\b/i, trait: "food_contact" },
   { re: /\b(no.*(food|beverage).?contact|does.?not.?contact.?food)\b/i,   trait: "no_food_contact" },
-  // Product features
   { re: /\b(pressure|bar\b|pump|pressuri[sz]ed)\b/i,                      trait: "pressure" },
   { re: /\b(steam|steamer)\b/i,                                             trait: "steam" },
   { re: /\b(outdoor|outside|weather|ip[456][0-9]|ipx)\b/i,                trait: "outdoor_use" },
@@ -90,7 +84,6 @@ const TEXT_SIGNALS = [
   { re: /\b(no.?wire|no.?radio|local.?only|no.?connect)\b/i,              trait: "local_only" },
 ];
 
-// Product keyword → context traits implied by the product type
 const PRODUCT_CONTEXTS = [
   { re: /\b(kettle|water.?boiler)\b/i,
     implied: ["liquid_heating","water_heating","food_contact","mains_power_likely","heating"] },
@@ -150,108 +143,97 @@ const PRODUCT_CONTEXTS = [
     implied: ["hair_care","personal_care","mains_power_likely","heating"] },
 ];
 
-// Suggestion tiers — evaluated in order, first matching tier shown
-// Each tier specifies when to show (requires_*) and what to offer
 const SUGGESTION_TIERS = [
   {
     id: "power",
     label: "Power source",
     icon: "zap",
-    // Show when: product detected but no power source mentioned
     show_if: (det) => det.hasProduct && !det.hasPower,
     suggestions: [
-      { label: "Mains powered",    text: "mains powered (230 V AC)",                           icon: "zap" },
-      { label: "Battery",          text: "battery powered with rechargeable pack",              icon: "zap" },
-      { label: "External adapter", text: "powered via external AC/DC power supply adapter",    icon: "zap" },
-      { label: "USB-C powered",    text: "USB-C powered (low-voltage supply)",                  icon: "zap" },
+      { label: "Mains powered",    text: "mains powered (230 V AC)" },
+      { label: "Battery",          text: "battery powered with rechargeable pack" },
+      { label: "External adapter", text: "powered via external AC/DC power supply adapter" },
+      { label: "USB-C powered",    text: "USB-C powered (low-voltage supply)" },
     ],
   },
   {
     id: "connectivity",
     label: "Connectivity",
     icon: "wifi",
-    // Show when: no radio connectivity mentioned yet
     show_if: (det) => !det.hasRadio && !det.hasLocalOnly && (det.hasProduct || det.hasPower),
     suggestions: [
-      { label: "Wi-Fi",        text: "Wi-Fi connected (2.4 GHz)",                              icon: "wifi" },
-      { label: "Bluetooth",    text: "Bluetooth connected (BLE)",                              icon: "wifi" },
-      { label: "App control",  text: "controllable via mobile app (iOS and Android)",          icon: "wifi" },
-      { label: "No wireless",  text: "no wireless connectivity — fully local operation",       icon: "wifi" },
+      { label: "Wi-Fi",        text: "Wi-Fi connected (2.4 GHz)" },
+      { label: "Bluetooth",    text: "Bluetooth connected (BLE)" },
+      { label: "App control",  text: "controllable via mobile app (iOS and Android)" },
+      { label: "No wireless",  text: "no wireless connectivity — fully local operation" },
     ],
   },
   {
     id: "cloud_software",
     label: "Cloud & software",
     icon: "cloud",
-    // Show when: radio detected but no cloud/ota/account mentioned
     show_if: (det) => det.hasRadio && !det.hasCloud && !det.hasOTA && !det.hasAccount,
     suggestions: [
-      { label: "Cloud account",  text: "with cloud account and user login (email + password)", icon: "cloud" },
-      { label: "OTA updates",    text: "with over-the-air firmware updates",                   icon: "cloud" },
-      { label: "Local only",     text: "local network only — no cloud or OTA dependency",      icon: "cloud" },
+      { label: "Cloud account",  text: "with cloud account and user login (email + password)" },
+      { label: "OTA updates",    text: "with over-the-air firmware updates" },
+      { label: "Local only",     text: "local network only — no cloud or OTA dependency" },
     ],
   },
   {
     id: "food_contact",
     label: "Food & materials",
     icon: "flask",
-    // Show when: food/beverage product detected but no food-contact statement
     show_if: (det) => det.hasFoodContext && !det.hasFoodContact && !det.hasNoFoodContact,
     suggestions: [
-      { label: "Food-contact path",  text: "food-contact wetted path (plastic and metal parts contact food or beverages)", icon: "flask" },
-      { label: "Plastic food parts", text: "plastic food-contact parts in brew or food path",  icon: "flask" },
-      { label: "No food contact",    text: "no direct food or beverage contact",               icon: "flask" },
+      { label: "Food-contact path",  text: "food-contact wetted path (plastic and metal parts contact food or beverages)" },
+      { label: "Plastic food parts", text: "plastic food-contact parts in brew or food path" },
+      { label: "No food contact",    text: "no direct food or beverage contact" },
     ],
   },
   {
     id: "pressure_steam",
     label: "Pressure & steam",
     icon: "droplets",
-    // Show when: coffee/espresso but no pressure/steam mentioned
     show_if: (det) => det.hasCoffeeContext && !det.hasPressure && !det.hasSteam,
     suggestions: [
-      { label: "Pressure system", text: "pressurised brew system (15-bar pump)",  icon: "droplets" },
-      { label: "Steam wand",      text: "steam wand for milk frothing",           icon: "droplets" },
-      { label: "No pressure",     text: "drip or filter brew — no pressure",      icon: "droplets" },
+      { label: "Pressure system", text: "pressurised brew system (15-bar pump)" },
+      { label: "Steam wand",      text: "steam wand for milk frothing" },
+      { label: "No pressure",     text: "drip or filter brew — no pressure" },
     ],
   },
   {
     id: "outdoor_context",
     label: "Use environment",
     icon: "leaf",
-    // Show when: outdoor/garden product but no environment stated
     show_if: (det) => det.hasOutdoorContext && !det.hasOutdoor && !det.hasIndoor,
     suggestions: [
-      { label: "Outdoor rated",  text: "for outdoor use — weather and dust exposure (IP-rated enclosure)", icon: "leaf" },
-      { label: "Indoor only",    text: "indoor use only — not weather exposed",   icon: "leaf" },
+      { label: "Outdoor rated",  text: "for outdoor use — weather and dust exposure (IP-rated enclosure)" },
+      { label: "Indoor only",    text: "indoor use only — not weather exposed" },
     ],
   },
   {
     id: "cybersecurity",
     label: "Account & auth",
     icon: "cpu",
-    // Show when: cloud/internet detected but no account/auth mentioned
     show_if: (det) => (det.hasCloud || det.hasInternet) && !det.hasAccount && !det.hasAuthentication,
     suggestions: [
-      { label: "User account",     text: "requires user account creation (email, password, profile)", icon: "cpu" },
-      { label: "Authentication",   text: "password and multi-factor authentication for device access",  icon: "cpu" },
-      { label: "No account",       text: "no user account required — device works standalone",          icon: "cpu" },
+      { label: "User account",     text: "requires user account creation (email, password, profile)" },
+      { label: "Authentication",   text: "password and multi-factor authentication for device access" },
+      { label: "No account",       text: "no user account required — device works standalone" },
     ],
   },
   {
     id: "payments",
     label: "Transactions",
     icon: "cart",
-    // Show when: app + connected but no payments mentioned
     show_if: (det) => det.hasAppControl && !det.hasMonetary,
     suggestions: [
-      { label: "In-app purchase",  text: "supports in-app purchases or subscription billing", icon: "cart" },
-      { label: "No payments",      text: "no monetary transactions or subscription functions", icon: "cart" },
+      { label: "In-app purchase",  text: "supports in-app purchases or subscription billing" },
+      { label: "No payments",      text: "no monetary transactions or subscription functions" },
     ],
   },
 ];
 
-// Derive a detection state object from free text
 function detectTraits(text) {
   const t = text.toLowerCase();
   const signals = new Set();
@@ -300,12 +282,10 @@ function useSmartSuggestions(description, backendChips) {
   return useMemo(() => {
     const text = (description || "").trim();
 
-    // After analysis: backend chips take priority, fill remaining slots with smart ones
     if (backendChips && backendChips.length) {
       return [{ id: "backend", label: "Suggested additions", suggestions: backendChips.slice(0, 6) }];
     }
 
-    // No text yet — return empty
     if (text.length < 5) return [];
 
     const det = detectTraits(text);
@@ -314,7 +294,7 @@ function useSmartSuggestions(description, backendChips) {
     for (const tier of SUGGESTION_TIERS) {
       if (tier.show_if(det)) {
         groups.push({ id: tier.id, label: tier.label, icon: tier.icon, suggestions: tier.suggestions });
-        if (groups.length >= 3) break; // max 3 groups at once to avoid overwhelm
+        if (groups.length >= 3) break;
       }
     }
 
@@ -394,7 +374,100 @@ function ImportancePill({ value }) {
 }
 
 
-function TopBar({ result, totalStandards, onReset }) {
+/* ──────────────────────────────────────────────────────────
+   IMPROVEMENT #1 — AnalysisProgressBanner
+   Multi-step animated progress shown during analysis.
+   Steps auto-advance on timers to keep users oriented.
+   ────────────────────────────────────────────────────────── */
+const PROGRESS_STEPS = [
+  "Parsing product traits",
+  "Detecting applicable regimes",
+  "Matching standards route",
+  "Generating clarifications",
+];
+const STEP_DELAYS_MS = [0, 2200, 4400, 6800];
+
+function AnalysisProgressBanner({ busy }) {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (!busy) {
+      setStepIndex(0);
+      return;
+    }
+    const timers = STEP_DELAYS_MS.slice(1).map((delay, i) =>
+      window.setTimeout(() => setStepIndex(i + 1), delay)
+    );
+    return () => timers.forEach(window.clearTimeout);
+  }, [busy]);
+
+  if (!busy) return null;
+
+  return (
+    <div className="analysis-progress" role="status" aria-live="polite">
+      <div className="analysis-progress__steps">
+        {PROGRESS_STEPS.map((step, i) => (
+          <div
+            key={step}
+            className={[
+              "analysis-progress__step",
+              i < stepIndex  ? "analysis-progress__step--done"   : "",
+              i === stepIndex ? "analysis-progress__step--active" : "",
+            ].filter(Boolean).join(" ")}
+          >
+            <div className="analysis-progress__dot">
+              {i < stepIndex ? <Check size={9} /> : null}
+            </div>
+            <span>{step}{i === stepIndex ? "…" : ""}</span>
+          </div>
+        ))}
+      </div>
+      <div className="analysis-progress__bar">
+        <div
+          className="analysis-progress__fill"
+          style={{ width: `${((stepIndex + 1) / PROGRESS_STEPS.length) * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   IMPROVEMENT #5 — DirtyBanner
+   Sticky nudge below topbar when description has been edited
+   post-analysis. Harder to miss than a button buried in a panel.
+   ────────────────────────────────────────────────────────── */
+function DirtyBanner({ dirty, busy, onReanalyze }) {
+  return (
+    <div className={`dirty-banner ${dirty ? "dirty-banner--visible" : ""}`} aria-hidden={!dirty}>
+      <div className="page-shell dirty-banner__inner">
+        <div className="dirty-banner__left">
+          <span className="dirty-banner__dot" />
+          <span>Description updated — re-run to apply changes</span>
+        </div>
+        <button
+          type="button"
+          className="button button--primary dirty-banner__btn"
+          onClick={onReanalyze}
+          disabled={busy}
+          tabIndex={dirty ? 0 : -1}
+        >
+          {busy ? <LoaderCircle size={13} className="spin" /> : <RefreshCcw size={13} />}
+          {busy ? "Re-running…" : "Re-run analysis"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   TopBar — IMPROVEMENT #4 (narrow responsive)
+            IMPROVEMENT #6 (Previous analysis button)
+            IMPROVEMENT #9 (Copy button surfaced in topbar)
+   ────────────────────────────────────────────────────────── */
+function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, onCopy, copied }) {
   return (
     <header className="topbar">
       <div className="page-shell topbar__inner">
@@ -412,7 +485,33 @@ function TopBar({ result, totalStandards, onReset }) {
           {result ? (
             <>
               <RiskPill value={result?.overall_risk || "MEDIUM"} />
-              <span className="topbar__count">{totalStandards} standards</span>
+              {/* IMPROVEMENT #4: hidden on very narrow screens */}
+              <span className="topbar__count topbar__count--hideable">{totalStandards} standards</span>
+
+              {/* IMPROVEMENT #9: Copy button surfaced in topbar */}
+              <button
+                type="button"
+                className="button button--secondary topbar__action-btn"
+                onClick={onCopy}
+                title="Copy analysis summary to clipboard"
+              >
+                {copied ? <Check size={13} /> : <Copy size={13} />}
+                <span className="topbar__btn-label">{copied ? "Copied" : "Copy"}</span>
+              </button>
+
+              {/* IMPROVEMENT #6: Restore previous analysis */}
+              {prevResult ? (
+                <button
+                  type="button"
+                  className="button button--secondary topbar__action-btn"
+                  onClick={onRestorePrev}
+                  title="Restore previous analysis"
+                >
+                  <ArrowLeft size={13} />
+                  <span className="topbar__btn-label">Previous</span>
+                </button>
+              ) : null}
+
               <button type="button" className="button button--secondary" onClick={onReset}>
                 <RefreshCcw size={13} />
                 New analysis
@@ -427,15 +526,12 @@ function TopBar({ result, totalStandards, onReset }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────
-   HeroPanel — compact strip on landing, full panel on result
-   ────────────────────────────────────────────────────────── */
+
 function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
 
-  /* ── Empty / Landing state: compact strip ── */
   if (!result) {
     return (
       <div className="landing-strip">
@@ -456,7 +552,6 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
     );
   }
 
-  /* ── Result state: full two-column hero ── */
   const title = hero.title || `${formatUiLabel(result?.product_type || "Product")} regulatory route`;
   const subtitle = result?.summary || hero.subtitle || "";
 
@@ -492,11 +587,7 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
         </div>
       </Panel>
 
-      <Panel
-        className="panel--support"
-        eyebrow="This output"
-        title="What's covered"
-      >
+      <Panel className="panel--support" eyebrow="This output" title="What's covered">
         <div className="support-list">
           {supportItems.map((item) => (
             <div key={item.title} className="support-list__item">
@@ -513,8 +604,11 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   );
 }
 
+
 /* ──────────────────────────────────────────────────────────
-   SmartSuggestionsPanel — live-updating chips from trait engine
+   SmartSuggestionsPanel — IMPROVEMENT #2
+   Chips show a checked/disabled state when their text is
+   already present in the description — prevents double-applying.
    ────────────────────────────────────────────────────────── */
 const SUGGESTION_ICONS = {
   zap:      <Zap size={11} />,
@@ -531,6 +625,8 @@ function SmartSuggestionsPanel({ description, onApply, backendChips }) {
   const groups = useSmartSuggestions(description, backendChips);
   if (!groups.length) return null;
 
+  const descLower = (description || "").toLowerCase();
+
   return (
     <div className="smart-suggestions">
       {groups.map((group) => (
@@ -540,16 +636,24 @@ function SmartSuggestionsPanel({ description, onApply, backendChips }) {
             {group.label}
           </div>
           <div className="smart-suggestions__chips">
-            {group.suggestions.map((s) => (
-              <button
-                key={s.label}
-                type="button"
-                className="smart-chip"
-                onClick={() => onApply(s.text)}
-              >
-                {s.label}
-              </button>
-            ))}
+            {group.suggestions.map((s) => {
+              // IMPROVEMENT #2: detect if text already in description
+              const isApplied = descLower.includes(s.text.toLowerCase());
+              return (
+                <button
+                  key={s.label}
+                  type="button"
+                  className={`smart-chip${isApplied ? " smart-chip--applied" : ""}`}
+                  onClick={() => { if (!isApplied) onApply(s.text); }}
+                  disabled={isApplied}
+                  title={isApplied ? "Already in description" : `Add: ${s.text}`}
+                  aria-pressed={isApplied}
+                >
+                  {isApplied ? <Check size={10} /> : null}
+                  {s.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       ))}
@@ -557,8 +661,10 @@ function SmartSuggestionsPanel({ description, onApply, backendChips }) {
   );
 }
 
+
 /* ──────────────────────────────────────────────────────────
-   ComposerPanel — landing & refinement variants
+   ComposerPanel — IMPROVEMENT #7 (sr-only label)
+                   IMPROVEMENT #8 (word count target hint)
    ────────────────────────────────────────────────────────── */
 function ComposerPanel({ description, setDescription, templates, backendChips, onAnalyze, busy, onDirty, isLanding }) {
   const charMax = 1200;
@@ -585,8 +691,13 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
     textareaRef.current?.focus();
   }, [setDescription, onDirty]);
 
+  // IMPROVEMENT #8: Show target hint while user is below the sweet spot
+  const showWordHint = wordCount > 0 && wordCount < 30;
+
   const sharedTextarea = (
+    // IMPROVEMENT #7: Label wraps textarea; sr-only span provides accessible name
     <label className={isLanding ? "landing-composer__field" : "composer__field"}>
+      <span className="sr-only">Describe your product</span>
       <textarea
         ref={textareaRef}
         value={description}
@@ -605,6 +716,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
         maxLength={charMax}
         spellCheck={false}
         className={isLanding ? "landing-composer__textarea" : "composer__textarea"}
+        aria-label="Describe your product"
       />
       {!isLanding && (
         <div className="composer__field-footer">
@@ -624,7 +736,6 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
   if (isLanding) {
     return (
       <div className="landing-composer">
-        {/* Quick-start templates */}
         <div className="landing-composer__quickstart">
           <span className="micro-label">Quick start</span>
           <div className="template-row">
@@ -645,13 +756,18 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
           </div>
         </div>
 
-        {/* Textarea + CTA always locked together */}
         <div className="landing-composer__input-block">
           {sharedTextarea}
           <div className="landing-composer__cta-row">
-            <div className={`counter ${usageState}`.trim()}>
-              {wordCount ? <span>{wordCount}w</span> : null}
-              <span>{description.length} / {charMax}</span>
+            <div className="landing-composer__cta-left">
+              <div className={`counter ${usageState}`.trim()}>
+                {wordCount ? <span>{wordCount}w</span> : null}
+                <span>{description.length} / {charMax}</span>
+              </div>
+              {/* IMPROVEMENT #8: word count hint */}
+              {showWordHint ? (
+                <span className="word-hint">aim for 30–80 words</span>
+              ) : null}
             </div>
             <button
               type="button"
@@ -666,7 +782,6 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
           </div>
         </div>
 
-        {/* Static hints row */}
         <div className="input-hints">
           <div className="input-hint">
             <span className="input-hint__icon"><Zap size={11} /></span>
@@ -682,7 +797,6 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
           </div>
         </div>
 
-        {/* Dynamic smart suggestions — updates as you type */}
         <SmartSuggestionsPanel
           description={description}
           onApply={handleApply}
@@ -719,7 +833,6 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
 
         {sharedTextarea}
 
-        {/* Smart suggestions — backend chips post-result, live inference pre-result */}
         <SmartSuggestionsPanel
           description={description}
           onApply={handleApply}
@@ -739,7 +852,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
           <button
             type="button"
             className="button button--secondary"
-            onClick={() => { setDescription(""); onDirty(true); }}
+            onClick={() => { setDescription(""); onDirty(false); }}
             disabled={!description}
           >
             Clear
@@ -826,6 +939,7 @@ function SnapshotRail({ result, routeSections, legislationGroups, description })
           ))}
         </div>
 
+        {/* IMPROVEMENT #9: CopyResultsButton is the headline action — promoted style */}
         <CopyResultsButton
           result={result}
           description={description}
@@ -881,8 +995,24 @@ function SnapshotRail({ result, routeSections, legislationGroups, description })
   );
 }
 
+
+/* ──────────────────────────────────────────────────────────
+   ClarificationsPanel — IMPROVEMENT #3
+   Tracks which cards have had a choice applied. Applied cards
+   show a green "Applied" badge and muted border — they stay
+   visible so users can re-read, but are clearly actioned.
+   ────────────────────────────────────────────────────────── */
 function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
   if (!items.length) return null;
+
+  const [appliedKeys, setAppliedKeys] = useState(new Set());
+
+  const handleCardApply = useCallback((itemKey, choiceText) => {
+    setAppliedKeys((prev) => new Set([...prev, itemKey]));
+    onApply(choiceText);
+  }, [onApply]);
+
+  const appliedCount = appliedKeys.size;
 
   return (
     <section className="panel">
@@ -891,6 +1021,9 @@ function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
           <span className="clarifications-header__eyebrow">Clarifications</span>
           <span className="clarifications-header__subtitle">
             {items.length} question{items.length === 1 ? "" : "s"} that may change scope
+            {appliedCount > 0 ? (
+              <span className="clarifications-applied-tally"> · {appliedCount} applied</span>
+            ) : null}
           </span>
         </div>
         {dirty ? (
@@ -906,13 +1039,14 @@ function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
         <div className="clarification-list">
           {items.map((item, index) => {
             const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
+            const isApplied = appliedKeys.has(item.key);
             return (
               <article
                 key={item.key}
-                className="clarification-card"
+                className={`clarification-card${isApplied ? " clarification-card--applied" : ""}`}
                 style={{
-                  "--card-accent": tone.dot,
-                  "--card-border": tone.bd,
+                  "--card-accent": isApplied ? "#78d5c1" : tone.dot,
+                  "--card-border": isApplied ? "rgba(120, 213, 193, 0.30)" : tone.bd,
                   "--card-bg": tone.bg,
                 }}
               >
@@ -921,7 +1055,15 @@ function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
                     <ImportancePill value={item.importance} />
                     <h3>{item.title}</h3>
                   </div>
-                  <div className="clarification-card__index">{String(index + 1).padStart(2, "0")}</div>
+                  {/* IMPROVEMENT #3: Applied badge replaces index number */}
+                  {isApplied ? (
+                    <span className="clarification-applied-badge">
+                      <Check size={10} />
+                      Applied
+                    </span>
+                  ) : (
+                    <div className="clarification-card__index">{String(index + 1).padStart(2, "0")}</div>
+                  )}
                 </div>
                 <p className="clarification-card__text">{item.why}</p>
                 {item.choices?.length ? (
@@ -930,8 +1072,8 @@ function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
                       <button
                         key={`${item.key}-${choice}`}
                         type="button"
-                        className="chip-button chip-button--soft"
-                        onClick={() => onApply(choice)}
+                        className={`chip-button chip-button--soft${isApplied ? " chip-button--muted" : ""}`}
+                        onClick={() => handleCardApply(item.key, choice)}
                       >
                         + {choice}
                       </button>
@@ -946,6 +1088,7 @@ function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
     </section>
   );
 }
+
 
 function StandardItem({ item, sectionKey }) {
   const dirKey = normalizeStandardDirective(item);
@@ -1118,6 +1261,12 @@ function StandardsRoutePanel({ sections, directiveBreakdown }) {
   );
 }
 
+
+/* ──────────────────────────────────────────────────────────
+   CopyResultsButton — IMPROVEMENT #9
+   Promoted to a more prominent style in the sidebar so it reads
+   as the primary action after reviewing the analysis.
+   ────────────────────────────────────────────────────────── */
 function CopyResultsButton({ result, description, routeSections, legislationGroups }) {
   const [copied, setCopied] = useState(false);
 
@@ -1139,9 +1288,9 @@ function CopyResultsButton({ result, description, routeSections, legislationGrou
   }, [description, legislationGroups, result, routeSections]);
 
   return (
-    <button type="button" className="button button--secondary button--full" onClick={handleCopy}>
+    <button type="button" className="button button--copy-rail button--full" onClick={handleCopy}>
       {copied ? <Check size={15} /> : <Copy size={15} />}
-      {copied ? "Copied" : "Copy analysis summary"}
+      {copied ? "Copied to clipboard" : "Copy analysis summary"}
     </button>
   );
 }
@@ -1205,6 +1354,14 @@ function ScrollTopButton({ visible }) {
   );
 }
 
+
+/* ================================================================
+   App — root component
+   IMPROVEMENT #1  analysis progress banner
+   IMPROVEMENT #5  dirty banner (sticky post-edit nudge)
+   IMPROVEMENT #6  one-level session history (prev result)
+   IMPROVEMENT #9  topbar copy handler
+   ================================================================ */
 export default function App() {
   const [description, setDescription] = useState("");
   const [result, setResult] = useState(null);
@@ -1215,6 +1372,13 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const resultsRef = useRef(null);
 
+  // IMPROVEMENT #6: one-level session history
+  const [prevResult, setPrevResult] = useState(null);
+  const [prevDescription, setPrevDescription] = useState("");
+
+  // IMPROVEMENT #9: topbar copy state
+  const [topbarCopied, setTopbarCopied] = useState(false);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 360);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -1223,7 +1387,6 @@ export default function App() {
 
   useEffect(() => {
     const controller = new AbortController();
-
     fetch(METADATA_URL, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error(`Metadata failed (${response.status})`);
@@ -1235,7 +1398,6 @@ export default function App() {
           setMetadata({ traits: [], products: [], legislations: [] });
         }
       });
-
     return () => controller.abort();
   }, []);
 
@@ -1275,6 +1437,12 @@ export default function App() {
     const payloadDescription = String(description || "").trim();
     if (!payloadDescription) return;
 
+    // IMPROVEMENT #6: save current result to history before overwriting
+    if (result) {
+      setPrevResult(result);
+      setPrevDescription(description);
+    }
+
     setBusy(true);
     setError("");
 
@@ -1297,19 +1465,55 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [description]);
+  }, [description, result]);
+
+  // IMPROVEMENT #6: restore previous analysis
+  const restorePrev = useCallback(() => {
+    if (!prevResult) return;
+    setResult(prevResult);
+    setDescription(prevDescription);
+    setClarifyDirty(false);
+    setPrevResult(null);
+    setPrevDescription("");
+  }, [prevResult, prevDescription]);
 
   const resetAnalysis = useCallback(() => {
     setResult(null);
     setDescription("");
     setError("");
     setClarifyDirty(false);
+    setPrevResult(null);
+    setPrevDescription("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  // IMPROVEMENT #9: topbar copy handler (same logic as sidebar, surfaced higher)
+  const handleTopbarCopy = useCallback(async () => {
+    if (!result) return;
+    const text = buildClipboardSummary({ result, description, routeSections, legislationGroups });
+    try {
+      await navigator.clipboard.writeText(text);
+      setTopbarCopied(true);
+      window.setTimeout(() => setTopbarCopied(false), 2400);
+    } catch (_) {}
+  }, [result, description, routeSections, legislationGroups]);
+
   return (
     <div className="app-shell">
-      <TopBar result={result} totalStandards={totalStandards} onReset={resetAnalysis} />
+      <TopBar
+        result={result}
+        totalStandards={totalStandards}
+        onReset={resetAnalysis}
+        prevResult={prevResult}
+        onRestorePrev={restorePrev}
+        onCopy={handleTopbarCopy}
+        copied={topbarCopied}
+      />
+
+      {/* IMPROVEMENT #5: Dirty banner — sticky, always rendered, animated in/out */}
+      {result ? (
+        <DirtyBanner dirty={clarifyDirty} busy={busy} onReanalyze={runAnalysis} />
+      ) : null}
 
       <main className={`page-shell page-main ${!result ? "page-main--landing" : ""}`.trim()}>
         <HeroPanel
@@ -1330,7 +1534,10 @@ export default function App() {
           isLanding={!result}
         />
 
-        {!result && <EmptyState />}
+        {/* IMPROVEMENT #1: Multi-step progress banner during analysis */}
+        <AnalysisProgressBanner busy={busy} />
+
+        {!result && !busy && <EmptyState />}
 
         {error ? <ErrorBanner message={error} /> : null}
 
