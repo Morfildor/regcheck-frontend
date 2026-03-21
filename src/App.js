@@ -532,61 +532,65 @@ function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
   if (!items.length) return null;
 
   return (
-    <Panel
-      eyebrow="Clarifications"
-      title="Questions that change scope"
-      subtitle="Use these prompts to strengthen the description before trusting the route."
-      action={
-        dirty ? (
+    <section className="panel">
+      <div className="clarifications-header">
+        <div className="clarifications-header__left">
+          <span className="clarifications-header__eyebrow">Clarifications</span>
+          <span className="clarifications-header__subtitle">
+            {items.length} question{items.length === 1 ? "" : "s"} that may change scope
+          </span>
+        </div>
+        {dirty ? (
           <button type="button" className="button button--primary" onClick={onReanalyze} disabled={busy}>
             {busy ? <LoaderCircle size={15} className="spin" /> : <RefreshCcw size={15} />}
             {busy ? "Re-running" : "Re-run analysis"}
           </button>
         ) : (
           <span className="keyboard-hint">Apply a detail below to update</span>
-        )
-      }
-    >
-      <div className="clarification-list">
-        {items.map((item, index) => {
-          const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
-          return (
-            <article
-              key={item.key}
-              className="clarification-card"
-              style={{
-                "--card-accent": tone.dot,
-                "--card-border": tone.bd,
-                "--card-bg": tone.bg,
-              }}
-            >
-              <div className="clarification-card__header">
-                <div className="clarification-card__title-group">
-                  <ImportancePill value={item.importance} />
-                  <h3>{item.title}</h3>
-                </div>
-                <div className="clarification-card__index">{String(index + 1).padStart(2, "0")}</div>
-              </div>
-              <p className="clarification-card__text">{item.why}</p>
-              {item.choices?.length ? (
-                <div className="template-row">
-                  {item.choices.map((choice) => (
-                    <button
-                      key={`${item.key}-${choice}`}
-                      type="button"
-                      className="chip-button chip-button--soft"
-                      onClick={() => onApply(choice)}
-                    >
-                      + {choice}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </article>
-          );
-        })}
+        )}
       </div>
-    </Panel>
+      <div className="panel__body">
+        <div className="clarification-list">
+          {items.map((item, index) => {
+            const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
+            return (
+              <article
+                key={item.key}
+                className="clarification-card"
+                style={{
+                  "--card-accent": tone.dot,
+                  "--card-border": tone.bd,
+                  "--card-bg": tone.bg,
+                }}
+              >
+                <div className="clarification-card__header">
+                  <div className="clarification-card__title-group">
+                    <ImportancePill value={item.importance} />
+                    <h3>{item.title}</h3>
+                  </div>
+                  <div className="clarification-card__index">{String(index + 1).padStart(2, "0")}</div>
+                </div>
+                <p className="clarification-card__text">{item.why}</p>
+                {item.choices?.length ? (
+                  <div className="template-row">
+                    {item.choices.map((choice) => (
+                      <button
+                        key={`${item.key}-${choice}`}
+                        type="button"
+                        className="chip-button chip-button--soft"
+                        onClick={() => onApply(choice)}
+                      >
+                        + {choice}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -790,6 +794,8 @@ function StructuredValue({ value }) {
 }
 
 function DetailsPanel({ result }) {
+  const [open, setOpen] = useState(false);
+
   if (!result) return null;
 
   const missingItems = result?.missing_information_items || [];
@@ -802,117 +808,132 @@ function DetailsPanel({ result }) {
     return null;
   }
 
+  const sectionCount = [
+    missingItems.length,
+    inputGapItems.length,
+    traits.length,
+    diagnostics.length,
+    additionalEntries.length,
+  ].filter(Boolean).length;
+
   return (
-    <Panel
-      eyebrow="Full Detail"
-      title="Structured analysis details"
-      subtitle="Complete backend output, grouped for legibility."
-    >
-      <div className="details-stack">
-        {missingItems.length ? (
-          <DetailBlock
-            title="Missing information"
-            subtitle="Direct prompts returned by the analysis engine."
-          >
-            <div className="detail-grid">
-              {missingItems.map((item) => (
-                <article key={`${item.key}-${item.message}`} className="detail-card">
-                  <div className="detail-card__header">
-                    <div className="detail-card__title">{gapLabel(item.key)}</div>
-                    {item.importance ? <ImportancePill value={item.importance} /> : null}
-                  </div>
-                  <p className="detail-card__text">{item.message || "No message returned."}</p>
-                  {item.examples?.length ? (
-                    <div className="tag-row">
-                      {item.examples.map((example) => (
-                        <span key={example} className="soft-tag">
-                          {example}
-                        </span>
-                      ))}
+    <section className="panel">
+      <button
+        type="button"
+        className={`details-toggle ${open ? "details-toggle--open" : ""}`}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="details-toggle__left">
+          <span className="details-toggle__eyebrow">Full Detail</span>
+          <span className="details-toggle__title">
+            Structured analysis — {sectionCount} section{sectionCount === 1 ? "" : "s"}
+          </span>
+        </div>
+        <ChevronDown size={15} className="details-toggle__chevron" />
+      </button>
+
+      {open ? (
+        <div className="details-panel-body">
+          {missingItems.length ? (
+            <DetailBlock
+              title="Missing information"
+              subtitle="Direct prompts returned by the analysis engine."
+            >
+              <div className="detail-grid">
+                {missingItems.map((item) => (
+                  <article key={`${item.key}-${item.message}`} className="detail-card">
+                    <div className="detail-card__header">
+                      <div className="detail-card__title">{gapLabel(item.key)}</div>
+                      {item.importance ? <ImportancePill value={item.importance} /> : null}
                     </div>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          </DetailBlock>
-        ) : null}
+                    <p className="detail-card__text">{item.message || "No message returned."}</p>
+                    {item.examples?.length ? (
+                      <div className="tag-row">
+                        {item.examples.map((example) => (
+                          <span key={example} className="soft-tag">{example}</span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </DetailBlock>
+          ) : null}
 
-        {inputGapItems.length ? (
-          <DetailBlock
-            title="Input gaps"
-            subtitle="Backend panel items, separate from the clarification list."
-          >
-            <div className="detail-grid">
-              {inputGapItems.map((item) => (
-                <article key={`${item.key}-${item.message}`} className="detail-card">
-                  <div className="detail-card__header">
-                    <div className="detail-card__title">{gapLabel(item.key)}</div>
-                    {item.importance ? <ImportancePill value={item.importance} /> : null}
-                  </div>
-                  <p className="detail-card__text">{item.message || "No message returned."}</p>
-                  {item.examples?.length ? (
-                    <div className="tag-row">
-                      {item.examples.map((example) => (
-                        <span key={example} className="soft-tag">
-                          {example}
-                        </span>
-                      ))}
+          {inputGapItems.length ? (
+            <DetailBlock
+              title="Input gaps"
+              subtitle="Backend panel items, separate from the clarification list."
+            >
+              <div className="detail-grid">
+                {inputGapItems.map((item) => (
+                  <article key={`${item.key}-${item.message}`} className="detail-card">
+                    <div className="detail-card__header">
+                      <div className="detail-card__title">{gapLabel(item.key)}</div>
+                      {item.importance ? <ImportancePill value={item.importance} /> : null}
                     </div>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          </DetailBlock>
-        ) : null}
+                    <p className="detail-card__text">{item.message || "No message returned."}</p>
+                    {item.examples?.length ? (
+                      <div className="tag-row">
+                        {item.examples.map((example) => (
+                          <span key={example} className="soft-tag">{example}</span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </DetailBlock>
+          ) : null}
 
-        {traits.length ? (
-          <DetailBlock title="Detected traits">
-            <div className="tag-row">
-              {traits.map((trait) => (
-                <span key={trait} className="soft-tag">
-                  {titleCase(trait)}
-                </span>
-              ))}
-            </div>
-          </DetailBlock>
-        ) : null}
+          {traits.length ? (
+            <DetailBlock title="Detected traits">
+              <div className="tag-row">
+                {traits.map((trait) => (
+                  <span key={trait} className="soft-tag">{titleCase(trait)}</span>
+                ))}
+              </div>
+            </DetailBlock>
+          ) : null}
 
-        {diagnostics.length ? (
-          <DetailBlock title="Engine diagnostics">
-            <div className="diagnostic-list">
-              {diagnostics.map((line, index) => (
-                <div key={`${line}-${index}`} className="diagnostic-line">
-                  {line}
+          {diagnostics.length ? (
+            <details className="raw-json">
+              <summary>Engine diagnostics ({diagnostics.length})</summary>
+              <div style={{ margin: "0 15px 15px" }}>
+                <div className="diagnostic-list">
+                  {diagnostics.map((line, index) => (
+                    <div key={`${line}-${index}`} className="diagnostic-line">{line}</div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </DetailBlock>
-        ) : null}
+              </div>
+            </details>
+          ) : null}
 
-        {additionalEntries.length ? (
-          <DetailBlock
-            title="Additional structured output"
-            subtitle="Top-level response fields not surfaced elsewhere."
-          >
-            <div className="detail-grid">
-              {additionalEntries.map(([key, value]) => (
-                <article key={key} className="detail-card">
-                  <div className="detail-card__header">
-                    <div className="detail-card__title">{titleCaseMinor(key)}</div>
-                  </div>
-                  <StructuredValue value={value} />
-                </article>
-              ))}
-            </div>
-          </DetailBlock>
-        ) : null}
+          {additionalEntries.length ? (
+            <DetailBlock
+              title="Additional structured output"
+              subtitle="Top-level response fields not surfaced elsewhere."
+            >
+              <div className="detail-grid">
+                {additionalEntries.map(([key, value]) => (
+                  <article key={key} className="detail-card">
+                    <div className="detail-card__header">
+                      <div className="detail-card__title">{titleCaseMinor(key)}</div>
+                    </div>
+                    <StructuredValue value={value} />
+                  </article>
+                ))}
+              </div>
+            </DetailBlock>
+          ) : null}
 
-        <details className="raw-json">
-          <summary>Raw analysis JSON</summary>
-          <pre>{JSON.stringify(result, null, 2)}</pre>
-        </details>
-      </div>
-    </Panel>
+          <details className="raw-json">
+            <summary>Raw analysis JSON</summary>
+            <pre>{JSON.stringify(result, null, 2)}</pre>
+          </details>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

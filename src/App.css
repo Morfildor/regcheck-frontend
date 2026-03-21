@@ -48,7 +48,7 @@ html, body, #root {
 
 body {
   font-family: "Outfit", system-ui, sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text);
   background:
     radial-gradient(ellipse at 18% 0%, rgba(100, 165, 240, 0.07) 0%, transparent 40%),
@@ -241,7 +241,7 @@ code {
 .panel__heading { min-width: 0; }
 
 .panel__eyebrow, .micro-label {
-  font-size: 0.67rem;
+  font-size: 0.70rem;
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -251,7 +251,7 @@ code {
 .panel__title {
   margin: 7px 0 0;
   font-family: "Fraunces", Georgia, serif;
-  font-size: clamp(1.1rem, 1.9vw, 1.5rem);
+  font-size: clamp(1.2rem, 2.0vw, 1.6rem);
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.04em;
@@ -261,7 +261,7 @@ code {
 .panel__subtitle {
   margin: 7px 0 0;
   max-width: 64ch;
-  font-size: 0.87rem;
+  font-size: 0.93rem;
   line-height: 1.68;
   color: var(--text-muted);
 }
@@ -307,13 +307,13 @@ code {
 
 .soft-tag {
   padding: 5px 10px;
-  font-size: 0.79rem;
+  font-size: 0.84rem;
   color: var(--text-muted);
 }
 
 .directive-pill, .status-pill, .importance-pill {
-  padding: 5px 9px;
-  font-size: 0.73rem;
+  padding: 5px 10px;
+  font-size: 0.78rem;
   font-weight: 600;
   background: var(--pill-bg);
   border-color: var(--pill-border);
@@ -358,7 +358,7 @@ code {
 .empty-card__title,
 .detail-block__header h3,
 .error-banner__title {
-  font-size: 0.88rem;
+  font-size: 0.94rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text-strong);
@@ -374,7 +374,7 @@ code {
 .composer__helper,
 .metric-card__detail {
   margin-top: 2px;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   line-height: 1.64;
   color: var(--text-muted);
 }
@@ -484,8 +484,8 @@ code {
 .chip-button {
   appearance: none;
   cursor: pointer;
-  padding: 6px 11px;
-  font-size: 0.79rem;
+  padding: 6px 12px;
+  font-size: 0.84rem;
   font-weight: 600;
   background: rgba(255, 255, 255, 0.042);
   border-radius: 999px;
@@ -532,7 +532,7 @@ code {
 }
 
 .lead-copy {
-  font-size: 0.94rem;
+  font-size: 0.99rem;
   line-height: 1.78;
   color: var(--text);
 }
@@ -554,7 +554,7 @@ code {
 .metric-card:last-child { border-right: none; }
 
 .metric-card__label {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -563,7 +563,7 @@ code {
 
 .metric-card__value {
   margin-top: 5px;
-  font-size: 0.95rem;
+  font-size: 1.0rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-strong);
@@ -788,7 +788,7 @@ code {
 }
 
 .route-section__title-row h3 {
-  font-size: 0.93rem;
+  font-size: 0.99rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-strong);
@@ -803,7 +803,7 @@ code {
 }
 
 .route-section__count {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
@@ -858,7 +858,7 @@ code {
   border: 1px solid var(--item-accent-border);
   background: var(--item-accent-bg);
   color: var(--text-strong);
-  font-size: 0.76rem;
+  font-size: 0.81rem;
   font-weight: 500;
 }
 
@@ -870,7 +870,7 @@ code {
 
 .standard-item__title {
   margin: 0;
-  font-size: 0.93rem;
+  font-size: 0.99rem;
   font-weight: 700;
   line-height: 1.40;
   letter-spacing: -0.02em;
@@ -879,7 +879,7 @@ code {
 
 .standard-item__summary {
   margin: 8px 0 0;
-  font-size: 0.85rem;
+  font-size: 0.90rem;
   line-height: 1.70;
   color: var(--text-muted);
 }
@@ -1010,6 +1010,92 @@ code {
 .raw-json summary::-webkit-details-marker { display: none; }
 
 .raw-json pre { margin: 0 15px 15px; }
+
+/* ── Collapsed Details Panel ──────────────────────────────── */
+.details-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+  transition: background 0.14s ease;
+}
+
+.details-toggle:hover {
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.details-toggle__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.details-toggle__eyebrow {
+  font-size: 0.70rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.details-toggle__title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.details-toggle__chevron {
+  color: var(--text-soft);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.details-toggle--open .details-toggle__chevron {
+  transform: rotate(180deg);
+}
+
+.details-panel-body {
+  padding: 0 24px 24px;
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid var(--border-sm);
+}
+
+/* ── Compact Clarifications header ───────────────────────── */
+.clarifications-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px 0;
+  flex-wrap: wrap;
+}
+
+.clarifications-header__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clarifications-header__eyebrow {
+  font-size: 0.70rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.clarifications-header__subtitle {
+  font-size: 0.84rem;
+  color: var(--text-soft);
+}
 
 /* ── Error Banner ─────────────────────────────────────────── */
 .error-banner {
