@@ -390,16 +390,7 @@ function SecondaryBtn({ onClick, disabled, children, style }){
   );
 }
 
-function GhostBtn({ onClick, children }){
-  return (
-    <button onClick={onClick} style={{
-      appearance:"none",cursor:"pointer",borderRadius:8,
-      border:`1px solid ${T.line}`,background:"transparent",
-      color:T.textMuted,padding:"5px 12px",fontWeight:600,fontSize:11.5,
-      transition:"all 0.18s",whiteSpace:"nowrap",letterSpacing:"0.01em",
-    }}>{children}</button>
-  );
-}
+
 
 function AddChipBtn({ onClick, children }){
   return (
@@ -1358,7 +1349,7 @@ export default function App(){
                 <div style={{
                   display:"flex",justifyContent:"space-between",alignItems:"center",
                   gap:8,flexWrap:"wrap",paddingTop:2,
-                  borderTop:`1px solid ${T.line}`,paddingTop:12,
+                  borderTop:`1px solid ${T.line}`,
                 }}>
                   <span style={{fontSize:11,color:T.textMuted}}>
                     {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})} · RuleGrid
