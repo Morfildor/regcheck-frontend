@@ -353,7 +353,6 @@ code {
 /* Text hierarchy — shared across many components */
 .support-list__title,
 .detail-card__title,
-.legislation-item__title,
 .route-section__title-row h3,
 .clarification-card__title-group h3,
 .empty-card__title,
@@ -367,7 +366,6 @@ code {
 
 .support-list__text,
 .detail-card__text,
-.legislation-item__directive,
 .route-section__title-wrap p,
 .clarification-card__text,
 .empty-card__text,
@@ -641,37 +639,65 @@ code {
   color: var(--text);
 }
 
-.legislation-group__items { display: grid; gap: 7px; }
+.legislation-group__items { display: grid; gap: 0; }
 
+/* Each legislation row: directive badge | title + code */
 .legislation-item {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 9px;
+  grid-template-columns: 44px 1fr;
+  gap: 0 10px;
   align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-sm);
 }
 
-.legislation-item__code {
-  padding: 3px 7px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.038);
-  border: 1px solid var(--border-sm);
+.legislation-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.legislation-item:first-child {
+  padding-top: 0;
+}
+
+/* Short directive badge: LVD / EMC / RED etc — always same width */
+.legislation-item__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1px solid var(--legislation-dot-border, rgba(255,255,255,0.10));
+  background: var(--legislation-dot-bg, rgba(255,255,255,0.04));
+  color: var(--legislation-dot-text, var(--text-muted));
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.73rem;
-  font-weight: 500;
-  color: var(--text-strong);
-  position: relative;
+  font-size: 0.60rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
-.legislation-item__code::before {
-  content: "";
-  position: absolute;
-  left: -6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--legislation-dot);
+/* Right column: title + code number stacked */
+.legislation-item__copy {
+  display: grid;
+  gap: 1px;
+}
+
+.legislation-item__title {
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.38;
+  color: var(--text);
+}
+
+.legislation-item__code-num {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  color: var(--text-soft);
+  line-height: 1.4;
 }
 
 /* ── Clarifications ───────────────────────────────────────── */
@@ -858,34 +884,45 @@ code {
   color: var(--text-muted);
 }
 
-/* Meta fields: inline key→value pairs, no nested cards */
+/* Meta fields: locked 3-column grid — labels and values always aligned */
 .standard-item__meta-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 10px;
-  padding-top: 10px;
   border-top: 1px solid var(--border-sm);
 }
 
 .standard-item__meta-card {
   display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 14px 9px 0;
   background: none;
   border: none;
+  border-right: 1px solid var(--border-sm);
+}
+
+.standard-item__meta-card:not(:first-child) {
+  padding-left: 14px;
+}
+
+.standard-item__meta-card:last-child {
+  border-right: none;
+  padding-right: 0;
 }
 
 .standard-item__meta-card .micro-label {
   color: var(--text-soft);
+  white-space: nowrap;
 }
 
 .standard-item__meta-value {
-  margin-top: 0;
-  font-size: 0.75rem;
-  line-height: 1.5;
+  font-size: 0.73rem;
+  line-height: 1.55;
   color: var(--text-muted);
+  /* Truncate extremely long version strings gracefully */
+  overflow-wrap: break-word;
+  word-break: break-all;
 }
 
 .standard-item__evidence {
@@ -1121,8 +1158,22 @@ code {
   }
 
   .standard-item__meta-grid {
-    flex-direction: column;
-    gap: 6px;
+    grid-template-columns: 1fr;
+  }
+
+  .standard-item__meta-card {
+    border-right: none;
+    border-bottom: 1px solid var(--border-sm);
+    padding: 8px 0;
+  }
+
+  .standard-item__meta-card:not(:first-child) {
+    padding-left: 0;
+  }
+
+  .standard-item__meta-card:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
   }
 }
 

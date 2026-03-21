@@ -496,18 +496,24 @@ function SnapshotRail({ result, routeSections, legislationGroups, description })
                 <div className="legislation-group__items">
                   {(group.items || []).map((item) => {
                     const tone = directiveTone(item.directive_key || "OTHER");
+                    const shortCode = directiveShort(item.directive_key || "OTHER");
                     return (
                       <div
                         key={`${group.key}-${item.code}-${item.title}`}
                         className="legislation-item"
-                        style={{ "--legislation-dot": tone.dot }}
+                        style={{
+                          "--legislation-dot": tone.dot,
+                          "--legislation-dot-bg": tone.bg,
+                          "--legislation-dot-border": tone.bd,
+                          "--legislation-dot-text": tone.text,
+                        }}
                       >
-                        <div className="legislation-item__code">{item.code}</div>
+                        <div className="legislation-item__badge">{shortCode}</div>
                         <div className="legislation-item__copy">
                           <div className="legislation-item__title">{item.title}</div>
-                          <div className="legislation-item__directive">
-                            {directiveShort(item.directive_key || "OTHER")}
-                          </div>
+                          {item.code ? (
+                            <div className="legislation-item__code-num">{item.code}</div>
+                          ) : null}
                         </div>
                       </div>
                     );
@@ -591,9 +597,9 @@ function StandardItem({ item, sectionKey }) {
   const evidenceList = sentenceCaseList(item.evidence_hint || []);
   const summary = item.standard_summary || item.reason || item.notes || "";
   const metaFields = [
-    { label: "Harmonized ref.", value: prettyValue(item.harmonized_reference) },
-    { label: "Harmonized ver.", value: prettyValue(item.dated_version) },
-    { label: "EU latest", value: prettyValue(item.version) },
+    { label: "Legislation",           value: prettyValue(item.harmonized_reference) },
+    { label: "EU Harmonized",         value: prettyValue(item.dated_version) },
+    { label: "EU Latest",             value: prettyValue(item.version) },
   ].filter((field) => field.value && field.value !== "—");
 
   return (
