@@ -360,12 +360,18 @@ code {
 .landing-composer__quickstart {
   display: grid;
   gap: 10px;
-  padding: 20px 22px 16px;
+  padding: 18px 20px 14px;
   border-bottom: 1px solid var(--border-sm);
 }
 
 .landing-composer__quickstart .micro-label {
   color: var(--text-soft);
+}
+
+/* Input block keeps textarea + CTA always together */
+.landing-composer__input-block {
+  display: grid;
+  gap: 0;
 }
 
 .landing-composer__field {
@@ -376,14 +382,14 @@ code {
 .landing-composer__textarea {
   width: 100%;
   resize: none;
-  padding: 20px 22px 16px;
+  padding: 18px 20px 12px;
   border: none;
   background: transparent;
   color: var(--text);
   line-height: 1.78;
   font-size: 0.96rem;
   outline: none;
-  min-height: 200px;
+  min-height: 190px;
   transition: background 0.2s ease;
 }
 
@@ -391,16 +397,51 @@ code {
   background: rgba(125, 185, 255, 0.018);
 }
 
-.landing-composer__footer {
+/* CTA row: counter left, button right — always immediately below textarea */
+.landing-composer__cta-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  padding: 0 22px 12px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px 14px 20px;
+  border-top: 1px solid var(--border-sm);
 }
 
-/* ── Input Hints — contextual, discreet ───────────────────── */
+/* ── Landing CTA button ───────────────────────────────────── */
+.button--landing-cta {
+  padding: 10px 20px;
+  font-size: 0.91rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border-radius: var(--radius);
+  background: rgba(125, 185, 255, 0.16);
+  border: 1px solid rgba(125, 185, 255, 0.28);
+  color: var(--text-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.14s ease;
+}
+
+.button--landing-cta:hover:not(:disabled) {
+  background: rgba(125, 185, 255, 0.24);
+  border-color: rgba(125, 185, 255, 0.42);
+  transform: translateY(-1px);
+}
+
+.button--landing-cta:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.cta-hint {
+  font-size: 0.70rem;
+  font-weight: 500;
+  font-family: "IBM Plex Mono", monospace;
+  opacity: 0.38;
+  letter-spacing: 0;
+}
 .input-hints {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -441,53 +482,11 @@ code {
 .landing-composer__chips {
   display: grid;
   gap: 10px;
-  padding: 14px 22px;
+  padding: 12px 20px 16px;
   border-top: 1px solid var(--border-sm);
 }
 
-/* ── Landing CTA button ───────────────────────────────────── */
-.button--landing-cta {
-  width: 100%;
-  padding: 15px 24px;
-  font-size: 0.97rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  border-radius: 0 0 var(--composer-radius) var(--composer-radius);
-  border-top: 1px solid rgba(125, 185, 255, 0.15);
-  background: rgba(125, 185, 255, 0.10);
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
-  color: var(--text-strong);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-  position: relative;
-}
-
-.button--landing-cta:hover:not(:disabled) {
-  background: rgba(125, 185, 255, 0.17);
-  color: #fff;
-}
-
-.button--landing-cta:disabled {
-  opacity: 0.36;
-  cursor: not-allowed;
-}
-
-.cta-hint {
-  margin-left: auto;
-  font-size: 0.72rem;
-  font-weight: 500;
-  font-family: "IBM Plex Mono", monospace;
-  opacity: 0.38;
-  letter-spacing: 0;
-}
-
-/* ── Empty State — compact 3-step guide ──────────────────── */
+/* ── Input Hints — contextual, discreet ───────────────────── */
 .empty-state-compact {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1486,7 +1485,6 @@ code {
   .clarification-card__header,
   .detail-card__header,
   .composer__field-footer,
-  .landing-composer__footer,
   .footer-note {
     flex-direction: column;
     align-items: stretch;

@@ -224,13 +224,6 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
               <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
             ) : null}
           </div>
-          {primaryRegimes.length ? (
-            <div className="tag-row">
-              {primaryRegimes.map((dirKey) => (
-                <DirectivePill key={dirKey} dirKey={dirKey} />
-              ))}
-            </div>
-          ) : null}
         </div>
       </Panel>
 
@@ -299,15 +292,17 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
         spellCheck={false}
         className={isLanding ? "landing-composer__textarea" : "composer__textarea"}
       />
-      <div className={isLanding ? "landing-composer__footer" : "composer__field-footer"}>
-        <div className="composer__helper">
-          Include: power source · radios · cloud/OTA · core functions · sensors · food-contact or wetted paths
+      {!isLanding && (
+        <div className="composer__field-footer">
+          <div className="composer__helper">
+            Include: power source · radios · cloud/OTA · core functions · sensors · food-contact or wetted paths
+          </div>
+          <div className={`counter ${usageState}`.trim()}>
+            {wordCount ? <span>{wordCount}w</span> : null}
+            <span>{description.length} / {charMax}</span>
+          </div>
         </div>
-        <div className={`counter ${usageState}`.trim()}>
-          {wordCount ? <span>{wordCount}w</span> : null}
-          <span>{description.length} / {charMax}</span>
-        </div>
-      </div>
+      )}
     </label>
   );
 
@@ -315,7 +310,7 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
   if (isLanding) {
     return (
       <div className="landing-composer">
-        {/* Quick start chips */}
+        {/* Quick start chips — compact, above the input */}
         <div className="landing-composer__quickstart">
           <span className="micro-label">Quick start</span>
           <div className="template-row">
@@ -336,26 +331,46 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
           </div>
         </div>
 
-        {/* Textarea */}
-        {sharedTextarea}
+        {/* Textarea + CTA always together — never separated */}
+        <div className="landing-composer__input-block">
+          {sharedTextarea}
 
-        {/* Contextual "what to include" hints — discreet, right where you need them */}
+          {/* CTA lives INSIDE the input block, always visible directly below */}
+          <div className="landing-composer__cta-row">
+            <div className={`counter ${usageState}`.trim()}>
+              {wordCount ? <span>{wordCount}w</span> : null}
+              <span>{description.length} / {charMax}</span>
+            </div>
+            <button
+              type="button"
+              className="button button--primary button--landing-cta"
+              onClick={onAnalyze}
+              disabled={busy || !description.trim()}
+            >
+              {busy ? <LoaderCircle size={15} className="spin" /> : <Search size={15} />}
+              {busy ? "Analyzing…" : "Analyze product"}
+              {!busy && <span className="cta-hint">⌘↩</span>}
+            </button>
+          </div>
+        </div>
+
+        {/* Hints — three inline pills, compact and discreet */}
         <div className="input-hints">
           <div className="input-hint">
-            <span className="input-hint__icon"><Zap size={12} /></span>
+            <span className="input-hint__icon"><Zap size={11} /></span>
             <span><strong>Power & function</strong> — mains, battery, heating, motors, sensors</span>
           </div>
           <div className="input-hint">
-            <span className="input-hint__icon"><Radio size={12} /></span>
-            <span><strong>Connectivity</strong> — Wi-Fi, Bluetooth, cloud, OTA updates</span>
+            <span className="input-hint__icon"><Radio size={11} /></span>
+            <span><strong>Connectivity</strong> — Wi-Fi, Bluetooth, cloud, OTA</span>
           </div>
           <div className="input-hint">
-            <span className="input-hint__icon"><FlaskConical size={12} /></span>
+            <span className="input-hint__icon"><FlaskConical size={11} /></span>
             <span><strong>Materials</strong> — wetted paths, food-contact, battery chemistry</span>
           </div>
         </div>
 
-        {/* Guided chips if available */}
+        {/* Guided chips — only shown if backend provides them, collapsed by default feel */}
         {chips.length ? (
           <div className="landing-composer__chips">
             <div className="micro-label">Add detail</div>
@@ -376,18 +391,6 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
             </div>
           </div>
         ) : null}
-
-        {/* Analyze CTA — prominent, full width */}
-        <button
-          type="button"
-          className="button button--primary button--landing-cta"
-          onClick={onAnalyze}
-          disabled={busy || !description.trim()}
-        >
-          {busy ? <LoaderCircle size={16} className="spin" /> : <Search size={16} />}
-          {busy ? "Analyzing…" : "Analyze product"}
-          {!busy && <span className="cta-hint">⌘↩</span>}
-        </button>
       </div>
     );
   }
@@ -471,7 +474,7 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
   );
 }
 
-function OverviewPanel({ result, routeSections, legislationItems, directiveBreakdown }) {
+function OverviewPanel({ result, routeSections, legislationItems }) {
   if (!result) return null;
 
   const confidence =
@@ -508,16 +511,6 @@ function OverviewPanel({ result, routeSections, legislationItems, directiveBreak
           <MetricCard label="Legislation" value={String(legislationItems.length)} />
         </div>
 
-        {directiveBreakdown.length ? (
-          <div className="route-breakdown">
-            {directiveBreakdown.map(({ key, count }) => (
-              <span key={key} className="breakdown-pill">
-                <DirectivePill dirKey={key} />
-                <span className="breakdown-pill__count">{count}</span>
-              </span>
-            ))}
-          </div>
-        ) : null}
       </div>
     </Panel>
   );
