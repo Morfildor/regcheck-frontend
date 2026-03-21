@@ -527,7 +527,7 @@ function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, on
 }
 
 
-function HeroPanel({ result, routeSections, legislationItems, guidanceItems, baseSafetyRoute }) {
+function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
@@ -583,7 +583,6 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems, bas
             {result?.product_type ? (
               <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
             ) : null}
-            <BaseSafetyRoutePill route={baseSafetyRoute} compact />
           </div>
         </div>
       </Panel>
@@ -627,23 +626,6 @@ const BASE_SAFETY_ROUTE_COPY = {
       "This is the base safety path for products such as routers, smart displays, laptops, monitors, speakers, and other AV/ICT equipment.",
   },
 };
-
-function baseSafetyRouteTone(route) {
-  if (route?.key === "EN_62368") {
-    return {
-      bg: "rgba(185,162,255,0.14)",
-      bd: "rgba(185,162,255,0.30)",
-      text: "#cab7ff",
-      dot: "#b9a2ff",
-    };
-  }
-  return {
-    bg: "rgba(143,218,184,0.14)",
-    bd: "rgba(143,218,184,0.30)",
-    text: "#9ee7c4",
-    dot: "#8fdab8",
-  };
-}
 
 function inferBaseSafetyRoute(result, routeSections) {
   if (!result) return null;
@@ -740,45 +722,9 @@ function inferBaseSafetyRoute(result, routeSections) {
   return null;
 }
 
-function BaseSafetyRoutePill({ route, compact = false }) {
-  if (!route) return null;
-  const tone = baseSafetyRouteTone(route);
-  const Icon = route.key === "EN_62368" ? Cpu : ShieldCheck;
-
-  return (
-    <span
-      className={`base-route-pill${compact ? " base-route-pill--compact" : ""}`}
-      style={{
-        "--base-route-bg": tone.bg,
-        "--base-route-border": tone.bd,
-        "--base-route-text": tone.text,
-        "--base-route-dot": tone.dot,
-      }}
-    >
-      <Icon size={12} />
-      <span>{route.label}</span>
-    </span>
-  );
-}
-
-function BaseSafetyRouteBanner({ route }) {
-  if (!route) return null;
-  return (
-    <div
-      className="base-route-banner"
-      style={{
-        "--base-route-bg": baseSafetyRouteTone(route).bg,
-        "--base-route-border": baseSafetyRouteTone(route).bd,
-      }}
-    >
-      <div className="base-route-banner__eyebrow">Base safety route</div>
-      <div className="base-route-banner__content">
-        <BaseSafetyRoutePill route={route} />
-        <p className="base-route-banner__text">{route.description}</p>
-        <p className="base-route-banner__note">{route.note}</p>
-      </div>
-    </div>
-  );
+function lvdBaseSafetyLabel(route) {
+  if (!route) return "";
+  return route.key === "EN_62368" ? "Base safety: EN 62368-1" : "Base safety: EN 60335-1";
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -1078,7 +1024,7 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
   );
 }
 
-function SnapshotRail({ result, routeSections, legislationGroups, description, baseSafetyRoute }) {
+function SnapshotRail({ result, routeSections, legislationGroups, description }) {
   if (!result) return null;
 
   const confidence =
@@ -1103,7 +1049,6 @@ function SnapshotRail({ result, routeSections, legislationGroups, description, b
         <div className="snapshot-list">
           {[
             ["Product", formatUiLabel(result?.product_type || "unclear")],
-            ["Base safety", baseSafetyRoute?.label || "Not resolved"],
             ["Confidence", formatUiLabel(confidence)],
             ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
             ["Standards", totalStandards],
@@ -1337,7 +1282,7 @@ function StandardItem({ item, sectionKey }) {
   );
 }
 
-function RouteSection({ section }) {
+function RouteSection({ section, baseSafetyRoute }) {
   const [open, setOpen] = useState(true);
   const tone = directiveTone(section.key);
   const title = routeTitle(section);
@@ -1360,6 +1305,9 @@ function RouteSection({ section }) {
             <div className="route-section__title-row">
               <h3>{title}</h3>
               <DirectivePill dirKey={section.key} />
+              {section.key === "LVD" && baseSafetyRoute ? (
+                <span className="soft-tag">{lvdBaseSafetyLabel(baseSafetyRoute)}</span>
+              ) : null}
             </div>
             {subtitle ? <p>{subtitle}</p> : null}
           </div>
@@ -1427,12 +1375,11 @@ function StandardsRoutePanel({ sections, directiveBreakdown, baseSafetyRoute }) 
       title="Standards route"
       subtitle="Grouped by regime — scan the path without losing item-level detail."
     >
-      <BaseSafetyRouteBanner route={baseSafetyRoute} />
       <RegimeNav directiveBreakdown={directiveBreakdown} />
 
       <div className="route-stack">
         {sections.map((section) => (
-          <RouteSection key={section.key || section.title} section={section} />
+          <RouteSection key={section.key || section.title} section={section} baseSafetyRoute={baseSafetyRoute} />
         ))}
       </div>
     </Panel>
@@ -1700,7 +1647,6 @@ export default function App() {
           routeSections={routeSections}
           legislationItems={legislationItems}
           guidanceItems={guidanceItems}
-          baseSafetyRoute={baseSafetyRoute}
         />
 
         <ComposerPanel
@@ -1766,8 +1712,7 @@ export default function App() {
               routeSections={routeSections}
               legislationGroups={legislationGroups}
               description={description}
-              baseSafetyRoute={baseSafetyRoute}
-            />
+                />
           </div>
         ) : null}
       </main>
