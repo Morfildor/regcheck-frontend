@@ -576,7 +576,7 @@ function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, on
    Removed duplicate RiskPill from hero tags (already in topbar
    and overview bar).
    ────────────────────────────────────────────────────────── */
-function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
+function HeroPanel({ result, routeSections = [], legislationItems = [], guidanceItems = [] }) {
   const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
@@ -605,10 +605,9 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const subtitle = result?.summary || hero.subtitle || "";
 
   // Unique directive keys in order — power the "Directives triggered" panel
-  const triggeredDirectives = useMemo(() => {
-    const keys = new Set(routeSections.map((s) => s.key));
-    return [...keys].sort((a, b) => directiveRank(a) - directiveRank(b));
-  }, [routeSections]);
+  const triggeredDirectives = [...new Set(routeSections.map((s) => s.key))].sort(
+    (a, b) => directiveRank(a) - directiveRank(b)
+  );
 
   const totalStandards = routeSections.reduce((n, s) => n + (s.count || 0), 0);
 
