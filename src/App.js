@@ -1,2324 +1,1196 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowUp,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ListChecks,
+  LoaderCircle,
+  RefreshCcw,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  TriangleAlert,
+  Waypoints,
+} from "lucide-react";
+import "./App.css";
+import {
+  ANALYZE_URL,
+  DEFAULT_TEMPLATES,
+  IMPORTANCE,
+  METADATA_URL,
+  SECTION_TONES,
+  STATUS,
+  buildClipboardSummary,
+  buildCompactLegislationItems,
+  buildDirectiveBreakdown,
+  buildDynamicTemplates,
+  buildGuidanceItems,
+  buildGuidedChips,
+  buildLegislationGroups,
+  buildRouteSections,
+  directiveShort,
+  directiveTone,
+  formatUiLabel,
+  gapLabel,
+  getAdditionalEntries,
+  joinText,
+  normalizeStandardDirective,
+  prettyValue,
+  routeTitle,
+  sentenceCaseList,
+  serializePreview,
+  titleCase,
+  titleCaseMinor,
+  uniqueBy,
+} from "./appHelpers";
 
-const ANALYZE_URL =
-  process.env.REACT_APP_REGCHECK_API_URL ||
-  "https://regcheck-api.onrender.com/analyze";
-const METADATA_URL = ANALYZE_URL.replace(/\/analyze$/, "/metadata/options");
-
-// ─── Design tokens ─────────────────────────────────────────────────────────────
-const T = {
-  bg:          "#0e1018",          // was #080a0f — slightly lifted
-  bgPanel:     "#13151f",          // was #0d0f18
-  bgCard:      "#181b27",          // was #111420
-  bgCardInner: "#1e2234",          // was #181c2e
-  bgCardDeep:  "#121622",          // was #0c0e1a
-
-  line:        "rgba(255,255,255,0.08)",   // was 0.06 — slightly more visible
-  lineStrong:  "rgba(255,255,255,0.12)",   // was 0.10
-  lineFocus:   "rgba(99,172,255,0.45)",    // was 0.50 — slightly softer
-
-  text:        "#e4e9f5",          // slightly brighter than muted pass
-  textSub:     "#99a6c0",          // was #8e9ab8 — lifted a touch
-  textMuted:   "#546070",
-  textLabel:   "#6878a0",
-
-  blue:        "#5ba8ff",
-  teal:        "#22d3c4",
-  violet:      "#9d7ef7",
-  rose:        "#f06b6b",
-  amber:       "#f5b830",
-  green:       "#3fd97a",
-
-  shadow:      "0 2px 16px rgba(0,0,0,0.45)",   // slightly softer
-  shadowLg:    "0 12px 48px rgba(0,0,0,0.50)",
-  shadowCard:  "0 2px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.28)",
-};
-
-Object.assign(T,{
-  bg:"#0c1118",
-  bgPanel:"#101721",
-  bgCard:"#131a24",
-  bgCardInner:"#18212d",
-  bgCardDeep:"#0f151d",
-  line:"rgba(255,255,255,0.07)",
-  lineStrong:"rgba(255,255,255,0.11)",
-  lineFocus:"rgba(91,168,255,0.38)",
-  text:"#e6ecf6",
-  textSub:"#b4bfd1",
-  textMuted:"#7b8aa3",
-  textLabel:"#8797b3",
-  shadow:"0 10px 30px rgba(0,0,0,0.26)",
-  shadowLg:"0 20px 60px rgba(0,0,0,0.34)",
-  shadowCard:"0 10px 28px rgba(0,0,0,0.24), 0 1px 0 rgba(255,255,255,0.03)",
-});
-
-// ─── Directive metadata ───────────────────────────────────────────────────────
-const DIR_SHORT = {
-  LVD:"LVD", EMC:"EMC", RED:"RED", RED_CYBER:"RED Cyber", CRA:"CRA",
-  ROHS:"RoHS", REACH:"REACH", GDPR:"GDPR", AI_Act:"AI Act", ESPR:"ESPR",
-  ECO:"Ecodesign", BATTERY:"Battery", FCM:"FCM", FCM_PLASTIC:"FCM Plastic",
-  MD:"MD", MACH_REG:"Machinery Reg.", OTHER:"Other",
-};
-
-const DIR_ORDER = [
-  "LVD","EMC","RED","RED_CYBER","ROHS","REACH","GDPR","FCM","FCM_PLASTIC",
-  "BATTERY","ECO","ESPR","CRA","AI_Act","MD","MACH_REG","OTHER",
-];
-
-const DIR_TONES = {
-  LVD:         { dot:"#6ee7b7", bg:"rgba(110,231,183,0.09)", bd:"rgba(110,231,183,0.22)", text:"#6ee7b7" },
-  EMC:         { dot:"#67e8f9", bg:"rgba(103,232,249,0.09)", bd:"rgba(103,232,249,0.22)", text:"#67e8f9" },
-  RED:         { dot:"#63acff", bg:"rgba(99,172,255,0.09)",  bd:"rgba(99,172,255,0.22)",  text:"#63acff" },
-  RED_CYBER:   { dot:"#c084fc", bg:"rgba(192,132,252,0.09)", bd:"rgba(192,132,252,0.22)", text:"#c084fc" },
-  CRA:         { dot:"#86efac", bg:"rgba(134,239,172,0.09)", bd:"rgba(134,239,172,0.22)", text:"#86efac" },
-  ROHS:        { dot:"#fcd34d", bg:"rgba(252,211,77,0.09)",  bd:"rgba(252,211,77,0.22)",  text:"#fcd34d" },
-  REACH:       { dot:"#fdba74", bg:"rgba(253,186,116,0.09)", bd:"rgba(253,186,116,0.22)", text:"#fdba74" },
-  GDPR:        { dot:"#2dd4bf", bg:"rgba(45,212,191,0.09)",  bd:"rgba(45,212,191,0.22)",  text:"#2dd4bf" },
-  AI_Act:      { dot:"#a78bfa", bg:"rgba(167,139,250,0.09)", bd:"rgba(167,139,250,0.22)", text:"#a78bfa" },
-  ESPR:        { dot:"#fb923c", bg:"rgba(251,146,60,0.09)",  bd:"rgba(251,146,60,0.22)",  text:"#fb923c" },
-  ECO:         { dot:"#4ade80", bg:"rgba(74,222,128,0.09)",  bd:"rgba(74,222,128,0.22)",  text:"#4ade80" },
-  BATTERY:     { dot:"#a3e635", bg:"rgba(163,230,53,0.09)",  bd:"rgba(163,230,53,0.22)",  text:"#a3e635" },
-  FCM:         { dot:"#f9a8d4", bg:"rgba(249,168,212,0.09)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
-  FCM_PLASTIC: { dot:"#f9a8d4", bg:"rgba(249,168,212,0.09)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
-  MD:          { dot:"#93c5fd", bg:"rgba(147,197,253,0.09)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
-  MACH_REG:    { dot:"#93c5fd", bg:"rgba(147,197,253,0.09)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
-  OTHER:       { dot:"#94a3b8", bg:"rgba(148,163,184,0.09)", bd:"rgba(148,163,184,0.22)", text:"#94a3b8" },
-};
-
-const STATUS = {
-  LOW:      { bg:"rgba(74,222,128,0.08)",  bd:"rgba(74,222,128,0.20)",  text:"#4ade80" },
-  MEDIUM:   { bg:"rgba(251,191,36,0.08)",  bd:"rgba(251,191,36,0.20)",  text:"#fbbf24" },
-  HIGH:     { bg:"rgba(251,113,133,0.08)", bd:"rgba(251,113,133,0.20)", text:"#fb7185" },
-  CRITICAL: { bg:"rgba(248,113,113,0.10)", bd:"rgba(248,113,113,0.24)", text:"#f87171" },
-};
-
-const IMPORTANCE = {
-  high:   { bg:"rgba(248,113,113,0.07)", bd:"rgba(248,113,113,0.18)", text:"#fb7185", dot:"#fb7185" },
-  medium: { bg:"rgba(251,191,36,0.07)",  bd:"rgba(251,191,36,0.18)",  text:"#fbbf24", dot:"#fbbf24" },
-  low:    { bg:"rgba(74,222,128,0.06)",  bd:"rgba(74,222,128,0.16)",  text:"#4ade80", dot:"#4ade80" },
-};
-
-const SECTION_TONES = {
-  harmonized:       { tag:"rgba(99,172,255,0.11)",  bd:"rgba(99,172,255,0.18)",  tagText:"#63acff" },
-  state_of_the_art: { tag:"rgba(251,146,60,0.11)",  bd:"rgba(251,146,60,0.18)",  tagText:"#fb923c" },
-  review:           { tag:"rgba(248,113,133,0.11)", bd:"rgba(248,113,133,0.18)", tagText:"#fb7185" },
-  unknown:          { tag:"rgba(148,163,184,0.08)", bd:"rgba(148,163,184,0.14)", tagText:"#94a3b8" },
-};
-
-const DEFAULT_TEMPLATES = [
-  { label:"Coffee machine",  text:"Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path." },
-  { label:"Electric kettle", text:"Electric kettle with mains power, liquid heating, food-contact water path, electronic controls, and optional Wi-Fi control." },
-  { label:"Air purifier",    text:"Smart air purifier with mains power, motorized fan, electronic controls, Wi-Fi app control, networked standby, and OTA firmware updates." },
-  { label:"Robot vacuum",    text:"Robot vacuum cleaner with rechargeable lithium battery, Wi-Fi and Bluetooth, cloud account, OTA firmware updates, LiDAR navigation, and camera." },
-];
-
-// ─── Utilities ────────────────────────────────────────────────────────────────
-function titleCase(input){
-  return String(input||"").replace(/[_-]+/g," ").replace(/\s+/g," ").trim().replace(/\b\w/g,m=>m.toUpperCase());
-}
-function gapLabel(key){
-  const labels={
-    product_type:"Product type", power_source:"Power source",
-    radio_scope_confirmation:"Radio scope", radio_technology:"Radio technology",
-    wifi_band:"Wi-Fi band", food_contact_materials:"Food-contact materials",
-    connectivity_architecture:"Connected design", redcyber_auth_scope:"Login / auth",
-    redcyber_transaction_scope:"Payments", contradictions:"Contradictions",
-  };
-  return labels[key]||titleCase(key);
-}
-function sentenceCaseList(values){ return (values||[]).map(v=>titleCase(String(v))); }
-function directiveTone(key){ return DIR_TONES[key]||DIR_TONES.OTHER; }
-function directiveShort(key){ return DIR_SHORT[key]||titleCase(key); }
-function directiveRank(key){ const r=DIR_ORDER.indexOf(key||"OTHER"); return r===-1?999:r; }
-function titleCaseMinor(input){
-  const small=new Set(["and","or","of","the","to","for","in","on"]);
-  return String(input||"")
-    .replace(/[_-]+/g," ")
-    .replace(/\s+/g," ")
-    .trim()
-    .split(" ")
-    .map((word,index)=>{
-      const upper=word.toUpperCase();
-      if(["LVD","EMC","RED","CRA","GDPR","ESPR","ROHS","REACH","MD"].includes(upper)) return upper;
-      if(upper==="AI") return "AI";
-      if(upper==="ACT") return index===0?"Act":"Act";
-      const lower=word.toLowerCase();
-      if(index>0&&small.has(lower)) return lower;
-      return lower.charAt(0).toUpperCase()+lower.slice(1);
-    })
-    .join(" ");
-}
-function routeTitle(section){
-  const titles={
-    LVD:"LVD Safety Route",
-    EMC:"EMC Compatibility Route",
-    RED:"RED Wireless Route",
-    RED_CYBER:"RED Cybersecurity Route",
-    ROHS:"RoHS Materials Route",
-    REACH:"REACH Chemicals Route",
-    GDPR:"GDPR Data Route",
-    AI_Act:"AI Act Route",
-    ESPR:"ESPR Route",
-    ECO:"Ecodesign Route",
-    BATTERY:"Battery Regulation Route",
-    FCM:"Food Contact Materials Route",
-    FCM_PLASTIC:"Food Contact Plastics Route",
-    CRA:"Cyber Resilience Act Route",
-    MD:"Machinery Directive Route",
-    MACH_REG:"Machinery Regulation Route",
-    OTHER:"Additional Route",
-  };
-  return titles[section?.key]||titleCaseMinor(section?.title||directiveShort(section?.key)||"Additional Route");
-}
-function formatUiLabel(value){
-  return titleCaseMinor(String(value||""));
-}
-function normalizeStandardDirective(item){
-  const code=String(item?.code||"").toUpperCase();
-  if(code.startsWith("EN 18031-")) return "RED_CYBER";
-  return item?.directive||item?.legislation_key||"OTHER";
-}
-function joinText(base,addition){
-  const a=String(base||"").trim(), b=String(addition||"").trim();
-  if(!b) return a; if(!a) return b;
-  if(a.toLowerCase().includes(b.toLowerCase())) return a;
-  const sep=/[\s,;:]$/.test(a)?" ":a.endsWith(".")?" ":", ";
-  return `${a}${sep}${b}`;
-}
-function uniqueBy(items,getKey){
-  const map=new Map();
-  (items||[]).forEach(item=>{ const k=getKey(item); if(!map.has(k)) map.set(k,item); });
-  return Array.from(map.values());
-}
-function prettyValue(value){
-  if(value===null||value===undefined||value==="") return "—";
-  if(Array.isArray(value)) return value.join(", ");
-  return String(value);
-}
-
-function buildDynamicTemplates(products){
-  const lookup=new Map((products||[]).map(p=>[p.id,p]));
-  const templates=[];
-  function addTemplate(productId,suffix,labelOverride){
-    const product=lookup.get(productId);
-    if(!product) return;
-    templates.push({ label:labelOverride||product.label, text:`${product.label} with ${suffix}.` });
-  }
-  addTemplate("coffee_machine","mains power, heating, water tank, grinder, food-contact brew path, Wi-Fi radio, app control, cloud account, and OTA updates","Coffee machine");
-  addTemplate("electric_kettle","mains power, liquid heating, food-contact water path, electronic controls, and optional Wi-Fi radio control","Electric kettle");
-  addTemplate("air_purifier","mains power, motorized fan, sensor electronics, Wi-Fi radio, app control, and OTA updates","Air purifier");
-  addTemplate("robot_vacuum","rechargeable battery, Wi-Fi and Bluetooth radio, cloud account, OTA updates, and LiDAR navigation","Robot vacuum");
-  addTemplate("robot_vacuum_cleaner","rechargeable battery, Wi-Fi and Bluetooth radio, cloud account, OTA updates, and LiDAR navigation","Robot vacuum");
-  return uniqueBy(templates.length?templates:DEFAULT_TEMPLATES, item=>item.label).slice(0,4);
-}
-
-function buildGuidedChips(metadata,result){
-  const productId=result?.product_type;
-  const product=(metadata?.products||[]).find(item=>item.id===productId);
-  const traits=new Set(result?.all_traits||[]);
-  const missingItems=result?.missing_information_items||[];
-  const chips=[];
-  const push=(label,text)=>{ if(!label||!text) return; if(!chips.some(item=>item.text===text)) chips.push({label,text}); };
-  missingItems.forEach(item=>(item.examples||[]).slice(0,2).forEach(ex=>push(gapLabel(item.key),ex)));
-  if(product?.implied_traits?.includes("food_contact")||traits.has("food_contact")){
-    push("Food contact","food-contact plastics, coatings, silicone, rubber, and metal parts");
-    push("Water path","wetted path materials, seals, and water tank");
-  }
-  if(product?.implied_traits?.includes("motorized")||traits.has("motorized")){
-    push("Motor","motorized function");
-    push("Pump","pump or fluid transfer function");
-  }
-  if(traits.has("radio")){
-    push("Wi-Fi","Wi-Fi radio");
-    push("Bluetooth","Bluetooth LE radio");
-    push("OTA","OTA firmware updates");
-  }
-  if(!traits.has("radio")&&(traits.has("app_control")||traits.has("cloud")||traits.has("ota"))){
-    push("Wi-Fi","Wi-Fi radio");
-    push("Bluetooth","Bluetooth LE radio");
-  }
-  if(traits.has("cloud")||traits.has("app_control")||traits.has("internet")){
-    push("Cloud","cloud account required");
-    push("Local control","local LAN control without cloud dependency");
-    push("Patching","security and firmware patching over the air");
-  }
-  if(traits.has("food_contact"))
-    push("Food contact","food-contact plastics, coatings, silicone, rubber, and metal parts");
-  if(traits.has("battery_powered")) push("Battery","rechargeable lithium battery");
-  if(traits.has("camera")) push("Camera","integrated camera");
-  if(traits.has("microphone")) push("Microphone","microphone or voice input");
-  if(!chips.length){
-    push("Mains","230 V mains powered");
-    push("Consumer","consumer household use");
-    push("App control","mobile app control");
-    push("Wi-Fi","Wi-Fi radio");
-    push("Food contact","food-contact plastics or coatings");
-  }
-  return chips.slice(0,10);
-}
-
-function buildGuidanceItems(result){
-  const traits=new Set(result?.all_traits||[]);
-  const rawItems=result?.input_gaps_panel?.items||result?.missing_information_items||[];
-  const items=[], seen=new Set();
-  const add=(key,title,why,importance,choices=[])=>{
-    if(seen.has(key)) return; seen.add(key);
-    items.push({key,title,why,importance,choices:choices.filter(Boolean).slice(0,3)});
-  };
-  if(traits.has("radio"))
-    add("radio_stack","Confirm radios","Changes RED and RF scope.","high",["Wi-Fi radio","Bluetooth LE radio","NFC radio"]);
-  if(traits.has("cloud")||traits.has("internet")||traits.has("app_control")||traits.has("ota")||traits.has("wifi"))
-    add("connected_architecture","Confirm connected design","Changes EN 18031 and cybersecurity route.","high",["cloud account required","local LAN control without cloud dependency","OTA firmware updates"]);
-  if(traits.has("food_contact"))
-    add("food_contact","Confirm wetted materials","Changes food-contact obligations.","medium",["food-contact plastics","silicone seal","metal wetted path"]);
-  if(traits.has("battery_powered"))
-    add("battery","Confirm battery setup","Changes Battery Regulation scope.","medium",["rechargeable lithium battery","replaceable battery","battery supplied with the product"]);
-  if(traits.has("camera")||traits.has("microphone")||traits.has("personal_data_likely"))
-    add("data_functions","Confirm sensitive functions","Changes cybersecurity/privacy expectations.","high",["integrated camera","microphone or voice input","user account and profile data"]);
-  rawItems.forEach(item=>add(item.key,gapLabel(item.key),item.message,item.importance||"medium",item.examples||[]));
-  return items.slice(0,6);
-}
-
-function buildCompactLegislationItems(result){
-  const sections=result?.legislation_sections||[];
-  const allItems=sections.flatMap(section=>(section.items||[]).map(item=>({...item,section_key:section.key,section_title:section.title})));
-  return uniqueBy(
-    [...allItems].sort((a,b)=>directiveRank(a.directive_key)-directiveRank(b.directive_key)||String(a.code).localeCompare(String(b.code))),
-    item=>`${item.code}-${item.directive_key}`
+function Panel({ eyebrow, title, subtitle, action, className = "", children }) {
+  return (
+    <section className={`panel ${className}`.trim()}>
+      {(eyebrow || title || subtitle || action) && (
+        <header className="panel__header">
+          <div className="panel__heading">
+            {eyebrow ? <div className="panel__eyebrow">{eyebrow}</div> : null}
+            {title ? <h2 className="panel__title">{title}</h2> : null}
+            {subtitle ? <p className="panel__subtitle">{subtitle}</p> : null}
+          </div>
+          {action ? <div className="panel__action">{action}</div> : null}
+        </header>
+      )}
+      <div className="panel__body">{children}</div>
+    </section>
   );
 }
 
-function compactLegislationGroupLabel(item){
-  const k=item.section_key;
-  if(k==="framework") return "Additional";
-  if(k==="non_ce") return "Parallel";
-  if(k==="future") return "Future";
-  if(k==="ce") return "CE";
-  return titleCase(k);
-}
-
-function sortStandardItems(items){
-  return [...(items||[])].sort((a,b)=>{
-    const aDir=normalizeStandardDirective(a), bDir=normalizeStandardDirective(b);
-    return directiveRank(aDir)-directiveRank(bDir)||String(a.code||"").localeCompare(String(b.code||""));
-  });
-}
-
-function buildSectionsFromFlatResult(result){
-  const standardRows=(result?.standards||[]).map(item=>({...item,item_type:item.item_type||"standard"}));
-  const reviewRows=(result?.review_items||[]).map(item=>({...item,item_type:"review"}));
-  const grouped={};
-  [...standardRows,...reviewRows].forEach(item=>{
-    let key=item.harmonization_status||(item.item_type==="review"?"review":"unknown");
-    if(!["harmonized","state_of_the_art","review","unknown"].includes(key)) key="unknown";
-    if(!grouped[key]) grouped[key]={ key, title:
-      key==="harmonized"?"Harmonized standards":
-      key==="state_of_the_art"?"State of the art / latest technical route":
-      key==="review"?"Review-required routes":"Other standards",
-      count:0, items:[] };
-    grouped[key].items.push(item);
-  });
-  return ["harmonized","state_of_the_art","review","unknown"]
-    .filter(k=>grouped[k])
-    .map(key=>({ ...grouped[key], items:sortStandardItems(grouped[key].items), count:grouped[key].items.length }));
-}
-
-function buildDirectiveBreakdown(result){
-  const sections=result?.standard_sections?.length?result.standard_sections:buildSectionsFromFlatResult(result);
-  const counts={};
-  sections.forEach(section=>(section.items||[]).forEach(item=>{ const dir=normalizeStandardDirective(item); counts[dir]=(counts[dir]||0)+1; }));
-  return Object.entries(counts).sort((a,b)=>directiveRank(a[0])-directiveRank(b[0])).map(([key,count])=>({key,count}));
-}
-
-// ─── Primitive components ─────────────────────────────────────────────────────
-
-function DirPill({ dirKey, large=false }){
-  const tone=directiveTone(dirKey);
+function DirectivePill({ dirKey }) {
+  const tone = directiveTone(dirKey);
   return (
-    <span style={{
-      display:"inline-flex",alignItems:"center",gap:5,borderRadius:7,
-      border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
-      padding:large?"5px 13px":"3px 9px", fontSize:large?12:10.5, fontWeight:700,
-      whiteSpace:"nowrap",letterSpacing:"0.025em",
-    }}>
-      <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+    <span
+      className="directive-pill"
+      style={{
+        "--pill-bg": tone.bg,
+        "--pill-border": tone.bd,
+        "--pill-text": tone.text,
+        "--pill-dot": tone.dot,
+      }}
+    >
+      <span className="directive-pill__dot" />
       {directiveShort(dirKey)}
     </span>
   );
 }
 
-function RiskBadge({ value }){
-  const tone=STATUS[value]||STATUS.MEDIUM;
+function RiskPill({ value }) {
+  const tone = STATUS[value] || STATUS.MEDIUM;
   return (
-    <span style={{
-      display:"inline-flex",alignItems:"center",gap:5,borderRadius:6,
-      border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
-      padding:"3px 10px",fontSize:10.5,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",
-    }}>
-      <span style={{width:5,height:5,borderRadius:999,background:tone.text,flexShrink:0}}/>
-      {value} Risk
+    <span
+      className="status-pill"
+      style={{
+        "--pill-bg": tone.bg,
+        "--pill-border": tone.bd,
+        "--pill-text": tone.text,
+      }}
+    >
+      {formatUiLabel(value || "MEDIUM")} risk
     </span>
   );
 }
 
-function Chip({ children, tone="neutral" }){
-  const s = tone==="neutral"
-    ? {bg:"rgba(255,255,255,0.04)", bd:T.lineStrong, text:T.textSub}
-    : tone==="blue"
-    ? {bg:"rgba(91,168,255,0.08)", bd:"rgba(91,168,255,0.18)", text:T.blue}
-    : tone==="teal"
-    ? {bg:"rgba(34,211,196,0.08)", bd:"rgba(34,211,196,0.18)", text:T.teal}
-    : {bg:"rgba(34,211,196,0.08)", bd:"rgba(34,211,196,0.18)", text:T.teal};
+function ImportancePill({ value }) {
+  const tone = IMPORTANCE[value] || IMPORTANCE.medium;
   return (
-    <span style={{
-      display:"inline-flex",alignItems:"center",borderRadius:999,
-      border:`1px solid ${s.bd}`,background:s.bg,color:s.text,
-      padding:"4px 10px",fontSize:11,fontWeight:600,
-    }}>{children}</span>
+    <span
+      className="importance-pill"
+      style={{
+        "--pill-bg": tone.bg,
+        "--pill-border": tone.bd,
+        "--pill-text": tone.text,
+        "--pill-dot": tone.dot,
+      }}
+    >
+      <span className="importance-pill__dot" />
+      {formatUiLabel(value)}
+    </span>
   );
 }
 
-function Card({ children, style }){
+function MetricCard({ label, value, detail }) {
   return (
-    <div style={{
-      borderRadius:18,border:`1px solid ${T.lineStrong}`,
-      background:T.bgCard,boxShadow:T.shadowCard,overflow:"hidden",
-      ...style,
-    }}>{children}</div>
-  );
-}
-
-function CardHeader({ title, subtitle, right }){
-  return (
-    <div style={{
-      padding:"14px 20px 12px",
-      borderBottom:`1px solid ${T.line}`,
-      background:T.bgCardDeep,
-      display:"flex",gap:12,alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",
-    }}>
-      <div style={{minWidth:0}}>
-        {title&&<div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.012em"}}>{title}</div>}
-        {subtitle&&<div style={{marginTop:4,fontSize:11.5,color:T.textSub,lineHeight:1.55,letterSpacing:"0.003em"}}>{subtitle}</div>}
-      </div>
-      {right&&<div style={{flexShrink:0}}>{right}</div>}
+    <div className="metric-card">
+      <div className="metric-card__label">{label}</div>
+      <div className="metric-card__value">{value}</div>
+      {detail ? <div className="metric-card__detail">{detail}</div> : null}
     </div>
   );
 }
 
-function SoftBox({ children, style }){
+function TopBar({ result, totalStandards, onReset }) {
   return (
-    <div style={{
-      borderRadius:12,border:`1px solid rgba(255,255,255,0.06)`,
-      background:"rgba(255,255,255,0.025)",padding:"12px 13px",
-      ...style,
-    }}>{children}</div>
-  );
-}
+    <header className="topbar">
+      <div className="page-shell topbar__inner">
+        <div className="brand">
+          <div className="brand__mark">
+            <Waypoints size={16} strokeWidth={2.3} />
+          </div>
+          <div>
+            <div className="brand__title">RuleGrid</div>
+            <div className="brand__subtitle">Guided EU regulatory scoping</div>
+          </div>
+        </div>
 
-function Label({ children }){
-  return (
-    <div style={{
-      fontSize:9.5,fontWeight:700,color:T.textLabel,
-      textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:5,
-    }}>{children}</div>
-  );
-}
-
-// ─── Buttons ─────────────────────────────────────────────────────────────────
-
-function PrimaryBtn({ onClick, disabled, children }){
-  return (
-    <button onClick={onClick} disabled={disabled} style={{
-      appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.4:1,borderRadius:12,border:"1px solid rgba(91,168,255,0.24)",
-      background:disabled?"rgba(91,168,255,0.10)":"linear-gradient(180deg, rgba(91,168,255,0.24) 0%, rgba(91,168,255,0.16) 100%)",
-      color:T.text,padding:"11px 22px",fontWeight:700,fontSize:13,
-      boxShadow:disabled?"none":"inset 0 1px 0 rgba(255,255,255,0.08)",
-      transition:"all 0.2s",letterSpacing:"0.01em",whiteSpace:"nowrap",
-    }}>{children}</button>
-  );
-}
-
-function SecondaryBtn({ onClick, disabled, children, style }){
-  return (
-    <button onClick={onClick} disabled={disabled} style={{
-      appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.45:1,borderRadius:12,
-      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.025)",
-      color:T.textSub,padding:"10px 18px",fontWeight:600,fontSize:13,
-      transition:"all 0.2s",...style,
-    }}>{children}</button>
-  );
-}
-
-
-
-function AddChipBtn({ onClick, children }){
-  return (
-    <button onClick={onClick} style={{
-      appearance:"none",cursor:"pointer",borderRadius:999,
-      border:`1px solid rgba(255,255,255,0.07)`,
-      background:"rgba(255,255,255,0.022)",
-      color:T.textSub,padding:"6px 11px",fontWeight:600,fontSize:11.5,
-      transition:"background 0.15s,color 0.15s,border-color 0.15s,transform 0.15s",
-      letterSpacing:"0.01em",
-    }}>{children}</button>
-  );
-}
-
-function CharCounter({ value, max=1200 }){
-  const len=value.length, pct=Math.min(len/max,1);
-  const color=pct>0.9?T.rose:pct>0.7?T.amber:T.textMuted;
-  return (
-    <span style={{fontSize:11,color,fontWeight:500,fontVariantNumeric:"tabular-nums"}}>
-      {len} / {max}
-    </span>
-  );
-}
-
-// ─── Topbar ───────────────────────────────────────────────────────────────────
-function TopbarLegacy({ result, onReset }){
-  const totalStandards=result
-    ?(result?.standard_sections?.length
-      ?result.standard_sections.reduce((n,s)=>n+(s.items||[]).length,0)
-      :(result?.standards||[]).length+(result?.review_items||[]).length)
-    :null;
-
-  return (
-    <div style={{
-      borderBottom:`1px solid ${T.line}`,
-      background:`rgba(14,16,24,0.90)`,
-      backdropFilter:"blur(24px) saturate(1.3)",
-      WebkitBackdropFilter:"blur(24px) saturate(1.3)",
-      padding:"0 clamp(14px,3vw,28px)",
-      display:"flex",alignItems:"center",gap:12,height:52,
-      position:"sticky",top:0,zIndex:100,
-    }}>
-      {/* Logo */}
-      <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
-        <div style={{
-          width:28,height:28,borderRadius:8,
-          background:`linear-gradient(140deg,${T.blue} 0%,${T.teal} 100%)`,
-          display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:13,fontWeight:900,color:"#050810",flexShrink:0,
-          boxShadow:`0 0 12px rgba(91,168,255,0.22)`,
-        }}>⬡</div>
-        <span style={{
-          fontFamily:"'DM Serif Display',Georgia,serif",
-          fontSize:18,color:T.text,letterSpacing:"-0.015em",whiteSpace:"nowrap",
-        }}>RuleGrid</span>
-      </div>
-
-      <div style={{width:1,height:16,background:T.line,margin:"0 4px",flexShrink:0}}/>
-      <span className="topbar-subtitle" style={{
-        fontSize:11,color:T.textMuted,fontWeight:500,letterSpacing:"0.01em",
-      }}>EU Regulatory Scoping</span>
-
-      {result&&(
-        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
-          <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
-          {totalStandards!==null&&(
-            <span className="topbar-count" style={{
-              fontSize:11,color:T.textSub,fontWeight:600,
-              background:"rgba(255,255,255,0.04)",border:`1px solid ${T.line}`,
-              borderRadius:6,padding:"3px 9px",whiteSpace:"nowrap",
-              fontVariantNumeric:"tabular-nums",
-            }}>{totalStandards} standards</span>
+        <div className="topbar__meta">
+          {result ? (
+            <>
+              <RiskPill value={result?.overall_risk || "MEDIUM"} />
+              <span className="topbar__count">{totalStandards} standards in route</span>
+              <button type="button" className="button button--secondary" onClick={onReset}>
+                <RefreshCcw size={14} />
+                New analysis
+              </button>
+            </>
+          ) : (
+            <span className="topbar__hint">Cleaner hierarchy, same depth of output</span>
           )}
-          <button onClick={onReset} className="topbar-reset-btn" style={{
-            appearance:"none",cursor:"pointer",borderRadius:8,
-            border:`1px solid rgba(91,168,255,0.22)`,
-            background:"rgba(91,168,255,0.07)",
-            color:T.blue,padding:"5px 13px",fontWeight:600,fontSize:12,
-            display:"flex",alignItems:"center",gap:6,
-            transition:"all 0.15s",whiteSpace:"nowrap",letterSpacing:"0.01em",
-          }}>
-            <span style={{fontSize:14,lineHeight:1}}>↺</span>
-            <span className="topbar-new-label">New analysis</span>
-          </button>
         </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Hero ─────────────────────────────────────────────────────────────────────
-function Topbar({ result, onReset }){
-  const totalStandards=result
-    ?(result?.standard_sections?.length
-      ?result.standard_sections.reduce((n,s)=>n+(s.items||[]).length,0)
-      :(result?.standards||[]).length+(result?.review_items||[]).length)
-    :null;
-
-  return (
-    <header style={{
-      borderBottom:`1px solid ${T.line}`,
-      background:"rgba(12,17,24,0.84)",
-      backdropFilter:"blur(20px)",
-      WebkitBackdropFilter:"blur(20px)",
-      position:"sticky",top:0,zIndex:100,
-    }}>
-      <div style={{
-        maxWidth:1380,margin:"0 auto",padding:"0 clamp(14px,3vw,22px)",
-        minHeight:58,display:"flex",alignItems:"center",gap:12,
-      }}>
-        <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-          <div style={{
-            width:10,height:10,borderRadius:999,background:T.blue,
-            boxShadow:"0 0 18px rgba(91,168,255,0.40)",flexShrink:0,
-          }}/>
-          <div style={{display:"grid",gap:1}}>
-            <span style={{
-              fontFamily:"'DM Serif Display',Georgia,serif",
-              fontSize:19,color:T.text,letterSpacing:"-0.015em",whiteSpace:"nowrap",
-            }}>RuleGrid</span>
-            <span className="topbar-subtitle" style={{
-              fontSize:11,color:T.textMuted,fontWeight:500,letterSpacing:"0.01em",
-            }}>EU regulatory scoping</span>
-          </div>
-        </div>
-
-        {result&&(
-          <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
-            <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
-            {totalStandards!==null&&(
-              <span className="topbar-count" style={{
-                fontSize:11,color:T.textSub,fontWeight:600,
-                background:"rgba(255,255,255,0.03)",border:`1px solid ${T.line}`,
-                borderRadius:999,padding:"4px 10px",whiteSpace:"nowrap",
-                fontVariantNumeric:"tabular-nums",
-              }}>{totalStandards} standards</span>
-            )}
-            <button onClick={onReset} className="topbar-reset-btn" style={{
-              appearance:"none",cursor:"pointer",borderRadius:999,
-              border:`1px solid rgba(91,168,255,0.16)`,
-              background:"rgba(91,168,255,0.06)",
-              color:T.text,padding:"7px 12px",fontWeight:600,fontSize:12,
-              whiteSpace:"nowrap",letterSpacing:"0.01em",
-            }}>
-              <span className="topbar-new-label">New analysis</span>
-            </button>
-          </div>
-        )}
       </div>
     </header>
   );
 }
 
-function HeroLegacy({ result }){
-  const hero=result?.hero_summary||{};
-  const primaryRegimes=hero.primary_regimes||[];
-  const showMeta=Boolean(result);
+function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
+  const hero = result?.hero_summary || {};
+  const confidence =
+    result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
+  const title = result
+    ? hero.title || `Review the ${formatUiLabel(result?.product_type || "product")} route`
+    : "Professional regulatory scoping for dense product decisions";
+  const subtitle = result
+    ? result?.summary ||
+      hero.subtitle ||
+      "Use the overview first, then work through clarifications and route sections."
+    : "Describe the actual product configuration and RuleGrid returns a standards route, legislation context, and the questions that materially change scope.";
+  const primaryRegimes = hero.primary_regimes || [];
+
+  const supportItems = result
+    ? [
+        {
+          icon: <ListChecks size={16} />,
+          title: `${routeSections.length} route sections`,
+          text: "Standards are grouped so safety, EMC, radio, and cybersecurity are easier to scan.",
+        },
+        {
+          icon: <ShieldCheck size={16} />,
+          title: `${legislationItems.length} legislation items`,
+          text: "Applicable frameworks stay visible in the side rail while you read the route.",
+        },
+        {
+          icon: <Search size={16} />,
+          title: `${guidanceItems.length} clarification prompts`,
+          text: "These are the details most likely to change the scope of the result.",
+        },
+      ]
+    : [
+        {
+          icon: <Search size={16} />,
+          title: "Power and major function",
+          text: "Call out mains power, battery, heating, motors, pumps, sensors, or cameras.",
+        },
+        {
+          icon: <Waypoints size={16} />,
+          title: "Connectivity and updates",
+          text: "Mention Wi-Fi, Bluetooth, cloud dependency, app control, and OTA firmware updates.",
+        },
+        {
+          icon: <ShieldCheck size={16} />,
+          title: "Materials and contact paths",
+          text: "Include wetted paths, food-contact parts, battery chemistry, or replaceable parts.",
+        },
+      ];
 
   return (
-    <div style={{
-      borderRadius:18,border:`1px solid ${T.lineStrong}`,
-      background:"linear-gradient(160deg,#181c2c 0%,#12152a 55%,#171b2c 100%)",
-      boxShadow:`${T.shadowLg},0 0 60px rgba(91,168,255,0.03)`,
-      padding:"clamp(22px,4vw,40px) clamp(18px,4vw,36px)",
-      position:"relative",overflow:"hidden",
-    }}>
-      {/* Grid texture */}
-      <div style={{position:"absolute",inset:0,pointerEvents:"none",
-        backgroundImage:`linear-gradient(rgba(255,255,255,0.040) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.040) 1px,transparent 1px)`,
-        backgroundSize:"48px 48px"}}/>
-      {/* Glow */}
-      <div style={{position:"absolute",top:-80,left:"40%",transform:"translateX(-50%)",
-        width:480,height:240,
-        background:"radial-gradient(ellipse,rgba(91,168,255,0.07),transparent 68%)",
-        pointerEvents:"none"}}/>
-      <div style={{position:"absolute",bottom:-60,right:"20%",
-        width:320,height:160,
-        background:"radial-gradient(ellipse,rgba(34,211,196,0.045),transparent 68%)",
-        pointerEvents:"none"}}/>
-
-      <div style={{position:"relative",display:"grid",gap:16,justifyItems:"center",textAlign:"center"}}>
-        {showMeta&&(
-          <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center",animation:"fadeUp 0.35s ease both"}}>
-            <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
-            <Chip tone="blue">{titleCase(hero.confidence||result?.product_match_confidence||"low")} Confidence</Chip>
-            {result?.product_type&&(
-              <Chip tone="teal">{titleCase(result.product_type)}</Chip>
+    <div className="hero-grid">
+      <Panel className="panel--hero" eyebrow="Guided Workspace" title={title} subtitle={subtitle}>
+        <div className="hero-panel__content">
+          <div className="hero-panel__tags">
+            {result ? (
+              <>
+                <RiskPill value={result?.overall_risk || "MEDIUM"} />
+                <span className="soft-tag">Confidence: {formatUiLabel(confidence)}</span>
+                {result?.product_type ? (
+                  <span className="soft-tag">Product: {formatUiLabel(result.product_type)}</span>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <span className="soft-tag">
+                  <Sparkles size={14} />
+                  Guided clarifications
+                </span>
+                <span className="soft-tag">
+                  <ListChecks size={14} />
+                  Standards route
+                </span>
+                <span className="soft-tag">
+                  <ShieldCheck size={14} />
+                  Legislation context
+                </span>
+              </>
             )}
           </div>
-        )}
-        <div style={{animation:"fadeUp 0.4s ease 0.05s both"}}>
-          <h1 style={{
-            fontFamily:"'DM Serif Display',Georgia,serif",
-            fontSize:"clamp(22px,4vw,40px)",fontWeight:400,color:T.text,
-            lineHeight:1.08,letterSpacing:"-0.025em",marginBottom:12,
-          }}>
-            {hero.title||"RuleGrid Regulatory Scoping"}
-          </h1>
-          <p style={{fontSize:"clamp(13px,2vw,14.5px)",color:T.textSub,lineHeight:1.8,maxWidth:560,margin:"0 auto"}}>
-            {hero.subtitle||"Describe the product clearly to generate the standards route and the applicable legislation path."}
-          </p>
+
+          {primaryRegimes.length ? (
+            <div className="tag-row">
+              {primaryRegimes.map((dirKey) => (
+                <DirectivePill key={dirKey} dirKey={dirKey} />
+              ))}
+            </div>
+          ) : null}
         </div>
-        {showMeta&&primaryRegimes.length>0&&(
-          <div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center",animation:"fadeUp 0.4s ease 0.10s both"}}>
-            {primaryRegimes.map(dirKey=><DirPill key={dirKey} dirKey={dirKey} large/>)}
-          </div>
-        )}
-        {showMeta&&result?.summary&&(
-          <div style={{
-            width:"100%",maxWidth:660,padding:"14px 20px",borderRadius:12,
-            background:"rgba(91,168,255,0.04)",border:`1px solid rgba(91,168,255,0.10)`,
-            fontSize:13.5,color:T.textSub,lineHeight:1.8,textAlign:"left",
-            animation:"fadeUp 0.4s ease 0.15s both",
-          }}>{result.summary}</div>
-        )}
-      </div>
+      </Panel>
+
+      <Panel
+        className="panel--support"
+        eyebrow={result ? "Current Output" : "Best Input"}
+        title={result ? "What this analysis covers" : "What to include in the description"}
+      >
+        <div className="support-list">
+          {supportItems.map((item) => (
+            <div key={item.title} className="support-list__item">
+              <div className="support-list__icon">{item.icon}</div>
+              <div>
+                <div className="support-list__title">{item.title}</div>
+                <div className="support-list__text">{item.text}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
     </div>
   );
 }
 
-// ─── Sidebar rail ─────────────────────────────────────────────────────────────
-function Hero({ result }){
-  const hero=result?.hero_summary||{};
-  const primaryRegimes=hero.primary_regimes||[];
-  const showMeta=Boolean(result);
+function ComposerPanel({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }) {
+  const charMax = 1200;
+  const wordCount = description.trim() ? description.trim().split(/\s+/).length : 0;
+  const usageState =
+    description.length > charMax * 0.9
+      ? "counter--danger"
+      : description.length > charMax * 0.7
+        ? "counter--warn"
+        : "";
 
   return (
-    <Card style={{
-      background:"linear-gradient(180deg, rgba(17,24,34,0.96) 0%, rgba(14,20,29,0.98) 100%)",
-      boxShadow:T.shadowLg,
-      position:"relative",
-    }}>
-      <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
-        <div style={{
-          position:"absolute",top:-120,right:-80,width:360,height:260,
-          background:"radial-gradient(circle, rgba(91,168,255,0.14) 0%, rgba(91,168,255,0.03) 42%, transparent 72%)",
-        }}/>
-        <div style={{
-          position:"absolute",bottom:-140,left:-40,width:280,height:220,
-          background:"radial-gradient(circle, rgba(34,211,196,0.08) 0%, transparent 70%)",
-        }}/>
-      </div>
-
-      <div className="hero-grid" style={{
-        position:"relative",padding:"clamp(22px,4vw,34px) clamp(18px,4vw,34px)",
-        display:"grid",gap:24,alignItems:"start",
-      }}>
-        <div style={{display:"grid",gap:16}}>
-          <div style={{display:"grid",gap:8,animation:"fadeUp 0.35s ease both"}}>
-            <span style={{
-              fontSize:11,fontWeight:700,color:T.blue,textTransform:"uppercase",
-              letterSpacing:"0.14em",
-            }}>Operator view</span>
-            <h1 style={{
-              fontFamily:"'DM Serif Display',Georgia,serif",
-              fontSize:"clamp(28px,4vw,42px)",fontWeight:400,color:T.text,
-              lineHeight:1.02,letterSpacing:"-0.03em",
-            }}>
-              {hero.title||"Professional regulatory scoping without the noise"}
-            </h1>
-            <p style={{fontSize:"clamp(14px,2vw,15px)",color:T.textSub,lineHeight:1.75,maxWidth:680}}>
-              {hero.subtitle||"Describe the product in plain language. RuleGrid returns a cleaner standards route, the legislation path, and the follow-up questions that materially change scope."}
-            </p>
-          </div>
-
-          <div style={{display:"flex",flexWrap:"wrap",gap:8,animation:"fadeUp 0.4s ease 0.05s both"}}>
-            {showMeta?(
-              <>
-                <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
-                <Chip tone="blue">{formatUiLabel(hero.confidence||result?.product_match_confidence||"low")} Confidence</Chip>
-                {result?.product_type&&<Chip tone="teal">{titleCase(result.product_type)}</Chip>}
-              </>
-            ):(
-              <>
-                <Chip tone="blue">Deep standards route</Chip>
-                <Chip tone="teal">Applicable legislation</Chip>
-                <Chip tone="neutral">Clarification prompts</Chip>
-              </>
-            )}
+    <Panel
+      eyebrow="Input"
+      title="Describe the product"
+      subtitle="Use the real operating setup, not marketing copy. Clear technical detail produces a more stable route."
+      action={<span className="keyboard-hint">Ctrl / Cmd + Enter to analyze</span>}
+    >
+      <div className="composer">
+        <div className="composer__block">
+          <div className="micro-label">Quick start</div>
+          <div className="template-row">
+            {templates.slice(0, 4).map((template) => (
+              <button
+                key={template.label}
+                type="button"
+                className="chip-button"
+                onClick={() => {
+                  setDescription(template.text);
+                  onDirty(true);
+                }}
+              >
+                {template.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div style={{display:"grid",gap:10,animation:"fadeUp 0.45s ease 0.1s both"}}>
-          <SoftBox style={{
-            background:"rgba(255,255,255,0.03)",
-            border:"1px solid rgba(255,255,255,0.07)",
-            minHeight:showMeta&&result?.summary?154:132,
-          }}>
-            <Label>{showMeta?"Analysis summary":"What to include"}</Label>
-            <div style={{fontSize:13.5,color:T.textSub,lineHeight:1.75}}>
-              {showMeta&&result?.summary
-                ? result.summary
-                : "Call out power source, radios, connectivity model, major functions, sensors, battery setup, and any food-contact or wetted materials."}
+        <label className="composer__field">
+          <textarea
+            value={description}
+            onChange={(event) => {
+              setDescription(event.target.value);
+              onDirty(true);
+            }}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                event.preventDefault();
+                onAnalyze();
+              }
+            }}
+            placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
+            rows={8}
+            maxLength={charMax}
+            spellCheck={false}
+            className="composer__textarea"
+          />
+          <div className="composer__field-footer">
+            <div className="composer__helper">
+              Mention power, radios, cloud dependency, updates, core functions, key sensors, and any food-contact or wetted-path detail.
             </div>
-          </SoftBox>
-          {showMeta&&primaryRegimes.length>0&&(
-            <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-              {primaryRegimes.map(dirKey=><DirPill key={dirKey} dirKey={dirKey} large/>)}
+            <div className={`counter ${usageState}`.trim()}>
+              {wordCount ? <span>{wordCount} words</span> : null}
+              <span>
+                {description.length} / {charMax}
+              </span>
             </div>
-          )}
+          </div>
+        </label>
+
+        {chips.length ? (
+          <div className="composer__block">
+            <div className="micro-label">Add missing detail fast</div>
+            <div className="template-row">
+              {chips.map((chip) => (
+                <button
+                  key={`${chip.label}-${chip.text}`}
+                  type="button"
+                  className="chip-button chip-button--soft"
+                  onClick={() => {
+                    setDescription((current) => joinText(current, chip.text));
+                    onDirty(true);
+                  }}
+                >
+                  + {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="composer__actions">
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={onAnalyze}
+            disabled={busy || !description.trim()}
+          >
+            {busy ? <LoaderCircle size={16} className="spin" /> : <Search size={16} />}
+            {busy ? "Analyzing" : "Analyze product"}
+          </button>
+
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={() => {
+              setDescription("");
+              onDirty(true);
+            }}
+            disabled={!description}
+          >
+            Clear
+          </button>
         </div>
       </div>
-    </Card>
+    </Panel>
   );
 }
 
-function SidebarRailLegacy({ result }){
-  if(!result) return null;
-  const items=buildCompactLegislationItems(result);
-  const confidence=result?.confidence_panel?.confidence||result?.product_match_confidence||"low";
-  const risk=result?.overall_risk||"MEDIUM";
-  const riskTone=STATUS[risk]||STATUS.MEDIUM;
+function OverviewPanel({ result, routeSections, legislationItems, directiveBreakdown }) {
+  if (!result) return null;
+
+  const confidence =
+    result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
+  const primaryRegimes = result?.hero_summary?.primary_regimes || [];
+  const totalStandards = routeSections.reduce(
+    (count, section) => count + (section.items || []).length,
+    0
+  );
 
   return (
-    <aside className="left-rail" style={{display:"grid",gap:10,position:"sticky",top:68,alignSelf:"start"}}>
-      {/* Detection card */}
-      <Card>
-        <CardHeader title="Detection" subtitle="Product identification"/>
-        <div style={{padding:"12px 14px",display:"grid",gap:8}}>
-          <SoftBox>
-            <Label>Detected product</Label>
-            <div style={{fontSize:14,fontWeight:700,color:T.text,marginTop:2,letterSpacing:"-0.01em"}}>{titleCase(result?.product_type||"Unclear")}</div>
-          </SoftBox>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            <SoftBox>
-              <Label>Confidence</Label>
-                <Chip tone="blue">{formatUiLabel(confidence)}</Chip>
-            </SoftBox>
-            {result?.overall_risk&&(
-              <SoftBox>
-                <Label>Risk</Label>
-                <span style={{
-                  display:"inline-flex",alignItems:"center",gap:5,borderRadius:6,
-                  border:`1px solid ${riskTone.bd}`,background:riskTone.bg,color:riskTone.text,
-                  padding:"3px 8px",fontSize:11,fontWeight:700,letterSpacing:"0.04em",
-                }}>
-                  <span style={{width:5,height:5,borderRadius:999,background:riskTone.text,flexShrink:0}}/>
-                  {formatUiLabel(risk)}
-                </span>
-              </SoftBox>
-            )}
+    <Panel
+      eyebrow="Overview"
+      title="Analysis overview"
+      subtitle="Start here before reading the route cards. This panel keeps the high-level outcome compact."
+    >
+      <div className="overview-grid">
+        <div className="overview-grid__summary">
+          <div className="lead-copy">{result?.summary || "No summary returned from the analysis."}</div>
+          {primaryRegimes.length ? (
+            <div className="tag-row">
+              {primaryRegimes.map((dirKey) => (
+                <DirectivePill key={dirKey} dirKey={dirKey} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="metric-grid">
+          <MetricCard label="Detected product" value={formatUiLabel(result?.product_type || "unclear")} />
+          <MetricCard label="Confidence" value={formatUiLabel(confidence)} />
+          <MetricCard label="Overall risk" value={formatUiLabel(result?.overall_risk || "MEDIUM")} />
+          <MetricCard label="Standards" value={String(totalStandards)} />
+          <MetricCard label="Legislation" value={String(legislationItems.length)} />
+        </div>
+      </div>
+
+      {directiveBreakdown.length ? (
+        <div className="route-breakdown">
+          {directiveBreakdown.map(({ key, count }) => (
+            <span key={key} className="breakdown-pill">
+              <DirectivePill dirKey={key} />
+              <span className="breakdown-pill__count">{count}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </Panel>
+  );
+}
+
+function SnapshotRail({ result, routeSections, legislationGroups, description }) {
+  if (!result) return null;
+
+  const confidence =
+    result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
+  const totalStandards = routeSections.reduce(
+    (count, section) => count + (section.items || []).length,
+    0
+  );
+  const totalLegislation = legislationGroups.reduce(
+    (count, group) => count + (group.items || []).length,
+    0
+  );
+
+  return (
+    <aside className="side-column">
+      <Panel
+        className="panel--sidebar"
+        eyebrow="Snapshot"
+        title="Keep the context visible"
+        subtitle="The route is on the left. Product identity and legislation stay pinned here."
+      >
+        <div className="snapshot-list">
+          {[
+            ["Product", formatUiLabel(result?.product_type || "unclear")],
+            ["Confidence", formatUiLabel(confidence)],
+            ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
+            ["Standards", totalStandards],
+            ["Legislation", totalLegislation],
+          ].map(([label, value]) => (
+            <div key={label} className="snapshot-row">
+              <span className="snapshot-row__label">{label}</span>
+              <strong>{value}</strong>
+            </div>
+          ))}
+        </div>
+
+        <CopyResultsButton
+          result={result}
+          description={description}
+          routeSections={routeSections}
+          legislationGroups={legislationGroups}
+        />
+
+        <div className="sidebar-section">
+          <div className="sidebar-section__heading">Applicable legislation</div>
+          <div className="sidebar-section__subheading">
+            Secondary context to the standards route
+          </div>
+
+          <div className="legislation-group-list">
+            {legislationGroups.map((group) => (
+              <div key={group.key || group.title} className="legislation-group">
+                <div className="legislation-group__header">
+                  <span>{titleCaseMinor(group.title)}</span>
+                  <span>{(group.items || []).length}</span>
+                </div>
+                <div className="legislation-group__items">
+                  {(group.items || []).map((item) => {
+                    const tone = directiveTone(item.directive_key || "OTHER");
+                    return (
+                      <div
+                        key={`${group.key}-${item.code}-${item.title}`}
+                        className="legislation-item"
+                        style={{ "--legislation-dot": tone.dot }}
+                      >
+                        <div className="legislation-item__code">{item.code}</div>
+                        <div className="legislation-item__copy">
+                          <div className="legislation-item__title">{item.title}</div>
+                          <div className="legislation-item__directive">
+                            {directiveShort(item.directive_key || "OTHER")}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </Card>
-
-      {/* Legislation card */}
-      <Card>
-        <CardHeader title="Applicable legislation" subtitle="All detected frameworks"/>
-        <div style={{padding:"10px 12px",display:"grid",gap:5}}>
-          {items.map(item=>{
-            const tone=directiveTone(item.directive_key||"OTHER");
-            const groupLabel=compactLegislationGroupLabel(item);
-            return (
-              <div key={`${item.code}-${item.directive_key}-${item.section_key}`}
-                style={{borderRadius:9,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"9px 11px",display:"grid",gap:4}}>
-                <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
-                  <div style={{display:"flex",gap:5,alignItems:"center"}}>
-                    <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
-                    <span style={{fontSize:12,fontWeight:700,color:tone.text,fontFamily:"'DM Mono',ui-monospace,monospace"}}>{item.code}</span>
-                  </div>
-                  <span style={{fontSize:9,opacity:0.60,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:tone.text}}>
-                    {groupLabel}
-                  </span>
-                </div>
-                <div style={{fontSize:11,lineHeight:1.5,color:T.textSub}}>{item.title}</div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+      </Panel>
     </aside>
   );
 }
 
-// ─── Input composer ───────────────────────────────────────────────────────────
-function SidebarRail({ result }){
-  const [showAllLegislation,setShowAllLegislation]=useState(false);
-  if(!result) return null;
-  const items=buildCompactLegislationItems(result);
-  const confidence=result?.confidence_panel?.confidence||result?.product_match_confidence||"low";
-  const risk=result?.overall_risk||"MEDIUM";
-  const riskTone=STATUS[risk]||STATUS.MEDIUM;
-  const totalStandards=result?.standard_sections?.length
-    ? result.standard_sections.reduce((n,section)=>n+(section.items||[]).length,0)
-    : (result?.standards||[]).length+(result?.review_items||[]).length;
-  const visibleItems=showAllLegislation?items:items.slice(0,6);
+function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
+  if (!items.length) return null;
 
   return (
-    <section className="summary-grid">
-      <Card>
-        <CardHeader title="Quick Context" subtitle="Secondary signals for interpreting the standards route"/>
-        <div style={{padding:"12px 14px",display:"grid",gap:10}}>
-          <div className="snapshot-grid" style={{display:"grid",gap:8}}>
-            <SoftBox>
-              <Label>Product</Label>
-              <div style={{fontSize:14,fontWeight:700,color:T.text,marginTop:2,letterSpacing:"-0.01em"}}>
-                {titleCase(result?.product_type||"Unclear")}
-              </div>
-            </SoftBox>
-            <SoftBox>
-              <Label>Confidence</Label>
-              <Chip tone="blue">{titleCase(confidence)}</Chip>
-            </SoftBox>
-            <SoftBox>
-              <Label>Risk</Label>
-              <span style={{
-                display:"inline-flex",alignItems:"center",gap:5,borderRadius:999,
-                border:`1px solid ${riskTone.bd}`,background:riskTone.bg,color:riskTone.text,
-                padding:"4px 10px",fontSize:11,fontWeight:700,letterSpacing:"0.04em",
-              }}>
-                <span style={{width:5,height:5,borderRadius:999,background:riskTone.text,flexShrink:0}}/>
-                {risk}
-              </span>
-            </SoftBox>
-            <SoftBox>
-              <Label>Standards in route</Label>
-              <div style={{fontSize:14,fontWeight:700,color:T.text,fontVariantNumeric:"tabular-nums"}}>
-                {totalStandards}
-              </div>
-            </SoftBox>
-          </div>
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader
-          title="Applicable Legislation"
-          subtitle={`${items.length} detected framework${items.length!==1?"s":""} • secondary to the standards route`}
-          right={items.length>6?(
-            <button
-              onClick={()=>setShowAllLegislation(v=>!v)}
+    <Panel
+      eyebrow="Clarifications"
+      title="Questions that materially change scope"
+      subtitle="Use these prompts to strengthen the description before trusting the route."
+      action={
+        dirty ? (
+          <button type="button" className="button button--primary" onClick={onReanalyze} disabled={busy}>
+            {busy ? <LoaderCircle size={16} className="spin" /> : <RefreshCcw size={16} />}
+            {busy ? "Re-running" : "Re-run analysis"}
+          </button>
+        ) : (
+          <span className="keyboard-hint">Apply a detail below to update the description</span>
+        )
+      }
+    >
+      <div className="clarification-list">
+        {items.map((item, index) => {
+          const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
+          return (
+            <article
+              key={item.key}
+              className="clarification-card"
               style={{
-                appearance:"none",cursor:"pointer",borderRadius:999,
-                border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.025)",
-                color:T.textSub,padding:"6px 10px",fontSize:11,fontWeight:600,
+                "--card-accent": tone.dot,
+                "--card-border": tone.bd,
+                "--card-bg": tone.bg,
               }}
             >
-              {showAllLegislation?"Show less":"Show all"}
-            </button>
-          ):null}
-        />
-        <div className="legislation-grid" style={{padding:"10px 14px 14px",display:"grid",gap:8}}>
-          {visibleItems.map(item=>{
-            const tone=directiveTone(item.directive_key||"OTHER");
-            const groupLabel=compactLegislationGroupLabel(item);
-            return (
-              <div key={`${item.code}-${item.directive_key}-${item.section_key}`}
-                style={{borderRadius:10,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"8px 10px",display:"grid",gap:5}}>
-                <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
-                  <div style={{display:"flex",gap:5,alignItems:"center"}}>
-                    <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
-                    <span style={{fontSize:12,fontWeight:700,color:tone.text,fontFamily:"'DM Mono',ui-monospace,monospace"}}>{item.code}</span>
-                  </div>
-                  <span style={{fontSize:9,opacity:0.65,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:tone.text}}>
-                    {groupLabel}
-                  </span>
+              <div className="clarification-card__header">
+                <div className="clarification-card__title-group">
+                  <ImportancePill value={item.importance} />
+                  <h3>{item.title}</h3>
                 </div>
-                <div style={{fontSize:11,lineHeight:1.5,color:T.textSub}}>{item.title}</div>
+                <div className="clarification-card__index">{String(index + 1).padStart(2, "0")}</div>
               </div>
-            );
-          })}
+              <p className="clarification-card__text">{item.why}</p>
+              {item.choices?.length ? (
+                <div className="template-row">
+                  {item.choices.map((choice) => (
+                    <button
+                      key={`${item.key}-${choice}`}
+                      type="button"
+                      className="chip-button chip-button--soft"
+                      onClick={() => onApply(choice)}
+                    >
+                      + {choice}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+    </Panel>
+  );
+}
+
+function StandardItem({ item, sectionKey }) {
+  const dirKey = normalizeStandardDirective(item);
+  const dirTone = directiveTone(dirKey);
+  const sectionTone = SECTION_TONES[sectionKey] || SECTION_TONES.unknown;
+  const evidenceList = sentenceCaseList(item.evidence_hint || []);
+  const summary = item.standard_summary || item.reason || item.notes || "";
+  const metaFields = [
+    { label: "Harmonized ref.", value: prettyValue(item.harmonized_reference) },
+    { label: "Harmonized version", value: prettyValue(item.dated_version) },
+    { label: "EU latest version", value: prettyValue(item.version) },
+  ].filter((field) => field.value && field.value !== "—");
+
+  return (
+    <article
+      className="standard-item"
+      style={{
+        "--item-accent": dirTone.dot,
+        "--item-accent-bg": dirTone.bg,
+        "--item-accent-border": dirTone.bd,
+      }}
+    >
+      <div className="standard-item__header">
+        <div className="standard-item__chips">
+          <span className="code-chip">{item.code || "No code"}</span>
+          <DirectivePill dirKey={dirKey} />
+          <span
+            className="status-pill status-pill--soft"
+            style={{
+              "--pill-bg": sectionTone.bg,
+              "--pill-border": sectionTone.bd,
+              "--pill-text": sectionTone.text,
+            }}
+          >
+            {formatUiLabel(item.harmonization_status || sectionKey || "unknown")}
+          </span>
         </div>
-      </Card>
+        <h4 className="standard-item__title">{titleCaseMinor(item.title || "Untitled standard")}</h4>
+      </div>
+
+      {summary && summary !== item.title ? (
+        <p className="standard-item__summary">{summary}</p>
+      ) : null}
+
+      {metaFields.length ? (
+        <div className="standard-item__meta-grid">
+          {metaFields.map((field) => (
+            <div key={field.label} className="standard-item__meta-card">
+              <div className="micro-label">{field.label}</div>
+              <div className="standard-item__meta-value">{field.value}</div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {evidenceList.length ? (
+        <div className="standard-item__evidence">
+          <div className="micro-label">Evidence expected</div>
+          <div className="tag-row">
+            {evidenceList.map((entry) => (
+              <span key={entry} className="soft-tag">
+                {entry}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function RouteSection({ section }) {
+  const [open, setOpen] = useState(true);
+  const tone = directiveTone(section.key);
+  const title = routeTitle(section);
+  const subtitle =
+    section.title && titleCaseMinor(section.title) !== title ? titleCaseMinor(section.title) : "";
+
+  return (
+    <section
+      className="route-section"
+      style={{
+        "--route-tone-bg": tone.bg,
+        "--route-tone-border": tone.bd,
+        "--route-tone-dot": tone.dot,
+      }}
+    >
+      <button type="button" className="route-section__toggle" onClick={() => setOpen((current) => !current)}>
+        <div className="route-section__title-wrap">
+          <div className="route-section__indicator" />
+          <div>
+            <div className="route-section__title-row">
+              <h3>{title}</h3>
+              <DirectivePill dirKey={section.key} />
+            </div>
+            <p>
+              {section.count || 0} standard{section.count === 1 ? "" : "s"}
+              {subtitle ? ` • ${subtitle}` : ""}
+            </p>
+          </div>
+        </div>
+
+        <div className="route-section__meta">
+          <span className="route-section__count">
+            {section.count || 0} item{section.count === 1 ? "" : "s"}
+          </span>
+          {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </div>
+      </button>
+
+      {open ? (
+        <div className="route-section__body">
+          {(section.items || []).map((item) => (
+            <StandardItem
+              key={`${section.key}-${item.code || item.title}-${item.version || ""}`}
+              item={item}
+              sectionKey={item.harmonization_status || "unknown"}
+            />
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
 
-function InputComposerLegacy({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }){
-  const [focused,setFocused]=useState(false);
-  const charMax=1200;
-  const wordCount=description.trim()?description.trim().split(/\s+/).length:0;
+function StandardsRoutePanel({ sections, directiveBreakdown }) {
+  if (!sections.length) return null;
 
   return (
-    <Card>
-      <CardHeader
-        title="Product description"
-        subtitle="Type · connectivity · power · functions · sensors · materials · battery"
-      />
-      <div style={{padding:"18px 20px",display:"grid",gap:16}}>
-
-        {/* Quick fill templates */}
-        <div>
-          <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:9}}>
-            Quick fill
-          </div>
-          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-            {templates.slice(0,4).map(template=>(
-              <button key={template.label} onClick={()=>{ setDescription(template.text); onDirty(true); }} style={{
-                appearance:"none",cursor:"pointer",borderRadius:8,
-                border:`1px solid rgba(91,168,255,0.18)`,background:"rgba(91,168,255,0.06)",
-                color:T.blue,padding:"6px 14px",fontSize:12,fontWeight:600,
-                transition:"all 0.15s",letterSpacing:"0.01em",
-              }}>{template.label}</button>
-            ))}
-          </div>
+    <Panel
+      eyebrow="Primary Output"
+      title="Standards route"
+      subtitle="Grouped by route so you can scan the decision path without losing the item-level detail."
+    >
+      {directiveBreakdown.length ? (
+        <div className="route-breakdown">
+          {directiveBreakdown.map(({ key, count }) => (
+            <span key={key} className="breakdown-pill">
+              <DirectivePill dirKey={key} />
+              <span className="breakdown-pill__count">{count}</span>
+            </span>
+          ))}
         </div>
+      ) : null}
 
-        {/* Textarea */}
-        <div style={{position:"relative"}}>
-          <textarea
-            value={description}
-            onChange={e=>{ setDescription(e.target.value); onDirty(true); }}
-            onFocus={()=>setFocused(true)}
-            onBlur={()=>setFocused(false)}
-            placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
-            rows={6}
-            maxLength={charMax}
-            style={{
-              width:"100%",borderRadius:12,resize:"vertical",minHeight:148,lineHeight:1.75,
-              border:`1px solid ${focused?T.lineFocus:T.lineStrong}`,
-              background:focused?"rgba(0,0,0,0.22)":"rgba(0,0,0,0.16)",
-              padding:"13px 15px 34px",
-              color:T.text,outline:"none",fontSize:14,
-              boxShadow:focused?"0 0 0 3px rgba(91,168,255,0.07), inset 0 1px 4px rgba(0,0,0,0.24)":"inset 0 1px 4px rgba(0,0,0,0.16)",
-              transition:"border-color 0.2s,box-shadow 0.2s,background 0.2s",
-              boxSizing:"border-box",
-            }}
-          />
-          <div style={{position:"absolute",bottom:10,right:13,pointerEvents:"none",display:"flex",alignItems:"center",gap:8}}>
-            {wordCount>0&&!busy&&(
-              <span style={{fontSize:10.5,color:T.textMuted,fontStyle:"italic"}}>{wordCount}w</span>
-            )}
-            <CharCounter value={description} max={charMax}/>
-          </div>
+      <div className="route-stack">
+        {sections.map((section) => (
+          <RouteSection key={section.key || section.title} section={section} />
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function DetailBlock({ title, subtitle, children }) {
+  return (
+    <section className="detail-block">
+      <div className="detail-block__header">
+        <h3>{title}</h3>
+        {subtitle ? <p>{subtitle}</p> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function StructuredValue({ value }) {
+  const text = serializePreview(value);
+
+  if (Array.isArray(value)) {
+    const primitiveArray = value.every(
+      (item) =>
+        item === null ||
+        item === undefined ||
+        ["string", "number", "boolean"].includes(typeof item)
+    );
+    if (primitiveArray) {
+      return (
+        <div className="tag-row">
+          {value.length ? (
+            value.map((item, index) => (
+              <span key={`${String(item)}-${index}`} className="soft-tag">
+                {String(item)}
+              </span>
+            ))
+          ) : (
+            <span className="empty-copy">No values</span>
+          )}
         </div>
+      );
+    }
+  }
 
-        {/* Add-detail chips */}
-        {chips.length>0&&(
-          <div>
-            <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:9}}>
-              Add detail
-            </div>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {chips.map(chip=>(
-                <AddChipBtn key={chip.label+chip.text} onClick={()=>{ setDescription(cur=>joinText(cur,chip.text)); onDirty(true); }}>
-                  + {chip.label}
-                </AddChipBtn>
+  if (typeof value === "object" && value !== null) {
+    return <pre className="json-preview">{text}</pre>;
+  }
+
+  return <div className="detail-value">{text}</div>;
+}
+
+function DetailsPanel({ result }) {
+  if (!result) return null;
+
+  const missingItems = result?.missing_information_items || [];
+  const inputGapItems = uniqueBy(result?.input_gaps_panel?.items || [], (item) => item.key || item.message);
+  const traits = result?.all_traits || [];
+  const diagnostics = result?.diagnostics || [];
+  const additionalEntries = getAdditionalEntries(result);
+
+  if (!missingItems.length && !inputGapItems.length && !traits.length && !diagnostics.length && !additionalEntries.length) {
+    return null;
+  }
+
+  return (
+    <Panel
+      eyebrow="Full Detail"
+      title="Structured analysis details"
+      subtitle="Nothing is removed. The dense output is grouped so it reads cleanly without hiding the backend response."
+    >
+      <div className="details-stack">
+        {missingItems.length ? (
+          <DetailBlock
+            title="Missing information from the current description"
+            subtitle="These are the direct prompts returned by the analysis."
+          >
+            <div className="detail-grid">
+              {missingItems.map((item) => (
+                <article key={`${item.key}-${item.message}`} className="detail-card">
+                  <div className="detail-card__header">
+                    <div className="detail-card__title">{gapLabel(item.key)}</div>
+                    {item.importance ? <ImportancePill value={item.importance} /> : null}
+                  </div>
+                  <p className="detail-card__text">{item.message || "No message returned."}</p>
+                  {item.examples?.length ? (
+                    <div className="tag-row">
+                      {item.examples.map((example) => (
+                        <span key={example} className="soft-tag">
+                          {example}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </article>
               ))}
             </div>
-          </div>
-        )}
+          </DetailBlock>
+        ) : null}
 
-        {/* Actions */}
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",paddingTop:2}}>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <PrimaryBtn onClick={onAnalyze} disabled={busy||!description.trim()}>
-              {busy?(
-                <span style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span className="spin">◌</span> Analyzing…
+        {inputGapItems.length ? (
+          <DetailBlock
+            title="Input gaps panel"
+            subtitle="This mirrors the backend panel items separately from the shorter clarification list."
+          >
+            <div className="detail-grid">
+              {inputGapItems.map((item) => (
+                <article key={`${item.key}-${item.message}`} className="detail-card">
+                  <div className="detail-card__header">
+                    <div className="detail-card__title">{gapLabel(item.key)}</div>
+                    {item.importance ? <ImportancePill value={item.importance} /> : null}
+                  </div>
+                  <p className="detail-card__text">{item.message || "No message returned."}</p>
+                  {item.examples?.length ? (
+                    <div className="tag-row">
+                      {item.examples.map((example) => (
+                        <span key={example} className="soft-tag">
+                          {example}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </DetailBlock>
+        ) : null}
+
+        {traits.length ? (
+          <DetailBlock title="Detected traits">
+            <div className="tag-row">
+              {traits.map((trait) => (
+                <span key={trait} className="soft-tag">
+                  {titleCase(trait)}
                 </span>
-              ):"Analyze product"}
-            </PrimaryBtn>
-            <SecondaryBtn onClick={()=>{ setDescription(""); onDirty(true); }} disabled={!description}>Clear</SecondaryBtn>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-// ─── Guidance strip ───────────────────────────────────────────────────────────
-function InputComposer({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }){
-  const [focused,setFocused]=useState(false);
-  const charMax=1200;
-  const wordCount=description.trim()?description.trim().split(/\s+/).length:0;
-
-  return (
-    <Card>
-      <CardHeader
-        title="Describe the product"
-        subtitle="Type | connectivity | power | functions | sensors | materials | battery"
-      />
-      <div style={{padding:"20px",display:"grid",gap:18}}>
-        <div style={{fontSize:13.5,color:T.textSub,lineHeight:1.7}}>
-          Aim for an operating description, not marketing copy. The better the input, the more stable the route.
-        </div>
-
-        <div>
-          <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:9}}>
-            Quick fill
-          </div>
-          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-            {templates.slice(0,4).map(template=>(
-              <button key={template.label} className="template-pill" onClick={()=>{ setDescription(template.text); onDirty(true); }} style={{
-                appearance:"none",cursor:"pointer",borderRadius:999,
-                border:`1px solid rgba(255,255,255,0.08)`,background:"rgba(255,255,255,0.025)",
-                color:T.text,padding:"7px 14px",fontSize:12,fontWeight:600,
-                transition:"all 0.15s",letterSpacing:"0.01em",
-              }}>{template.label}</button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{position:"relative"}}>
-          <textarea
-            value={description}
-            onChange={e=>{ setDescription(e.target.value); onDirty(true); }}
-            onFocus={()=>setFocused(true)}
-            onBlur={()=>setFocused(false)}
-            placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
-            rows={6}
-            maxLength={charMax}
-            style={{
-              width:"100%",borderRadius:14,resize:"vertical",minHeight:158,lineHeight:1.75,
-              border:`1px solid ${focused?T.lineFocus:T.lineStrong}`,
-              background:focused?"rgba(8,12,17,0.78)":"rgba(8,12,17,0.58)",
-              padding:"15px 16px 36px",
-              color:T.text,outline:"none",fontSize:14,
-              boxShadow:focused?"0 0 0 3px rgba(91,168,255,0.06), inset 0 1px 4px rgba(0,0,0,0.22)":"inset 0 1px 4px rgba(0,0,0,0.14)",
-              transition:"border-color 0.2s,box-shadow 0.2s,background 0.2s",
-              boxSizing:"border-box",
-            }}
-          />
-          <div style={{position:"absolute",bottom:10,right:13,pointerEvents:"none",display:"flex",alignItems:"center",gap:8}}>
-            {wordCount>0&&!busy&&(
-              <span style={{fontSize:10.5,color:T.textMuted,fontStyle:"italic"}}>{wordCount}w</span>
-            )}
-            <CharCounter value={description} max={charMax}/>
-          </div>
-        </div>
-
-        {chips.length>0&&(
-          <div>
-            <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:9}}>
-              Add detail
-            </div>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {chips.slice(0,10).map(chip=>(
-                <AddChipBtn key={chip.label+chip.text} onClick={()=>{ setDescription(cur=>joinText(cur,chip.text)); onDirty(true); }}>
-                  + {chip.label}
-                </AddChipBtn>
               ))}
             </div>
-          </div>
-        )}
+          </DetailBlock>
+        ) : null}
 
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",paddingTop:2}}>
-          <div style={{fontSize:12,color:T.textMuted,lineHeight:1.6,maxWidth:520}}>
-            Include the hardware setup, radios, cloud dependency, firmware updates, key sensors, and any food-contact or wetted-path detail.
-          </div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <PrimaryBtn onClick={onAnalyze} disabled={busy||!description.trim()}>
-              {busy?"Analyzing...":"Analyze product"}
-            </PrimaryBtn>
-            <SecondaryBtn onClick={()=>{ setDescription(""); onDirty(true); }} disabled={!description}>Clear</SecondaryBtn>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function GuidanceStripLegacy({ result, dirty, busy, onReanalyze, onApply }){
-  const [open,setOpen]=useState(false);
-  const items=buildGuidanceItems(result);
-  if(!items.length) return null;
-
-  const highCount=items.filter(i=>i.importance==="high").length;
-  const accentColor=highCount>0?T.amber:T.textMuted;
-  const accentBd=highCount>0?"rgba(245,184,48,0.14)":"rgba(255,255,255,0.06)";
-  const accentBg=highCount>0?"rgba(245,184,48,0.03)":"rgba(255,255,255,0.015)";
-
-  return (
-    <div style={{borderRadius:12,border:`1px solid ${accentBd}`,background:accentBg,overflow:"hidden"}}>
-      <div
-        style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",cursor:"pointer",userSelect:"none",flexWrap:"wrap"}}
-        onClick={()=>setOpen(v=>!v)}
-      >
-        <span style={{
-          fontSize:10,color:accentColor,flexShrink:0,
-          display:"inline-block",transition:"transform 0.2s",
-          transform:open?"rotate(90deg)":"rotate(0deg)",
-        }}>▶</span>
-        <span style={{fontSize:12.5,fontWeight:700,color:accentColor,whiteSpace:"nowrap"}}>
-          {items.length} clarification{items.length!==1?"s":""} may refine this route
-        </span>
-        <div style={{display:"flex",gap:5,flexWrap:"wrap",flex:1,minWidth:0}}>
-          {items.slice(0,3).map(item=>{
-            const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
-            return (
-              <span key={item.key} style={{
-                fontSize:10,fontWeight:600,borderRadius:5,padding:"2px 8px",
-                background:tone.bg,border:`1px solid ${tone.bd}`,color:tone.text,whiteSpace:"nowrap",
-              }}>{item.title}</span>
-            );
-          })}
-          {items.length>3&&<span style={{fontSize:10,color:T.textMuted,alignSelf:"center"}}>+{items.length-3} more</span>}
-        </div>
-        {dirty&&(
-          <button
-            onClick={e=>{e.stopPropagation();onReanalyze();}}
-            disabled={busy}
-            style={{
-              appearance:"none",cursor:"pointer",borderRadius:7,border:"none",
-              background:`linear-gradient(135deg,${T.blue},${T.teal})`,
-              color:"#050810",padding:"5px 13px",fontWeight:700,fontSize:11,
-              flexShrink:0,opacity:busy?0.5:1,whiteSpace:"nowrap",letterSpacing:"0.01em",
-            }}
-          >{busy?"…":"Re-analyze →"}</button>
-        )}
-        {dirty&&!busy&&(
-          <span style={{fontSize:10,color:T.amber,fontWeight:600,flexShrink:0,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
-            <span style={{width:5,height:5,borderRadius:999,background:T.amber,display:"inline-block"}}/>
-            Updated
-          </span>
-        )}
-      </div>
-      {open&&(
-        <div style={{borderTop:`1px solid rgba(255,255,255,0.05)`,padding:"12px 16px 14px",display:"flex",gap:6,flexWrap:"wrap"}}>
-          {items.flatMap(item=>item.choices.map(choice=>{
-            const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
-            return (
-              <button key={item.key+choice} onClick={()=>onApply(choice)} style={{
-                appearance:"none",cursor:"pointer",borderRadius:7,
-                border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.16)",
-                color:tone.text,padding:"5px 11px",fontSize:11,fontWeight:600,
-                transition:"filter 0.15s",letterSpacing:"0.01em",
-              }}>+ {choice}</button>
-            );
-          }))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Route pills ──────────────────────────────────────────────────────────────
-function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
-  const [open,setOpen]=useState(false);
-  const items=buildGuidanceItems(result);
-  if(!items.length) return null;
-
-  const highCount=items.filter(i=>i.importance==="high").length;
-  const accentColor=highCount>0?T.amber:T.textSub;
-  const accentBd=highCount>0?"rgba(245,184,48,0.16)":"rgba(255,255,255,0.06)";
-  const accentBg=highCount>0?"rgba(245,184,48,0.035)":"rgba(255,255,255,0.018)";
-
-  return (
-    <div style={{borderRadius:16,border:`1px solid ${accentBd}`,background:accentBg,overflow:"hidden"}}>
-      <div
-        style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",cursor:"pointer",userSelect:"none",flexWrap:"wrap"}}
-        onClick={()=>setOpen(v=>!v)}
-      >
-        <span style={{fontSize:12.5,fontWeight:700,color:accentColor,whiteSpace:"nowrap"}}>
-          {items.length} clarification{items.length!==1?"s":""} may change the route
-        </span>
-        <div style={{display:"flex",gap:5,flexWrap:"wrap",flex:1,minWidth:0}}>
-          {items.slice(0,3).map(item=>{
-            const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
-            return (
-              <span key={item.key} style={{
-                fontSize:10,fontWeight:600,borderRadius:999,padding:"3px 9px",
-                background:tone.bg,border:`1px solid ${tone.bd}`,color:tone.text,whiteSpace:"nowrap",
-              }}>{item.title}</span>
-            );
-          })}
-          {items.length>3&&<span style={{fontSize:10,color:T.textMuted,alignSelf:"center"}}>+{items.length-3} more</span>}
-        </div>
-        <span style={{fontSize:11,color:T.textMuted,fontWeight:600,whiteSpace:"nowrap"}}>
-          {open?"Hide":"Show"}
-        </span>
-        {dirty&&(
-          <button
-            onClick={e=>{e.stopPropagation();onReanalyze();}}
-            disabled={busy}
-            style={{
-              appearance:"none",cursor:"pointer",borderRadius:999,
-              border:"1px solid rgba(91,168,255,0.18)",
-              background:"rgba(91,168,255,0.08)",
-              color:T.text,padding:"6px 12px",fontWeight:700,fontSize:11,
-              flexShrink:0,opacity:busy?0.5:1,whiteSpace:"nowrap",letterSpacing:"0.01em",
-            }}
-          >{busy?"Working...":"Re-analyze"}</button>
-        )}
-        {dirty&&!busy&&(
-          <span style={{fontSize:10,color:T.amber,fontWeight:600,flexShrink:0,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
-            <span style={{width:5,height:5,borderRadius:999,background:T.amber,display:"inline-block"}}/>
-            Updated
-          </span>
-        )}
-      </div>
-      {open&&(
-        <div style={{borderTop:`1px solid rgba(255,255,255,0.05)`,padding:"12px 16px 16px",display:"flex",gap:6,flexWrap:"wrap"}}>
-          {items.flatMap(item=>item.choices.map(choice=>{
-            const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
-            return (
-              <button key={item.key+choice} onClick={()=>onApply(choice)} style={{
-                appearance:"none",cursor:"pointer",borderRadius:999,
-                border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.14)",
-                color:tone.text,padding:"6px 11px",fontSize:11,fontWeight:600,
-                transition:"filter 0.15s",letterSpacing:"0.01em",
-              }}>+ {choice}</button>
-            );
-          }))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function RoutePills({ result }){
-  const breakdown=buildDirectiveBreakdown(result);
-  if(!breakdown.length) return null;
-  const total=breakdown.reduce((n,{count})=>n+count,0);
-  return (
-    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-      <span style={{
-        fontSize:11,color:T.textMuted,fontWeight:600,marginRight:3,
-        fontVariantNumeric:"tabular-nums",
-      }}>
-        {total} total
-      </span>
-      {breakdown.map(({key,count})=>{
-        const tone=directiveTone(key);
-        return (
-          <span key={key} style={{
-            display:"inline-flex",alignItems:"center",gap:5,
-            borderRadius:999,border:`1px solid ${tone.bd}`,background:tone.bg,
-            color:tone.text,padding:"4px 10px",fontSize:11,fontWeight:700,whiteSpace:"nowrap",
-          }}>
-            <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
-            {directiveShort(key)}
-            <span style={{
-              opacity:0.50,fontWeight:500,marginLeft:1,
-              fontVariantNumeric:"tabular-nums",
-            }}>{count}</span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Standard card ────────────────────────────────────────────────────────────
-function StandardCardLegacy({ item, sectionKey }){
-  const dirKey=normalizeStandardDirective(item);
-  const dirTone=directiveTone(dirKey);
-  const sectionTone=SECTION_TONES[sectionKey]||SECTION_TONES.unknown;
-  const evidenceList=sentenceCaseList(item.evidence_hint||[]);
-  const summary=item.standard_summary||item.reason||item.notes||item.title;
-
-  const metaFields=[
-    {label:"Harmonized Ref.",   value:prettyValue(item.harmonized_reference)},
-    {label:"Harmonized Ver.",   value:prettyValue(item.dated_version)},
-    {label:"EU Latest Ver.",    value:prettyValue(item.version)},
-  ].filter(f=>f.value&&f.value!=="—"&&f.value!=="â€”");
-
-  return (
-    <div className="standard-card" style={{
-      borderRadius:14,
-      border:`1px solid ${dirTone.bd}`,
-      background:`linear-gradient(160deg,rgba(255,255,255,0.032) 0%,rgba(255,255,255,0.006) 100%)`,
-      overflow:"hidden",
-      boxShadow:`0 4px 20px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.04)`,
-      transition:"box-shadow 0.2s,transform 0.2s",
-    }}>
-      {/* Accent top bar — thicker, stronger gradient */}
-      <div style={{
-        height:3,
-        background:`linear-gradient(90deg,${dirTone.dot} 0%,${dirTone.dot}88 40%,transparent 80%)`,
-        boxShadow:`0 0 12px ${dirTone.dot}55`,
-      }}/>
-
-      {/* Header */}
-      <div style={{
-        padding:"14px 16px 13px",
-        background:`linear-gradient(140deg,${dirTone.bg} 0%,rgba(255,255,255,0.012) 70%)`,
-        borderBottom:`1px solid ${dirTone.bd}`,
-      }}>
-        {/* Top row: directive pill + status tag on left, code badge on right */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
-          <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",flex:1,minWidth:0}}>
-            <DirPill dirKey={dirKey}/>
-            <span style={{
-              display:"inline-flex",alignItems:"center",borderRadius:5,
-              background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
-              color:sectionTone.tagText,padding:"2px 7px",
-              fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.09em",
-            }}>{titleCase(item.harmonization_status||"unknown")}</span>
-          </div>
-
-          {/* Code badge — the striking one */}
-          <span style={{
-            display:"inline-flex",alignItems:"center",flexShrink:0,
-            borderRadius:8,
-            background:`linear-gradient(135deg,${dirTone.dot}22 0%,${dirTone.dot}0a 100%)`,
-            border:`1.5px solid ${dirTone.dot}cc`,
-            color:"#ffffff",
-            padding:"5px 13px",
-            fontSize:13,fontWeight:700,
-            letterSpacing:"0.06em",
-            whiteSpace:"nowrap",
-            fontFamily:"'DM Mono',ui-monospace,monospace",
-            boxShadow:`0 0 16px ${dirTone.dot}44, inset 0 1px 0 ${dirTone.dot}33`,
-            textShadow:`0 0 20px ${dirTone.dot}cc`,
-          }}>{item.code}</span>
-        </div>
-
-        {/* Title */}
-        <div style={{
-          fontSize:14,fontWeight:700,color:T.text,
-          lineHeight:1.4,
-          marginBottom:summary&&summary!==item.title?6:0,
-          letterSpacing:"-0.012em",
-        }}>
-          {item.title}
-        </div>
-
-        {summary&&summary!==item.title&&(
-          <div style={{fontSize:12,color:T.textSub,lineHeight:1.7,fontStyle:"italic",opacity:0.85}}>
-            {summary}
-          </div>
-        )}
-      </div>
-
-      {/* Footer: meta + evidence */}
-      <div style={{padding:"11px 14px 13px",background:"rgba(0,0,0,0.18)",display:"grid",gap:9}}>
-        {metaFields.length>0&&(
-          <div className="standard-meta-grid" style={{
-            display:"grid",
-            gridTemplateColumns:`repeat(${Math.min(metaFields.length,3)},minmax(0,1fr))`,
-            gap:6,
-          }}>
-            {metaFields.map(({label,value})=>(
-              <div key={label} style={{
-                borderRadius:7,padding:"8px 10px",
-                background:`${dirTone.bg}`,
-                border:`1px solid ${dirTone.bd}`,
-              }}>
-                <div style={{fontSize:8.5,fontWeight:700,color:dirTone.text,opacity:0.65,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4}}>
-                  {label}
+        {diagnostics.length ? (
+          <DetailBlock title="Engine diagnostics">
+            <div className="diagnostic-list">
+              {diagnostics.map((line, index) => (
+                <div key={`${line}-${index}`} className="diagnostic-line">
+                  {line}
                 </div>
-                <div style={{
-                  lineHeight:1.4,fontWeight:600,color:T.text,
-                  fontFamily:"'DM Mono',ui-monospace,monospace",
-                  fontSize:11.5,
-                }}>{value}</div>
-              </div>
-            ))}
-          </div>
-        )}
-        {evidenceList.length>0&&(
-          <div>
-            <div style={{fontSize:8.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6}}>Evidence Expected</div>
-            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-              {evidenceList.map(ev=>(
-                <span key={ev} style={{
-                  fontSize:10.5,fontWeight:500,color:T.textSub,
-                  background:"rgba(255,255,255,0.032)",border:`1px solid rgba(255,255,255,0.07)`,
-                  borderRadius:5,padding:"2px 8px",
-                }}>{ev}</span>
               ))}
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+          </DetailBlock>
+        ) : null}
 
-// ─── Standards section ────────────────────────────────────────────────────────
-function StandardCard({ item, sectionKey }){
-  const dirKey=normalizeStandardDirective(item);
-  const dirTone=directiveTone(dirKey);
-  const sectionTone=SECTION_TONES[sectionKey]||SECTION_TONES.unknown;
-  const evidenceList=sentenceCaseList(item.evidence_hint||[]);
-  const summary=item.standard_summary||item.reason||item.notes||item.title;
-
-  const metaFields=[
-    {label:"Harmonized Ref.", value:prettyValue(item.harmonized_reference)},
-    {label:"Harmonized Ver.", value:prettyValue(item.dated_version)},
-    {label:"EU Latest Ver.", value:prettyValue(item.version)},
-  ].filter(f=>f.value&&f.value!=="—");
-
-  return (
-    <div className="standard-card" style={{
-      borderRadius:16,
-      border:`1px solid rgba(255,255,255,0.07)`,
-      background:"linear-gradient(180deg, rgba(22,29,40,0.96) 0%, rgba(18,24,34,0.98) 100%)",
-      overflow:"hidden",
-      boxShadow:"0 10px 24px rgba(0,0,0,0.20)",
-      transition:"box-shadow 0.2s,transform 0.2s,border-color 0.2s",
-    }}>
-      <div style={{
-        padding:"15px 16px 14px",
-        display:"grid",gap:12,
-      }}>
-        <div style={{display:"grid",gap:8}}>
-          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-            <span style={{
-              display:"inline-flex",alignItems:"center",
-              borderRadius:999,border:`1px solid ${dirTone.bd}`,
-              background:dirTone.bg,color:dirTone.text,
-              padding:"4px 10px",fontSize:11.5,fontWeight:700,
-              fontFamily:"'DM Mono',ui-monospace,monospace",
-            }}>{item.code}</span>
-            <DirPill dirKey={dirKey}/>
-            <span style={{
-              display:"inline-flex",alignItems:"center",borderRadius:999,
-              background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
-              color:sectionTone.tagText,padding:"4px 9px",
-              fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.09em",
-            }}>{formatUiLabel(item.harmonization_status||"unknown")}</span>
-          </div>
-
-          <div style={{
-            fontSize:17,fontWeight:700,color:T.text,
-            lineHeight:1.45,letterSpacing:"-0.018em",
-          }}>
-            {titleCaseMinor(item.title)}
-          </div>
-        </div>
-
-        {summary&&summary!==item.title&&(
-          <div style={{
-            fontSize:13,color:T.textSub,lineHeight:1.75,
-            paddingTop:10,borderTop:`1px solid rgba(255,255,255,0.05)`,
-          }}>
-            {summary}
-          </div>
-        )}
-
-        {metaFields.length>0&&(
-          <div className="standard-meta-grid" style={{
-            display:"grid",
-            gridTemplateColumns:`repeat(${Math.min(metaFields.length,3)},minmax(0,1fr))`,
-            gap:8,
-          }}>
-            {metaFields.map(({label,value})=>(
-              <div key={label} style={{
-                borderRadius:10,padding:"9px 10px",
-                background:"rgba(255,255,255,0.03)",
-                border:`1px solid rgba(255,255,255,0.06)`,
-              }}>
-                <div style={{fontSize:8.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:5}}>
-                  {label}
-                </div>
-                <div style={{
-                  lineHeight:1.4,fontWeight:600,color:T.text,
-                  fontFamily:"'DM Mono',ui-monospace,monospace",
-                  fontSize:11.5,
-                }}>{value}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {evidenceList.length>0&&(
-          <div>
-            <div style={{fontSize:8.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6}}>Evidence Expected</div>
-            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-              {evidenceList.map(ev=>(
-                <span key={ev} style={{
-                  fontSize:10.5,fontWeight:500,color:T.textSub,
-                  background:"rgba(255,255,255,0.028)",border:`1px solid rgba(255,255,255,0.06)`,
-                  borderRadius:999,padding:"4px 9px",
-                }}>{ev}</span>
+        {additionalEntries.length ? (
+          <DetailBlock
+            title="Additional structured output"
+            subtitle="Top-level response fields not already surfaced elsewhere."
+          >
+            <div className="detail-grid">
+              {additionalEntries.map(([key, value]) => (
+                <article key={key} className="detail-card">
+                  <div className="detail-card__header">
+                    <div className="detail-card__title">{titleCaseMinor(key)}</div>
+                  </div>
+                  <StructuredValue value={value} />
+                </article>
               ))}
             </div>
-          </div>
-        )}
+          </DetailBlock>
+        ) : null}
+
+        <details className="raw-json">
+          <summary>Raw analysis JSON</summary>
+          <pre>{JSON.stringify(result, null, 2)}</pre>
+        </details>
       </div>
-    </div>
+    </Panel>
   );
 }
 
-function DirectiveGroupLegacy({ section, index }){
-  const [open,setOpen]=useState(true);
-  const tone=directiveTone(section.key);
-  const count=section.count||0;
-  return (
-    <div style={{
-      borderRadius:13,
-      border:`1px solid ${tone.bd}`,
-      background:`linear-gradient(150deg,${tone.bg} 0%,transparent 75%)`,
-      overflow:"hidden",
-      animation:`fadeUp 0.3s ease ${index*0.06}s both`,
-    }}>
-      <div
-        onClick={()=>setOpen(v=>!v)}
-        style={{
-          padding:"11px 16px",borderBottom:open?`1px solid ${tone.bd}`:"none",
-          display:"flex",justifyContent:"space-between",gap:10,alignItems:"center",
-          cursor:"pointer",userSelect:"none",
-          background:"rgba(0,0,0,0.12)",transition:"background 0.15s",
-        }}
-      >
-        <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-          <span style={{
-            fontSize:9,color:tone.text,opacity:0.65,flexShrink:0,
-            display:"inline-block",transition:"transform 0.2s",
-            transform:open?"rotate(90deg)":"rotate(0deg)",
-          }}>▶</span>
-          <div style={{minWidth:0}}>
-            <div style={{fontSize:13,fontWeight:700,color:T.text,letterSpacing:"-0.01em",lineHeight:1.3}}>
-              {section.title||directiveShort(section.key)}
-            </div>
-          </div>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:7,flexShrink:0}}>
-          <span style={{
-            fontSize:10,fontWeight:700,color:tone.text,
-            background:tone.bg,border:`1px solid ${tone.bd}`,
-            borderRadius:5,padding:"2px 7px",fontVariantNumeric:"tabular-nums",
-          }}>{count} item{count!==1?"s":""}</span>
-          <DirPill dirKey={section.key}/>
-        </div>
-      </div>
-      {open&&(
-        <div style={{padding:"16px",display:"grid",gap:14}}>
-          {(section.items||[]).map(item=>(
-            <StandardCard
-              key={`${section.key}-${item.code}-${item.title}`}
-              item={item}
-              sectionKey={item.harmonization_status||"unknown"}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+function CopyResultsButton({ result, description, routeSections, legislationGroups }) {
+  const [copied, setCopied] = useState(false);
 
-function DirectiveGroup({ section, index }){
-  const [open,setOpen]=useState(true);
-  const tone=directiveTone(section.key);
-  const count=section.count||0;
-  const heading=routeTitle(section);
-  return (
-    <div style={{
-      borderRadius:16,
-      border:`1px solid rgba(255,255,255,0.06)`,
-      background:"linear-gradient(180deg, rgba(20,27,38,0.98) 0%, rgba(16,22,31,0.98) 100%)",
-      overflow:"hidden",
-      animation:`fadeUp 0.3s ease ${index*0.06}s both`,
-    }}>
-      <div
-        onClick={()=>setOpen(v=>!v)}
-        style={{
-          padding:"13px 16px",borderBottom:open?`1px solid rgba(255,255,255,0.05)`:"none",
-          display:"flex",justifyContent:"space-between",gap:10,alignItems:"center",
-          cursor:"pointer",userSelect:"none",
-          background:"rgba(255,255,255,0.02)",transition:"background 0.15s",
-        }}
-      >
-        <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-          <span style={{
-            width:8,height:8,borderRadius:999,background:tone.dot,opacity:0.9,flexShrink:0,
-          }}/>
-          <div style={{minWidth:0}}>
-            <div style={{fontSize:20,fontWeight:700,color:T.text,letterSpacing:"-0.02em",lineHeight:1.15}}>
-              {heading}
-            </div>
-            <div style={{fontSize:12,color:T.textSub,marginTop:5,lineHeight:1.45}}>
-              {count} standard{count!==1?"s":""} in this route
-            </div>
-          </div>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:7,flexShrink:0}}>
-          <span style={{
-            fontSize:10,fontWeight:700,color:tone.text,
-            background:tone.bg,border:`1px solid ${tone.bd}`,
-            borderRadius:999,padding:"3px 8px",fontVariantNumeric:"tabular-nums",
-          }}>{count} standard{count!==1?"s":""}</span>
-          <DirPill dirKey={section.key}/>
-        </div>
-      </div>
-      {open&&(
-        <div style={{padding:"16px",display:"grid",gap:14}}>
-          {(section.items||[]).map(item=>(
-            <StandardCard
-              key={`${section.key}-${item.code}-${item.title}`}
-              item={item}
-              sectionKey={item.harmonization_status||"unknown"}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+  const handleCopy = useCallback(async () => {
+    const text = buildClipboardSummary({
+      result,
+      description,
+      routeSections,
+      legislationGroups,
+    });
 
-function StandardsSectionLegacy({ result }){
-  const sections=(result?.standard_sections||[])
-    .map(section=>({
-      ...section,
-      items:sortStandardItems((section.items||[]).map(item=>({ ...item, directive:normalizeStandardDirective(item) }))),
-    }))
-    .sort((a,b)=>directiveRank(a.key)-directiveRank(b.key));
-
-  if(!sections.length) return null;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2400);
+    } catch (_) {
+      setCopied(false);
+    }
+  }, [description, legislationGroups, result, routeSections]);
 
   return (
-    <Card>
-      <div style={{
-        padding:"15px 20px 13px",
-        borderBottom:`1px solid ${T.line}`,
-        background:T.bgCardDeep,
-        display:"grid",gap:10,
-      }}>
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>Standards route</div>
-            <div style={{marginTop:3,fontSize:11,color:T.textMuted,letterSpacing:"0.005em"}}>Primary output · ordered LVD → EMC → RED → RED Cyber</div>
-          </div>
-        </div>
-        <RoutePills result={result}/>
-      </div>
-
-      <div style={{padding:"16px 16px 20px",display:"grid",gap:16}}>
-        {sections.map((section,i)=>(
-          <DirectiveGroup key={section.key} section={section} index={i}/>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-// ─── Diagnostics panel ────────────────────────────────────────────────────────
-function StandardsSection({ result }){
-  const sections=(result?.standard_sections||[])
-    .map(section=>({
-      ...section,
-      items:sortStandardItems((section.items||[]).map(item=>({ ...item, directive:normalizeStandardDirective(item) }))),
-    }))
-    .sort((a,b)=>directiveRank(a.key)-directiveRank(b.key));
-
-  if(!sections.length) return null;
-
-  return (
-    <Card>
-      <div style={{
-        padding:"16px 20px 14px",
-        borderBottom:`1px solid ${T.line}`,
-        background:T.bgCardDeep,
-        display:"grid",gap:10,
-      }}>
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
-          <div>
-            <div style={{fontSize:16,fontWeight:700,color:T.text,letterSpacing:"-0.015em"}}>Standards Route</div>
-            <div style={{marginTop:4,fontSize:12,color:T.textSub,lineHeight:1.5}}>
-              Primary output. Ordered from core safety and EMC through wireless and cybersecurity routes.
-            </div>
-          </div>
-        </div>
-        <RoutePills result={result}/>
-      </div>
-
-      <div style={{padding:"16px 16px 20px",display:"grid",gap:16}}>
-        {sections.map((section,i)=>(
-          <DirectiveGroup key={section.key} section={section} index={i}/>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-function DiagnosticsPanel({ result }){
-  const [open,setOpen]=useState(false);
-  const diagnostics=result?.diagnostics||[];
-  const traits=result?.all_traits||[];
-  if(!diagnostics.length&&!traits.length) return null;
-  return (
-    <Card>
-      <div style={{
-        padding:"12px 20px",
-        borderBottom:open?`1px solid ${T.line}`:"none",
-        background:T.bgCardDeep,
-        display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,
-        cursor:"pointer",userSelect:"none",
-      }} onClick={()=>setOpen(v=>!v)}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{
-            fontSize:9,color:T.textMuted,
-            display:"inline-block",transition:"transform 0.2s",
-            transform:open?"rotate(90deg)":"rotate(0deg)",
-          }}>▶</span>
-          <div>
-            <div style={{fontSize:12.5,fontWeight:700,color:T.textSub,letterSpacing:"-0.005em"}}>Advanced diagnostics</div>
-            {!open&&traits.length>0&&(
-              <div style={{fontSize:10.5,color:T.textMuted,marginTop:1}}>
-                {traits.length} trait{traits.length!==1?"s":""} detected
-                {diagnostics.length>0?` · ${diagnostics.length} engine message${diagnostics.length!==1?"s":""}`:null}
-              </div>
-            )}
-          </div>
-        </div>
-        <span style={{fontSize:11,color:T.textMuted,fontWeight:500}}>
-          {open?"Hide":"Show"}
-        </span>
-      </div>
-      {open&&(
-        <div style={{padding:"14px 16px 18px",display:"grid",gap:12,animation:"fadeIn 0.2s ease both"}}>
-          {traits.length>0&&(
-            <SoftBox>
-              <Label>All traits detected</Label>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:8}}>
-                {traits.map(trait=>(
-                  <span key={trait} style={{
-                    fontSize:11,fontWeight:500,color:T.textSub,
-                    background:"rgba(255,255,255,0.04)",border:`1px solid rgba(255,255,255,0.07)`,
-                    borderRadius:6,padding:"3px 9px",
-                  }}>{titleCase(trait)}</span>
-                ))}
-              </div>
-            </SoftBox>
-          )}
-          {diagnostics.length>0&&(
-            <SoftBox>
-              <Label>Engine diagnostics</Label>
-              <div style={{marginTop:8,display:"grid",gap:4}}>
-                {diagnostics.map((line,i)=>(
-                  <div key={line+i} style={{
-                    fontSize:11,color:T.textSub,lineHeight:1.65,
-                    paddingLeft:12,paddingTop:4,paddingBottom:4,
-                    borderLeft:`2px solid rgba(255,255,255,0.07)`,
-                    fontFamily:"'DM Mono',ui-monospace,monospace",
-                  }}>{line}</div>
-                ))}
-              </div>
-            </SoftBox>
-          )}
-        </div>
-      )}
-    </Card>
-  );
-}
-
-// ─── Copy button ──────────────────────────────────────────────────────────────
-function CopyResultsButton({ result, description }){
-  const [copied,setCopied]=useState(false);
-  const handleCopy=async()=>{
-    const sections=result?.standard_sections?.length?result.standard_sections:buildSectionsFromFlatResult(result);
-    const text=[
-      "RuleGrid compliance summary","",
-      `Input: ${description}`,"",
-      `Detected product: ${titleCase(result?.product_type||"Unclear")}`,
-      `Confidence: ${titleCase(result?.product_match_confidence||"low")}`,
-      `Overall risk: ${result?.overall_risk||"MEDIUM"}`,"",
-      `Summary: ${result?.summary||""}`,"",
-      "Standards route:",
-      ...sections.flatMap(section=>[
-        `- ${section.title} (${section.count})`,
-        ...sortStandardItems(section.items||[]).map(item=>`  • ${item.code} — ${item.title}`),
-      ]),"",
-      "Applicable legislation:",
-      ...buildCompactLegislationItems(result).map(item=>`- ${item.code} — ${item.title}`),
-    ].join("\n");
-    try{ await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2600); }catch(_){}
-  };
-  return (
-    <button onClick={handleCopy} style={{
-      appearance:"none",cursor:"pointer",borderRadius:10,
-      border:`1px solid ${copied?"rgba(63,217,122,0.26)":T.lineStrong}`,
-      background:copied?"rgba(63,217,122,0.06)":"rgba(255,255,255,0.03)",
-      color:copied?T.green:T.textSub,
-      padding:"10px 18px",fontWeight:600,fontSize:13,
-      display:"flex",alignItems:"center",gap:7,
-      transition:"all 0.25s",
-    }}>
-      {copied?(
-        <>
-          <span style={{fontSize:14}}>✓</span>
-          Copied to clipboard
-        </>
-      ):(
-        <>
-          <span style={{fontSize:13,opacity:0.7}}>⎘</span>
-          Copy summary
-        </>
-      )}
+    <button type="button" className="button button--secondary button--full" onClick={handleCopy}>
+      {copied ? <Check size={16} /> : <Copy size={16} />}
+      {copied ? "Copied summary" : "Copy analysis summary"}
     </button>
   );
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
-function EmptyState(){
-  const steps=[
-    {n:"01",label:"Describe the product",text:"Type, power source, connectivity, key functions and sensors."},
-    {n:"02",label:"Add material detail",text:"Food-contact materials, battery type, certifications needed."},
-    {n:"03",label:"Refine iteratively",text:"Use clarification hints to sharpen the compliance route."},
-  ];
+function ErrorBanner({ message }) {
   return (
-    <Card style={{border:`1px dashed rgba(255,255,255,0.06)`}}>
-      <div style={{padding:"clamp(28px,5vw,52px) clamp(18px,5vw,36px)",display:"grid",gap:24,justifyItems:"center",textAlign:"center"}}>
-        <div style={{
-          width:56,height:56,borderRadius:18,
-          border:`1px solid rgba(91,168,255,0.16)`,
-          background:"linear-gradient(140deg,rgba(91,168,255,0.08),rgba(34,211,196,0.04))",
-          display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,
-          boxShadow:"0 0 20px rgba(91,168,255,0.06)",
-        }}>⬡</div>
-        <div>
-          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:"clamp(18px,3vw,24px)",color:T.text,marginBottom:8,letterSpacing:"-0.02em"}}>
-            Ready for analysis
-          </div>
-          <div style={{fontSize:13.5,color:T.textSub,lineHeight:1.8,maxWidth:420}}>
-            Enter a product description above to generate the EU standards route and applicable legislation.
-          </div>
-        </div>
-        <div style={{display:"grid",gap:8,width:"100%",maxWidth:460,textAlign:"left"}}>
-          {steps.map((step,i)=>(
-            <div key={step.n} style={{
-              display:"flex",gap:14,alignItems:"flex-start",
-              padding:"12px 16px",borderRadius:12,
-              background:"rgba(255,255,255,0.018)",border:`1px solid ${T.line}`,
-              animation:`fadeUp 0.35s ease ${0.05+i*0.07}s both`,
-            }}>
-              <span style={{
-                fontSize:9,fontWeight:800,color:T.blue,letterSpacing:"0.10em",
-                background:"rgba(91,168,255,0.08)",border:`1px solid rgba(91,168,255,0.15)`,
-                borderRadius:6,padding:"3px 7px",flexShrink:0,marginTop:2,
-                fontVariantNumeric:"tabular-nums",
-              }}>{step.n}</span>
-              <div>
-                <div style={{fontSize:12.5,fontWeight:700,color:T.text,marginBottom:3}}>{step.label}</div>
-                <div style={{fontSize:12,color:T.textSub,lineHeight:1.65}}>{step.text}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-// ─── Error card ───────────────────────────────────────────────────────────────
-function ErrorCard({ message }){
-  return (
-    <div style={{
-      borderRadius:12,border:`1px solid rgba(240,107,107,0.18)`,
-      background:"rgba(240,107,107,0.04)",padding:"14px 18px",
-      display:"flex",gap:12,alignItems:"flex-start",
-      animation:"fadeUp 0.2s ease both",
-    }}>
-      <div style={{
-        width:28,height:28,borderRadius:8,flexShrink:0,marginTop:1,
-        background:"rgba(240,107,107,0.09)",border:"1px solid rgba(240,107,107,0.16)",
-        display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:13,color:T.rose,
-      }}>⚠</div>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{fontSize:13,fontWeight:700,color:"#f87171",marginBottom:4,letterSpacing:"-0.005em"}}>Analysis error</div>
-        <div style={{fontSize:13,color:T.textSub,lineHeight:1.65}}>{message}</div>
+    <div className="error-banner" role="alert">
+      <TriangleAlert size={18} />
+      <div>
+        <div className="error-banner__title">Analysis error</div>
+        <div className="error-banner__text">{message}</div>
       </div>
     </div>
   );
 }
 
-// ─── Scroll-to-top ────────────────────────────────────────────────────────────
-function ScrollTopBtn({ visible }){
+function EmptyState() {
+  const items = [
+    {
+      icon: <Search size={18} />,
+      title: "1. Describe the real product",
+      text: "Include power, radios, control model, updates, materials, and any sensitive functions.",
+    },
+    {
+      icon: <Waypoints size={18} />,
+      title: "2. Review the route first",
+      text: "The analysis overview and route grouping are designed to make the first pass fast.",
+    },
+    {
+      icon: <ShieldCheck size={18} />,
+      title: "3. Refine with clarifications",
+      text: "Use guided prompts to add scope-changing details, then run the analysis again.",
+    },
+  ];
+
+  return (
+    <Panel
+      className="panel--empty"
+      eyebrow="Workflow"
+      title="A cleaner route starts with a specific product description"
+      subtitle="The UI stays simple until there is output, then the route expands into guided sections instead of equal-weight cards."
+    >
+      <div className="empty-grid">
+        {items.map((item) => (
+          <div key={item.title} className="empty-card">
+            <div className="empty-card__icon">{item.icon}</div>
+            <div className="empty-card__title">{item.title}</div>
+            <div className="empty-card__text">{item.text}</div>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function ScrollTopButton({ visible }) {
   return (
     <button
-      onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}
-      style={{
-        position:"fixed",bottom:24,right:22,zIndex:200,
-        width:40,height:40,borderRadius:12,
-        border:`1px solid rgba(255,255,255,0.09)`,
-        background:"rgba(18,20,30,0.88)",
-        backdropFilter:"blur(12px)",
-        WebkitBackdropFilter:"blur(12px)",
-        color:T.textSub,fontSize:16,cursor:"pointer",
-        boxShadow:"0 4px 18px rgba(0,0,0,0.40)",
-        display:"flex",alignItems:"center",justifyContent:"center",
-        opacity:visible?1:0,pointerEvents:visible?"auto":"none",
-        transition:"opacity 0.25s,transform 0.25s",
-        transform:visible?"translateY(0)":"translateY(8px)",
-      }}
-      title="Back to top"
-    >↑</button>
+      type="button"
+      className={`scroll-top ${visible ? "scroll-top--visible" : ""}`.trim()}
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label="Back to top"
+    >
+      <ArrowUp size={16} />
+    </button>
   );
 }
 
-// ─── Root app ─────────────────────────────────────────────────────────────────
-function AppLegacy(){
-  const [description,setDescription]=useState("");
-  const [result,setResult]=useState(null);
-  const [metadata,setMetadata]=useState(null);
-  const [busy,setBusy]=useState(false);
-  const [error,setError]=useState("");
-  const [clarifyDirty,setClarifyDirty]=useState(false);
-  const [scrolled,setScrolled]=useState(false);
-  const resultsRef=useRef(null);
+export default function App() {
+  const [description, setDescription] = useState("");
+  const [result, setResult] = useState(null);
+  const [metadata, setMetadata] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [clarifyDirty, setClarifyDirty] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const resultsRef = useRef(null);
 
-  useEffect(()=>{
-    const onScroll=()=>setScrolled(window.scrollY>360);
-    window.addEventListener("scroll",onScroll,{passive:true});
-    return()=>window.removeEventListener("scroll",onScroll);
-  },[]);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 360);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-  useEffect(()=>{
-    let active=true;
-    fetch(METADATA_URL)
-      .then(res=>{ if(!res.ok) throw new Error(`Metadata failed (${res.status})`); return res.json(); })
-      .then(data=>{ if(active) setMetadata(data); })
-      .catch(()=>{ if(active) setMetadata({traits:[],products:[],legislations:[]}); });
-    return()=>{ active=false; };
-  },[]);
+  useEffect(() => {
+    const controller = new AbortController();
 
-  const templates=useMemo(()=>{
-    const dynamic=buildDynamicTemplates(metadata?.products||[]);
-    return dynamic.length?dynamic:DEFAULT_TEMPLATES;
-  },[metadata]);
-
-  const chips=useMemo(()=>{
-    const backend=(result?.suggested_quick_adds||[]).map(item=>({ label:titleCase(item.label), text:item.text }));
-    const frontend=buildGuidedChips(metadata,result);
-    return uniqueBy([...backend,...frontend], item=>item.text).slice(0,12);
-  },[metadata,result]);
-
-  useEffect(()=>{
-    if(!result||!resultsRef.current) return;
-    const timer=window.setTimeout(()=>resultsRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),80);
-    return()=>window.clearTimeout(timer);
-  },[result]);
-
-  const runAnalysis=useCallback(async()=>{
-    const payloadDescription=String(description||"").trim();
-    if(!payloadDescription) return;
-    setBusy(true); setError("");
-    try{
-      const response=await fetch(ANALYZE_URL,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ description:payloadDescription, depth:"deep" }),
+    fetch(METADATA_URL, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Metadata failed (${response.status})`);
+        }
+        return response.json();
+      })
+      .then((data) => setMetadata(data))
+      .catch((fetchError) => {
+        if (fetchError.name !== "AbortError") {
+          setMetadata({ traits: [], products: [], legislations: [] });
+        }
       });
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok) throw new Error(data?.detail||`Analysis failed (${response.status})`);
-      setResult(data); setClarifyDirty(false);
-    }catch(err){
-      setError(err?.message||"Analysis failed.");
-    }finally{
+
+    return () => controller.abort();
+  }, []);
+
+  const templates = useMemo(() => {
+    const dynamic = buildDynamicTemplates(metadata?.products || []);
+    return dynamic.length ? dynamic : DEFAULT_TEMPLATES;
+  }, [metadata]);
+
+  const routeSections = useMemo(() => buildRouteSections(result), [result]);
+  const guidanceItems = useMemo(() => buildGuidanceItems(result), [result]);
+  const legislationItems = useMemo(() => buildCompactLegislationItems(result), [result]);
+  const legislationGroups = useMemo(() => buildLegislationGroups(result), [result]);
+  const directiveBreakdown = useMemo(() => buildDirectiveBreakdown(routeSections), [routeSections]);
+  const totalStandards = useMemo(
+    () => routeSections.reduce((count, section) => count + (section.items || []).length, 0),
+    [routeSections]
+  );
+
+  const chips = useMemo(() => {
+    const backend = (result?.suggested_quick_adds || []).map((item) => ({
+      label: titleCase(item.label),
+      text: item.text,
+    }));
+    const frontend = buildGuidedChips(metadata, result);
+    return uniqueBy([...backend, ...frontend], (item) => item.text).slice(0, 12);
+  }, [metadata, result]);
+
+  useEffect(() => {
+    if (!result || !resultsRef.current) return;
+    const timer = window.setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [result]);
+
+  const runAnalysis = useCallback(async () => {
+    const payloadDescription = String(description || "").trim();
+    if (!payloadDescription) return;
+
+    setBusy(true);
+    setError("");
+
+    try {
+      const response = await fetch(ANALYZE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: payloadDescription, depth: "deep" }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.detail || `Analysis failed (${response.status})`);
+      }
+
+      setResult(data);
+      setClarifyDirty(false);
+    } catch (requestError) {
+      setError(requestError?.message || "Analysis failed.");
+    } finally {
       setBusy(false);
     }
-  },[description]);
+  }, [description]);
 
-  const resetAnalysis=useCallback(()=>{
+  const resetAnalysis = useCallback(() => {
     setResult(null);
     setDescription("");
     setError("");
     setClarifyDirty(false);
-    window.scrollTo({top:0,behavior:"smooth"});
-  },[]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   return (
-    <div style={{minHeight:"100vh",background:T.bg}}>
-      <style>{globalCss}</style>
-      <Topbar result={result} onReset={resetAnalysis}/>
+    <div className="app-shell">
+      <TopBar result={result} totalStandards={totalStandards} onReset={resetAnalysis} />
 
-      <div style={{maxWidth:1380,margin:"0 auto",padding:"clamp(14px,3vw,24px) clamp(14px,3vw,22px) 96px"}}>
-        <div className="app-shell-grid">
-          <div className="left-rail-slot">{result?<SidebarRail result={result}/>:null}</div>
+      <main className="page-shell page-main">
+        <HeroPanel
+          result={result}
+          routeSections={routeSections}
+          legislationItems={legislationItems}
+          guidanceItems={guidanceItems}
+        />
 
-          <main style={{display:"grid",gap:14,minWidth:0}}>
-            <Hero result={result}/>
-            <InputComposer
-              description={description}
-              setDescription={setDescription}
-              templates={templates}
-              chips={chips}
-              onAnalyze={runAnalysis}
-              busy={busy}
-              onDirty={setClarifyDirty}
-            />
-            {error&&<ErrorCard message={error}/>}
-            <div ref={resultsRef}/>
-            {!result?(
-              <EmptyState/>
-            ):(
-              <div style={{display:"grid",gap:14,animation:"fadeIn 0.3s ease both"}}>
-                <GuidanceStrip
-                  result={result}
-                  dirty={clarifyDirty}
-                  busy={busy}
-                  onReanalyze={runAnalysis}
-                  onApply={text=>{
-                    setDescription(cur=>{ const next=joinText(cur,text); if(next!==cur) setClarifyDirty(true); return next; });
-                  }}
-                />
-                <StandardsSection result={result}/>
-                <DiagnosticsPanel result={result}/>
-                <div style={{
-                  display:"flex",justifyContent:"space-between",alignItems:"center",
-                  gap:8,flexWrap:"wrap",paddingTop:2,
-                  borderTop:`1px solid ${T.line}`,
-                }}>
-                  <span style={{fontSize:11,color:T.textMuted}}>
-                    {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})} · RuleGrid
-                  </span>
-                  <CopyResultsButton result={result} description={description}/>
-                </div>
-              </div>
-            )}
-          </main>
-        </div>
-      </div>
+        <ComposerPanel
+          description={description}
+          setDescription={setDescription}
+          templates={templates}
+          chips={chips}
+          onAnalyze={runAnalysis}
+          busy={busy}
+          onDirty={setClarifyDirty}
+        />
 
-      <ScrollTopBtn visible={scrolled}/>
-    </div>
-  );
-}
+        {error ? <ErrorBanner message={error} /> : null}
 
-// ─── Global CSS ───────────────────────────────────────────────────────────────
-void [
-  TopbarLegacy,
-  HeroLegacy,
-  SidebarRailLegacy,
-  InputComposerLegacy,
-  GuidanceStripLegacy,
-  StandardCardLegacy,
-  DirectiveGroupLegacy,
-  StandardsSectionLegacy,
-  AppLegacy,
-];
+        <div ref={resultsRef} />
 
-export default function App(){
-  const [description,setDescription]=useState("");
-  const [result,setResult]=useState(null);
-  const [metadata,setMetadata]=useState(null);
-  const [busy,setBusy]=useState(false);
-  const [error,setError]=useState("");
-  const [clarifyDirty,setClarifyDirty]=useState(false);
-  const [scrolled,setScrolled]=useState(false);
-  const resultsRef=useRef(null);
-
-  useEffect(()=>{
-    const onScroll=()=>setScrolled(window.scrollY>360);
-    window.addEventListener("scroll",onScroll,{passive:true});
-    return()=>window.removeEventListener("scroll",onScroll);
-  },[]);
-
-  useEffect(()=>{
-    let active=true;
-    fetch(METADATA_URL)
-      .then(res=>{ if(!res.ok) throw new Error(`Metadata failed (${res.status})`); return res.json(); })
-      .then(data=>{ if(active) setMetadata(data); })
-      .catch(()=>{ if(active) setMetadata({traits:[],products:[],legislations:[]}); });
-    return()=>{ active=false; };
-  },[]);
-
-  const templates=useMemo(()=>{
-    const dynamic=buildDynamicTemplates(metadata?.products||[]);
-    return dynamic.length?dynamic:DEFAULT_TEMPLATES;
-  },[metadata]);
-
-  const chips=useMemo(()=>{
-    const backend=(result?.suggested_quick_adds||[]).map(item=>({ label:titleCase(item.label), text:item.text }));
-    const frontend=buildGuidedChips(metadata,result);
-    return uniqueBy([...backend,...frontend], item=>item.text).slice(0,12);
-  },[metadata,result]);
-
-  useEffect(()=>{
-    if(!result||!resultsRef.current) return;
-    const timer=window.setTimeout(()=>resultsRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),80);
-    return()=>window.clearTimeout(timer);
-  },[result]);
-
-  const runAnalysis=useCallback(async()=>{
-    const payloadDescription=String(description||"").trim();
-    if(!payloadDescription) return;
-    setBusy(true); setError("");
-    try{
-      const response=await fetch(ANALYZE_URL,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ description:payloadDescription, depth:"deep" }),
-      });
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok) throw new Error(data?.detail||`Analysis failed (${response.status})`);
-      setResult(data); setClarifyDirty(false);
-    }catch(err){
-      setError(err?.message||"Analysis failed.");
-    }finally{
-      setBusy(false);
-    }
-  },[description]);
-
-  const resetAnalysis=useCallback(()=>{
-    setResult(null);
-    setDescription("");
-    setError("");
-    setClarifyDirty(false);
-    window.scrollTo({top:0,behavior:"smooth"});
-  },[]);
-
-  return (
-    <div style={{minHeight:"100vh",background:T.bg}}>
-      <style>{globalCss}</style>
-      <Topbar result={result} onReset={resetAnalysis}/>
-
-      <div style={{maxWidth:1380,margin:"0 auto",padding:"clamp(14px,3vw,24px) clamp(14px,3vw,22px) 96px"}}>
-        <main style={{display:"grid",gap:16,minWidth:0}}>
-          <Hero result={result}/>
-          <InputComposer
-            description={description}
-            setDescription={setDescription}
-            templates={templates}
-            chips={chips}
-            onAnalyze={runAnalysis}
-            busy={busy}
-            onDirty={setClarifyDirty}
-          />
-          {error&&<ErrorCard message={error}/>}
-          <div ref={resultsRef}/>
-          {!result?(
-            <EmptyState/>
-          ):(
-            <div style={{display:"grid",gap:16,animation:"fadeIn 0.3s ease both"}}>
-              <GuidanceStrip
+        {result ? (
+          <div className="workspace-grid">
+            <div className="workspace-main">
+              <OverviewPanel
                 result={result}
+                routeSections={routeSections}
+                legislationItems={legislationItems}
+                directiveBreakdown={directiveBreakdown}
+              />
+
+              <ClarificationsPanel
+                items={guidanceItems}
                 dirty={clarifyDirty}
                 busy={busy}
                 onReanalyze={runAnalysis}
-                onApply={text=>{
-                  setDescription(cur=>{ const next=joinText(cur,text); if(next!==cur) setClarifyDirty(true); return next; });
+                onApply={(text) => {
+                  setDescription((current) => {
+                    const next = joinText(current, text);
+                    if (next !== current) {
+                      setClarifyDirty(true);
+                    }
+                    return next;
+                  });
                 }}
               />
-              <StandardsSection result={result}/>
-              <SidebarRail result={result}/>
-              <DiagnosticsPanel result={result}/>
-              <div style={{
-                display:"flex",justifyContent:"space-between",alignItems:"center",
-                gap:8,flexWrap:"wrap",paddingTop:2,
-                borderTop:`1px solid ${T.line}`,
-              }}>
-                <span style={{fontSize:11,color:T.textMuted}}>
-                  {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})} | RuleGrid
+
+              <StandardsRoutePanel sections={routeSections} directiveBreakdown={directiveBreakdown} />
+              <DetailsPanel result={result} />
+
+              <div className="footer-note">
+                <span>
+                  {new Date().toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
                 </span>
-                <CopyResultsButton result={result} description={description}/>
+                <span>RuleGrid</span>
               </div>
             </div>
-          )}
-        </main>
-      </div>
 
-      <ScrollTopBtn visible={scrolled}/>
+            <SnapshotRail
+              result={result}
+              routeSections={routeSections}
+              legislationGroups={legislationGroups}
+              description={description}
+            />
+          </div>
+        ) : (
+          <EmptyState />
+        )}
+      </main>
+
+      <ScrollTopButton visible={scrolled} />
     </div>
   );
 }
-
-const globalCss=`
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500;600&display=swap');
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html, body, #root {
-    min-height: 100%;
-    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
-    color: ${T.text};
-    background: ${T.bg};
-    line-height: 1.4;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  body {
-    background:
-      radial-gradient(circle at top right, rgba(91,168,255,0.10), transparent 28%),
-      radial-gradient(circle at bottom left, rgba(34,211,196,0.05), transparent 24%),
-      ${T.bg};
-  }
-
-  button, input, select, textarea { font: inherit; color: inherit; }
-
-  textarea::placeholder { color: ${T.textMuted}; opacity: 1; }
-  textarea::-webkit-scrollbar { width: 5px; }
-  textarea::-webkit-scrollbar-track { background: transparent; }
-  textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 4px; }
-
-  /* Custom scrollbar for page */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: ${T.bg}; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 6px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
-
-  .hero-grid {
-    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.9fr);
-  }
-
-  .summary-grid {
-    display: grid;
-    grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
-    gap: 14px;
-  }
-
-  .snapshot-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .legislation-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  /* Animations */
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spin { animation: spin 0.75s linear infinite; display: inline-block; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-
-  /* Standard card hover lift */
-  .standard-card {
-    transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
-  }
-  .standard-card:hover {
-    box-shadow: 0 18px 40px rgba(0,0,0,0.28) !important;
-    border-color: rgba(91,168,255,0.16) !important;
-    transform: translateY(-1px);
-  }
-
-  button:not(:disabled) { transition: transform 0.12s ease, opacity 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease; }
-  button:not(:disabled):hover { transform: translateY(-1px); }
-  button:not(:disabled):active { transform: translateY(0); }
-
-  /* Focus ring */
-  button:focus-visible, textarea:focus-visible {
-    outline: 2px solid rgba(91,168,255,0.45);
-    outline-offset: 2px;
-  }
-
-  .template-pill:hover,
-  .topbar-reset-btn:hover {
-    background: rgba(255,255,255,0.045) !important;
-    border-color: rgba(255,255,255,0.12) !important;
-  }
-
-  /* ── Responsive ────────────────────────────────────────── */
-
-  @media (max-width: 1080px) {
-    .hero-grid,
-    .summary-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .snapshot-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 860px) {
-    .legislation-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .standard-meta-grid {
-      grid-template-columns: 1fr 1fr !important;
-    }
-    .topbar-subtitle { display: none; }
-    .snapshot-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .standard-meta-grid {
-      grid-template-columns: 1fr !important;
-    }
-    .snapshot-grid {
-      grid-template-columns: 1fr;
-    }
-    .topbar-count { display: none; }
-    .topbar-new-label { display: none; }
-  }
-`;

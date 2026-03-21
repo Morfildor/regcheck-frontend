@@ -1,8 +1,33 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { render, screen, waitFor } from "@testing-library/react";
+import App from "./App";
 
-test('renders learn react link', () => {
+beforeEach(() => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: async () => ({ traits: [], products: [], legislations: [] }),
+    })
+  );
+});
+
+afterEach(() => {
+  jest.resetAllMocks();
+});
+
+test("renders the product analysis workspace", async () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  expect(
+    screen.getByRole("heading", {
+      name: /professional regulatory scoping for dense product decisions/i,
+    })
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByRole("button", { name: /analyze product/i })
+  ).toBeInTheDocument();
 });
