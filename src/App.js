@@ -390,7 +390,16 @@ function SecondaryBtn({ onClick, disabled, children, style }){
   );
 }
 
-
+function GhostBtn({ onClick, children }){
+  return (
+    <button onClick={onClick} style={{
+      appearance:"none",cursor:"pointer",borderRadius:8,
+      border:`1px solid ${T.line}`,background:"transparent",
+      color:T.textMuted,padding:"5px 12px",fontWeight:600,fontSize:11.5,
+      transition:"all 0.18s",whiteSpace:"nowrap",letterSpacing:"0.01em",
+    }}>{children}</button>
+  );
+}
 
 function AddChipBtn({ onClick, children }){
   return (
@@ -837,23 +846,28 @@ function StandardCard({ item, sectionKey }){
 
   return (
     <div className="standard-card" style={{
-      borderRadius:13,
+      borderRadius:14,
       border:`1px solid ${dirTone.bd}`,
-      background:`linear-gradient(165deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0.008) 100%)`,
+      background:`linear-gradient(160deg,rgba(255,255,255,0.032) 0%,rgba(255,255,255,0.006) 100%)`,
       overflow:"hidden",
-      boxShadow:"0 3px 16px rgba(0,0,0,0.28)",
+      boxShadow:`0 4px 20px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.04)`,
       transition:"box-shadow 0.2s,transform 0.2s",
     }}>
-      {/* Accent top bar */}
-      <div style={{height:2,background:`linear-gradient(90deg,${dirTone.dot},transparent 70%)`}}/>
+      {/* Accent top bar — thicker, stronger gradient */}
+      <div style={{
+        height:3,
+        background:`linear-gradient(90deg,${dirTone.dot} 0%,${dirTone.dot}88 40%,transparent 80%)`,
+        boxShadow:`0 0 12px ${dirTone.dot}55`,
+      }}/>
 
       {/* Header */}
       <div style={{
-        padding:"14px 16px 12px",
-        background:`linear-gradient(140deg,${dirTone.bg} 0%,rgba(255,255,255,0.018) 65%)`,
-        borderBottom:`1px solid rgba(255,255,255,0.07)`,
+        padding:"14px 16px 13px",
+        background:`linear-gradient(140deg,${dirTone.bg} 0%,rgba(255,255,255,0.012) 70%)`,
+        borderBottom:`1px solid ${dirTone.bd}`,
       }}>
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10,marginBottom:9}}>
+        {/* Top row: directive pill + status tag on left, code badge on right */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
           <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",flex:1,minWidth:0}}>
             <DirPill dirKey={dirKey}/>
             <span style={{
@@ -863,28 +877,43 @@ function StandardCard({ item, sectionKey }){
               fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.09em",
             }}>{titleCase(item.harmonization_status||"unknown")}</span>
           </div>
+
+          {/* Code badge — the striking one */}
           <span style={{
             display:"inline-flex",alignItems:"center",flexShrink:0,
-            borderRadius:7,background:dirTone.dot,color:"#050810",
-            padding:"4px 11px",fontSize:12,fontWeight:800,
-            letterSpacing:"-0.01em",whiteSpace:"nowrap",
+            borderRadius:8,
+            background:`linear-gradient(135deg,${dirTone.dot}22 0%,${dirTone.dot}0a 100%)`,
+            border:`1.5px solid ${dirTone.dot}cc`,
+            color:"#ffffff",
+            padding:"5px 13px",
+            fontSize:13,fontWeight:700,
+            letterSpacing:"0.06em",
+            whiteSpace:"nowrap",
             fontFamily:"'DM Mono',ui-monospace,monospace",
+            boxShadow:`0 0 16px ${dirTone.dot}44, inset 0 1px 0 ${dirTone.dot}33`,
+            textShadow:`0 0 20px ${dirTone.dot}cc`,
           }}>{item.code}</span>
         </div>
 
-        <div style={{fontSize:14.5,fontWeight:700,color:T.text,lineHeight:1.35,marginBottom:summary&&summary!==item.title?7:0,letterSpacing:"-0.015em"}}>
+        {/* Title */}
+        <div style={{
+          fontSize:14,fontWeight:700,color:T.text,
+          lineHeight:1.4,
+          marginBottom:summary&&summary!==item.title?6:0,
+          letterSpacing:"-0.012em",
+        }}>
           {item.title}
         </div>
 
         {summary&&summary!==item.title&&(
-          <div style={{fontSize:12,color:"rgba(142,154,184,0.80)",lineHeight:1.7,fontStyle:"italic"}}>
+          <div style={{fontSize:12,color:T.textSub,lineHeight:1.7,fontStyle:"italic",opacity:0.85}}>
             {summary}
           </div>
         )}
       </div>
 
       {/* Footer: meta + evidence */}
-      <div style={{padding:"11px 14px 13px",background:"rgba(0,0,0,0.16)",display:"grid",gap:9}}>
+      <div style={{padding:"11px 14px 13px",background:"rgba(0,0,0,0.18)",display:"grid",gap:9}}>
         {metaFields.length>0&&(
           <div className="standard-meta-grid" style={{
             display:"grid",
@@ -894,14 +923,14 @@ function StandardCard({ item, sectionKey }){
             {metaFields.map(({label,value})=>(
               <div key={label} style={{
                 borderRadius:7,padding:"8px 10px",
-                background:"rgba(255,255,255,0.025)",
-                border:"1px solid rgba(255,255,255,0.045)",
+                background:`${dirTone.bg}`,
+                border:`1px solid ${dirTone.bd}`,
               }}>
-                <div style={{fontSize:8.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4}}>
+                <div style={{fontSize:8.5,fontWeight:700,color:dirTone.text,opacity:0.65,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4}}>
                   {label}
                 </div>
                 <div style={{
-                  lineHeight:1.4,fontWeight:500,color:T.text,
+                  lineHeight:1.4,fontWeight:600,color:T.text,
                   fontFamily:"'DM Mono',ui-monospace,monospace",
                   fontSize:11.5,
                 }}>{value}</div>
@@ -916,7 +945,7 @@ function StandardCard({ item, sectionKey }){
               {evidenceList.map(ev=>(
                 <span key={ev} style={{
                   fontSize:10.5,fontWeight:500,color:T.textSub,
-                  background:"rgba(255,255,255,0.032)",border:`1px solid rgba(255,255,255,0.06)`,
+                  background:"rgba(255,255,255,0.032)",border:`1px solid rgba(255,255,255,0.07)`,
                   borderRadius:5,padding:"2px 8px",
                 }}>{ev}</span>
               ))}
@@ -1349,7 +1378,7 @@ export default function App(){
                 <div style={{
                   display:"flex",justifyContent:"space-between",alignItems:"center",
                   gap:8,flexWrap:"wrap",paddingTop:2,
-                  borderTop:`1px solid ${T.line}`,
+                  borderTop:`1px solid ${T.line}`,paddingTop:12,
                 }}>
                   <span style={{fontSize:11,color:T.textMuted}}>
                     {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})} · RuleGrid
@@ -1422,7 +1451,7 @@ const globalCss=`
     transition: box-shadow 0.22s ease, transform 0.22s ease;
   }
   .standard-card:hover {
-    box-shadow: 0 10px 36px rgba(0,0,0,0.42) !important;
+    box-shadow: 0 12px 44px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.06) !important;
     transform: translateY(-2px);
   }
 
