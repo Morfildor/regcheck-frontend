@@ -376,11 +376,7 @@ function Label({ children }){
   );
 }
 
-function Value({ children }){
-  return (
-    <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{children}</div>
-  );
-}
+
 
 // ─── Buttons ──────────────────────────────────────────────────────────────────
 
@@ -443,7 +439,7 @@ function CharCounter({ value, max=1200 }){
 }
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
-function Topbar({ result }){
+function Topbar({ result, onReset }){
   const totalStandards=result
     ?(result?.standard_sections?.length
       ?result.standard_sections.reduce((n,s)=>n+(s.items||[]).length,0)
@@ -485,6 +481,14 @@ function Topbar({ result }){
               {totalStandards} standard{totalStandards!==1?"s":""}
             </span>
           )}
+          <button onClick={onReset} style={{
+            appearance:"none",cursor:"pointer",borderRadius:8,
+            border:`1px solid rgba(99,172,255,0.28)`,
+            background:"rgba(99,172,255,0.08)",
+            color:T.blue,padding:"5px 13px",fontWeight:600,fontSize:12,
+            display:"flex",alignItems:"center",gap:6,
+            transition:"all 0.15s",
+          }}>↺ New analysis</button>
         </div>
       )}
     </div>
@@ -667,82 +671,101 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
   );
 }
 
-// ─── Guidance strip ───────────────────────────────────────────────────────────
+// ─── Guidance strip — compact collapsible banner ──────────────────────────────
 function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
+  const [open,setOpen]=useState(false);
   const items=buildGuidanceItems(result);
   if(!items.length) return null;
+
+  const highCount=items.filter(i=>i.importance==="high").length;
+
   return (
-    <Card>
-      <CardHeader
-        title="Clarify these first"
-        subtitle="Compact input gaps that can materially change the standards route."
-        right={<PrimaryBtn onClick={onReanalyze} disabled={!dirty||busy}>{busy?"Analyzing…":dirty?"Refresh route →":"Route current"}</PrimaryBtn>}
-      />
-      <div style={{padding:"14px 16px",display:"grid",gap:10}}>
-        <div className="guidance-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10}}>
-          {items.map(item=>{
+    <div style={{
+      borderRadius:12,
+      border:`1px solid ${highCount>0?"rgba(251,191,36,0.22)":"rgba(255,255,255,0.08)"}`,
+      background:highCount>0?"rgba(251,191,36,0.05)":"rgba(255,255,255,0.03)",
+      overflow:"hidden",
+    }}>
+      {/* ── collapsed bar ── */}
+      <div style={{
+        display:"flex",alignItems:"center",gap:10,padding:"9px 14px",
+        cursor:"pointer",userSelect:"none",
+      }} onClick={()=>setOpen(v=>!v)}>
+        <span style={{fontSize:13}}>{open?"▾":"▸"}</span>
+        <span style={{fontSize:12,fontWeight:700,color:highCount>0?T.amber:T.textSub}}>
+          {items.length} clarification{items.length!==1?"s":""} that may refine this route
+        </span>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginLeft:4}}>
+          {items.slice(0,4).map(item=>{
             const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
             return (
-              <div key={item.key} style={{borderRadius:12,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"12px 13px",display:"grid",gap:8}}>
-                <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"space-between"}}>
-                  <div style={{fontSize:12,fontWeight:700,color:tone.text}}>{item.title}</div>
-                  <span style={{width:6,height:6,borderRadius:999,background:tone.text,flexShrink:0}}/>
-                </div>
-                <div style={{fontSize:12,color:"rgba(255,255,255,0.68)",lineHeight:1.5}}>{item.why}</div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {item.choices.map(choice=>(
-                    <button key={choice} onClick={()=>onApply(choice)} style={{
-                      appearance:"none",cursor:"pointer",borderRadius:6,
-                      border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.2)",
-                      color:tone.text,padding:"4px 9px",fontSize:11,fontWeight:600,
-                    }}>+ {choice}</button>
-                  ))}
-                </div>
-              </div>
+              <span key={item.key} style={{
+                fontSize:10,fontWeight:600,borderRadius:5,padding:"2px 7px",
+                background:tone.bg,border:`1px solid ${tone.bd}`,color:tone.text,
+              }}>{item.title}</span>
             );
           })}
+          {items.length>4&&<span style={{fontSize:10,color:T.textMuted}}>+{items.length-4} more</span>}
         </div>
         {dirty&&(
-          <div style={{fontSize:12,color:T.amber,fontWeight:600,display:"flex",alignItems:"center",gap:7,paddingTop:2}}>
-            <span style={{width:5,height:5,borderRadius:999,background:T.amber,display:"inline-block"}}/>
-            Input updated — refresh route to apply changes.
-          </div>
+          <span style={{marginLeft:"auto",fontSize:11,color:T.amber,fontWeight:600,flexShrink:0}}>
+            ● Updated — re-run to apply
+          </span>
+        )}
+        {dirty&&(
+          <button onClick={e=>{e.stopPropagation();onReanalyze();}} disabled={busy} style={{
+            appearance:"none",cursor:"pointer",borderRadius:7,border:"none",
+            background:`linear-gradient(135deg,${T.blue},${T.teal})`,
+            color:"#000",padding:"5px 12px",fontWeight:700,fontSize:11,flexShrink:0,
+            opacity:busy?0.5:1,
+          }}>{busy?"…":"Refresh →"}</button>
         )}
       </div>
-    </Card>
+
+      {/* ── expanded chips ── */}
+      {open&&(
+        <div style={{borderTop:`1px solid rgba(255,255,255,0.07)`,padding:"10px 14px",display:"flex",gap:7,flexWrap:"wrap"}}>
+          {items.flatMap(item=>item.choices.map(choice=>{
+            const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
+            return (
+              <button key={item.key+choice} onClick={()=>onApply(choice)} style={{
+                appearance:"none",cursor:"pointer",borderRadius:6,
+                border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.2)",
+                color:tone.text,padding:"4px 9px",fontSize:11,fontWeight:600,
+              }}>+ {choice}</button>
+            );
+          }))}
+        </div>
+      )}
+    </div>
   );
 }
 
-// ─── Route snapshot ───────────────────────────────────────────────────────────
+// ─── Route snapshot — minimal pill row ───────────────────────────────────────
 function StandardsOverview({ result }){
   const breakdown=buildDirectiveBreakdown(result);
   if(!breakdown.length) return null;
   const total=breakdown.reduce((n,{count})=>n+count,0);
   return (
-    <Card>
-      <CardHeader title="Route snapshot" subtitle={`${total} standards across ${breakdown.length} directive${breakdown.length!==1?"s":""}.`}/>
-      <div style={{padding:"14px 16px"}}>
-        <div className="snapshot-grid" style={{display:"grid",gridTemplateColumns:"repeat(6,minmax(0,1fr))",gap:8}}>
-          {breakdown.map(({key,count})=>{
-            const tone=directiveTone(key);
-            const barPct=Math.max(12,Math.round((count/total)*100));
-            return (
-              <div key={key} style={{borderRadius:12,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"12px 10px",display:"grid",gap:6}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot}}/>
-                  <div style={{fontSize:11,fontWeight:700,color:tone.text}}>{directiveShort(key)}</div>
-                </div>
-                <div style={{fontSize:28,lineHeight:1,fontWeight:800,color:T.text}}>{count}</div>
-                <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,0.08)",overflow:"hidden"}}>
-                  <div style={{height:"100%",width:`${barPct}%`,borderRadius:999,background:tone.dot,transition:"width 0.6s ease"}}/>
-                </div>
-                <div style={{fontSize:10,color:T.textMuted,letterSpacing:"0.04em"}}>standard{count!==1?"s":""}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </Card>
+    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",padding:"2px 0"}}>
+      <span style={{fontSize:11,color:T.textMuted,fontWeight:600,letterSpacing:"0.04em",marginRight:2}}>
+        {total} standard{total!==1?"s":""} across
+      </span>
+      {breakdown.map(({key,count})=>{
+        const tone=directiveTone(key);
+        return (
+          <span key={key} style={{
+            display:"inline-flex",alignItems:"center",gap:5,
+            borderRadius:20,border:`1px solid ${tone.bd}`,background:tone.bg,
+            color:tone.text,padding:"3px 9px",fontSize:11,fontWeight:700,
+            whiteSpace:"nowrap",
+          }}>
+            <span style={{width:5,height:5,borderRadius:999,background:tone.dot}}/>
+            {directiveShort(key)} <span style={{opacity:0.75,fontWeight:500}}>·{count}</span>
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -763,44 +786,63 @@ function StandardCard({ item, sectionKey }){
 
   return (
     <div style={{
-      borderRadius:14,border:`1px solid ${dirTone.bd}`,
-      background:"rgba(255,255,255,0.04)",
-      overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.25)",
+      borderRadius:16,border:`1.5px solid ${dirTone.bd}`,
+      background:`linear-gradient(160deg,rgba(255,255,255,0.055) 0%,rgba(255,255,255,0.02) 100%)`,
+      overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.32)",
+      transition:"box-shadow 0.2s",
     }}>
+      {/* ── header band ── */}
       <div style={{
-        padding:"13px 15px 11px",
-        background:`linear-gradient(135deg,${dirTone.bg},transparent)`,
-        borderBottom:`1px solid ${T.line}`,display:"grid",gap:10,
+        padding:"15px 18px 13px",
+        background:`linear-gradient(135deg,${dirTone.bg},transparent 80%)`,
+        borderBottom:`1px solid rgba(255,255,255,0.08)`,
       }}>
-        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",justifyContent:"space-between"}}>
-          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+          <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
             <DirPill dirKey={dirKey}/>
             <span style={{
-              display:"inline-flex",alignItems:"center",borderRadius:6,
+              display:"inline-flex",alignItems:"center",borderRadius:5,
               background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
-              color:sectionTone.tagText,padding:"2px 8px",fontSize:10,fontWeight:700,
+              color:sectionTone.tagText,padding:"2px 7px",fontSize:10,fontWeight:700,
               textTransform:"uppercase",letterSpacing:"0.08em",
             }}>{titleCase(item.harmonization_status||"unknown")}</span>
           </div>
           <span style={{
             display:"inline-flex",alignItems:"center",borderRadius:8,
             background:dirTone.dot,color:"#000",
-            padding:"7px 13px",fontSize:14,fontWeight:800,
-            letterSpacing:"-0.02em",whiteSpace:"nowrap",flexShrink:0,
+            padding:"6px 13px",fontSize:13,fontWeight:900,
+            letterSpacing:"-0.01em",whiteSpace:"nowrap",flexShrink:0,fontFamily:"monospace",
           }}>{item.code}</span>
         </div>
-        <div>
-          <div style={{fontSize:14,fontWeight:700,color:T.text,lineHeight:1.35}}>{item.title}</div>
-          <div style={{marginTop:5,fontSize:12,color:T.textSub,lineHeight:1.7}}>{summary}</div>
+        <div style={{fontSize:15,fontWeight:700,color:T.text,lineHeight:1.35,marginBottom:6,letterSpacing:"-0.01em"}}>
+          {item.title}
         </div>
+        {summary&&(
+          <div style={{fontSize:12.5,color:"rgba(192,200,228,0.85)",lineHeight:1.7,fontStyle:"italic"}}>
+            {summary}
+          </div>
+        )}
       </div>
 
-      <div className="standard-meta-grid" style={{padding:14,display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8}}>
+      {/* ── meta grid ── */}
+      <div className="standard-meta-grid" style={{
+        padding:"12px 16px",display:"grid",
+        gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8,
+        background:"rgba(0,0,0,0.15)",
+      }}>
         {metaFields.map(({label,value})=>(
-          <SoftBox key={label}>
-            <Label>{label}</Label>
-            <Value>{value}</Value>
-          </SoftBox>
+          <div key={label} style={{
+            borderRadius:8,padding:"9px 11px",
+            background:"rgba(255,255,255,0.04)",
+            border:"1px solid rgba(255,255,255,0.07)",
+          }}>
+            <div style={{fontSize:9.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:5}}>
+              {label}
+            </div>
+            <div style={{fontSize:12.5,color:value==="—"?T.textMuted:T.text,lineHeight:1.55,fontWeight:value==="—"?400:500}}>
+              {value}
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -823,20 +865,32 @@ function StandardsSection({ result }){
 
   return (
     <Card>
-      <CardHeader title="Standards route" subtitle="Primary output · ordered LVD → EMC → RED → RED Cyber."/>
-      <div style={{padding:"14px 16px",display:"grid",gap:14}}>
+      <CardHeader
+        title="Standards route"
+        subtitle="Primary output · ordered LVD → EMC → RED → RED Cyber."
+      />
+      {/* Route summary pills */}
+      <div style={{padding:"10px 16px 0",borderBottom:`1px solid ${T.line}`}}>
+        <StandardsOverview result={result}/>
+        <div style={{height:10}}/>
+      </div>
+      <div style={{padding:"18px 18px",display:"grid",gap:18}}>
         {sections.map((section,i)=>{
           const tone=directiveTone(section.key);
           return (
-            <div key={section.key} style={{borderRadius:14,border:`1px solid ${tone.bd}`,background:`linear-gradient(135deg,${tone.bg},transparent)`,overflow:"hidden"}}>
-              <div style={{padding:"12px 14px",borderBottom:`1px solid ${tone.bd}`,display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+            <div key={section.key} style={{borderRadius:16,border:`1px solid ${tone.bd}`,background:`linear-gradient(135deg,${tone.bg},transparent)`,overflow:"hidden"}}>
+              <div style={{
+                padding:"13px 16px",borderBottom:`1px solid ${tone.bd}`,
+                display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap",
+                background:"rgba(0,0,0,0.12)",
+              }}>
                 <div>
-                  <div style={{fontSize:13,fontWeight:700,color:T.text}}>{section.title||directiveShort(section.key)}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>{section.title||directiveShort(section.key)}</div>
                   <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>{section.count||0} item{(section.count||0)!==1?"s":""}</div>
                 </div>
                 <DirPill dirKey={section.key}/>
               </div>
-              <div style={{padding:14,display:"grid",gap:12}}>
+              <div style={{padding:"16px",display:"grid",gap:14}}>
                 {(section.items||[]).map(item=>(
                   <StandardCard key={`${section.key}-${item.code}-${item.title}-${i}`} item={item} sectionKey={item.harmonization_status||"unknown"}/>
                 ))}
@@ -1060,10 +1114,18 @@ export default function App(){
     }
   },[description]);
 
+  const resetAnalysis=useCallback(()=>{
+    setResult(null);
+    setDescription("");
+    setError("");
+    setClarifyDirty(false);
+    window.scrollTo({top:0,behavior:"smooth"});
+  },[]);
+
   return (
     <div style={{minHeight:"100vh",background:T.bg}}>
       <style>{globalCss}</style>
-      <Topbar result={result}/>
+      <Topbar result={result} onReset={resetAnalysis}/>
 
       <div style={{maxWidth:1380,margin:"0 auto",padding:"22px 20px 72px"}}>
         <div className="app-shell-grid">
@@ -1098,13 +1160,11 @@ export default function App(){
                     setDescription(cur=>{ const next=joinText(cur,text); if(next!==cur) setClarifyDirty(true); return next; });
                   }}
                 />
-                <StandardsOverview result={result}/>
                 <StandardsSection result={result}/>
                 <DiagnosticsPanel result={result}/>
 
                 <div style={{display:"flex",justifyContent:"flex-end",gap:10,flexWrap:"wrap"}}>
                   <CopyResultsButton result={result} description={description}/>
-                  <SecondaryBtn onClick={runAnalysis} disabled={busy||!description.trim()}>Re-run analysis</SecondaryBtn>
                 </div>
               </>
             )}

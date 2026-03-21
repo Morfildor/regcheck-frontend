@@ -5,39 +5,33 @@ const ANALYZE_URL =
   "https://regcheck-api.onrender.com/analyze";
 const METADATA_URL = ANALYZE_URL.replace(/\/analyze$/, "/metadata/options");
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
+// ─── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
-  // Page backgrounds (kept dark)
-  bg:          "#0d0f14",
-  bgPanel:     "#161820",
+  bg:          "#0b0d12",
+  bgPanel:     "#13151c",
+  bgCard:      "#1a1d28",
+  bgCardInner: "#21253a",
+  bgCardDeep:  "#161924",
 
-  // Card backgrounds — lifted for readability
-  bgCard:      "#22263a",       // outer card
-  bgCardInner: "#2a2e44",       // inner soft-box inside cards
-  bgCardDeep:  "#1e2133",       // card header band
+  line:        "rgba(255,255,255,0.07)",
+  lineStrong:  "rgba(255,255,255,0.12)",
+  lineFocus:   "rgba(99,172,255,0.45)",
 
-  // Borders
-  line:        "rgba(255,255,255,0.08)",
-  lineStrong:  "rgba(255,255,255,0.14)",
-  lineFocus:   "rgba(99,172,255,0.5)",
+  text:        "#eef0f8",
+  textSub:     "#b4bbd4",
+  textMuted:   "#6e7898",
+  textLabel:   "#8892b4",
 
-  // Text — noticeably brighter than before
-  text:        "#eef0f8",       // primary
-  textSub:     "#b0b6d0",       // secondary — was #8b90a8
-  textMuted:   "#7880a0",       // tertiary  — was #555a72
-  textLabel:   "#9098b8",       // label / caps
-
-  // Accents
   blue:        "#63acff",
-  teal:        "#38c9b0",
-  violet:      "#9b87f5",
+  teal:        "#2dd4bf",
+  violet:      "#a78bfa",
   rose:        "#f87171",
   amber:       "#fbbf24",
   green:       "#4ade80",
 
-  // Shadows
-  shadow:      "0 4px 24px rgba(0,0,0,0.45)",
-  shadowLg:    "0 8px 40px rgba(0,0,0,0.55)",
+  shadow:      "0 2px 16px rgba(0,0,0,0.5)",
+  shadowLg:    "0 8px 40px rgba(0,0,0,0.6)",
+  shadowCard:  "0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)",
 };
 
 // ─── Directive metadata ───────────────────────────────────────────────────────
@@ -54,43 +48,43 @@ const DIR_ORDER = [
 ];
 
 const DIR_TONES = {
-  LVD:         { dot:"#6ee7b7", bg:"rgba(110,231,183,0.10)", bd:"rgba(110,231,183,0.22)", text:"#6ee7b7" },
-  EMC:         { dot:"#67e8f9", bg:"rgba(103,232,249,0.10)", bd:"rgba(103,232,249,0.22)", text:"#67e8f9" },
-  RED:         { dot:"#63acff", bg:"rgba(99,172,255,0.10)",  bd:"rgba(99,172,255,0.22)",  text:"#63acff" },
-  RED_CYBER:   { dot:"#c084fc", bg:"rgba(192,132,252,0.10)", bd:"rgba(192,132,252,0.22)", text:"#c084fc" },
-  CRA:         { dot:"#86efac", bg:"rgba(134,239,172,0.10)", bd:"rgba(134,239,172,0.22)", text:"#86efac" },
-  ROHS:        { dot:"#fcd34d", bg:"rgba(252,211,77,0.10)",  bd:"rgba(252,211,77,0.22)",  text:"#fcd34d" },
-  REACH:       { dot:"#fdba74", bg:"rgba(253,186,116,0.10)", bd:"rgba(253,186,116,0.22)", text:"#fdba74" },
-  GDPR:        { dot:"#38c9b0", bg:"rgba(56,201,176,0.10)",  bd:"rgba(56,201,176,0.22)",  text:"#38c9b0" },
-  AI_Act:      { dot:"#a78bfa", bg:"rgba(167,139,250,0.10)", bd:"rgba(167,139,250,0.22)", text:"#a78bfa" },
-  ESPR:        { dot:"#fb923c", bg:"rgba(251,146,60,0.10)",  bd:"rgba(251,146,60,0.22)",  text:"#fb923c" },
-  ECO:         { dot:"#4ade80", bg:"rgba(74,222,128,0.10)",  bd:"rgba(74,222,128,0.22)",  text:"#4ade80" },
-  BATTERY:     { dot:"#a3e635", bg:"rgba(163,230,53,0.10)",  bd:"rgba(163,230,53,0.22)",  text:"#a3e635" },
-  FCM:         { dot:"#f9a8d4", bg:"rgba(249,168,212,0.10)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
-  FCM_PLASTIC: { dot:"#f9a8d4", bg:"rgba(249,168,212,0.10)", bd:"rgba(249,168,212,0.22)", text:"#f9a8d4" },
-  MD:          { dot:"#93c5fd", bg:"rgba(147,197,253,0.10)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
-  MACH_REG:    { dot:"#93c5fd", bg:"rgba(147,197,253,0.10)", bd:"rgba(147,197,253,0.22)", text:"#93c5fd" },
-  OTHER:       { dot:"#94a3b8", bg:"rgba(148,163,184,0.10)", bd:"rgba(148,163,184,0.22)", text:"#94a3b8" },
+  LVD:         { dot:"#6ee7b7", bg:"rgba(110,231,183,0.09)", bd:"rgba(110,231,183,0.20)", text:"#6ee7b7" },
+  EMC:         { dot:"#67e8f9", bg:"rgba(103,232,249,0.09)", bd:"rgba(103,232,249,0.20)", text:"#67e8f9" },
+  RED:         { dot:"#63acff", bg:"rgba(99,172,255,0.09)",  bd:"rgba(99,172,255,0.20)",  text:"#63acff" },
+  RED_CYBER:   { dot:"#c084fc", bg:"rgba(192,132,252,0.09)", bd:"rgba(192,132,252,0.20)", text:"#c084fc" },
+  CRA:         { dot:"#86efac", bg:"rgba(134,239,172,0.09)", bd:"rgba(134,239,172,0.20)", text:"#86efac" },
+  ROHS:        { dot:"#fcd34d", bg:"rgba(252,211,77,0.09)",  bd:"rgba(252,211,77,0.20)",  text:"#fcd34d" },
+  REACH:       { dot:"#fdba74", bg:"rgba(253,186,116,0.09)", bd:"rgba(253,186,116,0.20)", text:"#fdba74" },
+  GDPR:        { dot:"#2dd4bf", bg:"rgba(45,212,191,0.09)",  bd:"rgba(45,212,191,0.20)",  text:"#2dd4bf" },
+  AI_Act:      { dot:"#a78bfa", bg:"rgba(167,139,250,0.09)", bd:"rgba(167,139,250,0.20)", text:"#a78bfa" },
+  ESPR:        { dot:"#fb923c", bg:"rgba(251,146,60,0.09)",  bd:"rgba(251,146,60,0.20)",  text:"#fb923c" },
+  ECO:         { dot:"#4ade80", bg:"rgba(74,222,128,0.09)",  bd:"rgba(74,222,128,0.20)",  text:"#4ade80" },
+  BATTERY:     { dot:"#a3e635", bg:"rgba(163,230,53,0.09)",  bd:"rgba(163,230,53,0.20)",  text:"#a3e635" },
+  FCM:         { dot:"#f9a8d4", bg:"rgba(249,168,212,0.09)", bd:"rgba(249,168,212,0.20)", text:"#f9a8d4" },
+  FCM_PLASTIC: { dot:"#f9a8d4", bg:"rgba(249,168,212,0.09)", bd:"rgba(249,168,212,0.20)", text:"#f9a8d4" },
+  MD:          { dot:"#93c5fd", bg:"rgba(147,197,253,0.09)", bd:"rgba(147,197,253,0.20)", text:"#93c5fd" },
+  MACH_REG:    { dot:"#93c5fd", bg:"rgba(147,197,253,0.09)", bd:"rgba(147,197,253,0.20)", text:"#93c5fd" },
+  OTHER:       { dot:"#94a3b8", bg:"rgba(148,163,184,0.09)", bd:"rgba(148,163,184,0.20)", text:"#94a3b8" },
 };
 
 const STATUS = {
-  LOW:      { bg:"rgba(74,222,128,0.12)",  bd:"rgba(74,222,128,0.28)",  text:"#4ade80" },
-  MEDIUM:   { bg:"rgba(251,191,36,0.12)",  bd:"rgba(251,191,36,0.28)",  text:"#fbbf24" },
-  HIGH:     { bg:"rgba(251,113,133,0.12)", bd:"rgba(251,113,133,0.28)", text:"#fb7185" },
-  CRITICAL: { bg:"rgba(248,113,113,0.15)", bd:"rgba(248,113,113,0.32)", text:"#f87171" },
+  LOW:      { bg:"rgba(74,222,128,0.10)",  bd:"rgba(74,222,128,0.25)",  text:"#4ade80" },
+  MEDIUM:   { bg:"rgba(251,191,36,0.10)",  bd:"rgba(251,191,36,0.25)",  text:"#fbbf24" },
+  HIGH:     { bg:"rgba(251,113,133,0.10)", bd:"rgba(251,113,133,0.25)", text:"#fb7185" },
+  CRITICAL: { bg:"rgba(248,113,113,0.13)", bd:"rgba(248,113,113,0.30)", text:"#f87171" },
 };
 
 const IMPORTANCE = {
-  high:   { bg:"rgba(248,113,113,0.10)", bd:"rgba(248,113,113,0.24)", text:"#fb7185", dot:"#fb7185" },
-  medium: { bg:"rgba(251,191,36,0.10)",  bd:"rgba(251,191,36,0.24)",  text:"#fbbf24", dot:"#fbbf24" },
-  low:    { bg:"rgba(74,222,128,0.08)",  bd:"rgba(74,222,128,0.22)",  text:"#4ade80", dot:"#4ade80" },
+  high:   { bg:"rgba(248,113,113,0.08)", bd:"rgba(248,113,113,0.22)", text:"#fb7185", dot:"#fb7185" },
+  medium: { bg:"rgba(251,191,36,0.08)",  bd:"rgba(251,191,36,0.22)",  text:"#fbbf24", dot:"#fbbf24" },
+  low:    { bg:"rgba(74,222,128,0.07)",  bd:"rgba(74,222,128,0.20)",  text:"#4ade80", dot:"#4ade80" },
 };
 
 const SECTION_TONES = {
-  harmonized:       { bg:"rgba(99,172,255,0.07)",  bd:"rgba(99,172,255,0.16)",  tag:"rgba(99,172,255,0.14)",  tagText:"#63acff", icon:"⬡" },
-  state_of_the_art: { bg:"rgba(251,146,60,0.07)",  bd:"rgba(251,146,60,0.16)",  tag:"rgba(251,146,60,0.14)",  tagText:"#fb923c", icon:"◈" },
-  review:           { bg:"rgba(248,113,133,0.07)", bd:"rgba(248,113,133,0.16)", tag:"rgba(248,113,133,0.14)", tagText:"#fb7185", icon:"◉" },
-  unknown:          { bg:"rgba(148,163,184,0.05)", bd:"rgba(148,163,184,0.13)", tag:"rgba(148,163,184,0.11)", tagText:"#94a3b8", icon:"○" },
+  harmonized:       { tag:"rgba(99,172,255,0.14)",  bd:"rgba(99,172,255,0.22)",  tagText:"#63acff" },
+  state_of_the_art: { tag:"rgba(251,146,60,0.14)",  bd:"rgba(251,146,60,0.22)",  tagText:"#fb923c" },
+  review:           { tag:"rgba(248,113,133,0.14)", bd:"rgba(248,113,133,0.22)", tagText:"#fb7185" },
+  unknown:          { tag:"rgba(148,163,184,0.10)", bd:"rgba(148,163,184,0.18)", tagText:"#94a3b8" },
 };
 
 const DEFAULT_TEMPLATES = [
@@ -100,26 +94,20 @@ const DEFAULT_TEMPLATES = [
   { label:"Robot vacuum",    text:"Robot vacuum cleaner with rechargeable lithium battery, Wi-Fi and Bluetooth, cloud account, OTA firmware updates, LiDAR navigation, and camera." },
 ];
 
-// ─── Utility functions (logic unchanged) ─────────────────────────────────────
-function titleCase(input) {
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function titleCase(input){
   return String(input||"").replace(/[_-]+/g," ").replace(/\s+/g," ").trim().replace(/\b\w/g,m=>m.toUpperCase());
 }
 function gapLabel(key){
   const labels={
-    product_type:"Product type",
-    power_source:"Power source",
-    radio_scope_confirmation:"Radio scope",
-    radio_technology:"Radio technology",
-    wifi_band:"Wi-Fi band",
-    food_contact_materials:"Food-contact materials",
-    connectivity_architecture:"Connected design",
-    redcyber_auth_scope:"Login / authentication",
-    redcyber_transaction_scope:"Payments / subscriptions",
-    contradictions:"Contradictions",
+    product_type:"Product type", power_source:"Power source",
+    radio_scope_confirmation:"Radio scope", radio_technology:"Radio technology",
+    wifi_band:"Wi-Fi band", food_contact_materials:"Food-contact materials",
+    connectivity_architecture:"Connected design", redcyber_auth_scope:"Login / auth",
+    redcyber_transaction_scope:"Payments", contradictions:"Contradictions",
   };
   return labels[key]||titleCase(key);
 }
-
 function sentenceCaseList(values){ return (values||[]).map(v=>titleCase(String(v))); }
 function directiveTone(key){ return DIR_TONES[key]||DIR_TONES.OTHER; }
 function directiveShort(key){ return DIR_SHORT[key]||titleCase(key); }
@@ -281,18 +269,18 @@ function buildDirectiveBreakdown(result){
   return Object.entries(counts).sort((a,b)=>directiveRank(a[0])-directiveRank(b[0])).map(([key,count])=>({key,count}));
 }
 
-// ─── Primitive UI components ──────────────────────────────────────────────────
+// ─── Primitive components ─────────────────────────────────────────────────────
 
 function DirPill({ dirKey, large=false }){
   const tone=directiveTone(dirKey);
   return (
     <span style={{
-      display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,
+      display:"inline-flex",alignItems:"center",gap:5,borderRadius:6,
       border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
-      padding:large?"5px 11px":"3px 9px", fontSize:large?12:11, fontWeight:700,
-      whiteSpace:"nowrap",letterSpacing:"0.03em",
+      padding:large?"5px 12px":"3px 8px", fontSize:large?12:11, fontWeight:700,
+      whiteSpace:"nowrap",letterSpacing:"0.02em",
     }}>
-      <span style={{width:6,height:6,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+      <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
       {directiveShort(dirKey)}
     </span>
   );
@@ -302,9 +290,9 @@ function RiskBadge({ value }){
   const tone=STATUS[value]||STATUS.MEDIUM;
   return (
     <span style={{
-      display:"inline-flex",alignItems:"center",gap:7,borderRadius:6,
+      display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,
       border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
-      padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:"0.08em",textTransform:"uppercase",
+      padding:"3px 10px",fontSize:11,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",
     }}>
       <span style={{width:5,height:5,borderRadius:999,background:tone.text}}/>
       {value} Risk
@@ -314,10 +302,10 @@ function RiskBadge({ value }){
 
 function Chip({ children, tone="neutral" }){
   const s = tone==="neutral"
-    ? {bg:"rgba(255,255,255,0.07)", bd:T.lineStrong, text:T.textSub}
+    ? {bg:"rgba(255,255,255,0.06)", bd:T.lineStrong, text:T.textSub}
     : tone==="blue"
-    ? {bg:"rgba(99,172,255,0.12)", bd:"rgba(99,172,255,0.24)", text:T.blue}
-    : {bg:"rgba(56,201,176,0.10)", bd:"rgba(56,201,176,0.22)", text:T.teal};
+    ? {bg:"rgba(99,172,255,0.10)", bd:"rgba(99,172,255,0.22)", text:T.blue}
+    : {bg:"rgba(45,212,191,0.10)", bd:"rgba(45,212,191,0.22)", text:T.teal};
   return (
     <span style={{
       display:"inline-flex",alignItems:"center",borderRadius:6,
@@ -330,8 +318,8 @@ function Chip({ children, tone="neutral" }){
 function Card({ children, style }){
   return (
     <div style={{
-      borderRadius:18,border:`1px solid ${T.lineStrong}`,
-      background:T.bgCard, boxShadow:T.shadow, overflow:"hidden",
+      borderRadius:16,border:`1px solid ${T.lineStrong}`,
+      background:T.bgCard,boxShadow:T.shadowCard,overflow:"hidden",
       ...style,
     }}>{children}</div>
   );
@@ -340,28 +328,25 @@ function Card({ children, style }){
 function CardHeader({ title, subtitle, right }){
   return (
     <div style={{
-      padding:"16px 20px 13px",
+      padding:"15px 20px 13px",
       borderBottom:`1px solid ${T.line}`,
       background:T.bgCardDeep,
-      display:"flex",gap:14,alignItems:"flex-start",justifyContent:"space-between",
+      display:"flex",gap:12,alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",
     }}>
-      <div>
-        {title&&<div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>{title}</div>}
-        {subtitle&&<div style={{marginTop:4,fontSize:12,color:T.textMuted,lineHeight:1.5}}>{subtitle}</div>}
+      <div style={{minWidth:0}}>
+        {title&&<div style={{fontSize:13,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>{title}</div>}
+        {subtitle&&<div style={{marginTop:3,fontSize:11,color:T.textMuted,lineHeight:1.55}}>{subtitle}</div>}
       </div>
       {right&&<div style={{flexShrink:0}}>{right}</div>}
     </div>
   );
 }
 
-// Inner meta box — now uses a noticeably lighter background
 function SoftBox({ children, style }){
   return (
     <div style={{
-      borderRadius:10,
-      border:`1px solid rgba(255,255,255,0.10)`,
-      background:"rgba(255,255,255,0.07)",
-      padding:"11px 13px",
+      borderRadius:10,border:`1px solid rgba(255,255,255,0.08)`,
+      background:"rgba(255,255,255,0.04)",padding:"10px 12px",
       ...style,
     }}>{children}</div>
   );
@@ -370,24 +355,22 @@ function SoftBox({ children, style }){
 function Label({ children }){
   return (
     <div style={{
-      fontSize:10,fontWeight:700,color:T.textLabel,
+      fontSize:9.5,fontWeight:700,color:T.textLabel,
       textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:5,
     }}>{children}</div>
   );
 }
 
-
-
-// ─── Buttons ──────────────────────────────────────────────────────────────────
+// ─── Buttons ─────────────────────────────────────────────────────────────────
 
 function PrimaryBtn({ onClick, disabled, children }){
   return (
     <button onClick={onClick} disabled={disabled} style={{
       appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.4:1,borderRadius:10,border:"none",
-      background:disabled?"rgba(99,172,255,0.25)":`linear-gradient(135deg,${T.blue},${T.teal})`,
-      color:"#000",padding:"10px 20px",fontWeight:700,fontSize:13,
-      boxShadow:disabled?"none":"0 0 28px rgba(99,172,255,0.28)",
+      opacity:disabled?0.38:1,borderRadius:10,border:"none",
+      background:disabled?"rgba(99,172,255,0.18)":`linear-gradient(135deg,${T.blue},${T.teal})`,
+      color:"#000",padding:"11px 22px",fontWeight:700,fontSize:13,
+      boxShadow:disabled?"none":"0 0 24px rgba(99,172,255,0.22)",
       transition:"all 0.2s",letterSpacing:"0.01em",whiteSpace:"nowrap",
     }}>{children}</button>
   );
@@ -397,9 +380,9 @@ function SecondaryBtn({ onClick, disabled, children, style }){
   return (
     <button onClick={onClick} disabled={disabled} style={{
       appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.45:1,borderRadius:10,
-      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.05)",
-      color:T.textSub,padding:"9px 16px",fontWeight:600,fontSize:13,
+      opacity:disabled?0.4:1,borderRadius:10,
+      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.04)",
+      color:T.textSub,padding:"10px 18px",fontWeight:600,fontSize:13,
       transition:"all 0.2s",...style,
     }}>{children}</button>
   );
@@ -410,8 +393,8 @@ function GhostBtn({ onClick, children }){
     <button onClick={onClick} style={{
       appearance:"none",cursor:"pointer",borderRadius:8,
       border:`1px solid ${T.line}`,background:"transparent",
-      color:T.textMuted,padding:"6px 12px",fontWeight:600,fontSize:12,
-      transition:"all 0.2s",
+      color:T.textMuted,padding:"5px 11px",fontWeight:600,fontSize:11.5,
+      transition:"all 0.2s",whiteSpace:"nowrap",
     }}>{children}</button>
   );
 }
@@ -419,15 +402,14 @@ function GhostBtn({ onClick, children }){
 function AddChipBtn({ onClick, children }){
   return (
     <button onClick={onClick} style={{
-      appearance:"none",cursor:"pointer",borderRadius:8,
-      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.05)",
-      color:T.textSub,padding:"5px 11px",fontWeight:600,fontSize:12,
-      transition:"background 0.15s,color 0.15s",
+      appearance:"none",cursor:"pointer",borderRadius:7,
+      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.04)",
+      color:T.textSub,padding:"5px 11px",fontWeight:600,fontSize:11.5,
+      transition:"background 0.15s,color 0.15s,border-color 0.15s",
     }}>{children}</button>
   );
 }
 
-// ─── Char counter ─────────────────────────────────────────────────────────────
 function CharCounter({ value, max=1200 }){
   const len=value.length, pct=Math.min(len/max,1);
   const color=pct>0.9?T.rose:pct>0.7?T.amber:T.textMuted;
@@ -449,46 +431,46 @@ function Topbar({ result, onReset }){
   return (
     <div style={{
       borderBottom:`1px solid ${T.line}`,
-      background:`${T.bgPanel}e0`,
-      backdropFilter:"blur(18px)",
-      padding:"0 24px",
-      display:"flex",alignItems:"center",gap:12,height:52,
+      background:`${T.bgPanel}f0`,
+      backdropFilter:"blur(20px)",
+      WebkitBackdropFilter:"blur(20px)",
+      padding:"0 20px",
+      display:"flex",alignItems:"center",gap:10,height:50,
       position:"sticky",top:0,zIndex:100,
     }}>
-      <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
         <div style={{
-          width:28,height:28,borderRadius:8,
+          width:26,height:26,borderRadius:7,
           background:`linear-gradient(135deg,${T.blue},${T.teal})`,
           display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:13,fontWeight:900,color:"#000",
+          fontSize:12,fontWeight:900,color:"#000",flexShrink:0,
         }}>⬡</div>
-        <span style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:18,color:T.text,letterSpacing:"-0.01em"}}>
+        <span style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:17,color:T.text,letterSpacing:"-0.01em",whiteSpace:"nowrap"}}>
           RuleGrid
         </span>
       </div>
-      <div style={{width:1,height:20,background:T.line,margin:"0 2px"}}/>
-      <span style={{fontSize:11,color:T.textMuted,fontWeight:500}}>EU Regulatory Scoping</span>
+
+      <div style={{width:1,height:18,background:T.line,margin:"0 2px",flexShrink:0}}/>
+      <span className="topbar-subtitle" style={{fontSize:11,color:T.textMuted,fontWeight:500}}>EU Regulatory Scoping</span>
 
       {result&&(
-        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:7}}>
           <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
           {totalStandards!==null&&(
-            <span style={{
+            <span className="topbar-count" style={{
               fontSize:11,color:T.textMuted,fontWeight:600,
-              background:"rgba(255,255,255,0.05)",border:`1px solid ${T.line}`,
-              borderRadius:6,padding:"3px 9px",
-            }}>
-              {totalStandards} standard{totalStandards!==1?"s":""}
-            </span>
+              background:"rgba(255,255,255,0.04)",border:`1px solid ${T.line}`,
+              borderRadius:6,padding:"3px 8px",whiteSpace:"nowrap",
+            }}>{totalStandards} std</span>
           )}
           <button onClick={onReset} style={{
             appearance:"none",cursor:"pointer",borderRadius:8,
-            border:`1px solid rgba(99,172,255,0.28)`,
-            background:"rgba(99,172,255,0.08)",
-            color:T.blue,padding:"5px 13px",fontWeight:600,fontSize:12,
-            display:"flex",alignItems:"center",gap:6,
-            transition:"all 0.15s",
-          }}>↺ New analysis</button>
+            border:`1px solid rgba(99,172,255,0.25)`,
+            background:"rgba(99,172,255,0.07)",
+            color:T.blue,padding:"5px 12px",fontWeight:600,fontSize:12,
+            display:"flex",alignItems:"center",gap:5,
+            transition:"all 0.15s",whiteSpace:"nowrap",
+          }}>↺ <span className="topbar-new-label">New analysis</span></button>
         </div>
       )}
     </div>
@@ -503,39 +485,49 @@ function Hero({ result }){
 
   return (
     <div style={{
-      borderRadius:20,border:`1px solid ${T.lineStrong}`,
-      background:"linear-gradient(145deg,#1e2236,#1a1d2e 55%,#1d2238)",
-      boxShadow:`${T.shadowLg},0 0 80px rgba(99,172,255,0.06)`,
-      padding:"32px 28px",position:"relative",overflow:"hidden",
+      borderRadius:16,border:`1px solid ${T.lineStrong}`,
+      background:"linear-gradient(150deg,#1c2035 0%,#161926 55%,#1a1e30 100%)",
+      boxShadow:`${T.shadowLg},0 0 60px rgba(99,172,255,0.05)`,
+      padding:"clamp(20px,4vw,36px) clamp(16px,4vw,32px)",
+      position:"relative",overflow:"hidden",
     }}>
-      <div style={{position:"absolute",inset:0,pointerEvents:"none",backgroundImage:`linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)`,backgroundSize:"40px 40px"}}/>
-      <div style={{position:"absolute",top:-80,left:"50%",transform:"translateX(-50%)",width:500,height:240,background:"radial-gradient(ellipse,rgba(99,172,255,0.09),transparent 70%)",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",inset:0,pointerEvents:"none",
+        backgroundImage:`linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)`,
+        backgroundSize:"48px 48px"}}/>
+      <div style={{position:"absolute",top:-60,left:"50%",transform:"translateX(-50%)",
+        width:400,height:200,
+        background:"radial-gradient(ellipse,rgba(99,172,255,0.07),transparent 70%)",
+        pointerEvents:"none"}}/>
 
-      <div style={{position:"relative",display:"grid",gap:16,justifyItems:"center",textAlign:"center"}}>
+      <div style={{position:"relative",display:"grid",gap:14,justifyItems:"center",textAlign:"center"}}>
         {showMeta&&(
-          <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
+          <div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center"}}>
             <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
             <Chip tone="blue">{titleCase(hero.confidence||result?.product_match_confidence||"low")} Confidence</Chip>
           </div>
         )}
         <div>
-          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:400,color:T.text,lineHeight:1.08,letterSpacing:"-0.02em",marginBottom:12}}>
+          <h1 style={{
+            fontFamily:"'DM Serif Display',Georgia,serif",
+            fontSize:"clamp(22px,4vw,38px)",fontWeight:400,color:T.text,
+            lineHeight:1.1,letterSpacing:"-0.02em",marginBottom:10,
+          }}>
             {hero.title||"RuleGrid Regulatory Scoping"}
-          </div>
-          <div style={{fontSize:14,color:T.textSub,lineHeight:1.75,maxWidth:600,margin:"0 auto"}}>
+          </h1>
+          <p style={{fontSize:"clamp(13px,2vw,14px)",color:T.textSub,lineHeight:1.75,maxWidth:560,margin:"0 auto"}}>
             {hero.subtitle||"Describe the product clearly to generate the standards route and the applicable legislation path."}
-          </div>
+          </p>
         </div>
         {showMeta&&primaryRegimes.length>0&&(
-          <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
+          <div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center"}}>
             {primaryRegimes.map(dirKey=><DirPill key={dirKey} dirKey={dirKey} large/>)}
           </div>
         )}
         {showMeta&&result?.summary&&(
           <div style={{
-            maxWidth:680,padding:"12px 18px",borderRadius:12,
-            background:"rgba(99,172,255,0.07)",border:`1px solid rgba(99,172,255,0.16)`,
-            fontSize:13,color:T.textSub,lineHeight:1.7,textAlign:"left",
+            width:"100%",maxWidth:640,padding:"13px 18px",borderRadius:12,
+            background:"rgba(99,172,255,0.06)",border:`1px solid rgba(99,172,255,0.14)`,
+            fontSize:13,color:T.textSub,lineHeight:1.75,textAlign:"left",
           }}>{result.summary}</div>
         )}
       </div>
@@ -549,23 +541,23 @@ function SidebarRail({ result }){
   const items=buildCompactLegislationItems(result);
   const confidence=result?.confidence_panel?.confidence||result?.product_match_confidence||"low";
   return (
-    <aside className="left-rail" style={{display:"grid",gap:12,position:"sticky",top:68,alignSelf:"start"}}>
+    <aside className="left-rail" style={{display:"grid",gap:10,position:"sticky",top:64,alignSelf:"start"}}>
       <Card>
         <CardHeader title="Applicable legislation" subtitle="All detected legislation"/>
-        <div style={{padding:"12px 14px",display:"grid",gap:7}}>
+        <div style={{padding:"10px 12px",display:"grid",gap:6}}>
           {items.map(item=>{
             const tone=directiveTone(item.directive_key||"OTHER");
             return (
               <div key={`${item.code}-${item.directive_key}-${item.section_key}`}
-                style={{borderRadius:10,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"9px 11px",display:"grid",gap:4}}>
-                <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
-                  <span style={{width:6,height:6,borderRadius:999,background:tone.dot}}/>
-                  <span style={{fontSize:12,fontWeight:700,color:tone.text}}>{item.code}</span>
-                  <span style={{fontSize:10,opacity:0.75,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:tone.text}}>
+                style={{borderRadius:9,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"8px 10px",display:"grid",gap:3}}>
+                <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                  <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+                  <span style={{fontSize:11.5,fontWeight:700,color:tone.text}}>{item.code}</span>
+                  <span style={{fontSize:9.5,opacity:0.7,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:tone.text}}>
                     {compactLegislationGroupLabel(item)}
                   </span>
                 </div>
-                <div style={{fontSize:11,lineHeight:1.45,color:T.textSub,fontWeight:500}}>{item.title}</div>
+                <div style={{fontSize:11,lineHeight:1.45,color:T.textSub}}>{item.title}</div>
               </div>
             );
           })}
@@ -574,10 +566,10 @@ function SidebarRail({ result }){
 
       <Card>
         <CardHeader title="Detection" subtitle="Product identification"/>
-        <div style={{padding:"12px 14px",display:"grid",gap:8}}>
+        <div style={{padding:"10px 12px",display:"grid",gap:7}}>
           <SoftBox>
             <Label>Detected product</Label>
-            <div style={{fontSize:16,fontWeight:700,color:T.text}}>{titleCase(result?.product_type||"Unclear")}</div>
+            <div style={{fontSize:14,fontWeight:700,color:T.text,marginTop:1}}>{titleCase(result?.product_type||"Unclear")}</div>
           </SoftBox>
           <SoftBox>
             <Label>Confidence</Label>
@@ -605,21 +597,25 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
     <Card>
       <CardHeader
         title="Product description"
-        subtitle="Product type · connectivity · power source · key functions · sensors · materials · battery"
+        subtitle="Type · connectivity · power · functions · sensors · materials · battery"
       />
       <div style={{padding:"16px 18px",display:"grid",gap:14}}>
+
         <div>
-          <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Quick fill</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:8}}>
+            Quick fill
+          </div>
+          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
             {templates.slice(0,4).map(template=>(
               <button key={template.label} onClick={()=>{ setDescription(template.text); onDirty(true); }} style={{
                 appearance:"none",cursor:"pointer",borderRadius:8,
-                border:`1px solid rgba(99,172,255,0.22)`,background:"rgba(99,172,255,0.08)",
-                color:T.blue,padding:"6px 14px",fontSize:12,fontWeight:600,transition:"all 0.15s",
+                border:`1px solid rgba(99,172,255,0.20)`,background:"rgba(99,172,255,0.07)",
+                color:T.blue,padding:"6px 13px",fontSize:12,fontWeight:600,transition:"all 0.15s",
               }}>{template.label}</button>
             ))}
           </div>
         </div>
+
         <div style={{position:"relative"}}>
           <textarea
             value={description}
@@ -627,14 +623,14 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
             onFocus={()=>setFocused(true)}
             onBlur={()=>setFocused(false)}
             placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
-            rows={7}
+            rows={6}
             maxLength={charMax}
             style={{
-              width:"100%",borderRadius:12,resize:"vertical",minHeight:160,lineHeight:1.75,
+              width:"100%",borderRadius:12,resize:"vertical",minHeight:140,lineHeight:1.7,
               border:`1px solid ${focused?T.lineFocus:T.lineStrong}`,
-              background:"rgba(0,0,0,0.28)",padding:"13px 15px 32px",
+              background:"rgba(0,0,0,0.22)",padding:"12px 14px 32px",
               color:T.text,outline:"none",fontSize:14,
-              boxShadow:focused?"0 0 0 3px rgba(99,172,255,0.09)":"none",
+              boxShadow:focused?"0 0 0 3px rgba(99,172,255,0.08)":"none",
               transition:"border-color 0.2s,box-shadow 0.2s",
               boxSizing:"border-box",
             }}
@@ -643,10 +639,13 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
             <CharCounter value={description} max={charMax}/>
           </div>
         </div>
+
         {chips.length>0&&(
           <div>
-            <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Add detail</div>
-            <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+            <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:8}}>
+              Add detail
+            </div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {chips.map(chip=>(
                 <AddChipBtn key={chip.label+chip.text} onClick={()=>{ setDescription(cur=>joinText(cur,chip.text)); onDirty(true); }}>
                   + {chip.label}
@@ -655,10 +654,15 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
             </div>
           </div>
         )}
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+
+        <div style={{display:"flex",gap:9,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",gap:9,flexWrap:"wrap"}}>
             <PrimaryBtn onClick={onAnalyze} disabled={busy||!description.trim()}>
-              {busy?(<span style={{display:"flex",alignItems:"center",gap:8}}><span className="spin">◌</span> Analyzing…</span>):("Analyze product")}
+              {busy?(
+                <span style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span className="spin">◌</span> Analyzing…
+                </span>
+              ):"Analyze product"}
             </PrimaryBtn>
             <SecondaryBtn onClick={()=>{ setDescription(""); onDirty(true); }} disabled={!description}>Clear</SecondaryBtn>
           </div>
@@ -671,67 +675,65 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
   );
 }
 
-// ─── Guidance strip — compact collapsible banner ──────────────────────────────
+// ─── Guidance strip ───────────────────────────────────────────────────────────
 function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
   const [open,setOpen]=useState(false);
   const items=buildGuidanceItems(result);
   if(!items.length) return null;
 
   const highCount=items.filter(i=>i.importance==="high").length;
+  const accentColor=highCount>0?T.amber:T.textMuted;
+  const accentBd=highCount>0?"rgba(251,191,36,0.20)":"rgba(255,255,255,0.08)";
+  const accentBg=highCount>0?"rgba(251,191,36,0.04)":"rgba(255,255,255,0.02)";
 
   return (
-    <div style={{
-      borderRadius:12,
-      border:`1px solid ${highCount>0?"rgba(251,191,36,0.22)":"rgba(255,255,255,0.08)"}`,
-      background:highCount>0?"rgba(251,191,36,0.05)":"rgba(255,255,255,0.03)",
-      overflow:"hidden",
-    }}>
-      {/* ── collapsed bar ── */}
-      <div style={{
-        display:"flex",alignItems:"center",gap:10,padding:"9px 14px",
-        cursor:"pointer",userSelect:"none",
-      }} onClick={()=>setOpen(v=>!v)}>
-        <span style={{fontSize:13}}>{open?"▾":"▸"}</span>
-        <span style={{fontSize:12,fontWeight:700,color:highCount>0?T.amber:T.textSub}}>
+    <div style={{borderRadius:12,border:`1px solid ${accentBd}`,background:accentBg,overflow:"hidden"}}>
+      <div
+        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",cursor:"pointer",userSelect:"none",flexWrap:"wrap"}}
+        onClick={()=>setOpen(v=>!v)}
+      >
+        <span style={{fontSize:12,color:accentColor,flexShrink:0}}>{open?"▾":"▸"}</span>
+        <span style={{fontSize:12,fontWeight:700,color:accentColor,whiteSpace:"nowrap"}}>
           {items.length} clarification{items.length!==1?"s":""} that may refine this route
         </span>
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginLeft:4}}>
-          {items.slice(0,4).map(item=>{
+        <div style={{display:"flex",gap:5,flexWrap:"wrap",flex:1,minWidth:0}}>
+          {items.slice(0,3).map(item=>{
             const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
             return (
               <span key={item.key} style={{
                 fontSize:10,fontWeight:600,borderRadius:5,padding:"2px 7px",
-                background:tone.bg,border:`1px solid ${tone.bd}`,color:tone.text,
+                background:tone.bg,border:`1px solid ${tone.bd}`,color:tone.text,whiteSpace:"nowrap",
               }}>{item.title}</span>
             );
           })}
-          {items.length>4&&<span style={{fontSize:10,color:T.textMuted}}>+{items.length-4} more</span>}
+          {items.length>3&&<span style={{fontSize:10,color:T.textMuted,alignSelf:"center"}}>+{items.length-3}</span>}
         </div>
         {dirty&&(
-          <span style={{marginLeft:"auto",fontSize:11,color:T.amber,fontWeight:600,flexShrink:0}}>
-            ● Updated — re-run to apply
-          </span>
+          <button
+            onClick={e=>{e.stopPropagation();onReanalyze();}}
+            disabled={busy}
+            style={{
+              appearance:"none",cursor:"pointer",borderRadius:7,border:"none",
+              background:`linear-gradient(135deg,${T.blue},${T.teal})`,
+              color:"#000",padding:"5px 12px",fontWeight:700,fontSize:11,
+              flexShrink:0,opacity:busy?0.5:1,whiteSpace:"nowrap",
+            }}
+          >{busy?"…":"Refresh →"}</button>
         )}
-        {dirty&&(
-          <button onClick={e=>{e.stopPropagation();onReanalyze();}} disabled={busy} style={{
-            appearance:"none",cursor:"pointer",borderRadius:7,border:"none",
-            background:`linear-gradient(135deg,${T.blue},${T.teal})`,
-            color:"#000",padding:"5px 12px",fontWeight:700,fontSize:11,flexShrink:0,
-            opacity:busy?0.5:1,
-          }}>{busy?"…":"Refresh →"}</button>
+        {dirty&&!busy&&(
+          <span style={{fontSize:10,color:T.amber,fontWeight:600,flexShrink:0,whiteSpace:"nowrap"}}>● Updated</span>
         )}
       </div>
-
-      {/* ── expanded chips ── */}
       {open&&(
-        <div style={{borderTop:`1px solid rgba(255,255,255,0.07)`,padding:"10px 14px",display:"flex",gap:7,flexWrap:"wrap"}}>
+        <div style={{borderTop:`1px solid rgba(255,255,255,0.06)`,padding:"10px 14px 12px",display:"flex",gap:6,flexWrap:"wrap"}}>
           {items.flatMap(item=>item.choices.map(choice=>{
             const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
             return (
               <button key={item.key+choice} onClick={()=>onApply(choice)} style={{
                 appearance:"none",cursor:"pointer",borderRadius:6,
-                border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.2)",
+                border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.18)",
                 color:tone.text,padding:"4px 9px",fontSize:11,fontWeight:600,
+                transition:"filter 0.15s",
               }}>+ {choice}</button>
             );
           }))}
@@ -741,27 +743,26 @@ function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
   );
 }
 
-// ─── Route snapshot — minimal pill row ───────────────────────────────────────
-function StandardsOverview({ result }){
+// ─── Route pills ──────────────────────────────────────────────────────────────
+function RoutePills({ result }){
   const breakdown=buildDirectiveBreakdown(result);
   if(!breakdown.length) return null;
   const total=breakdown.reduce((n,{count})=>n+count,0);
   return (
-    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",padding:"2px 0"}}>
-      <span style={{fontSize:11,color:T.textMuted,fontWeight:600,letterSpacing:"0.04em",marginRight:2}}>
-        {total} standard{total!==1?"s":""} across
+    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+      <span style={{fontSize:11,color:T.textMuted,fontWeight:500,marginRight:2}}>
+        {total} standards —
       </span>
       {breakdown.map(({key,count})=>{
         const tone=directiveTone(key);
         return (
           <span key={key} style={{
-            display:"inline-flex",alignItems:"center",gap:5,
+            display:"inline-flex",alignItems:"center",gap:4,
             borderRadius:20,border:`1px solid ${tone.bd}`,background:tone.bg,
-            color:tone.text,padding:"3px 9px",fontSize:11,fontWeight:700,
-            whiteSpace:"nowrap",
+            color:tone.text,padding:"2px 8px",fontSize:10.5,fontWeight:700,whiteSpace:"nowrap",
           }}>
-            <span style={{width:5,height:5,borderRadius:999,background:tone.dot}}/>
-            {directiveShort(key)} <span style={{opacity:0.75,fontWeight:500}}>·{count}</span>
+            <span style={{width:4,height:4,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+            {directiveShort(key)}<span style={{opacity:0.6,fontWeight:400,marginLeft:2}}>{count}</span>
           </span>
         );
       })}
@@ -778,79 +779,86 @@ function StandardCard({ item, sectionKey }){
   const summary=item.standard_summary||item.reason||item.notes||item.title;
 
   const metaFields=[
-    {label:"Harmonized Reference", value:prettyValue(item.harmonized_reference)},
-    {label:"Evidence Expected",    value:prettyValue(evidence||"—")},
-    {label:"Harmonized Version",   value:prettyValue(item.dated_version)},
-    {label:"EU Latest Version",    value:prettyValue(item.version)},
+    {label:"Harmonized Ref.",   value:prettyValue(item.harmonized_reference)},
+    {label:"Evidence Expected", value:prettyValue(evidence||"—")},
+    {label:"Harmonized Ver.",   value:prettyValue(item.dated_version)},
+    {label:"EU Latest Ver.",    value:prettyValue(item.version)},
   ];
 
   return (
-    <div style={{
-      borderRadius:16,border:`1.5px solid ${dirTone.bd}`,
-      background:`linear-gradient(160deg,rgba(255,255,255,0.055) 0%,rgba(255,255,255,0.02) 100%)`,
-      overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.32)",
-      transition:"box-shadow 0.2s",
+    <div className="standard-card" style={{
+      borderRadius:14,
+      border:`1.5px solid ${dirTone.bd}`,
+      background:`linear-gradient(160deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.015) 100%)`,
+      overflow:"hidden",
+      boxShadow:"0 4px 22px rgba(0,0,0,0.35)",
+      transition:"box-shadow 0.2s,transform 0.2s",
     }}>
-      {/* ── header band ── */}
+      {/* Header band */}
       <div style={{
-        padding:"15px 18px 13px",
-        background:`linear-gradient(135deg,${dirTone.bg},transparent 80%)`,
-        borderBottom:`1px solid rgba(255,255,255,0.08)`,
+        padding:"14px 18px 12px",
+        background:`linear-gradient(135deg,${dirTone.bg} 0%,transparent 70%)`,
+        borderBottom:`1px solid rgba(255,255,255,0.07)`,
       }}>
-        <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-          <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
             <DirPill dirKey={dirKey}/>
             <span style={{
               display:"inline-flex",alignItems:"center",borderRadius:5,
               background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
-              color:sectionTone.tagText,padding:"2px 7px",fontSize:10,fontWeight:700,
-              textTransform:"uppercase",letterSpacing:"0.08em",
+              color:sectionTone.tagText,padding:"2px 7px",
+              fontSize:9.5,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",
             }}>{titleCase(item.harmonization_status||"unknown")}</span>
           </div>
           <span style={{
-            display:"inline-flex",alignItems:"center",borderRadius:8,
-            background:dirTone.dot,color:"#000",
-            padding:"6px 13px",fontSize:13,fontWeight:900,
-            letterSpacing:"-0.01em",whiteSpace:"nowrap",flexShrink:0,fontFamily:"monospace",
+            display:"inline-flex",alignItems:"center",
+            borderRadius:8,background:dirTone.dot,color:"#000",
+            padding:"5px 12px",fontSize:12.5,fontWeight:900,
+            letterSpacing:"-0.01em",whiteSpace:"nowrap",flexShrink:0,
+            fontFamily:"'DM Mono',ui-monospace,monospace",
           }}>{item.code}</span>
         </div>
-        <div style={{fontSize:15,fontWeight:700,color:T.text,lineHeight:1.35,marginBottom:6,letterSpacing:"-0.01em"}}>
+
+        <div style={{fontSize:15,fontWeight:700,color:T.text,lineHeight:1.35,marginBottom:summary&&summary!==item.title?6:0,letterSpacing:"-0.015em"}}>
           {item.title}
         </div>
-        {summary&&(
-          <div style={{fontSize:12.5,color:"rgba(192,200,228,0.85)",lineHeight:1.7,fontStyle:"italic"}}>
+
+        {summary&&summary!==item.title&&(
+          <div style={{fontSize:12.5,color:"rgba(180,187,212,0.85)",lineHeight:1.7,fontStyle:"italic"}}>
             {summary}
           </div>
         )}
       </div>
 
-      {/* ── meta grid ── */}
+      {/* Meta grid */}
       <div className="standard-meta-grid" style={{
-        padding:"12px 16px",display:"grid",
-        gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8,
-        background:"rgba(0,0,0,0.15)",
+        padding:"12px 16px 14px",
+        display:"grid",
+        gridTemplateColumns:"repeat(2,minmax(0,1fr))",
+        gap:7,
+        background:"rgba(0,0,0,0.18)",
       }}>
         {metaFields.map(({label,value})=>(
           <div key={label} style={{
             borderRadius:8,padding:"9px 11px",
-            background:"rgba(255,255,255,0.04)",
-            border:"1px solid rgba(255,255,255,0.07)",
+            background:"rgba(255,255,255,0.035)",
+            border:"1px solid rgba(255,255,255,0.06)",
           }}>
-            <div style={{fontSize:9.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:5}}>
+            <div style={{fontSize:9,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.11em",marginBottom:5}}>
               {label}
             </div>
-            <div style={{fontSize:12.5,color:value==="—"?T.textMuted:T.text,lineHeight:1.55,fontWeight:value==="—"?400:500}}>
-              {value}
-            </div>
+            <div style={{
+              lineHeight:1.5,fontWeight:value==="—"?400:500,
+              color:value==="—"?T.textMuted:T.text,
+              fontFamily:value==="—"?"inherit":"'DM Mono',ui-monospace,monospace",
+              fontSize:value==="—"?12.5:12,
+            }}>{value}</div>
           </div>
         ))}
       </div>
     </div>
   );
 }
-
-// ─── Collapsible section wrapper ──────────────────────────────────────────────
-
 
 // ─── Standards section ────────────────────────────────────────────────────────
 function StandardsSection({ result }){
@@ -865,34 +873,53 @@ function StandardsSection({ result }){
 
   return (
     <Card>
-      <CardHeader
-        title="Standards route"
-        subtitle="Primary output · ordered LVD → EMC → RED → RED Cyber."
-      />
-      {/* Route summary pills */}
-      <div style={{padding:"10px 16px 0",borderBottom:`1px solid ${T.line}`}}>
-        <StandardsOverview result={result}/>
-        <div style={{height:10}}/>
+      <div style={{
+        padding:"16px 20px 14px",
+        borderBottom:`1px solid ${T.line}`,
+        background:T.bgCardDeep,
+        display:"grid",gap:10,
+      }}>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>Standards route</div>
+            <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>Primary output · ordered LVD → EMC → RED → RED Cyber</div>
+          </div>
+        </div>
+        <RoutePills result={result}/>
       </div>
-      <div style={{padding:"18px 18px",display:"grid",gap:18}}>
+
+      <div style={{padding:"16px 16px 20px",display:"grid",gap:16}}>
         {sections.map((section,i)=>{
           const tone=directiveTone(section.key);
           return (
-            <div key={section.key} style={{borderRadius:16,border:`1px solid ${tone.bd}`,background:`linear-gradient(135deg,${tone.bg},transparent)`,overflow:"hidden"}}>
+            <div key={section.key} style={{
+              borderRadius:14,
+              border:`1px solid ${tone.bd}`,
+              background:`linear-gradient(145deg,${tone.bg},transparent 80%)`,
+              overflow:"hidden",
+            }}>
               <div style={{
-                padding:"13px 16px",borderBottom:`1px solid ${tone.bd}`,
-                display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap",
-                background:"rgba(0,0,0,0.12)",
+                padding:"11px 15px",borderBottom:`1px solid ${tone.bd}`,
+                display:"flex",justifyContent:"space-between",gap:10,alignItems:"center",flexWrap:"wrap",
+                background:"rgba(0,0,0,0.14)",
               }}>
                 <div>
-                  <div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>{section.title||directiveShort(section.key)}</div>
-                  <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>{section.count||0} item{(section.count||0)!==1?"s":""}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>
+                    {section.title||directiveShort(section.key)}
+                  </div>
+                  <div style={{marginTop:2,fontSize:11,color:T.textMuted}}>
+                    {section.count||0} item{(section.count||0)!==1?"s":""}
+                  </div>
                 </div>
                 <DirPill dirKey={section.key}/>
               </div>
-              <div style={{padding:"16px",display:"grid",gap:14}}>
+              <div style={{padding:"14px",display:"grid",gap:12}}>
                 {(section.items||[]).map(item=>(
-                  <StandardCard key={`${section.key}-${item.code}-${item.title}-${i}`} item={item} sectionKey={item.harmonization_status||"unknown"}/>
+                  <StandardCard
+                    key={`${section.key}-${item.code}-${item.title}-${i}`}
+                    item={item}
+                    sectionKey={item.harmonization_status||"unknown"}
+                  />
                 ))}
               </div>
             </div>
@@ -914,14 +941,14 @@ function DiagnosticsPanel({ result }){
       <CardHeader
         title="Advanced diagnostics"
         subtitle="Trait detection and engine output."
-        right={<GhostBtn onClick={()=>setOpen(v=>!v)}>{open?"Hide diagnostics":"Show diagnostics"}</GhostBtn>}
+        right={<GhostBtn onClick={()=>setOpen(v=>!v)}>{open?"Hide":"Show diagnostics"}</GhostBtn>}
       />
       {open&&(
-        <div style={{padding:"12px 16px 16px",display:"grid",gap:12}}>
+        <div style={{padding:"12px 16px 16px",display:"grid",gap:10}}>
           {traits.length>0&&(
             <SoftBox>
               <Label>All traits detected</Label>
-              <div style={{display:"flex",gap:7,flexWrap:"wrap",marginTop:8}}>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:7}}>
                 {traits.map(trait=><Chip key={trait}>{titleCase(trait)}</Chip>)}
               </div>
             </SoftBox>
@@ -929,9 +956,9 @@ function DiagnosticsPanel({ result }){
           {diagnostics.length>0&&(
             <SoftBox>
               <Label>Engine diagnostics</Label>
-              <div style={{marginTop:8,display:"grid",gap:6}}>
+              <div style={{marginTop:7,display:"grid",gap:5}}>
                 {diagnostics.map((line,i)=>(
-                  <div key={line+i} style={{fontSize:12,color:T.textSub,lineHeight:1.65,paddingLeft:12,borderLeft:`2px solid ${T.line}`}}>{line}</div>
+                  <div key={line+i} style={{fontSize:12,color:T.textSub,lineHeight:1.6,paddingLeft:11,borderLeft:`2px solid ${T.line}`}}>{line}</div>
                 ))}
               </div>
             </SoftBox>
@@ -962,11 +989,11 @@ function CopyResultsButton({ result, description }){
       "Applicable legislation:",
       ...buildCompactLegislationItems(result).map(item=>`- ${item.code} — ${item.title}`),
     ].join("\n");
-    try{ await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2200); }catch(_){}
+    try{ await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2400); }catch(_){}
   };
   return (
-    <SecondaryBtn onClick={handleCopy} style={copied?{color:T.green,borderColor:"rgba(74,222,128,0.3)"}:{}}>
-      {copied?"✓ Copied to clipboard":"Copy summary"}
+    <SecondaryBtn onClick={handleCopy} style={copied?{color:T.green,borderColor:"rgba(74,222,128,0.28)"}:{}}>
+      {copied?"✓ Copied":"Copy summary"}
     </SecondaryBtn>
   );
 }
@@ -974,36 +1001,38 @@ function CopyResultsButton({ result, description }){
 // ─── Empty state ──────────────────────────────────────────────────────────────
 function EmptyState(){
   const steps=[
-    {icon:"01",label:"Describe the product",text:"Product type, power source, connectivity, key functions."},
-    {icon:"02",label:"Add detail",text:"Materials (food-contact), sensors, battery, certifications needed."},
-    {icon:"03",label:"Refine iteratively",text:"Use the guidance strip to clarify traits and refresh the route."},
+    {n:"01",label:"Describe the product",text:"Product type, power source, connectivity, key functions."},
+    {n:"02",label:"Add detail",text:"Materials (food-contact), sensors, battery, certifications needed."},
+    {n:"03",label:"Refine iteratively",text:"Use clarification hints to sharpen the route."},
   ];
   return (
-    <Card style={{border:`1px dashed ${T.line}`}}>
-      <div style={{padding:"36px 28px",display:"grid",gap:24,justifyItems:"center",textAlign:"center"}}>
+    <Card style={{border:`1px dashed rgba(255,255,255,0.08)`}}>
+      <div style={{padding:"clamp(24px,5vw,44px) clamp(16px,5vw,32px)",display:"grid",gap:22,justifyItems:"center",textAlign:"center"}}>
         <div style={{
-          width:60,height:60,borderRadius:18,
-          border:`1px solid rgba(99,172,255,0.2)`,background:"rgba(99,172,255,0.07)",
-          display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,
+          width:52,height:52,borderRadius:16,
+          border:`1px solid rgba(99,172,255,0.18)`,background:"rgba(99,172,255,0.06)",
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,
         }}>⬡</div>
         <div>
-          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:22,color:T.text,marginBottom:8}}>Ready for analysis</div>
-          <div style={{fontSize:13,color:T.textSub,lineHeight:1.75,maxWidth:440}}>
+          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:"clamp(18px,3vw,22px)",color:T.text,marginBottom:7}}>
+            Ready for analysis
+          </div>
+          <div style={{fontSize:13,color:T.textSub,lineHeight:1.75,maxWidth:400}}>
             Enter a product description above to generate the standards route and legislation overview.
           </div>
         </div>
-        <div style={{display:"grid",gap:10,width:"100%",maxWidth:480,textAlign:"left"}}>
+        <div style={{display:"grid",gap:8,width:"100%",maxWidth:440,textAlign:"left"}}>
           {steps.map(step=>(
-            <div key={step.icon} style={{
-              display:"flex",gap:14,alignItems:"flex-start",
-              padding:"10px 14px",borderRadius:12,
-              background:"rgba(255,255,255,0.03)",border:`1px solid ${T.line}`,
+            <div key={step.n} style={{
+              display:"flex",gap:13,alignItems:"flex-start",
+              padding:"10px 14px",borderRadius:11,
+              background:"rgba(255,255,255,0.025)",border:`1px solid ${T.line}`,
             }}>
               <span style={{
-                fontSize:10,fontWeight:800,color:T.blue,letterSpacing:"0.08em",
-                background:"rgba(99,172,255,0.10)",border:`1px solid rgba(99,172,255,0.18)`,
-                borderRadius:6,padding:"3px 7px",flexShrink:0,marginTop:1,
-              }}>{step.icon}</span>
+                fontSize:9.5,fontWeight:800,color:T.blue,letterSpacing:"0.08em",
+                background:"rgba(99,172,255,0.09)",border:`1px solid rgba(99,172,255,0.16)`,
+                borderRadius:6,padding:"3px 6px",flexShrink:0,marginTop:1,
+              }}>{step.n}</span>
               <div>
                 <div style={{fontSize:12,fontWeight:700,color:T.text,marginBottom:2}}>{step.label}</div>
                 <div style={{fontSize:12,color:T.textSub,lineHeight:1.6}}>{step.text}</div>
@@ -1020,11 +1049,11 @@ function EmptyState(){
 function ErrorCard({ message }){
   return (
     <div style={{
-      borderRadius:14,border:`1px solid rgba(248,113,113,0.28)`,
-      background:"rgba(248,113,113,0.07)",padding:"14px 18px",
-      display:"flex",gap:12,alignItems:"flex-start",
+      borderRadius:13,border:`1px solid rgba(248,113,113,0.25)`,
+      background:"rgba(248,113,113,0.06)",padding:"13px 17px",
+      display:"flex",gap:11,alignItems:"flex-start",
     }}>
-      <span style={{fontSize:16,flexShrink:0,marginTop:1,color:T.rose}}>⚠</span>
+      <span style={{fontSize:15,flexShrink:0,marginTop:1,color:T.rose}}>⚠</span>
       <div>
         <div style={{fontSize:13,fontWeight:700,color:"#fb7185",marginBottom:4}}>Analysis error</div>
         <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{message}</div>
@@ -1039,13 +1068,13 @@ function ScrollTopBtn({ visible }){
     <button
       onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}
       style={{
-        position:"fixed",bottom:28,right:28,zIndex:200,
-        width:40,height:40,borderRadius:12,
+        position:"fixed",bottom:24,right:20,zIndex:200,
+        width:38,height:38,borderRadius:11,
         border:`1px solid ${T.lineStrong}`,background:T.bgCard,
-        color:T.textSub,fontSize:16,cursor:"pointer",
+        color:T.textSub,fontSize:15,cursor:"pointer",
         boxShadow:T.shadow,display:"flex",alignItems:"center",justifyContent:"center",
         opacity:visible?1:0,pointerEvents:visible?"auto":"none",
-        transition:"opacity 0.3s",
+        transition:"opacity 0.25s",
       }}
       title="Back to top"
     >↑</button>
@@ -1064,7 +1093,7 @@ export default function App(){
   const resultsRef=useRef(null);
 
   useEffect(()=>{
-    const onScroll=()=>setScrolled(window.scrollY>400);
+    const onScroll=()=>setScrolled(window.scrollY>360);
     window.addEventListener("scroll",onScroll,{passive:true});
     return()=>window.removeEventListener("scroll",onScroll);
   },[]);
@@ -1127,13 +1156,12 @@ export default function App(){
       <style>{globalCss}</style>
       <Topbar result={result} onReset={resetAnalysis}/>
 
-      <div style={{maxWidth:1380,margin:"0 auto",padding:"22px 20px 72px"}}>
+      <div style={{maxWidth:1360,margin:"0 auto",padding:"clamp(12px,3vw,22px) clamp(12px,3vw,20px) 80px"}}>
         <div className="app-shell-grid">
           <div className="left-rail-slot">{result?<SidebarRail result={result}/>:null}</div>
 
-          <main style={{display:"grid",gap:14,minWidth:0}}>
+          <main style={{display:"grid",gap:12,minWidth:0}}>
             <Hero result={result}/>
-
             <InputComposer
               description={description}
               setDescription={setDescription}
@@ -1143,10 +1171,8 @@ export default function App(){
               busy={busy}
               onDirty={setClarifyDirty}
             />
-
             {error&&<ErrorCard message={error}/>}
             <div ref={resultsRef}/>
-
             {!result?(
               <EmptyState/>
             ):(
@@ -1162,8 +1188,7 @@ export default function App(){
                 />
                 <StandardsSection result={result}/>
                 <DiagnosticsPanel result={result}/>
-
-                <div style={{display:"flex",justifyContent:"flex-end",gap:10,flexWrap:"wrap"}}>
+                <div style={{display:"flex",justifyContent:"flex-end",gap:8,flexWrap:"wrap",paddingTop:4}}>
                   <CopyResultsButton result={result} description={description}/>
                 </div>
               </>
@@ -1179,48 +1204,76 @@ export default function App(){
 
 // ─── Global CSS ───────────────────────────────────────────────────────────────
 const globalCss=`
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
-  *{ box-sizing:border-box; margin:0; padding:0; }
-  html,body,#root{
-    min-height:100%;
-    font-family:'DM Sans',ui-sans-serif,system-ui,sans-serif;
-    color:${T.text};
-    background:${T.bg};
-    -webkit-font-smoothing:antialiased;
-  }
-  button,input,select,textarea{ font:inherit; color:inherit; }
-  textarea::placeholder{ color:${T.textMuted}; }
-  textarea::-webkit-scrollbar{ width:5px; }
-  textarea::-webkit-scrollbar-track{ background:transparent; }
-  textarea::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.12); border-radius:3px; }
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
-  .app-shell-grid{
-    display:grid;
-    grid-template-columns:260px minmax(0,1fr);
-    gap:16px;
-    align-items:start;
-  }
-  .left-rail-slot{ min-width:0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  @keyframes spin{ to{ transform:rotate(360deg); } }
-  .spin{ animation:spin 0.75s linear infinite; }
+  html, body, #root {
+    min-height: 100%;
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    color: ${T.text};
+    background: ${T.bg};
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-  button:not(:disabled):hover{ filter:brightness(1.12); }
-  button:not(:disabled):active{ filter:brightness(0.95); transform:scale(0.99); }
+  button, input, select, textarea { font: inherit; color: inherit; }
 
-  @media(max-width:1120px){
-    .snapshot-grid{ grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+  textarea::placeholder { color: ${T.textMuted}; }
+  textarea::-webkit-scrollbar { width: 4px; }
+  textarea::-webkit-scrollbar-track { background: transparent; }
+  textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 4px; }
+
+  /* Layout */
+  .app-shell-grid {
+    display: grid;
+    grid-template-columns: 240px minmax(0,1fr);
+    gap: 14px;
+    align-items: start;
   }
-  @media(max-width:1040px){
-    .app-shell-grid{ grid-template-columns:1fr; }
-    .left-rail,.left-rail-slot{ position:static !important; top:auto !important; }
-    .snapshot-grid{ grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+  .left-rail-slot { min-width: 0; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+
+  /* Standard card hover lift */
+  .standard-card:hover {
+    box-shadow: 0 8px 36px rgba(0,0,0,0.5) !important;
+    transform: translateY(-1px);
   }
-  @media(max-width:960px){
-    .guidance-grid{ grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
-    .snapshot-grid{ grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+
+  button:not(:disabled):hover { filter: brightness(1.10); }
+  button:not(:disabled):active { filter: brightness(0.94); transform: scale(0.985); }
+
+  /* ── Responsive ────────────────────────────────────────── */
+
+  /* Sidebar collapses below 1040px — moves below main */
+  @media (max-width: 1040px) {
+    .app-shell-grid {
+      grid-template-columns: 1fr;
+    }
+    .left-rail, .left-rail-slot {
+      position: static !important;
+      top: auto !important;
+    }
+    .left-rail-slot { order: 2; }
+    main { order: 1; }
   }
-  @media(max-width:680px){
-    .guidance-grid,.snapshot-grid,.standard-meta-grid{ grid-template-columns:1fr !important; }
+
+  /* Tablet: meta grid goes single column */
+  @media (max-width: 768px) {
+    .standard-meta-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .topbar-subtitle { display: none; }
+  }
+
+  /* Mobile: further simplify topbar */
+  @media (max-width: 480px) {
+    .standard-meta-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .topbar-count { display: none; }
+    .topbar-new-label { display: none; }
   }
 `;
