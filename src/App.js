@@ -34,6 +34,24 @@ const T = {
   shadowCard:  "0 2px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.28)",
 };
 
+Object.assign(T,{
+  bg:"#0c1118",
+  bgPanel:"#101721",
+  bgCard:"#131a24",
+  bgCardInner:"#18212d",
+  bgCardDeep:"#0f151d",
+  line:"rgba(255,255,255,0.07)",
+  lineStrong:"rgba(255,255,255,0.11)",
+  lineFocus:"rgba(91,168,255,0.38)",
+  text:"#e6ecf6",
+  textSub:"#b4bfd1",
+  textMuted:"#7b8aa3",
+  textLabel:"#8797b3",
+  shadow:"0 10px 30px rgba(0,0,0,0.26)",
+  shadowLg:"0 20px 60px rgba(0,0,0,0.34)",
+  shadowCard:"0 10px 28px rgba(0,0,0,0.24), 0 1px 0 rgba(255,255,255,0.03)",
+});
+
 // ─── Directive metadata ───────────────────────────────────────────────────────
 const DIR_SHORT = {
   LVD:"LVD", EMC:"EMC", RED:"RED", RED_CYBER:"RED Cyber", CRA:"CRA",
@@ -112,6 +130,49 @@ function sentenceCaseList(values){ return (values||[]).map(v=>titleCase(String(v
 function directiveTone(key){ return DIR_TONES[key]||DIR_TONES.OTHER; }
 function directiveShort(key){ return DIR_SHORT[key]||titleCase(key); }
 function directiveRank(key){ const r=DIR_ORDER.indexOf(key||"OTHER"); return r===-1?999:r; }
+function titleCaseMinor(input){
+  const small=new Set(["and","or","of","the","to","for","in","on"]);
+  return String(input||"")
+    .replace(/[_-]+/g," ")
+    .replace(/\s+/g," ")
+    .trim()
+    .split(" ")
+    .map((word,index)=>{
+      const upper=word.toUpperCase();
+      if(["LVD","EMC","RED","CRA","GDPR","ESPR","ROHS","REACH","MD"].includes(upper)) return upper;
+      if(upper==="AI") return "AI";
+      if(upper==="ACT") return index===0?"Act":"Act";
+      const lower=word.toLowerCase();
+      if(index>0&&small.has(lower)) return lower;
+      return lower.charAt(0).toUpperCase()+lower.slice(1);
+    })
+    .join(" ");
+}
+function routeTitle(section){
+  const titles={
+    LVD:"LVD Safety Route",
+    EMC:"EMC Compatibility Route",
+    RED:"RED Wireless Route",
+    RED_CYBER:"RED Cybersecurity Route",
+    ROHS:"RoHS Materials Route",
+    REACH:"REACH Chemicals Route",
+    GDPR:"GDPR Data Route",
+    AI_Act:"AI Act Route",
+    ESPR:"ESPR Route",
+    ECO:"Ecodesign Route",
+    BATTERY:"Battery Regulation Route",
+    FCM:"Food Contact Materials Route",
+    FCM_PLASTIC:"Food Contact Plastics Route",
+    CRA:"Cyber Resilience Act Route",
+    MD:"Machinery Directive Route",
+    MACH_REG:"Machinery Regulation Route",
+    OTHER:"Additional Route",
+  };
+  return titles[section?.key]||titleCaseMinor(section?.title||directiveShort(section?.key)||"Additional Route");
+}
+function formatUiLabel(value){
+  return titleCaseMinor(String(value||""));
+}
 function normalizeStandardDirective(item){
   const code=String(item?.code||"").toUpperCase();
   if(code.startsWith("EN 18031-")) return "RED_CYBER";
@@ -302,17 +363,17 @@ function RiskBadge({ value }){
 
 function Chip({ children, tone="neutral" }){
   const s = tone==="neutral"
-    ? {bg:"rgba(255,255,255,0.05)", bd:T.lineStrong, text:T.textSub}
+    ? {bg:"rgba(255,255,255,0.04)", bd:T.lineStrong, text:T.textSub}
     : tone==="blue"
-    ? {bg:"rgba(91,168,255,0.09)", bd:"rgba(91,168,255,0.20)", text:T.blue}
+    ? {bg:"rgba(91,168,255,0.08)", bd:"rgba(91,168,255,0.18)", text:T.blue}
     : tone==="teal"
-    ? {bg:"rgba(34,211,196,0.09)", bd:"rgba(34,211,196,0.20)", text:T.teal}
-    : {bg:"rgba(34,211,196,0.09)", bd:"rgba(34,211,196,0.20)", text:T.teal};
+    ? {bg:"rgba(34,211,196,0.08)", bd:"rgba(34,211,196,0.18)", text:T.teal}
+    : {bg:"rgba(34,211,196,0.08)", bd:"rgba(34,211,196,0.18)", text:T.teal};
   return (
     <span style={{
-      display:"inline-flex",alignItems:"center",borderRadius:6,
+      display:"inline-flex",alignItems:"center",borderRadius:999,
       border:`1px solid ${s.bd}`,background:s.bg,color:s.text,
-      padding:"3px 9px",fontSize:11,fontWeight:600,
+      padding:"4px 10px",fontSize:11,fontWeight:600,
     }}>{children}</span>
   );
 }
@@ -320,7 +381,7 @@ function Chip({ children, tone="neutral" }){
 function Card({ children, style }){
   return (
     <div style={{
-      borderRadius:16,border:`1px solid ${T.lineStrong}`,
+      borderRadius:18,border:`1px solid ${T.lineStrong}`,
       background:T.bgCard,boxShadow:T.shadowCard,overflow:"hidden",
       ...style,
     }}>{children}</div>
@@ -336,8 +397,8 @@ function CardHeader({ title, subtitle, right }){
       display:"flex",gap:12,alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",
     }}>
       <div style={{minWidth:0}}>
-        {title&&<div style={{fontSize:13,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>{title}</div>}
-        {subtitle&&<div style={{marginTop:3,fontSize:11,color:T.textMuted,lineHeight:1.55,letterSpacing:"0.005em"}}>{subtitle}</div>}
+        {title&&<div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.012em"}}>{title}</div>}
+        {subtitle&&<div style={{marginTop:4,fontSize:11.5,color:T.textSub,lineHeight:1.55,letterSpacing:"0.003em"}}>{subtitle}</div>}
       </div>
       {right&&<div style={{flexShrink:0}}>{right}</div>}
     </div>
@@ -347,8 +408,8 @@ function CardHeader({ title, subtitle, right }){
 function SoftBox({ children, style }){
   return (
     <div style={{
-      borderRadius:10,border:`1px solid rgba(255,255,255,0.07)`,
-      background:"rgba(255,255,255,0.03)",padding:"10px 12px",
+      borderRadius:12,border:`1px solid rgba(255,255,255,0.06)`,
+      background:"rgba(255,255,255,0.025)",padding:"12px 13px",
       ...style,
     }}>{children}</div>
   );
@@ -369,11 +430,11 @@ function PrimaryBtn({ onClick, disabled, children }){
   return (
     <button onClick={onClick} disabled={disabled} style={{
       appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.35:1,borderRadius:10,border:"none",
-      background:disabled?"rgba(91,168,255,0.12)":`linear-gradient(135deg,${T.blue},${T.teal})`,
-      color:"#050810",padding:"11px 24px",fontWeight:700,fontSize:13,
-      boxShadow:disabled?"none":"0 0 24px rgba(91,168,255,0.18)",
-      transition:"all 0.2s",letterSpacing:"0.015em",whiteSpace:"nowrap",
+      opacity:disabled?0.4:1,borderRadius:12,border:"1px solid rgba(91,168,255,0.24)",
+      background:disabled?"rgba(91,168,255,0.10)":"linear-gradient(180deg, rgba(91,168,255,0.24) 0%, rgba(91,168,255,0.16) 100%)",
+      color:T.text,padding:"11px 22px",fontWeight:700,fontSize:13,
+      boxShadow:disabled?"none":"inset 0 1px 0 rgba(255,255,255,0.08)",
+      transition:"all 0.2s",letterSpacing:"0.01em",whiteSpace:"nowrap",
     }}>{children}</button>
   );
 }
@@ -382,8 +443,8 @@ function SecondaryBtn({ onClick, disabled, children, style }){
   return (
     <button onClick={onClick} disabled={disabled} style={{
       appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.4:1,borderRadius:10,
-      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.03)",
+      opacity:disabled?0.45:1,borderRadius:12,
+      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.025)",
       color:T.textSub,padding:"10px 18px",fontWeight:600,fontSize:13,
       transition:"all 0.2s",...style,
     }}>{children}</button>
@@ -395,11 +456,11 @@ function SecondaryBtn({ onClick, disabled, children, style }){
 function AddChipBtn({ onClick, children }){
   return (
     <button onClick={onClick} style={{
-      appearance:"none",cursor:"pointer",borderRadius:7,
+      appearance:"none",cursor:"pointer",borderRadius:999,
       border:`1px solid rgba(255,255,255,0.07)`,
-      background:"rgba(255,255,255,0.028)",
-      color:T.textSub,padding:"5px 11px",fontWeight:600,fontSize:11.5,
-      transition:"background 0.15s,color 0.15s,border-color 0.15s",
+      background:"rgba(255,255,255,0.022)",
+      color:T.textSub,padding:"6px 11px",fontWeight:600,fontSize:11.5,
+      transition:"background 0.15s,color 0.15s,border-color 0.15s,transform 0.15s",
       letterSpacing:"0.01em",
     }}>{children}</button>
   );
@@ -416,7 +477,7 @@ function CharCounter({ value, max=1200 }){
 }
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
-function Topbar({ result, onReset }){
+function TopbarLegacy({ result, onReset }){
   const totalStandards=result
     ?(result?.standard_sections?.length
       ?result.standard_sections.reduce((n,s)=>n+(s.items||[]).length,0)
@@ -482,7 +543,69 @@ function Topbar({ result, onReset }){
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
-function Hero({ result }){
+function Topbar({ result, onReset }){
+  const totalStandards=result
+    ?(result?.standard_sections?.length
+      ?result.standard_sections.reduce((n,s)=>n+(s.items||[]).length,0)
+      :(result?.standards||[]).length+(result?.review_items||[]).length)
+    :null;
+
+  return (
+    <header style={{
+      borderBottom:`1px solid ${T.line}`,
+      background:"rgba(12,17,24,0.84)",
+      backdropFilter:"blur(20px)",
+      WebkitBackdropFilter:"blur(20px)",
+      position:"sticky",top:0,zIndex:100,
+    }}>
+      <div style={{
+        maxWidth:1380,margin:"0 auto",padding:"0 clamp(14px,3vw,22px)",
+        minHeight:58,display:"flex",alignItems:"center",gap:12,
+      }}>
+        <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+          <div style={{
+            width:10,height:10,borderRadius:999,background:T.blue,
+            boxShadow:"0 0 18px rgba(91,168,255,0.40)",flexShrink:0,
+          }}/>
+          <div style={{display:"grid",gap:1}}>
+            <span style={{
+              fontFamily:"'DM Serif Display',Georgia,serif",
+              fontSize:19,color:T.text,letterSpacing:"-0.015em",whiteSpace:"nowrap",
+            }}>RuleGrid</span>
+            <span className="topbar-subtitle" style={{
+              fontSize:11,color:T.textMuted,fontWeight:500,letterSpacing:"0.01em",
+            }}>EU regulatory scoping</span>
+          </div>
+        </div>
+
+        {result&&(
+          <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
+            <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
+            {totalStandards!==null&&(
+              <span className="topbar-count" style={{
+                fontSize:11,color:T.textSub,fontWeight:600,
+                background:"rgba(255,255,255,0.03)",border:`1px solid ${T.line}`,
+                borderRadius:999,padding:"4px 10px",whiteSpace:"nowrap",
+                fontVariantNumeric:"tabular-nums",
+              }}>{totalStandards} standards</span>
+            )}
+            <button onClick={onReset} className="topbar-reset-btn" style={{
+              appearance:"none",cursor:"pointer",borderRadius:999,
+              border:`1px solid rgba(91,168,255,0.16)`,
+              background:"rgba(91,168,255,0.06)",
+              color:T.text,padding:"7px 12px",fontWeight:600,fontSize:12,
+              whiteSpace:"nowrap",letterSpacing:"0.01em",
+            }}>
+              <span className="topbar-new-label">New analysis</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
+
+function HeroLegacy({ result }){
   const hero=result?.hero_summary||{};
   const primaryRegimes=hero.primary_regimes||[];
   const showMeta=Boolean(result);
@@ -550,7 +673,92 @@ function Hero({ result }){
 }
 
 // ─── Sidebar rail ─────────────────────────────────────────────────────────────
-function SidebarRail({ result }){
+function Hero({ result }){
+  const hero=result?.hero_summary||{};
+  const primaryRegimes=hero.primary_regimes||[];
+  const showMeta=Boolean(result);
+
+  return (
+    <Card style={{
+      background:"linear-gradient(180deg, rgba(17,24,34,0.96) 0%, rgba(14,20,29,0.98) 100%)",
+      boxShadow:T.shadowLg,
+      position:"relative",
+    }}>
+      <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+        <div style={{
+          position:"absolute",top:-120,right:-80,width:360,height:260,
+          background:"radial-gradient(circle, rgba(91,168,255,0.14) 0%, rgba(91,168,255,0.03) 42%, transparent 72%)",
+        }}/>
+        <div style={{
+          position:"absolute",bottom:-140,left:-40,width:280,height:220,
+          background:"radial-gradient(circle, rgba(34,211,196,0.08) 0%, transparent 70%)",
+        }}/>
+      </div>
+
+      <div className="hero-grid" style={{
+        position:"relative",padding:"clamp(22px,4vw,34px) clamp(18px,4vw,34px)",
+        display:"grid",gap:24,alignItems:"start",
+      }}>
+        <div style={{display:"grid",gap:16}}>
+          <div style={{display:"grid",gap:8,animation:"fadeUp 0.35s ease both"}}>
+            <span style={{
+              fontSize:11,fontWeight:700,color:T.blue,textTransform:"uppercase",
+              letterSpacing:"0.14em",
+            }}>Operator view</span>
+            <h1 style={{
+              fontFamily:"'DM Serif Display',Georgia,serif",
+              fontSize:"clamp(28px,4vw,42px)",fontWeight:400,color:T.text,
+              lineHeight:1.02,letterSpacing:"-0.03em",
+            }}>
+              {hero.title||"Professional regulatory scoping without the noise"}
+            </h1>
+            <p style={{fontSize:"clamp(14px,2vw,15px)",color:T.textSub,lineHeight:1.75,maxWidth:680}}>
+              {hero.subtitle||"Describe the product in plain language. RuleGrid returns a cleaner standards route, the legislation path, and the follow-up questions that materially change scope."}
+            </p>
+          </div>
+
+          <div style={{display:"flex",flexWrap:"wrap",gap:8,animation:"fadeUp 0.4s ease 0.05s both"}}>
+            {showMeta?(
+              <>
+                <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
+                <Chip tone="blue">{formatUiLabel(hero.confidence||result?.product_match_confidence||"low")} Confidence</Chip>
+                {result?.product_type&&<Chip tone="teal">{titleCase(result.product_type)}</Chip>}
+              </>
+            ):(
+              <>
+                <Chip tone="blue">Deep standards route</Chip>
+                <Chip tone="teal">Applicable legislation</Chip>
+                <Chip tone="neutral">Clarification prompts</Chip>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div style={{display:"grid",gap:10,animation:"fadeUp 0.45s ease 0.1s both"}}>
+          <SoftBox style={{
+            background:"rgba(255,255,255,0.03)",
+            border:"1px solid rgba(255,255,255,0.07)",
+            minHeight:showMeta&&result?.summary?154:132,
+          }}>
+            <Label>{showMeta?"Analysis summary":"What to include"}</Label>
+            <div style={{fontSize:13.5,color:T.textSub,lineHeight:1.75}}>
+              {showMeta&&result?.summary
+                ? result.summary
+                : "Call out power source, radios, connectivity model, major functions, sensors, battery setup, and any food-contact or wetted materials."}
+            </div>
+          </SoftBox>
+          {showMeta&&primaryRegimes.length>0&&(
+            <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+              {primaryRegimes.map(dirKey=><DirPill key={dirKey} dirKey={dirKey} large/>)}
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function SidebarRailLegacy({ result }){
   if(!result) return null;
   const items=buildCompactLegislationItems(result);
   const confidence=result?.confidence_panel?.confidence||result?.product_match_confidence||"low";
@@ -570,7 +778,7 @@ function SidebarRail({ result }){
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             <SoftBox>
               <Label>Confidence</Label>
-              <Chip tone="blue">{titleCase(confidence)}</Chip>
+                <Chip tone="blue">{formatUiLabel(confidence)}</Chip>
             </SoftBox>
             {result?.overall_risk&&(
               <SoftBox>
@@ -581,7 +789,7 @@ function SidebarRail({ result }){
                   padding:"3px 8px",fontSize:11,fontWeight:700,letterSpacing:"0.04em",
                 }}>
                   <span style={{width:5,height:5,borderRadius:999,background:riskTone.text,flexShrink:0}}/>
-                  {risk}
+                  {formatUiLabel(risk)}
                 </span>
               </SoftBox>
             )}
@@ -619,7 +827,99 @@ function SidebarRail({ result }){
 }
 
 // ─── Input composer ───────────────────────────────────────────────────────────
-function InputComposer({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }){
+function SidebarRail({ result }){
+  const [showAllLegislation,setShowAllLegislation]=useState(false);
+  if(!result) return null;
+  const items=buildCompactLegislationItems(result);
+  const confidence=result?.confidence_panel?.confidence||result?.product_match_confidence||"low";
+  const risk=result?.overall_risk||"MEDIUM";
+  const riskTone=STATUS[risk]||STATUS.MEDIUM;
+  const totalStandards=result?.standard_sections?.length
+    ? result.standard_sections.reduce((n,section)=>n+(section.items||[]).length,0)
+    : (result?.standards||[]).length+(result?.review_items||[]).length;
+  const visibleItems=showAllLegislation?items:items.slice(0,6);
+
+  return (
+    <section className="summary-grid">
+      <Card>
+        <CardHeader title="Quick Context" subtitle="Secondary signals for interpreting the standards route"/>
+        <div style={{padding:"12px 14px",display:"grid",gap:10}}>
+          <div className="snapshot-grid" style={{display:"grid",gap:8}}>
+            <SoftBox>
+              <Label>Product</Label>
+              <div style={{fontSize:14,fontWeight:700,color:T.text,marginTop:2,letterSpacing:"-0.01em"}}>
+                {titleCase(result?.product_type||"Unclear")}
+              </div>
+            </SoftBox>
+            <SoftBox>
+              <Label>Confidence</Label>
+              <Chip tone="blue">{titleCase(confidence)}</Chip>
+            </SoftBox>
+            <SoftBox>
+              <Label>Risk</Label>
+              <span style={{
+                display:"inline-flex",alignItems:"center",gap:5,borderRadius:999,
+                border:`1px solid ${riskTone.bd}`,background:riskTone.bg,color:riskTone.text,
+                padding:"4px 10px",fontSize:11,fontWeight:700,letterSpacing:"0.04em",
+              }}>
+                <span style={{width:5,height:5,borderRadius:999,background:riskTone.text,flexShrink:0}}/>
+                {risk}
+              </span>
+            </SoftBox>
+            <SoftBox>
+              <Label>Standards in route</Label>
+              <div style={{fontSize:14,fontWeight:700,color:T.text,fontVariantNumeric:"tabular-nums"}}>
+                {totalStandards}
+              </div>
+            </SoftBox>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Applicable Legislation"
+          subtitle={`${items.length} detected framework${items.length!==1?"s":""} • secondary to the standards route`}
+          right={items.length>6?(
+            <button
+              onClick={()=>setShowAllLegislation(v=>!v)}
+              style={{
+                appearance:"none",cursor:"pointer",borderRadius:999,
+                border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.025)",
+                color:T.textSub,padding:"6px 10px",fontSize:11,fontWeight:600,
+              }}
+            >
+              {showAllLegislation?"Show less":"Show all"}
+            </button>
+          ):null}
+        />
+        <div className="legislation-grid" style={{padding:"10px 14px 14px",display:"grid",gap:8}}>
+          {visibleItems.map(item=>{
+            const tone=directiveTone(item.directive_key||"OTHER");
+            const groupLabel=compactLegislationGroupLabel(item);
+            return (
+              <div key={`${item.code}-${item.directive_key}-${item.section_key}`}
+                style={{borderRadius:10,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"8px 10px",display:"grid",gap:5}}>
+                <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:5,alignItems:"center"}}>
+                    <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+                    <span style={{fontSize:12,fontWeight:700,color:tone.text,fontFamily:"'DM Mono',ui-monospace,monospace"}}>{item.code}</span>
+                  </div>
+                  <span style={{fontSize:9,opacity:0.65,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:tone.text}}>
+                    {groupLabel}
+                  </span>
+                </div>
+                <div style={{fontSize:11,lineHeight:1.5,color:T.textSub}}>{item.title}</div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </section>
+  );
+}
+
+function InputComposerLegacy({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }){
   const [focused,setFocused]=useState(false);
   const charMax=1200;
   const wordCount=description.trim()?description.trim().split(/\s+/).length:0;
@@ -713,7 +1013,98 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
 }
 
 // ─── Guidance strip ───────────────────────────────────────────────────────────
-function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
+function InputComposer({ description, setDescription, templates, chips, onAnalyze, busy, onDirty }){
+  const [focused,setFocused]=useState(false);
+  const charMax=1200;
+  const wordCount=description.trim()?description.trim().split(/\s+/).length:0;
+
+  return (
+    <Card>
+      <CardHeader
+        title="Describe the product"
+        subtitle="Type | connectivity | power | functions | sensors | materials | battery"
+      />
+      <div style={{padding:"20px",display:"grid",gap:18}}>
+        <div style={{fontSize:13.5,color:T.textSub,lineHeight:1.7}}>
+          Aim for an operating description, not marketing copy. The better the input, the more stable the route.
+        </div>
+
+        <div>
+          <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:9}}>
+            Quick fill
+          </div>
+          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+            {templates.slice(0,4).map(template=>(
+              <button key={template.label} className="template-pill" onClick={()=>{ setDescription(template.text); onDirty(true); }} style={{
+                appearance:"none",cursor:"pointer",borderRadius:999,
+                border:`1px solid rgba(255,255,255,0.08)`,background:"rgba(255,255,255,0.025)",
+                color:T.text,padding:"7px 14px",fontSize:12,fontWeight:600,
+                transition:"all 0.15s",letterSpacing:"0.01em",
+              }}>{template.label}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{position:"relative"}}>
+          <textarea
+            value={description}
+            onChange={e=>{ setDescription(e.target.value); onDirty(true); }}
+            onFocus={()=>setFocused(true)}
+            onBlur={()=>setFocused(false)}
+            placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
+            rows={6}
+            maxLength={charMax}
+            style={{
+              width:"100%",borderRadius:14,resize:"vertical",minHeight:158,lineHeight:1.75,
+              border:`1px solid ${focused?T.lineFocus:T.lineStrong}`,
+              background:focused?"rgba(8,12,17,0.78)":"rgba(8,12,17,0.58)",
+              padding:"15px 16px 36px",
+              color:T.text,outline:"none",fontSize:14,
+              boxShadow:focused?"0 0 0 3px rgba(91,168,255,0.06), inset 0 1px 4px rgba(0,0,0,0.22)":"inset 0 1px 4px rgba(0,0,0,0.14)",
+              transition:"border-color 0.2s,box-shadow 0.2s,background 0.2s",
+              boxSizing:"border-box",
+            }}
+          />
+          <div style={{position:"absolute",bottom:10,right:13,pointerEvents:"none",display:"flex",alignItems:"center",gap:8}}>
+            {wordCount>0&&!busy&&(
+              <span style={{fontSize:10.5,color:T.textMuted,fontStyle:"italic"}}>{wordCount}w</span>
+            )}
+            <CharCounter value={description} max={charMax}/>
+          </div>
+        </div>
+
+        {chips.length>0&&(
+          <div>
+            <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:9}}>
+              Add detail
+            </div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {chips.slice(0,10).map(chip=>(
+                <AddChipBtn key={chip.label+chip.text} onClick={()=>{ setDescription(cur=>joinText(cur,chip.text)); onDirty(true); }}>
+                  + {chip.label}
+                </AddChipBtn>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",paddingTop:2}}>
+          <div style={{fontSize:12,color:T.textMuted,lineHeight:1.6,maxWidth:520}}>
+            Include the hardware setup, radios, cloud dependency, firmware updates, key sensors, and any food-contact or wetted-path detail.
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <PrimaryBtn onClick={onAnalyze} disabled={busy||!description.trim()}>
+              {busy?"Analyzing...":"Analyze product"}
+            </PrimaryBtn>
+            <SecondaryBtn onClick={()=>{ setDescription(""); onDirty(true); }} disabled={!description}>Clear</SecondaryBtn>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function GuidanceStripLegacy({ result, dirty, busy, onReanalyze, onApply }){
   const [open,setOpen]=useState(false);
   const items=buildGuidanceItems(result);
   if(!items.length) return null;
@@ -788,6 +1179,79 @@ function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
 }
 
 // ─── Route pills ──────────────────────────────────────────────────────────────
+function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
+  const [open,setOpen]=useState(false);
+  const items=buildGuidanceItems(result);
+  if(!items.length) return null;
+
+  const highCount=items.filter(i=>i.importance==="high").length;
+  const accentColor=highCount>0?T.amber:T.textSub;
+  const accentBd=highCount>0?"rgba(245,184,48,0.16)":"rgba(255,255,255,0.06)";
+  const accentBg=highCount>0?"rgba(245,184,48,0.035)":"rgba(255,255,255,0.018)";
+
+  return (
+    <div style={{borderRadius:16,border:`1px solid ${accentBd}`,background:accentBg,overflow:"hidden"}}>
+      <div
+        style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",cursor:"pointer",userSelect:"none",flexWrap:"wrap"}}
+        onClick={()=>setOpen(v=>!v)}
+      >
+        <span style={{fontSize:12.5,fontWeight:700,color:accentColor,whiteSpace:"nowrap"}}>
+          {items.length} clarification{items.length!==1?"s":""} may change the route
+        </span>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap",flex:1,minWidth:0}}>
+          {items.slice(0,3).map(item=>{
+            const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
+            return (
+              <span key={item.key} style={{
+                fontSize:10,fontWeight:600,borderRadius:999,padding:"3px 9px",
+                background:tone.bg,border:`1px solid ${tone.bd}`,color:tone.text,whiteSpace:"nowrap",
+              }}>{item.title}</span>
+            );
+          })}
+          {items.length>3&&<span style={{fontSize:10,color:T.textMuted,alignSelf:"center"}}>+{items.length-3} more</span>}
+        </div>
+        <span style={{fontSize:11,color:T.textMuted,fontWeight:600,whiteSpace:"nowrap"}}>
+          {open?"Hide":"Show"}
+        </span>
+        {dirty&&(
+          <button
+            onClick={e=>{e.stopPropagation();onReanalyze();}}
+            disabled={busy}
+            style={{
+              appearance:"none",cursor:"pointer",borderRadius:999,
+              border:"1px solid rgba(91,168,255,0.18)",
+              background:"rgba(91,168,255,0.08)",
+              color:T.text,padding:"6px 12px",fontWeight:700,fontSize:11,
+              flexShrink:0,opacity:busy?0.5:1,whiteSpace:"nowrap",letterSpacing:"0.01em",
+            }}
+          >{busy?"Working...":"Re-analyze"}</button>
+        )}
+        {dirty&&!busy&&(
+          <span style={{fontSize:10,color:T.amber,fontWeight:600,flexShrink:0,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
+            <span style={{width:5,height:5,borderRadius:999,background:T.amber,display:"inline-block"}}/>
+            Updated
+          </span>
+        )}
+      </div>
+      {open&&(
+        <div style={{borderTop:`1px solid rgba(255,255,255,0.05)`,padding:"12px 16px 16px",display:"flex",gap:6,flexWrap:"wrap"}}>
+          {items.flatMap(item=>item.choices.map(choice=>{
+            const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
+            return (
+              <button key={item.key+choice} onClick={()=>onApply(choice)} style={{
+                appearance:"none",cursor:"pointer",borderRadius:999,
+                border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.14)",
+                color:tone.text,padding:"6px 11px",fontSize:11,fontWeight:600,
+                transition:"filter 0.15s",letterSpacing:"0.01em",
+              }}>+ {choice}</button>
+            );
+          }))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RoutePills({ result }){
   const breakdown=buildDirectiveBreakdown(result);
   if(!breakdown.length) return null;
@@ -798,15 +1262,15 @@ function RoutePills({ result }){
         fontSize:11,color:T.textMuted,fontWeight:600,marginRight:3,
         fontVariantNumeric:"tabular-nums",
       }}>
-        {total} total —
+        {total} total
       </span>
       {breakdown.map(({key,count})=>{
         const tone=directiveTone(key);
         return (
           <span key={key} style={{
             display:"inline-flex",alignItems:"center",gap:5,
-            borderRadius:20,border:`1px solid ${tone.bd}`,background:tone.bg,
-            color:tone.text,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap",
+            borderRadius:999,border:`1px solid ${tone.bd}`,background:tone.bg,
+            color:tone.text,padding:"4px 10px",fontSize:11,fontWeight:700,whiteSpace:"nowrap",
           }}>
             <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
             {directiveShort(key)}
@@ -822,7 +1286,7 @@ function RoutePills({ result }){
 }
 
 // ─── Standard card ────────────────────────────────────────────────────────────
-function StandardCard({ item, sectionKey }){
+function StandardCardLegacy({ item, sectionKey }){
   const dirKey=normalizeStandardDirective(item);
   const dirTone=directiveTone(dirKey);
   const sectionTone=SECTION_TONES[sectionKey]||SECTION_TONES.unknown;
@@ -833,7 +1297,7 @@ function StandardCard({ item, sectionKey }){
     {label:"Harmonized Ref.",   value:prettyValue(item.harmonized_reference)},
     {label:"Harmonized Ver.",   value:prettyValue(item.dated_version)},
     {label:"EU Latest Ver.",    value:prettyValue(item.version)},
-  ].filter(f=>f.value&&f.value!=="—");
+  ].filter(f=>f.value&&f.value!=="—"&&f.value!=="â€”");
 
   return (
     <div className="standard-card" style={{
@@ -949,7 +1413,112 @@ function StandardCard({ item, sectionKey }){
 }
 
 // ─── Standards section ────────────────────────────────────────────────────────
-function DirectiveGroup({ section, index }){
+function StandardCard({ item, sectionKey }){
+  const dirKey=normalizeStandardDirective(item);
+  const dirTone=directiveTone(dirKey);
+  const sectionTone=SECTION_TONES[sectionKey]||SECTION_TONES.unknown;
+  const evidenceList=sentenceCaseList(item.evidence_hint||[]);
+  const summary=item.standard_summary||item.reason||item.notes||item.title;
+
+  const metaFields=[
+    {label:"Harmonized Ref.", value:prettyValue(item.harmonized_reference)},
+    {label:"Harmonized Ver.", value:prettyValue(item.dated_version)},
+    {label:"EU Latest Ver.", value:prettyValue(item.version)},
+  ].filter(f=>f.value&&f.value!=="—");
+
+  return (
+    <div className="standard-card" style={{
+      borderRadius:16,
+      border:`1px solid rgba(255,255,255,0.07)`,
+      background:"linear-gradient(180deg, rgba(22,29,40,0.96) 0%, rgba(18,24,34,0.98) 100%)",
+      overflow:"hidden",
+      boxShadow:"0 10px 24px rgba(0,0,0,0.20)",
+      transition:"box-shadow 0.2s,transform 0.2s,border-color 0.2s",
+    }}>
+      <div style={{
+        padding:"15px 16px 14px",
+        display:"grid",gap:12,
+      }}>
+        <div style={{display:"grid",gap:8}}>
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <span style={{
+              display:"inline-flex",alignItems:"center",
+              borderRadius:999,border:`1px solid ${dirTone.bd}`,
+              background:dirTone.bg,color:dirTone.text,
+              padding:"4px 10px",fontSize:11.5,fontWeight:700,
+              fontFamily:"'DM Mono',ui-monospace,monospace",
+            }}>{item.code}</span>
+            <DirPill dirKey={dirKey}/>
+            <span style={{
+              display:"inline-flex",alignItems:"center",borderRadius:999,
+              background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
+              color:sectionTone.tagText,padding:"4px 9px",
+              fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.09em",
+            }}>{formatUiLabel(item.harmonization_status||"unknown")}</span>
+          </div>
+
+          <div style={{
+            fontSize:17,fontWeight:700,color:T.text,
+            lineHeight:1.45,letterSpacing:"-0.018em",
+          }}>
+            {titleCaseMinor(item.title)}
+          </div>
+        </div>
+
+        {summary&&summary!==item.title&&(
+          <div style={{
+            fontSize:13,color:T.textSub,lineHeight:1.75,
+            paddingTop:10,borderTop:`1px solid rgba(255,255,255,0.05)`,
+          }}>
+            {summary}
+          </div>
+        )}
+
+        {metaFields.length>0&&(
+          <div className="standard-meta-grid" style={{
+            display:"grid",
+            gridTemplateColumns:`repeat(${Math.min(metaFields.length,3)},minmax(0,1fr))`,
+            gap:8,
+          }}>
+            {metaFields.map(({label,value})=>(
+              <div key={label} style={{
+                borderRadius:10,padding:"9px 10px",
+                background:"rgba(255,255,255,0.03)",
+                border:`1px solid rgba(255,255,255,0.06)`,
+              }}>
+                <div style={{fontSize:8.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:5}}>
+                  {label}
+                </div>
+                <div style={{
+                  lineHeight:1.4,fontWeight:600,color:T.text,
+                  fontFamily:"'DM Mono',ui-monospace,monospace",
+                  fontSize:11.5,
+                }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {evidenceList.length>0&&(
+          <div>
+            <div style={{fontSize:8.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6}}>Evidence Expected</div>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              {evidenceList.map(ev=>(
+                <span key={ev} style={{
+                  fontSize:10.5,fontWeight:500,color:T.textSub,
+                  background:"rgba(255,255,255,0.028)",border:`1px solid rgba(255,255,255,0.06)`,
+                  borderRadius:999,padding:"4px 9px",
+                }}>{ev}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DirectiveGroupLegacy({ section, index }){
   const [open,setOpen]=useState(true);
   const tone=directiveTone(section.key);
   const count=section.count||0;
@@ -1006,7 +1575,66 @@ function DirectiveGroup({ section, index }){
   );
 }
 
-function StandardsSection({ result }){
+function DirectiveGroup({ section, index }){
+  const [open,setOpen]=useState(true);
+  const tone=directiveTone(section.key);
+  const count=section.count||0;
+  const heading=routeTitle(section);
+  return (
+    <div style={{
+      borderRadius:16,
+      border:`1px solid rgba(255,255,255,0.06)`,
+      background:"linear-gradient(180deg, rgba(20,27,38,0.98) 0%, rgba(16,22,31,0.98) 100%)",
+      overflow:"hidden",
+      animation:`fadeUp 0.3s ease ${index*0.06}s both`,
+    }}>
+      <div
+        onClick={()=>setOpen(v=>!v)}
+        style={{
+          padding:"13px 16px",borderBottom:open?`1px solid rgba(255,255,255,0.05)`:"none",
+          display:"flex",justifyContent:"space-between",gap:10,alignItems:"center",
+          cursor:"pointer",userSelect:"none",
+          background:"rgba(255,255,255,0.02)",transition:"background 0.15s",
+        }}
+      >
+        <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+          <span style={{
+            width:8,height:8,borderRadius:999,background:tone.dot,opacity:0.9,flexShrink:0,
+          }}/>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:20,fontWeight:700,color:T.text,letterSpacing:"-0.02em",lineHeight:1.15}}>
+              {heading}
+            </div>
+            <div style={{fontSize:12,color:T.textSub,marginTop:5,lineHeight:1.45}}>
+              {count} standard{count!==1?"s":""} in this route
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:7,flexShrink:0}}>
+          <span style={{
+            fontSize:10,fontWeight:700,color:tone.text,
+            background:tone.bg,border:`1px solid ${tone.bd}`,
+            borderRadius:999,padding:"3px 8px",fontVariantNumeric:"tabular-nums",
+          }}>{count} standard{count!==1?"s":""}</span>
+          <DirPill dirKey={section.key}/>
+        </div>
+      </div>
+      {open&&(
+        <div style={{padding:"16px",display:"grid",gap:14}}>
+          {(section.items||[]).map(item=>(
+            <StandardCard
+              key={`${section.key}-${item.code}-${item.title}`}
+              item={item}
+              sectionKey={item.harmonization_status||"unknown"}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StandardsSectionLegacy({ result }){
   const sections=(result?.standard_sections||[])
     .map(section=>({
       ...section,
@@ -1043,6 +1671,44 @@ function StandardsSection({ result }){
 }
 
 // ─── Diagnostics panel ────────────────────────────────────────────────────────
+function StandardsSection({ result }){
+  const sections=(result?.standard_sections||[])
+    .map(section=>({
+      ...section,
+      items:sortStandardItems((section.items||[]).map(item=>({ ...item, directive:normalizeStandardDirective(item) }))),
+    }))
+    .sort((a,b)=>directiveRank(a.key)-directiveRank(b.key));
+
+  if(!sections.length) return null;
+
+  return (
+    <Card>
+      <div style={{
+        padding:"16px 20px 14px",
+        borderBottom:`1px solid ${T.line}`,
+        background:T.bgCardDeep,
+        display:"grid",gap:10,
+      }}>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+          <div>
+            <div style={{fontSize:16,fontWeight:700,color:T.text,letterSpacing:"-0.015em"}}>Standards Route</div>
+            <div style={{marginTop:4,fontSize:12,color:T.textSub,lineHeight:1.5}}>
+              Primary output. Ordered from core safety and EMC through wireless and cybersecurity routes.
+            </div>
+          </div>
+        </div>
+        <RoutePills result={result}/>
+      </div>
+
+      <div style={{padding:"16px 16px 20px",display:"grid",gap:16}}>
+        {sections.map((section,i)=>(
+          <DirectiveGroup key={section.key} section={section} index={i}/>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 function DiagnosticsPanel({ result }){
   const [open,setOpen]=useState(false);
   const diagnostics=result?.diagnostics||[];
@@ -1260,7 +1926,7 @@ function ScrollTopBtn({ visible }){
 }
 
 // ─── Root app ─────────────────────────────────────────────────────────────────
-export default function App(){
+function AppLegacy(){
   const [description,setDescription]=useState("");
   const [result,setResult]=useState(null);
   const [metadata,setMetadata]=useState(null);
@@ -1388,6 +2054,142 @@ export default function App(){
 }
 
 // ─── Global CSS ───────────────────────────────────────────────────────────────
+void [
+  TopbarLegacy,
+  HeroLegacy,
+  SidebarRailLegacy,
+  InputComposerLegacy,
+  GuidanceStripLegacy,
+  StandardCardLegacy,
+  DirectiveGroupLegacy,
+  StandardsSectionLegacy,
+  AppLegacy,
+];
+
+export default function App(){
+  const [description,setDescription]=useState("");
+  const [result,setResult]=useState(null);
+  const [metadata,setMetadata]=useState(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState("");
+  const [clarifyDirty,setClarifyDirty]=useState(false);
+  const [scrolled,setScrolled]=useState(false);
+  const resultsRef=useRef(null);
+
+  useEffect(()=>{
+    const onScroll=()=>setScrolled(window.scrollY>360);
+    window.addEventListener("scroll",onScroll,{passive:true});
+    return()=>window.removeEventListener("scroll",onScroll);
+  },[]);
+
+  useEffect(()=>{
+    let active=true;
+    fetch(METADATA_URL)
+      .then(res=>{ if(!res.ok) throw new Error(`Metadata failed (${res.status})`); return res.json(); })
+      .then(data=>{ if(active) setMetadata(data); })
+      .catch(()=>{ if(active) setMetadata({traits:[],products:[],legislations:[]}); });
+    return()=>{ active=false; };
+  },[]);
+
+  const templates=useMemo(()=>{
+    const dynamic=buildDynamicTemplates(metadata?.products||[]);
+    return dynamic.length?dynamic:DEFAULT_TEMPLATES;
+  },[metadata]);
+
+  const chips=useMemo(()=>{
+    const backend=(result?.suggested_quick_adds||[]).map(item=>({ label:titleCase(item.label), text:item.text }));
+    const frontend=buildGuidedChips(metadata,result);
+    return uniqueBy([...backend,...frontend], item=>item.text).slice(0,12);
+  },[metadata,result]);
+
+  useEffect(()=>{
+    if(!result||!resultsRef.current) return;
+    const timer=window.setTimeout(()=>resultsRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),80);
+    return()=>window.clearTimeout(timer);
+  },[result]);
+
+  const runAnalysis=useCallback(async()=>{
+    const payloadDescription=String(description||"").trim();
+    if(!payloadDescription) return;
+    setBusy(true); setError("");
+    try{
+      const response=await fetch(ANALYZE_URL,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ description:payloadDescription, depth:"deep" }),
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data?.detail||`Analysis failed (${response.status})`);
+      setResult(data); setClarifyDirty(false);
+    }catch(err){
+      setError(err?.message||"Analysis failed.");
+    }finally{
+      setBusy(false);
+    }
+  },[description]);
+
+  const resetAnalysis=useCallback(()=>{
+    setResult(null);
+    setDescription("");
+    setError("");
+    setClarifyDirty(false);
+    window.scrollTo({top:0,behavior:"smooth"});
+  },[]);
+
+  return (
+    <div style={{minHeight:"100vh",background:T.bg}}>
+      <style>{globalCss}</style>
+      <Topbar result={result} onReset={resetAnalysis}/>
+
+      <div style={{maxWidth:1380,margin:"0 auto",padding:"clamp(14px,3vw,24px) clamp(14px,3vw,22px) 96px"}}>
+        <main style={{display:"grid",gap:16,minWidth:0}}>
+          <Hero result={result}/>
+          <InputComposer
+            description={description}
+            setDescription={setDescription}
+            templates={templates}
+            chips={chips}
+            onAnalyze={runAnalysis}
+            busy={busy}
+            onDirty={setClarifyDirty}
+          />
+          {error&&<ErrorCard message={error}/>}
+          <div ref={resultsRef}/>
+          {!result?(
+            <EmptyState/>
+          ):(
+            <div style={{display:"grid",gap:16,animation:"fadeIn 0.3s ease both"}}>
+              <GuidanceStrip
+                result={result}
+                dirty={clarifyDirty}
+                busy={busy}
+                onReanalyze={runAnalysis}
+                onApply={text=>{
+                  setDescription(cur=>{ const next=joinText(cur,text); if(next!==cur) setClarifyDirty(true); return next; });
+                }}
+              />
+              <StandardsSection result={result}/>
+              <SidebarRail result={result}/>
+              <DiagnosticsPanel result={result}/>
+              <div style={{
+                display:"flex",justifyContent:"space-between",alignItems:"center",
+                gap:8,flexWrap:"wrap",paddingTop:2,
+                borderTop:`1px solid ${T.line}`,
+              }}>
+                <span style={{fontSize:11,color:T.textMuted}}>
+                  {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})} | RuleGrid
+                </span>
+                <CopyResultsButton result={result} description={description}/>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+
+      <ScrollTopBtn visible={scrolled}/>
+    </div>
+  );
+}
+
 const globalCss=`
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500;600&display=swap');
 
@@ -1398,8 +2200,16 @@ const globalCss=`
     font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
     color: ${T.text};
     background: ${T.bg};
+    line-height: 1.4;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top right, rgba(91,168,255,0.10), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(34,211,196,0.05), transparent 24%),
+      ${T.bg};
   }
 
   button, input, select, textarea { font: inherit; color: inherit; }
@@ -1415,14 +2225,23 @@ const globalCss=`
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 6px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
 
-  /* Layout */
-  .app-shell-grid {
-    display: grid;
-    grid-template-columns: 248px minmax(0,1fr);
-    gap: 14px;
-    align-items: start;
+  .hero-grid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.9fr);
   }
-  .left-rail-slot { min-width: 0; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
+    gap: 14px;
+  }
+
+  .snapshot-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .legislation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
   /* Animations */
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -1439,17 +2258,17 @@ const globalCss=`
 
   /* Standard card hover lift */
   .standard-card {
-    transition: box-shadow 0.22s ease, transform 0.22s ease;
+    transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
   }
   .standard-card:hover {
-    box-shadow: 0 12px 44px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.06) !important;
-    transform: translateY(-2px);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.28) !important;
+    border-color: rgba(91,168,255,0.16) !important;
+    transform: translateY(-1px);
   }
 
-  /* Button interactions */
-  button:not(:disabled) { transition: filter 0.15s, transform 0.12s, opacity 0.15s; }
-  button:not(:disabled):hover { filter: brightness(1.10); }
-  button:not(:disabled):active { filter: brightness(0.93); transform: scale(0.982); }
+  button:not(:disabled) { transition: transform 0.12s ease, opacity 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease; }
+  button:not(:disabled):hover { transform: translateY(-1px); }
+  button:not(:disabled):active { transform: translateY(0); }
 
   /* Focus ring */
   button:focus-visible, textarea:focus-visible {
@@ -1457,24 +2276,29 @@ const globalCss=`
     outline-offset: 2px;
   }
 
-  /* Topbar reset button hover */
+  .template-pill:hover,
   .topbar-reset-btn:hover {
-    background: rgba(91,168,255,0.12) !important;
-    border-color: rgba(91,168,255,0.36) !important;
+    background: rgba(255,255,255,0.045) !important;
+    border-color: rgba(255,255,255,0.12) !important;
   }
 
   /* ── Responsive ────────────────────────────────────────── */
 
-  @media (max-width: 1060px) {
-    .app-shell-grid {
+  @media (max-width: 1080px) {
+    .hero-grid,
+    .summary-grid {
       grid-template-columns: 1fr;
     }
-    .left-rail, .left-rail-slot {
-      position: static !important;
-      top: auto !important;
+
+    .snapshot-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .left-rail-slot { order: 2; }
-    main { order: 1; }
+  }
+
+  @media (max-width: 860px) {
+    .legislation-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 768px) {
@@ -1482,11 +2306,17 @@ const globalCss=`
       grid-template-columns: 1fr 1fr !important;
     }
     .topbar-subtitle { display: none; }
+    .snapshot-grid {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 
   @media (max-width: 480px) {
     .standard-meta-grid {
       grid-template-columns: 1fr !important;
+    }
+    .snapshot-grid {
+      grid-template-columns: 1fr;
     }
     .topbar-count { display: none; }
     .topbar-new-label { display: none; }
