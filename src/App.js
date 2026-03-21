@@ -1003,14 +1003,14 @@ function SnapshotRail({ result, routeSections, legislationGroups, description })
    visible so users can re-read, but are clearly actioned.
    ────────────────────────────────────────────────────────── */
 function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
-  if (!items.length) return null;
-
   const [appliedKeys, setAppliedKeys] = useState(new Set());
 
   const handleCardApply = useCallback((itemKey, choiceText) => {
     setAppliedKeys((prev) => new Set([...prev, itemKey]));
     onApply(choiceText);
   }, [onApply]);
+
+  if (!items.length) return null;
 
   const appliedCount = appliedKeys.size;
 
