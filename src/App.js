@@ -1586,12 +1586,14 @@ function ScrollTopButton({ visible }) {
 export default function App() {
   const [description, setDescription] = useState("");
   const [result, setResult] = useState(null);
+  const [resultRevision, setResultRevision] = useState(0);
   const [metadata, setMetadata] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [clarifyDirty, setClarifyDirty] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const resultsRef = useRef(null);
+  const analysisAbortRef = useRef(null);
 
   // One-level session history
   const [prevResult, setPrevResult] = useState(null);
@@ -1620,6 +1622,13 @@ export default function App() {
         }
       });
     return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      analysisAbortRef.current?.abort();
+      analysisAbortRef.current = null;
+    };
   }, []);
 
   const templates = useMemo(() => {
@@ -1655,15 +1664,26 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [result]);
 
+  const cancelActiveAnalysis = useCallback(() => {
+    const controller = analysisAbortRef.current;
+    if (controller) {
+      analysisAbortRef.current = null;
+      controller.abort();
+    }
+    setBusy(false);
+  }, []);
+
   const runAnalysis = useCallback(async () => {
     const payloadDescription = String(description || "").trim();
-    if (!payloadDescription) return;
+    if (!payloadDescription || busy || analysisAbortRef.current) return;
 
     if (result) {
       setPrevResult(result);
       setPrevDescription(description);
     }
 
+    const controller = new AbortController();
+    analysisAbortRef.current = controller;
     setBusy(true);
     setError("");
 
@@ -1672,32 +1692,46 @@ export default function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: payloadDescription, depth: "deep" }),
+        signal: controller.signal,
       });
 
       const data = await response.json().catch(() => ({}));
+      if (analysisAbortRef.current !== controller) {
+        return;
+      }
       if (!response.ok) {
         throw new Error(data?.detail || `Analysis failed (${response.status})`);
       }
 
       setResult(data);
+      setResultRevision((current) => current + 1);
       setClarifyDirty(false);
     } catch (requestError) {
-      setError(requestError?.message || "Analysis failed.");
+      if (requestError?.name !== "AbortError" && analysisAbortRef.current === controller) {
+        setError(requestError?.message || "Analysis failed.");
+      }
     } finally {
-      setBusy(false);
+      if (analysisAbortRef.current === controller) {
+        analysisAbortRef.current = null;
+        setBusy(false);
+      }
     }
-  }, [description, result]);
+  }, [busy, description, result]);
 
   const restorePrev = useCallback(() => {
     if (!prevResult) return;
+    cancelActiveAnalysis();
     setResult(prevResult);
+    setResultRevision((current) => current + 1);
     setDescription(prevDescription);
+    setError("");
     setClarifyDirty(false);
     setPrevResult(null);
     setPrevDescription("");
-  }, [prevResult, prevDescription]);
+  }, [cancelActiveAnalysis, prevResult, prevDescription]);
 
   const resetAnalysis = useCallback(() => {
+    cancelActiveAnalysis();
     setResult(null);
     setDescription("");
     setError("");
@@ -1705,7 +1739,7 @@ export default function App() {
     setPrevResult(null);
     setPrevDescription("");
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [cancelActiveAnalysis]);
 
   // FIX #3: single copy handler shared by topbar and sidebar
   const handleCopyAnalysis = useCallback(async () => {
@@ -1777,7 +1811,10 @@ export default function App() {
               />
 
               {/* FIX #11: ErrorBoundary wraps volatile panels */}
-              <ErrorBoundary label="Standards route could not be rendered">
+              <ErrorBoundary
+                key={`standards-${resultRevision}`}
+                label="Standards route could not be rendered"
+              >
                 <StandardsRoutePanel
                   sections={routeSections}
                   directiveBreakdown={directiveBreakdown}
@@ -1785,7 +1822,10 @@ export default function App() {
                 />
               </ErrorBoundary>
 
-              <ErrorBoundary label="Clarifications could not be rendered">
+              <ErrorBoundary
+                key={`clarifications-${resultRevision}`}
+                label="Clarifications could not be rendered"
+              >
                 {/* FIX #2: removed dirty/busy/onReanalyze — DirtyBanner is the canonical CTA */}
                 <ClarificationsPanel
                   items={guidanceItems}
@@ -1811,7 +1851,10 @@ export default function App() {
               </div>
             </div>
 
-            <ErrorBoundary label="Sidebar could not be rendered">
+            <ErrorBoundary
+              key={`sidebar-${resultRevision}`}
+              label="Sidebar could not be rendered"
+            >
               {/* FIX #3: shared copy state passed down */}
               <SnapshotRail
                 result={result}
