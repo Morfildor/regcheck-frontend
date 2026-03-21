@@ -25,6 +25,25 @@
   --accent-dim:     rgba(125, 185, 255, 0.14);
   --accent-teal:    #78d5c1;
 
+  /* FIX #12: Accent opacity ramp tokens — replaces scattered rgba() literals.
+     When the accent colour changes, only these tokens need updating. */
+  --accent-06:  rgba(125, 185, 255, 0.06);
+  --accent-08:  rgba(125, 185, 255, 0.08);
+  --accent-10:  rgba(125, 185, 255, 0.10);
+  --accent-14:  rgba(125, 185, 255, 0.14);
+  --accent-16:  rgba(125, 185, 255, 0.16);
+  --accent-22:  rgba(125, 185, 255, 0.22);
+  --accent-28:  rgba(125, 185, 255, 0.28);
+  --accent-38:  rgba(125, 185, 255, 0.38);
+
+  /* Teal opacity ramp tokens */
+  --teal-07:    rgba(120, 213, 193, 0.07);
+  --teal-08:    rgba(120, 213, 193, 0.08);
+  --teal-12:    rgba(120, 213, 193, 0.12);
+  --teal-20:    rgba(120, 213, 193, 0.20);
+  --teal-24:    rgba(120, 213, 193, 0.24);
+  --teal-38:    rgba(120, 213, 193, 0.38);
+
   /* Typography */
   --text:           #d4e5f2;
   --text-strong:    #ecf5ff;
@@ -39,6 +58,10 @@
   /* Shadows */
   --shadow:         0 1px 6px rgba(0, 0, 0, 0.20), 0 4px 20px rgba(0, 0, 0, 0.12);
   --shadow-lg:      0 2px 14px rgba(0, 0, 0, 0.24), 0 10px 44px rgba(0, 0, 0, 0.18);
+
+  /* FIX #7: topbar height as a token — dirty-banner top and sidebar top
+     now derive from this instead of being magic numbers. */
+  --topbar-h:       58px;
 
   /* Landing composer */
   --composer-radius: 20px;
@@ -85,7 +108,25 @@ code {
   border-radius: 999px;
 }
 
-/* ── IMPROVEMENT #7: Screen-reader-only utility ───────────── */
+/* FIX #8: Global keyboard-focus ring.
+   Visible only when navigating by keyboard (not on mouse click).
+   Applied to all interactive elements; overridden where shape differs. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Pill-shaped buttons need a matching pill ring */
+.smart-chip:focus-visible,
+.chip-button:focus-visible,
+.directive-pill:focus-visible,
+.status-pill:focus-visible,
+.importance-pill:focus-visible {
+  border-radius: 999px;
+}
+
+/* ── Screen-reader-only utility ───────────────────────────── */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -145,7 +186,7 @@ code {
 }
 
 .topbar__inner {
-  min-height: 58px;
+  min-height: var(--topbar-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -173,14 +214,11 @@ code {
   display: block;
 }
 
-/* ── IMPROVEMENT #9: Topbar action buttons ────────────────── */
-/* Small icon+label buttons that sit beside "New analysis" */
 .topbar__action-btn {
   padding: 7px 11px;
   font-size: 0.82rem;
 }
 
-/* Label inside action button — hidden at very narrow widths */
 .topbar__btn-label {
   display: inline;
 }
@@ -244,7 +282,7 @@ code {
 }
 
 .smart-chip:hover:not(:disabled) {
-  background: rgba(125, 185, 255, 0.10);
+  background: var(--accent-10);
   border-color: rgba(125, 185, 255, 0.25);
   color: var(--text-strong);
   transform: translateY(-1px);
@@ -254,19 +292,19 @@ code {
   transform: translateY(0);
 }
 
-/* IMPROVEMENT #2: Applied chip state */
+/* Applied chip state */
 .smart-chip--applied {
   cursor: default;
   color: var(--accent-teal);
-  background: rgba(120, 213, 193, 0.07);
-  border-color: rgba(120, 213, 193, 0.20);
+  background: var(--teal-07);
+  border-color: var(--teal-20);
   opacity: 0.72;
 }
 
 .smart-chip--applied:hover {
   transform: none;
-  background: rgba(120, 213, 193, 0.07);
-  border-color: rgba(120, 213, 193, 0.20);
+  background: var(--teal-07);
+  border-color: var(--teal-20);
   color: var(--accent-teal);
 }
 
@@ -309,12 +347,12 @@ code {
   color: var(--text-soft);
 }
 
-/* ── IMPROVEMENT #1: Analysis Progress Banner ─────────────── */
+/* ── Analysis Progress Banner ─────────────────────────────── */
 .analysis-progress {
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(125, 185, 255, 0.14);
+  border: 1px solid var(--accent-14);
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(125, 185, 255, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 0%, var(--accent-06) 0%, transparent 60%),
     linear-gradient(160deg, rgba(18, 30, 50, 0.96), rgba(12, 20, 34, 0.98));
   padding: 18px 22px 14px;
   display: grid;
@@ -344,13 +382,13 @@ code {
 
 .analysis-progress__step--active {
   border-color: rgba(125, 185, 255, 0.32);
-  background: rgba(125, 185, 255, 0.08);
+  background: var(--accent-08);
   color: var(--accent);
 }
 
 .analysis-progress__step--done {
   border-color: rgba(120, 213, 193, 0.24);
-  background: rgba(120, 213, 193, 0.06);
+  background: var(--teal-07);
   color: var(--accent-teal);
   opacity: 0.72;
 }
@@ -375,7 +413,7 @@ code {
 
 .analysis-progress__step--done .analysis-progress__dot {
   border-color: var(--accent-teal);
-  background: rgba(120, 213, 193, 0.12);
+  background: var(--teal-12);
   opacity: 1;
 }
 
@@ -398,11 +436,11 @@ code {
   50%       { opacity: 1;   transform: scale(1.12); }
 }
 
-/* ── IMPROVEMENT #5: Dirty Banner ────────────────────────── */
-/* Renders always; slides down when dirty, hides when not */
+/* ── DirtyBanner ──────────────────────────────────────────── */
+/* FIX #7: uses --topbar-h token instead of hardcoded 58px     */
 .dirty-banner {
   position: sticky;
-  top: 58px; /* matches topbar height */
+  top: var(--topbar-h);
   z-index: 39;
   overflow: hidden;
   max-height: 0;
@@ -425,7 +463,7 @@ code {
   gap: 14px;
   padding: 9px 0;
   background: rgba(10, 17, 28, 0.88);
-  border-bottom: 1px solid rgba(125, 185, 255, 0.15);
+  border-bottom: 1px solid var(--accent-14);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -447,13 +485,41 @@ code {
   animation: pulse-dot 1.6s ease infinite;
 }
 
-.dirty-banner__btn {
-  padding: 7px 13px;
-  font-size: 0.82rem;
+/* FIX #4: actions group (re-run + dismiss) */
+.dirty-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
 }
 
-/* ── IMPROVEMENT #3: Clarification applied state ─────────── */
+.dirty-banner__btn {
+  padding: 7px 13px;
+  font-size: 0.82rem;
+}
+
+/* FIX #4: dismiss (✕) button */
+.dirty-banner__dismiss {
+  appearance: none;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  color: var(--text-soft);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.13s ease, color 0.13s ease, border-color 0.13s ease;
+  flex-shrink: 0;
+}
+
+.dirty-banner__dismiss:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* ── Clarification applied state ──────────────────────────── */
 .clarification-card--applied {
   opacity: 0.82;
 }
@@ -465,7 +531,7 @@ code {
   padding: 4px 9px;
   border-radius: 999px;
   border: 1px solid rgba(120, 213, 193, 0.28);
-  background: rgba(120, 213, 193, 0.08);
+  background: var(--teal-08);
   color: var(--accent-teal);
   font-size: 0.72rem;
   font-weight: 600;
@@ -485,14 +551,13 @@ code {
   pointer-events: none;
 }
 
-/* Tweak header layout to hold badge */
 .clarification-card__header-right {
   display: flex;
   align-items: center;
   flex-shrink: 0;
 }
 
-/* ── IMPROVEMENT #8: Word count target hint ───────────────── */
+/* ── Word count target hint ───────────────────────────────── */
 .word-hint {
   font-size: 0.73rem;
   color: var(--text-soft);
@@ -501,7 +566,6 @@ code {
   animation: fadeIn 0.3s ease;
 }
 
-/* Landing CTA row now has a left sub-group */
 .landing-composer__cta-left {
   display: flex;
   align-items: center;
@@ -509,11 +573,10 @@ code {
   flex-wrap: wrap;
 }
 
-/* ── IMPROVEMENT #9: Copy button promoted style in sidebar ── */
-/* Slightly elevated from pure secondary — teal tint signals it's the main share action */
+/* ── Copy button promoted style in sidebar ────────────────── */
 .button--copy-rail {
   appearance: none;
-  border: 1px solid rgba(120, 213, 193, 0.24);
+  border: 1px solid var(--teal-24);
   border-radius: var(--radius);
   padding: 9px 15px;
   display: inline-flex;
@@ -524,20 +587,31 @@ code {
   font-size: 0.87rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  background: rgba(120, 213, 193, 0.07);
+  background: var(--teal-07);
   color: var(--accent-teal);
   transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease;
 }
 
 .button--copy-rail:hover:not(:disabled) {
-  background: rgba(120, 213, 193, 0.13);
-  border-color: rgba(120, 213, 193, 0.38);
+  background: var(--teal-12);
+  border-color: var(--teal-38);
   transform: translateY(-1px);
 }
 
 .button--copy-rail:disabled {
   opacity: 0.44;
   cursor: not-allowed;
+}
+
+/* ── Expand/Collapse All button in StandardsRoutePanel ────── */
+.expand-all-btn {
+  padding: 7px 11px;
+  font-size: 0.80rem;
+  white-space: nowrap;
+}
+
+.expand-all-btn__label {
+  display: inline;
 }
 
 /* ── Panels ───────────────────────────────────────────────── */
@@ -561,7 +635,7 @@ code {
 
 .panel--hero {
   background:
-    radial-gradient(ellipse at 95% 0%, rgba(125, 185, 255, 0.08), transparent 52%),
+    radial-gradient(ellipse at 95% 0%, var(--accent-08), transparent 52%),
     linear-gradient(160deg, var(--surface-2), var(--surface-0));
   box-shadow: var(--shadow-lg);
 }
@@ -570,9 +644,10 @@ code {
   background: linear-gradient(160deg, rgba(21, 33, 50, 0.80), var(--surface-0));
 }
 
+/* FIX #7: uses --topbar-h token instead of hardcoded 74px */
 .panel--sidebar {
   position: sticky;
-  top: 74px;
+  top: calc(var(--topbar-h) + 16px);
 }
 
 .panel--empty {
@@ -583,9 +658,9 @@ code {
 
 .panel--standards {
   background:
-    radial-gradient(ellipse at 2% 40%, rgba(125, 185, 255, 0.05), transparent 52%),
+    radial-gradient(ellipse at 2% 40%, var(--accent-06), transparent 52%),
     linear-gradient(160deg, rgba(20, 33, 52, 0.97), rgba(13, 21, 36, 0.99));
-  border-color: rgba(125, 185, 255, 0.10);
+  border-color: var(--accent-10);
   box-shadow: var(--shadow-lg), inset 0 0 0 1px rgba(125, 185, 255, 0.04);
 }
 
@@ -629,6 +704,11 @@ code {
   color: var(--text-muted);
 }
 
+.panel__action {
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
 .panel__body {
   padding: 20px 24px 24px;
 }
@@ -649,6 +729,24 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
+}
+
+/* FIX #10: Directive scope panel (replaces "What's covered") */
+.directive-scope-list {
+  display: grid;
+  gap: 12px;
+}
+
+.directive-scope-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.directive-scope-hint {
+  font-size: 0.83rem;
+  line-height: 1.62;
+  color: var(--text-soft);
 }
 
 /* ── Landing Strip — compact heading, no panel box ────────── */
@@ -702,9 +800,9 @@ code {
   display: grid;
   gap: 0;
   border-radius: var(--composer-radius);
-  border: 1px solid rgba(125, 185, 255, 0.13);
+  border: 1px solid var(--accent-14);
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(125, 185, 255, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 0%, var(--accent-06) 0%, transparent 60%),
     linear-gradient(160deg, rgba(18, 30, 50, 0.96), rgba(12, 20, 34, 0.98));
   box-shadow:
     var(--shadow-lg),
@@ -725,7 +823,6 @@ code {
   color: var(--text-soft);
 }
 
-/* Input block keeps textarea + CTA always together */
 .landing-composer__input-block {
   display: grid;
   gap: 0;
@@ -754,7 +851,12 @@ code {
   background: rgba(125, 185, 255, 0.018);
 }
 
-/* CTA row: counter left, button right — always immediately below textarea */
+/* FIX #8: explicit focus ring for landing textarea */
+.landing-composer__textarea:focus-visible {
+  outline: none; /* ring would clip inside composer; rely on border glow instead */
+  background: rgba(125, 185, 255, 0.025);
+}
+
 .landing-composer__cta-row {
   display: flex;
   align-items: center;
@@ -772,8 +874,8 @@ code {
   font-weight: 700;
   letter-spacing: -0.01em;
   border-radius: var(--radius);
-  background: rgba(125, 185, 255, 0.16);
-  border: 1px solid rgba(125, 185, 255, 0.28);
+  background: var(--accent-16);
+  border: 1px solid var(--accent-28);
   color: var(--text-strong);
   display: inline-flex;
   align-items: center;
@@ -783,8 +885,8 @@ code {
 }
 
 .button--landing-cta:hover:not(:disabled) {
-  background: rgba(125, 185, 255, 0.24);
-  border-color: rgba(125, 185, 255, 0.42);
+  background: var(--accent-22);
+  border-color: var(--accent-38);
   transform: translateY(-1px);
 }
 
@@ -845,7 +947,7 @@ code {
   border-top: 1px solid var(--border-sm);
 }
 
-/* ── Input Hints — contextual, discreet ───────────────────── */
+/* ── Empty State ──────────────────────────────────────────── */
 .empty-state-compact {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -873,7 +975,7 @@ code {
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: rgba(125, 185, 255, 0.07);
+  background: var(--accent-08);
   color: var(--accent);
   flex-shrink: 0;
   margin-top: 1px;
@@ -951,7 +1053,7 @@ code {
   border-radius: 9px;
   display: grid;
   place-items: center;
-  background: rgba(125, 185, 255, 0.08);
+  background: var(--accent-08);
   color: var(--accent);
   flex-shrink: 0;
 }
@@ -1007,9 +1109,14 @@ code {
 }
 
 .composer__textarea:focus {
-  border-color: rgba(125, 185, 255, 0.38);
+  border-color: var(--accent-38);
   background: rgba(10, 18, 30, 0.72);
-  box-shadow: 0 0 0 3px rgba(125, 185, 255, 0.08);
+  box-shadow: 0 0 0 3px var(--accent-08);
+}
+
+/* FIX #8: explicit focus ring for this textarea */
+.composer__textarea:focus-visible {
+  outline: none; /* uses border + box-shadow instead */
 }
 
 .composer__field-footer {
@@ -1065,14 +1172,14 @@ code {
 }
 
 .button--primary {
-  background: rgba(125, 185, 255, 0.16);
-  border-color: rgba(125, 185, 255, 0.28);
+  background: var(--accent-16);
+  border-color: var(--accent-28);
   color: var(--text-strong);
 }
 
 .button--primary:hover:not(:disabled) {
-  background: rgba(125, 185, 255, 0.22);
-  border-color: rgba(125, 185, 255, 0.38);
+  background: var(--accent-22);
+  border-color: var(--accent-38);
 }
 
 .button--secondary {
@@ -1126,12 +1233,11 @@ code {
   gap: 14px;
 }
 
-/* route-stack inside standards panel gets extra top breathing room */
 .panel--standards .route-stack {
   margin-top: 4px;
 }
 
-/* ── Overview Bar — minimal summary + inline metrics ─────── */
+/* ── Overview Bar ─────────────────────────────────────────── */
 .overview-bar {
   background: linear-gradient(160deg, var(--surface-1), var(--surface-0));
   border: 1px solid var(--border);
@@ -1186,7 +1292,6 @@ code {
 .overview-metric__value--high {
   color: #f08078;
 }
-
 
 /* ── Base Safety Route ────────────────────────────────────── */
 .base-route-pill {
@@ -1247,7 +1352,7 @@ code {
   color: var(--text-soft);
 }
 
-/* ── Regime Nav — centered, scannable directive strip ─────── */
+/* ── Regime Nav ───────────────────────────────────────────── */
 .regime-nav {
   margin: 0 24px 20px;
   padding: 14px 0;
@@ -1306,7 +1411,7 @@ code {
   padding: 0 4px;
 }
 
-/* ── Legacy overview / metric grid (kept for potential reuse) */
+/* ── Legacy overview / metric grid ───────────────────────── */
 .overview-grid {
   display: grid;
   gap: 16px;
@@ -1770,7 +1875,7 @@ code {
   padding: 8px 12px;
   border-radius: var(--radius);
   background: rgba(7, 13, 22, 0.50);
-  border-left: 2px solid rgba(125, 185, 255, 0.28);
+  border-left: 2px solid var(--accent-28);
   font-size: 0.74rem;
   line-height: 1.6;
   color: #b2c8df;
@@ -1893,6 +1998,32 @@ code {
   border: 1px solid rgba(240, 128, 120, 0.24);
   background: rgba(240, 128, 120, 0.07);
   color: #fbbdb8;
+}
+
+/* FIX #11: ErrorBoundary fallback panel */
+.error-boundary-fallback {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(240, 128, 120, 0.18);
+  background: rgba(240, 128, 120, 0.05);
+  color: #fbbdb8;
+}
+
+.error-boundary-fallback__title {
+  font-size: 0.90rem;
+  font-weight: 600;
+  color: #fbbdb8;
+}
+
+.error-boundary-fallback__text {
+  margin-top: 3px;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: rgba(251, 189, 184, 0.70);
 }
 
 /* ── Footer ───────────────────────────────────────────────── */
@@ -2031,13 +2162,17 @@ code {
 }
 
 @media (max-width: 600px) {
-  /* IMPROVEMENT #4: topbar stays horizontal on mobile — don't stack */
-  .topbar__inner {
-    gap: 8px;
-    min-height: 52px;
+  /* FIX #7: update --topbar-h for mobile height */
+  :root {
+    --topbar-h: 52px;
   }
 
-  /* Hide the standards count to save space — risk pill + buttons are enough */
+  .topbar__inner {
+    gap: 8px;
+    min-height: var(--topbar-h);
+  }
+
+  /* Hide standards count to save space */
   .topbar__count--hideable {
     display: none;
   }
@@ -2104,16 +2239,24 @@ code {
 
   .cta-hint { display: none; }
 
-  /* Keep dirty banner readable on small screens */
   .dirty-banner__inner {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row; /* keep horizontal — actions group handles stacking */
+    align-items: center;
     gap: 8px;
     padding: 10px 0;
   }
 
   .dirty-banner--visible {
-    max-height: 100px;
+    max-height: 68px;
+  }
+
+  /* Hide expand-all label on small screens */
+  .expand-all-btn__label {
+    display: none;
+  }
+
+  .expand-all-btn {
+    padding: 7px 9px;
   }
 }
 
@@ -2126,9 +2269,7 @@ code {
   }
 }
 
-/* ── IMPROVEMENT #10: Reduced-transparency fallback ──────── */
-/* On devices/OSes where layers can look muddy or perform poorly,
-   replace alpha-heavy surfaces with solid equivalents. */
+/* ── Reduced-transparency fallback ───────────────────────── */
 @media (prefers-reduced-transparency: reduce) {
   :root {
     --surface-0:      #0d1726;

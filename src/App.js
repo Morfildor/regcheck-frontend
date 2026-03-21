@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowUp,
@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
   TriangleAlert,
+  X,
   Zap,
   FlaskConical,
   Wifi,
@@ -37,6 +38,7 @@ import {
   buildGuidanceItems,
   buildLegislationGroups,
   buildRouteSections,
+  directiveRank,
   directiveShort,
   directiveTone,
   formatUiLabel,
@@ -47,6 +49,40 @@ import {
   sentenceCaseList,
   titleCaseMinor,
 } from "./appHelpers";
+
+/* ================================================================
+   IMPROVEMENT #11 — ErrorBoundary
+   Class component wrapping volatile panels so a render error in
+   one section doesn't blank the entire UI.
+   ================================================================ */
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="error-boundary-fallback" role="alert">
+          <TriangleAlert size={15} />
+          <div>
+            <div className="error-boundary-fallback__title">
+              {this.props.label || "This section could not be rendered"}
+            </div>
+            <div className="error-boundary-fallback__text">
+              Try starting a new analysis if the problem persists.
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 
 /* ================================================================
    SMART SUGGESTION ENGINE v2
@@ -375,9 +411,7 @@ function ImportancePill({ value }) {
 
 
 /* ──────────────────────────────────────────────────────────
-   IMPROVEMENT #1 — AnalysisProgressBanner
-   Multi-step animated progress shown during analysis.
-   Steps auto-advance on timers to keep users oriented.
+   AnalysisProgressBanner — multi-step animated progress
    ────────────────────────────────────────────────────────── */
 const PROGRESS_STEPS = [
   "Parsing product traits",
@@ -434,11 +468,11 @@ function AnalysisProgressBanner({ busy }) {
 
 
 /* ──────────────────────────────────────────────────────────
-   IMPROVEMENT #5 — DirtyBanner
-   Sticky nudge below topbar when description has been edited
-   post-analysis. Harder to miss than a button buried in a panel.
+   DirtyBanner — sticky nudge when description edited post-analysis
+   FIX #4: Added onDismiss (✕) so users can close without re-running
+   FIX #2: This is now the ONLY "re-run" CTA — removed from ClarificationsPanel
    ────────────────────────────────────────────────────────── */
-function DirtyBanner({ dirty, busy, onReanalyze }) {
+function DirtyBanner({ dirty, busy, onReanalyze, onDismiss }) {
   return (
     <div className={`dirty-banner ${dirty ? "dirty-banner--visible" : ""}`} aria-hidden={!dirty}>
       <div className="page-shell dirty-banner__inner">
@@ -446,16 +480,28 @@ function DirtyBanner({ dirty, busy, onReanalyze }) {
           <span className="dirty-banner__dot" />
           <span>Description updated — re-run to apply changes</span>
         </div>
-        <button
-          type="button"
-          className="button button--primary dirty-banner__btn"
-          onClick={onReanalyze}
-          disabled={busy}
-          tabIndex={dirty ? 0 : -1}
-        >
-          {busy ? <LoaderCircle size={13} className="spin" /> : <RefreshCcw size={13} />}
-          {busy ? "Re-running…" : "Re-run analysis"}
-        </button>
+        <div className="dirty-banner__actions">
+          <button
+            type="button"
+            className="button button--primary dirty-banner__btn"
+            onClick={onReanalyze}
+            disabled={busy}
+            tabIndex={dirty ? 0 : -1}
+          >
+            {busy ? <LoaderCircle size={13} className="spin" /> : <RefreshCcw size={13} />}
+            {busy ? "Re-running…" : "Re-run analysis"}
+          </button>
+          <button
+            type="button"
+            className="dirty-banner__dismiss"
+            onClick={onDismiss}
+            tabIndex={dirty ? 0 : -1}
+            aria-label="Dismiss"
+            title="Dismiss — keep current analysis"
+          >
+            <X size={14} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -463,9 +509,7 @@ function DirtyBanner({ dirty, busy, onReanalyze }) {
 
 
 /* ──────────────────────────────────────────────────────────
-   TopBar — IMPROVEMENT #4 (narrow responsive)
-            IMPROVEMENT #6 (Previous analysis button)
-            IMPROVEMENT #9 (Copy button surfaced in topbar)
+   TopBar
    ────────────────────────────────────────────────────────── */
 function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, onCopy, copied }) {
   return (
@@ -485,10 +529,9 @@ function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, on
           {result ? (
             <>
               <RiskPill value={result?.overall_risk || "MEDIUM"} />
-              {/* IMPROVEMENT #4: hidden on very narrow screens */}
               <span className="topbar__count topbar__count--hideable">{totalStandards} standards</span>
 
-              {/* IMPROVEMENT #9: Copy button surfaced in topbar */}
+              {/* FIX #3: shared copy state — same handler as sidebar button */}
               <button
                 type="button"
                 className="button button--secondary topbar__action-btn"
@@ -499,7 +542,6 @@ function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, on
                 <span className="topbar__btn-label">{copied ? "Copied" : "Copy"}</span>
               </button>
 
-              {/* IMPROVEMENT #6: Restore previous analysis */}
               {prevResult ? (
                 <button
                   type="button"
@@ -527,6 +569,13 @@ function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, on
 }
 
 
+/* ──────────────────────────────────────────────────────────
+   HeroPanel
+   FIX #1 / #10: Replaced "What's covered" side panel with
+   "Directives triggered" panel showing actual regime pills.
+   Removed duplicate RiskPill from hero tags (already in topbar
+   and overview bar).
+   ────────────────────────────────────────────────────────── */
 function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const hero = result?.hero_summary || {};
   const confidence =
@@ -555,30 +604,20 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const title = hero.title || `${formatUiLabel(result?.product_type || "Product")} regulatory route`;
   const subtitle = result?.summary || hero.subtitle || "";
 
-  const supportItems = [
-    {
-      icon: <ListChecks size={14} />,
-      title: `${routeSections.length} route sections`,
-      text: "Standards grouped by regime for a faster first pass.",
-    },
-    {
-      icon: <ShieldCheck size={14} />,
-      title: `${legislationItems.length} legislation items`,
-      text: "Applicable frameworks pinned in the side rail.",
-    },
-    {
-      icon: <Search size={14} />,
-      title: `${guidanceItems.length} clarifications`,
-      text: "Details most likely to shift scope.",
-    },
-  ];
+  // Unique directive keys in order — power the "Directives triggered" panel
+  const triggeredDirectives = useMemo(() => {
+    const keys = new Set(routeSections.map((s) => s.key));
+    return [...keys].sort((a, b) => directiveRank(a) - directiveRank(b));
+  }, [routeSections]);
+
+  const totalStandards = routeSections.reduce((n, s) => n + (s.count || 0), 0);
 
   return (
     <div className="hero-grid">
       <Panel className="panel--hero" eyebrow="Guided Workspace" title={title} subtitle={subtitle}>
         <div className="hero-panel__content">
           <div className="hero-panel__tags">
-            <RiskPill value={result?.overall_risk || "MEDIUM"} />
+            {/* RiskPill removed — already shown in topbar and overview bar */}
             <span className="soft-tag">Confidence: {formatUiLabel(confidence)}</span>
             {result?.product_type ? (
               <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
@@ -587,23 +626,29 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
         </div>
       </Panel>
 
-      <Panel className="panel--support" eyebrow="This output" title="What's covered">
-        <div className="support-list">
-          {supportItems.map((item) => (
-            <div key={item.title} className="support-list__item">
-              <div className="support-list__icon">{item.icon}</div>
-              <div>
-                <div className="support-list__title">{item.title}</div>
-                <div className="support-list__text">{item.text}</div>
-              </div>
+      {/* FIX #10: replaced "What's covered" static copy with live directive scope panel */}
+      <Panel className="panel--support" eyebrow="Directives triggered" title="Scope">
+        <div className="directive-scope-list">
+          {triggeredDirectives.length ? (
+            <div className="directive-scope-pills">
+              {triggeredDirectives.map((key) => (
+                <DirectivePill key={key} dirKey={key} />
+              ))}
             </div>
-          ))}
+          ) : (
+            <span className="soft-tag" style={{ color: "var(--text-soft)" }}>No directives detected</span>
+          )}
+          <p className="directive-scope-hint">
+            {totalStandards} standard{totalStandards === 1 ? "" : "s"} across{" "}
+            {routeSections.length} regime{routeSections.length === 1 ? "" : "s"} —
+            {" "}{legislationItems.length} legislation item{legislationItems.length === 1 ? "" : "s"} —
+            {" "}{guidanceItems.length} clarification{guidanceItems.length === 1 ? "" : "s"}.
+          </p>
         </div>
       </Panel>
     </div>
   );
 }
-
 
 
 const BASE_SAFETY_ROUTE_COPY = {
@@ -673,53 +718,18 @@ function inferBaseSafetyRoute(result, routeSections) {
     .toLowerCase();
 
   const applianceHints = [
-    /coffee/,
-    /espresso/,
-    /kettle/,
-    /air.?fry/,
-    /oven/,
-    /vacuum/,
-    /robot.?vac/,
-    /air.?purifier/,
-    /fan\b/,
-    /heater/,
-    /dishwasher/,
-    /washing.?machine/,
-    /dryer/,
-    /blender/,
-    /mixer/,
-    /toaster/,
-    /fridge/,
-    /freezer/,
-    /appliance/,
+    /coffee/, /espresso/, /kettle/, /air.?fry/, /oven/, /vacuum/,
+    /robot.?vac/, /air.?purifier/, /fan\b/, /heater/, /dishwasher/,
+    /washing.?machine/, /dryer/, /blender/, /mixer/, /toaster/,
+    /fridge/, /freezer/, /appliance/,
   ];
 
   const avictHints = [
-    /router/,
-    /modem/,
-    /gateway/,
-    /access.?point/,
-    /switch\b/,
-    /laptop/,
-    /desktop/,
-    /server/,
-    /nas\b/,
-    /monitor/,
-    /display/,
-    /smart.?display/,
-    /smart.?speaker/,
-    /speaker/,
-    /television/,
-    /smart.?tv/,
-    /stream(ing)?/,
-    /set.?top/,
-    /projector/,
-    /voip/,
-    /ict/,
-    /communications?/,
-    /audio/,
-    /video/,
-    /network/,
+    /router/, /modem/, /gateway/, /access.?point/, /switch\b/, /laptop/,
+    /desktop/, /server/, /nas\b/, /monitor/, /display/, /smart.?display/,
+    /smart.?speaker/, /speaker/, /television/, /smart.?tv/, /stream(ing)?/,
+    /set.?top/, /projector/, /voip/, /ict/, /communications?/, /audio/,
+    /video/, /network/,
   ];
 
   const hasApplianceHint = applianceHints.some((re) => re.test(productText));
@@ -760,10 +770,12 @@ function BaseSafetyRoutePill({ route, compact = false, labelOverride = "" }) {
   );
 }
 
+
 /* ──────────────────────────────────────────────────────────
-   SmartSuggestionsPanel — IMPROVEMENT #2
-   Chips show a checked/disabled state when their text is
-   already present in the description — prevents double-applying.
+   SmartSuggestionsPanel
+   FIX #9: isApplied now uses explicit Set tracking instead of
+   substring scan. No false positives when the user types the
+   same word themselves; no false negatives when they paraphrase.
    ────────────────────────────────────────────────────────── */
 const SUGGESTION_ICONS = {
   zap:      <Zap size={11} />,
@@ -776,11 +788,9 @@ const SUGGESTION_ICONS = {
   cart:     <ShoppingCart size={11} />,
 };
 
-function SmartSuggestionsPanel({ description, onApply, backendChips }) {
+function SmartSuggestionsPanel({ description, onApply, backendChips, appliedChipTexts = new Set() }) {
   const groups = useSmartSuggestions(description, backendChips);
   if (!groups.length) return null;
-
-  const descLower = (description || "").toLowerCase();
 
   return (
     <div className="smart-suggestions">
@@ -792,8 +802,7 @@ function SmartSuggestionsPanel({ description, onApply, backendChips }) {
           </div>
           <div className="smart-suggestions__chips">
             {group.suggestions.map((s) => {
-              // IMPROVEMENT #2: detect if text already in description
-              const isApplied = descLower.includes(s.text.toLowerCase());
+              const isApplied = appliedChipTexts.has(s.text);
               return (
                 <button
                   key={s.label}
@@ -801,7 +810,7 @@ function SmartSuggestionsPanel({ description, onApply, backendChips }) {
                   className={`smart-chip${isApplied ? " smart-chip--applied" : ""}`}
                   onClick={() => { if (!isApplied) onApply(s.text); }}
                   disabled={isApplied}
-                  title={isApplied ? "Already in description" : `Add: ${s.text}`}
+                  title={isApplied ? "Already applied" : `Add: ${s.text}`}
                   aria-pressed={isApplied}
                 >
                   {isApplied ? <Check size={10} /> : null}
@@ -818,8 +827,9 @@ function SmartSuggestionsPanel({ description, onApply, backendChips }) {
 
 
 /* ──────────────────────────────────────────────────────────
-   ComposerPanel — IMPROVEMENT #7 (sr-only label)
-                   IMPROVEMENT #8 (word count target hint)
+   ComposerPanel
+   FIX #9: tracks appliedChipTexts in an explicit Set so
+            SmartSuggestionsPanel gets accurate isApplied state
    ────────────────────────────────────────────────────────── */
 function ComposerPanel({ description, setDescription, templates, backendChips, onAnalyze, busy, onDirty, isLanding }) {
   const charMax = 1200;
@@ -833,6 +843,14 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
 
   const textareaRef = useRef(null);
 
+  // FIX #9: explicit chip tracking instead of substring scan
+  const [appliedChipTexts, setAppliedChipTexts] = useState(() => new Set());
+
+  // Reset chip tracking when switching between landing and result states
+  useEffect(() => {
+    setAppliedChipTexts(new Set());
+  }, [isLanding]);
+
   useEffect(() => {
     if (isLanding && textareaRef.current) {
       const t = setTimeout(() => textareaRef.current?.focus(), 120);
@@ -842,15 +860,14 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
 
   const handleApply = useCallback((text) => {
     setDescription((current) => joinText(current, text));
+    setAppliedChipTexts((prev) => new Set([...prev, text]));
     onDirty(true);
     textareaRef.current?.focus();
   }, [setDescription, onDirty]);
 
-  // IMPROVEMENT #8: Show target hint while user is below the sweet spot
   const showWordHint = wordCount > 0 && wordCount < 30;
 
   const sharedTextarea = (
-    // IMPROVEMENT #7: Label wraps textarea; sr-only span provides accessible name
     <label className={isLanding ? "landing-composer__field" : "composer__field"}>
       <span className="sr-only">Describe your product</span>
       <textarea
@@ -901,6 +918,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
                 className="chip-button"
                 onClick={() => {
                   setDescription(template.text);
+                  setAppliedChipTexts(new Set());
                   onDirty(true);
                   textareaRef.current?.focus();
                 }}
@@ -919,7 +937,6 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
                 {wordCount ? <span>{wordCount}w</span> : null}
                 <span>{description.length} / {charMax}</span>
               </div>
-              {/* IMPROVEMENT #8: word count hint */}
               {showWordHint ? (
                 <span className="word-hint">aim for 30–80 words</span>
               ) : null}
@@ -956,6 +973,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
           description={description}
           onApply={handleApply}
           backendChips={null}
+          appliedChipTexts={appliedChipTexts}
         />
       </div>
     );
@@ -978,7 +996,11 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
                 key={template.label}
                 type="button"
                 className="chip-button"
-                onClick={() => { setDescription(template.text); onDirty(true); }}
+                onClick={() => {
+                  setDescription(template.text);
+                  setAppliedChipTexts(new Set());
+                  onDirty(true);
+                }}
               >
                 {template.label}
               </button>
@@ -992,6 +1014,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
           description={description}
           onApply={handleApply}
           backendChips={backendChips}
+          appliedChipTexts={appliedChipTexts}
         />
 
         <div className="composer__actions">
@@ -1007,7 +1030,11 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
           <button
             type="button"
             className="button button--secondary"
-            onClick={() => { setDescription(""); onDirty(false); }}
+            onClick={() => {
+              setDescription("");
+              setAppliedChipTexts(new Set());
+              onDirty(false);
+            }}
             disabled={!description}
           >
             Clear
@@ -1019,6 +1046,9 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
 }
 
 
+/* ──────────────────────────────────────────────────────────
+   OverviewPanel — summary text + inline metric strip
+   ────────────────────────────────────────────────────────── */
 function OverviewPanel({ result, routeSections, legislationItems }) {
   if (!result) return null;
 
@@ -1057,11 +1087,15 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
   );
 }
 
-function SnapshotRail({ result, routeSections, legislationGroups, description }) {
+
+/* ──────────────────────────────────────────────────────────
+   SnapshotRail — sticky sidebar
+   FIX #1: removed "Confidence" from snapshot list (in overview bar)
+   FIX #3: onCopy/copied come from App for shared state
+   ────────────────────────────────────────────────────────── */
+function SnapshotRail({ result, routeSections, legislationGroups, description, onCopy, copied }) {
   if (!result) return null;
 
-  const confidence =
-    result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
   const totalStandards = routeSections.reduce(
     (count, section) => count + (section.items || []).length,
     0
@@ -1080,11 +1114,11 @@ function SnapshotRail({ result, routeSections, legislationGroups, description })
         subtitle="Product identity and legislation pinned alongside the route."
       >
         <div className="snapshot-list">
+          {/* FIX #1: removed Confidence row — it lives in the overview bar */}
           {[
             ["Product", formatUiLabel(result?.product_type || "unclear")],
-            ["Confidence", formatUiLabel(confidence)],
-            ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
-            ["Standards", totalStandards],
+            ["Risk",    formatUiLabel(result?.overall_risk || "MEDIUM")],
+            ["Standards",   totalStandards],
             ["Legislation", totalLegislation],
           ].map(([label, value]) => (
             <div key={label} className="snapshot-row">
@@ -1094,13 +1128,8 @@ function SnapshotRail({ result, routeSections, legislationGroups, description })
           ))}
         </div>
 
-        {/* IMPROVEMENT #9: CopyResultsButton is the headline action — promoted style */}
-        <CopyResultsButton
-          result={result}
-          description={description}
-          routeSections={routeSections}
-          legislationGroups={legislationGroups}
-        />
+        {/* FIX #3: CopyResultsButton is props-driven; state lives in App */}
+        <CopyResultsButton onCopy={onCopy} copied={copied} />
 
         <div className="sidebar-section">
           <div className="sidebar-section__heading">Applicable legislation</div>
@@ -1152,12 +1181,12 @@ function SnapshotRail({ result, routeSections, legislationGroups, description })
 
 
 /* ──────────────────────────────────────────────────────────
-   ClarificationsPanel — IMPROVEMENT #3
-   Tracks which cards have had a choice applied. Applied cards
-   show a green "Applied" badge and muted border — they stay
-   visible so users can re-read, but are clearly actioned.
+   ClarificationsPanel
+   FIX #2: Removed duplicate "Re-run analysis" button. The sticky
+   DirtyBanner is the canonical re-run CTA. This panel now always
+   shows the keyboard-hint, which is more contextually honest.
    ────────────────────────────────────────────────────────── */
-function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
+function ClarificationsPanel({ items, onApply }) {
   const [appliedKeys, setAppliedKeys] = useState(new Set());
 
   const handleCardApply = useCallback((itemKey, choiceText) => {
@@ -1181,14 +1210,8 @@ function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
             ) : null}
           </span>
         </div>
-        {dirty ? (
-          <button type="button" className="button button--primary" onClick={onReanalyze} disabled={busy}>
-            {busy ? <LoaderCircle size={15} className="spin" /> : <RefreshCcw size={15} />}
-            {busy ? "Re-running" : "Re-run analysis"}
-          </button>
-        ) : (
-          <span className="keyboard-hint">Apply a detail below to update</span>
-        )}
+        {/* FIX #2: always show keyboard-hint; re-run lives in DirtyBanner */}
+        <span className="keyboard-hint">Apply a detail below to update</span>
       </div>
       <div className="panel__body">
         <div className="clarification-list">
@@ -1210,7 +1233,6 @@ function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
                     <ImportancePill value={item.importance} />
                     <h3>{item.title}</h3>
                   </div>
-                  {/* IMPROVEMENT #3: Applied badge replaces index number */}
                   {isApplied ? (
                     <span className="clarification-applied-badge">
                       <Check size={10} />
@@ -1315,8 +1337,14 @@ function StandardItem({ item, sectionKey }) {
   );
 }
 
-function RouteSection({ section, baseSafetyRoute }) {
-  const [open, setOpen] = useState(true);
+
+/* ──────────────────────────────────────────────────────────
+   RouteSection
+   FIX #5: open state is now lifted to StandardsRoutePanel.
+           First section opens by default; all others start closed.
+   FIX #6 (aria): aria-expanded and aria-controls added.
+   ────────────────────────────────────────────────────────── */
+function RouteSection({ section, baseSafetyRoute, open, onToggle }) {
   const tone = directiveTone(section.key);
   const title = routeTitle(section);
   const subtitle =
@@ -1325,6 +1353,8 @@ function RouteSection({ section, baseSafetyRoute }) {
     section.key === "LVD" && baseSafetyRoute
       ? `Base safety: ${baseSafetyRoute.key === "EN_62368" ? "EN 62368-1" : "EN 60335-1"}`
       : "";
+
+  const bodyId = `route-section-body-${section.key}`;
 
   return (
     <section
@@ -1335,7 +1365,13 @@ function RouteSection({ section, baseSafetyRoute }) {
         "--route-tone-dot": tone.dot,
       }}
     >
-      <button type="button" className="route-section__toggle" onClick={() => setOpen((current) => !current)}>
+      <button
+        type="button"
+        className="route-section__toggle"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={bodyId}
+      >
         <div className="route-section__title-wrap">
           <div className="route-section__indicator" />
           <div>
@@ -1359,7 +1395,7 @@ function RouteSection({ section, baseSafetyRoute }) {
       </button>
 
       {open ? (
-        <div className="route-section__body">
+        <div id={bodyId} className="route-section__body">
           {(section.items || []).map((item) => (
             <StandardItem
               key={`${section.key}-${item.code || item.title}-${item.version || ""}`}
@@ -1402,7 +1438,37 @@ function RegimeNav({ directiveBreakdown }) {
   );
 }
 
+
+/* ──────────────────────────────────────────────────────────
+   StandardsRoutePanel
+   FIX #5: open state lifted here. First section starts open,
+           rest start collapsed. Expand / Collapse all toggle
+           added to the panel header action slot.
+   ────────────────────────────────────────────────────────── */
 function StandardsRoutePanel({ sections, directiveBreakdown, baseSafetyRoute }) {
+  const [openSet, setOpenSet] = useState(
+    () => new Set(sections.slice(0, 1).map((s) => s.key))
+  );
+
+  const allOpen = sections.length > 0 && openSet.size === sections.length;
+
+  const toggleSection = useCallback((key) => {
+    setOpenSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (allOpen) {
+      setOpenSet(new Set());
+    } else {
+      setOpenSet(new Set(sections.map((s) => s.key)));
+    }
+  }, [allOpen, sections]);
+
   if (!sections.length) return null;
 
   return (
@@ -1411,12 +1477,29 @@ function StandardsRoutePanel({ sections, directiveBreakdown, baseSafetyRoute }) 
       eyebrow="Primary Output"
       title="Standards route"
       subtitle="Grouped by regime — scan the path without losing item-level detail."
+      action={
+        <button
+          type="button"
+          className="button button--secondary expand-all-btn"
+          onClick={toggleAll}
+          title={allOpen ? "Collapse all sections" : "Expand all sections"}
+        >
+          {allOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          <span className="expand-all-btn__label">{allOpen ? "Collapse all" : "Expand all"}</span>
+        </button>
+      }
     >
       <RegimeNav directiveBreakdown={directiveBreakdown} />
 
       <div className="route-stack">
         {sections.map((section) => (
-          <RouteSection key={section.key || section.title} section={section} baseSafetyRoute={baseSafetyRoute} />
+          <RouteSection
+            key={section.key || section.title}
+            section={section}
+            baseSafetyRoute={baseSafetyRoute}
+            open={openSet.has(section.key)}
+            onToggle={() => toggleSection(section.key)}
+          />
         ))}
       </div>
     </Panel>
@@ -1425,32 +1508,13 @@ function StandardsRoutePanel({ sections, directiveBreakdown, baseSafetyRoute }) 
 
 
 /* ──────────────────────────────────────────────────────────
-   CopyResultsButton — IMPROVEMENT #9
-   Promoted to a more prominent style in the sidebar so it reads
-   as the primary action after reviewing the analysis.
+   CopyResultsButton
+   FIX #3: state removed — onCopy/copied come from App so
+           topbar and sidebar buttons share a single state.
    ────────────────────────────────────────────────────────── */
-function CopyResultsButton({ result, description, routeSections, legislationGroups }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(async () => {
-    const text = buildClipboardSummary({
-      result,
-      description,
-      routeSections,
-      legislationGroups,
-    });
-
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2400);
-    } catch (_) {
-      setCopied(false);
-    }
-  }, [description, legislationGroups, result, routeSections]);
-
+function CopyResultsButton({ onCopy, copied }) {
   return (
-    <button type="button" className="button button--copy-rail button--full" onClick={handleCopy}>
+    <button type="button" className="button button--copy-rail button--full" onClick={onCopy}>
       {copied ? <Check size={15} /> : <Copy size={15} />}
       {copied ? "Copied to clipboard" : "Copy analysis summary"}
     </button>
@@ -1519,10 +1583,6 @@ function ScrollTopButton({ visible }) {
 
 /* ================================================================
    App — root component
-   IMPROVEMENT #1  analysis progress banner
-   IMPROVEMENT #5  dirty banner (sticky post-edit nudge)
-   IMPROVEMENT #6  one-level session history (prev result)
-   IMPROVEMENT #9  topbar copy handler
    ================================================================ */
 export default function App() {
   const [description, setDescription] = useState("");
@@ -1534,12 +1594,12 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const resultsRef = useRef(null);
 
-  // IMPROVEMENT #6: one-level session history
+  // One-level session history
   const [prevResult, setPrevResult] = useState(null);
   const [prevDescription, setPrevDescription] = useState("");
 
-  // IMPROVEMENT #9: topbar copy state
-  const [topbarCopied, setTopbarCopied] = useState(false);
+  // FIX #3: single copy state shared by topbar + sidebar button
+  const [analysisCopied, setAnalysisCopied] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 360);
@@ -1573,7 +1633,7 @@ export default function App() {
   const legislationItems   = useMemo(() => buildCompactLegislationItems(result), [result]);
   const legislationGroups  = useMemo(() => buildLegislationGroups(result),       [result]);
   const directiveBreakdown = useMemo(() => buildDirectiveBreakdown(routeSections), [routeSections]);
-  const baseSafetyRoute  = useMemo(() => inferBaseSafetyRoute(result, routeSections), [result, routeSections]);
+  const baseSafetyRoute    = useMemo(() => inferBaseSafetyRoute(result, routeSections), [result, routeSections]);
 
   const totalStandards = useMemo(
     () => routeSections.reduce((count, section) => count + (section.items || []).length, 0),
@@ -1600,7 +1660,6 @@ export default function App() {
     const payloadDescription = String(description || "").trim();
     if (!payloadDescription) return;
 
-    // IMPROVEMENT #6: save current result to history before overwriting
     if (result) {
       setPrevResult(result);
       setPrevDescription(description);
@@ -1630,7 +1689,6 @@ export default function App() {
     }
   }, [description, result]);
 
-  // IMPROVEMENT #6: restore previous analysis
   const restorePrev = useCallback(() => {
     if (!prevResult) return;
     setResult(prevResult);
@@ -1650,14 +1708,14 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // IMPROVEMENT #9: topbar copy handler (same logic as sidebar, surfaced higher)
-  const handleTopbarCopy = useCallback(async () => {
+  // FIX #3: single copy handler shared by topbar and sidebar
+  const handleCopyAnalysis = useCallback(async () => {
     if (!result) return;
     const text = buildClipboardSummary({ result, description, routeSections, legislationGroups });
     try {
       await navigator.clipboard.writeText(text);
-      setTopbarCopied(true);
-      window.setTimeout(() => setTopbarCopied(false), 2400);
+      setAnalysisCopied(true);
+      window.setTimeout(() => setAnalysisCopied(false), 2400);
     } catch (_) {}
   }, [result, description, routeSections, legislationGroups]);
 
@@ -1669,13 +1727,18 @@ export default function App() {
         onReset={resetAnalysis}
         prevResult={prevResult}
         onRestorePrev={restorePrev}
-        onCopy={handleTopbarCopy}
-        copied={topbarCopied}
+        onCopy={handleCopyAnalysis}
+        copied={analysisCopied}
       />
 
-      {/* IMPROVEMENT #5: Dirty banner — sticky, always rendered, animated in/out */}
+      {/* FIX #4: DirtyBanner now has onDismiss to clear without re-running */}
       {result ? (
-        <DirtyBanner dirty={clarifyDirty} busy={busy} onReanalyze={runAnalysis} />
+        <DirtyBanner
+          dirty={clarifyDirty}
+          busy={busy}
+          onReanalyze={runAnalysis}
+          onDismiss={() => setClarifyDirty(false)}
+        />
       ) : null}
 
       <main className={`page-shell page-main ${!result ? "page-main--landing" : ""}`.trim()}>
@@ -1697,7 +1760,6 @@ export default function App() {
           isLanding={!result}
         />
 
-        {/* IMPROVEMENT #1: Multi-step progress banner during analysis */}
         <AnalysisProgressBanner busy={busy} />
 
         {!result && !busy && <EmptyState />}
@@ -1713,24 +1775,30 @@ export default function App() {
                 result={result}
                 routeSections={routeSections}
                 legislationItems={legislationItems}
-                directiveBreakdown={directiveBreakdown}
               />
 
-              <StandardsRoutePanel sections={routeSections} directiveBreakdown={directiveBreakdown} baseSafetyRoute={baseSafetyRoute} />
+              {/* FIX #11: ErrorBoundary wraps volatile panels */}
+              <ErrorBoundary label="Standards route could not be rendered">
+                <StandardsRoutePanel
+                  sections={routeSections}
+                  directiveBreakdown={directiveBreakdown}
+                  baseSafetyRoute={baseSafetyRoute}
+                />
+              </ErrorBoundary>
 
-              <ClarificationsPanel
-                items={guidanceItems}
-                dirty={clarifyDirty}
-                busy={busy}
-                onReanalyze={runAnalysis}
-                onApply={(text) => {
-                  setDescription((current) => {
-                    const next = joinText(current, text);
-                    if (next !== current) setClarifyDirty(true);
-                    return next;
-                  });
-                }}
-              />
+              <ErrorBoundary label="Clarifications could not be rendered">
+                {/* FIX #2: removed dirty/busy/onReanalyze — DirtyBanner is the canonical CTA */}
+                <ClarificationsPanel
+                  items={guidanceItems}
+                  onApply={(text) => {
+                    setDescription((current) => {
+                      const next = joinText(current, text);
+                      if (next !== current) setClarifyDirty(true);
+                      return next;
+                    });
+                  }}
+                />
+              </ErrorBoundary>
 
               <div className="footer-note">
                 <span>
@@ -1744,12 +1812,17 @@ export default function App() {
               </div>
             </div>
 
-            <SnapshotRail
-              result={result}
-              routeSections={routeSections}
-              legislationGroups={legislationGroups}
-              description={description}
-            />
+            <ErrorBoundary label="Sidebar could not be rendered">
+              {/* FIX #3: shared copy state passed down */}
+              <SnapshotRail
+                result={result}
+                routeSections={routeSections}
+                legislationGroups={legislationGroups}
+                description={description}
+                onCopy={handleCopyAnalysis}
+                copied={analysisCopied}
+              />
+            </ErrorBoundary>
           </div>
         ) : null}
       </main>
