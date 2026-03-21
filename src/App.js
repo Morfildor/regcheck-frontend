@@ -168,7 +168,6 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
-  const primaryRegimes = hero.primary_regimes || [];
 
   /* ── Empty / Landing state: compact strip ── */
   if (!result) {
