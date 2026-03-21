@@ -7,31 +7,31 @@ const METADATA_URL = ANALYZE_URL.replace(/\/analyze$/, "/metadata/options");
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bg:          "#0b0d12",
-  bgPanel:     "#13151c",
-  bgCard:      "#1a1d28",
-  bgCardInner: "#21253a",
-  bgCardDeep:  "#161924",
+  bg:          "#080a0f",
+  bgPanel:     "#0d0f18",
+  bgCard:      "#111420",
+  bgCardInner: "#181c2e",
+  bgCardDeep:  "#0c0e1a",
 
-  line:        "rgba(255,255,255,0.07)",
-  lineStrong:  "rgba(255,255,255,0.12)",
-  lineFocus:   "rgba(99,172,255,0.45)",
+  line:        "rgba(255,255,255,0.06)",
+  lineStrong:  "rgba(255,255,255,0.10)",
+  lineFocus:   "rgba(99,172,255,0.50)",
 
-  text:        "#eef0f8",
-  textSub:     "#b4bbd4",
-  textMuted:   "#6e7898",
-  textLabel:   "#8892b4",
+  text:        "#f0f2fa",
+  textSub:     "#a8b2cc",
+  textMuted:   "#5a6585",
+  textLabel:   "#6e7da0",
 
-  blue:        "#63acff",
-  teal:        "#2dd4bf",
-  violet:      "#a78bfa",
-  rose:        "#f87171",
-  amber:       "#fbbf24",
-  green:       "#4ade80",
+  blue:        "#5ba8ff",
+  teal:        "#22d3c4",
+  violet:      "#9d7ef7",
+  rose:        "#f06b6b",
+  amber:       "#f5b830",
+  green:       "#3fd97a",
 
-  shadow:      "0 2px 16px rgba(0,0,0,0.5)",
-  shadowLg:    "0 8px 40px rgba(0,0,0,0.6)",
-  shadowCard:  "0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)",
+  shadow:      "0 2px 16px rgba(0,0,0,0.6)",
+  shadowLg:    "0 12px 48px rgba(0,0,0,0.7)",
+  shadowCard:  "0 2px 12px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4)",
 };
 
 // ─── Directive metadata ───────────────────────────────────────────────────────
@@ -275,10 +275,10 @@ function DirPill({ dirKey, large=false }){
   const tone=directiveTone(dirKey);
   return (
     <span style={{
-      display:"inline-flex",alignItems:"center",gap:5,borderRadius:6,
+      display:"inline-flex",alignItems:"center",gap:5,borderRadius:7,
       border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
-      padding:large?"5px 12px":"3px 8px", fontSize:large?12:11, fontWeight:700,
-      whiteSpace:"nowrap",letterSpacing:"0.02em",
+      padding:large?"5px 13px":"3px 9px", fontSize:large?12:10.5, fontWeight:700,
+      whiteSpace:"nowrap",letterSpacing:"0.025em",
     }}>
       <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
       {directiveShort(dirKey)}
@@ -290,11 +290,11 @@ function RiskBadge({ value }){
   const tone=STATUS[value]||STATUS.MEDIUM;
   return (
     <span style={{
-      display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,
+      display:"inline-flex",alignItems:"center",gap:5,borderRadius:6,
       border:`1px solid ${tone.bd}`,background:tone.bg,color:tone.text,
-      padding:"3px 10px",fontSize:11,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",
+      padding:"3px 10px",fontSize:10.5,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",
     }}>
-      <span style={{width:5,height:5,borderRadius:999,background:tone.text}}/>
+      <span style={{width:5,height:5,borderRadius:999,background:tone.text,flexShrink:0}}/>
       {value} Risk
     </span>
   );
@@ -302,10 +302,12 @@ function RiskBadge({ value }){
 
 function Chip({ children, tone="neutral" }){
   const s = tone==="neutral"
-    ? {bg:"rgba(255,255,255,0.06)", bd:T.lineStrong, text:T.textSub}
+    ? {bg:"rgba(255,255,255,0.055)", bd:T.lineStrong, text:T.textSub}
     : tone==="blue"
-    ? {bg:"rgba(99,172,255,0.10)", bd:"rgba(99,172,255,0.22)", text:T.blue}
-    : {bg:"rgba(45,212,191,0.10)", bd:"rgba(45,212,191,0.22)", text:T.teal};
+    ? {bg:"rgba(91,168,255,0.10)", bd:"rgba(91,168,255,0.22)", text:T.blue}
+    : tone==="teal"
+    ? {bg:"rgba(34,211,196,0.10)", bd:"rgba(34,211,196,0.22)", text:T.teal}
+    : {bg:"rgba(34,211,196,0.10)", bd:"rgba(34,211,196,0.22)", text:T.teal};
   return (
     <span style={{
       display:"inline-flex",alignItems:"center",borderRadius:6,
@@ -328,14 +330,14 @@ function Card({ children, style }){
 function CardHeader({ title, subtitle, right }){
   return (
     <div style={{
-      padding:"15px 20px 13px",
+      padding:"14px 20px 12px",
       borderBottom:`1px solid ${T.line}`,
       background:T.bgCardDeep,
       display:"flex",gap:12,alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",
     }}>
       <div style={{minWidth:0}}>
         {title&&<div style={{fontSize:13,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>{title}</div>}
-        {subtitle&&<div style={{marginTop:3,fontSize:11,color:T.textMuted,lineHeight:1.55}}>{subtitle}</div>}
+        {subtitle&&<div style={{marginTop:3,fontSize:11,color:T.textMuted,lineHeight:1.55,letterSpacing:"0.005em"}}>{subtitle}</div>}
       </div>
       {right&&<div style={{flexShrink:0}}>{right}</div>}
     </div>
@@ -367,11 +369,11 @@ function PrimaryBtn({ onClick, disabled, children }){
   return (
     <button onClick={onClick} disabled={disabled} style={{
       appearance:"none",cursor:disabled?"not-allowed":"pointer",
-      opacity:disabled?0.38:1,borderRadius:10,border:"none",
-      background:disabled?"rgba(99,172,255,0.18)":`linear-gradient(135deg,${T.blue},${T.teal})`,
-      color:"#000",padding:"11px 22px",fontWeight:700,fontSize:13,
-      boxShadow:disabled?"none":"0 0 24px rgba(99,172,255,0.22)",
-      transition:"all 0.2s",letterSpacing:"0.01em",whiteSpace:"nowrap",
+      opacity:disabled?0.35:1,borderRadius:10,border:"none",
+      background:disabled?"rgba(91,168,255,0.15)":`linear-gradient(135deg,${T.blue},${T.teal})`,
+      color:"#050810",padding:"11px 24px",fontWeight:700,fontSize:13,
+      boxShadow:disabled?"none":"0 0 28px rgba(91,168,255,0.24)",
+      transition:"all 0.2s",letterSpacing:"0.015em",whiteSpace:"nowrap",
     }}>{children}</button>
   );
 }
@@ -393,8 +395,8 @@ function GhostBtn({ onClick, children }){
     <button onClick={onClick} style={{
       appearance:"none",cursor:"pointer",borderRadius:8,
       border:`1px solid ${T.line}`,background:"transparent",
-      color:T.textMuted,padding:"5px 11px",fontWeight:600,fontSize:11.5,
-      transition:"all 0.2s",whiteSpace:"nowrap",
+      color:T.textMuted,padding:"5px 12px",fontWeight:600,fontSize:11.5,
+      transition:"all 0.18s",whiteSpace:"nowrap",letterSpacing:"0.01em",
     }}>{children}</button>
   );
 }
@@ -403,9 +405,11 @@ function AddChipBtn({ onClick, children }){
   return (
     <button onClick={onClick} style={{
       appearance:"none",cursor:"pointer",borderRadius:7,
-      border:`1px solid ${T.lineStrong}`,background:"rgba(255,255,255,0.04)",
+      border:`1px solid rgba(255,255,255,0.08)`,
+      background:"rgba(255,255,255,0.035)",
       color:T.textSub,padding:"5px 11px",fontWeight:600,fontSize:11.5,
       transition:"background 0.15s,color 0.15s,border-color 0.15s",
+      letterSpacing:"0.01em",
     }}>{children}</button>
   );
 }
@@ -431,46 +435,55 @@ function Topbar({ result, onReset }){
   return (
     <div style={{
       borderBottom:`1px solid ${T.line}`,
-      background:`${T.bgPanel}f0`,
-      backdropFilter:"blur(20px)",
-      WebkitBackdropFilter:"blur(20px)",
-      padding:"0 20px",
-      display:"flex",alignItems:"center",gap:10,height:50,
+      background:`rgba(8,10,15,0.88)`,
+      backdropFilter:"blur(24px) saturate(1.4)",
+      WebkitBackdropFilter:"blur(24px) saturate(1.4)",
+      padding:"0 clamp(14px,3vw,28px)",
+      display:"flex",alignItems:"center",gap:12,height:52,
       position:"sticky",top:0,zIndex:100,
     }}>
-      <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+      {/* Logo */}
+      <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
         <div style={{
-          width:26,height:26,borderRadius:7,
-          background:`linear-gradient(135deg,${T.blue},${T.teal})`,
+          width:28,height:28,borderRadius:8,
+          background:`linear-gradient(140deg,${T.blue} 0%,${T.teal} 100%)`,
           display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:12,fontWeight:900,color:"#000",flexShrink:0,
+          fontSize:13,fontWeight:900,color:"#050810",flexShrink:0,
+          boxShadow:`0 0 14px rgba(91,168,255,0.30)`,
         }}>⬡</div>
-        <span style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:17,color:T.text,letterSpacing:"-0.01em",whiteSpace:"nowrap"}}>
-          RuleGrid
-        </span>
+        <span style={{
+          fontFamily:"'DM Serif Display',Georgia,serif",
+          fontSize:18,color:T.text,letterSpacing:"-0.015em",whiteSpace:"nowrap",
+        }}>RuleGrid</span>
       </div>
 
-      <div style={{width:1,height:18,background:T.line,margin:"0 2px",flexShrink:0}}/>
-      <span className="topbar-subtitle" style={{fontSize:11,color:T.textMuted,fontWeight:500}}>EU Regulatory Scoping</span>
+      <div style={{width:1,height:16,background:T.line,margin:"0 4px",flexShrink:0}}/>
+      <span className="topbar-subtitle" style={{
+        fontSize:11,color:T.textMuted,fontWeight:500,letterSpacing:"0.01em",
+      }}>EU Regulatory Scoping</span>
 
       {result&&(
-        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:7}}>
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
           <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
           {totalStandards!==null&&(
             <span className="topbar-count" style={{
-              fontSize:11,color:T.textMuted,fontWeight:600,
-              background:"rgba(255,255,255,0.04)",border:`1px solid ${T.line}`,
-              borderRadius:6,padding:"3px 8px",whiteSpace:"nowrap",
-            }}>{totalStandards} std</span>
+              fontSize:11,color:T.textSub,fontWeight:600,
+              background:"rgba(255,255,255,0.05)",border:`1px solid ${T.line}`,
+              borderRadius:6,padding:"3px 9px",whiteSpace:"nowrap",
+              fontVariantNumeric:"tabular-nums",
+            }}>{totalStandards} standards</span>
           )}
-          <button onClick={onReset} style={{
+          <button onClick={onReset} className="topbar-reset-btn" style={{
             appearance:"none",cursor:"pointer",borderRadius:8,
-            border:`1px solid rgba(99,172,255,0.25)`,
-            background:"rgba(99,172,255,0.07)",
-            color:T.blue,padding:"5px 12px",fontWeight:600,fontSize:12,
-            display:"flex",alignItems:"center",gap:5,
-            transition:"all 0.15s",whiteSpace:"nowrap",
-          }}>↺ <span className="topbar-new-label">New analysis</span></button>
+            border:`1px solid rgba(91,168,255,0.28)`,
+            background:"rgba(91,168,255,0.08)",
+            color:T.blue,padding:"5px 13px",fontWeight:600,fontSize:12,
+            display:"flex",alignItems:"center",gap:6,
+            transition:"all 0.15s",whiteSpace:"nowrap",letterSpacing:"0.01em",
+          }}>
+            <span style={{fontSize:14,lineHeight:1}}>↺</span>
+            <span className="topbar-new-label">New analysis</span>
+          </button>
         </div>
       )}
     </div>
@@ -485,49 +498,59 @@ function Hero({ result }){
 
   return (
     <div style={{
-      borderRadius:16,border:`1px solid ${T.lineStrong}`,
-      background:"linear-gradient(150deg,#1c2035 0%,#161926 55%,#1a1e30 100%)",
-      boxShadow:`${T.shadowLg},0 0 60px rgba(99,172,255,0.05)`,
-      padding:"clamp(20px,4vw,36px) clamp(16px,4vw,32px)",
+      borderRadius:18,border:`1px solid ${T.lineStrong}`,
+      background:"linear-gradient(160deg,#131728 0%,#0d1020 55%,#121629 100%)",
+      boxShadow:`${T.shadowLg},0 0 80px rgba(91,168,255,0.04)`,
+      padding:"clamp(22px,4vw,40px) clamp(18px,4vw,36px)",
       position:"relative",overflow:"hidden",
     }}>
+      {/* Grid texture */}
       <div style={{position:"absolute",inset:0,pointerEvents:"none",
-        backgroundImage:`linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)`,
-        backgroundSize:"48px 48px"}}/>
-      <div style={{position:"absolute",top:-60,left:"50%",transform:"translateX(-50%)",
-        width:400,height:200,
-        background:"radial-gradient(ellipse,rgba(99,172,255,0.07),transparent 70%)",
+        backgroundImage:`linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px)`,
+        backgroundSize:"56px 56px"}}/>
+      {/* Glow */}
+      <div style={{position:"absolute",top:-80,left:"40%",transform:"translateX(-50%)",
+        width:480,height:240,
+        background:"radial-gradient(ellipse,rgba(91,168,255,0.06),transparent 68%)",
+        pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:-60,right:"20%",
+        width:320,height:160,
+        background:"radial-gradient(ellipse,rgba(34,211,196,0.04),transparent 68%)",
         pointerEvents:"none"}}/>
 
-      <div style={{position:"relative",display:"grid",gap:14,justifyItems:"center",textAlign:"center"}}>
+      <div style={{position:"relative",display:"grid",gap:16,justifyItems:"center",textAlign:"center"}}>
         {showMeta&&(
-          <div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center"}}>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center",animation:"fadeUp 0.35s ease both"}}>
             <RiskBadge value={result?.overall_risk||"MEDIUM"}/>
             <Chip tone="blue">{titleCase(hero.confidence||result?.product_match_confidence||"low")} Confidence</Chip>
+            {result?.product_type&&(
+              <Chip tone="teal">{titleCase(result.product_type)}</Chip>
+            )}
           </div>
         )}
-        <div>
+        <div style={{animation:"fadeUp 0.4s ease 0.05s both"}}>
           <h1 style={{
             fontFamily:"'DM Serif Display',Georgia,serif",
-            fontSize:"clamp(22px,4vw,38px)",fontWeight:400,color:T.text,
-            lineHeight:1.1,letterSpacing:"-0.02em",marginBottom:10,
+            fontSize:"clamp(22px,4vw,40px)",fontWeight:400,color:T.text,
+            lineHeight:1.08,letterSpacing:"-0.025em",marginBottom:12,
           }}>
             {hero.title||"RuleGrid Regulatory Scoping"}
           </h1>
-          <p style={{fontSize:"clamp(13px,2vw,14px)",color:T.textSub,lineHeight:1.75,maxWidth:560,margin:"0 auto"}}>
+          <p style={{fontSize:"clamp(13px,2vw,14.5px)",color:T.textSub,lineHeight:1.8,maxWidth:560,margin:"0 auto"}}>
             {hero.subtitle||"Describe the product clearly to generate the standards route and the applicable legislation path."}
           </p>
         </div>
         {showMeta&&primaryRegimes.length>0&&(
-          <div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center"}}>
+          <div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center",animation:"fadeUp 0.4s ease 0.10s both"}}>
             {primaryRegimes.map(dirKey=><DirPill key={dirKey} dirKey={dirKey} large/>)}
           </div>
         )}
         {showMeta&&result?.summary&&(
           <div style={{
-            width:"100%",maxWidth:640,padding:"13px 18px",borderRadius:12,
-            background:"rgba(99,172,255,0.06)",border:`1px solid rgba(99,172,255,0.14)`,
-            fontSize:13,color:T.textSub,lineHeight:1.75,textAlign:"left",
+            width:"100%",maxWidth:660,padding:"14px 20px",borderRadius:12,
+            background:"rgba(91,168,255,0.05)",border:`1px solid rgba(91,168,255,0.12)`,
+            fontSize:13.5,color:T.textSub,lineHeight:1.8,textAlign:"left",
+            animation:"fadeUp 0.4s ease 0.15s both",
           }}>{result.summary}</div>
         )}
       </div>
@@ -540,47 +563,64 @@ function SidebarRail({ result }){
   if(!result) return null;
   const items=buildCompactLegislationItems(result);
   const confidence=result?.confidence_panel?.confidence||result?.product_match_confidence||"low";
+  const risk=result?.overall_risk||"MEDIUM";
+  const riskTone=STATUS[risk]||STATUS.MEDIUM;
+
   return (
-    <aside className="left-rail" style={{display:"grid",gap:10,position:"sticky",top:64,alignSelf:"start"}}>
+    <aside className="left-rail" style={{display:"grid",gap:10,position:"sticky",top:68,alignSelf:"start"}}>
+      {/* Detection card */}
       <Card>
-        <CardHeader title="Applicable legislation" subtitle="All detected legislation"/>
-        <div style={{padding:"10px 12px",display:"grid",gap:6}}>
-          {items.map(item=>{
-            const tone=directiveTone(item.directive_key||"OTHER");
-            return (
-              <div key={`${item.code}-${item.directive_key}-${item.section_key}`}
-                style={{borderRadius:9,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"8px 10px",display:"grid",gap:3}}>
-                <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                  <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
-                  <span style={{fontSize:11.5,fontWeight:700,color:tone.text}}>{item.code}</span>
-                  <span style={{fontSize:9.5,opacity:0.7,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:tone.text}}>
-                    {compactLegislationGroupLabel(item)}
-                  </span>
-                </div>
-                <div style={{fontSize:11,lineHeight:1.45,color:T.textSub}}>{item.title}</div>
-              </div>
-            );
-          })}
+        <CardHeader title="Detection" subtitle="Product identification"/>
+        <div style={{padding:"12px 14px",display:"grid",gap:8}}>
+          <SoftBox>
+            <Label>Detected product</Label>
+            <div style={{fontSize:14,fontWeight:700,color:T.text,marginTop:2,letterSpacing:"-0.01em"}}>{titleCase(result?.product_type||"Unclear")}</div>
+          </SoftBox>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <SoftBox>
+              <Label>Confidence</Label>
+              <Chip tone="blue">{titleCase(confidence)}</Chip>
+            </SoftBox>
+            {result?.overall_risk&&(
+              <SoftBox>
+                <Label>Risk</Label>
+                <span style={{
+                  display:"inline-flex",alignItems:"center",gap:5,borderRadius:6,
+                  border:`1px solid ${riskTone.bd}`,background:riskTone.bg,color:riskTone.text,
+                  padding:"3px 8px",fontSize:11,fontWeight:700,letterSpacing:"0.04em",
+                }}>
+                  <span style={{width:5,height:5,borderRadius:999,background:riskTone.text,flexShrink:0}}/>
+                  {risk}
+                </span>
+              </SoftBox>
+            )}
+          </div>
         </div>
       </Card>
 
+      {/* Legislation card */}
       <Card>
-        <CardHeader title="Detection" subtitle="Product identification"/>
-        <div style={{padding:"10px 12px",display:"grid",gap:7}}>
-          <SoftBox>
-            <Label>Detected product</Label>
-            <div style={{fontSize:14,fontWeight:700,color:T.text,marginTop:1}}>{titleCase(result?.product_type||"Unclear")}</div>
-          </SoftBox>
-          <SoftBox>
-            <Label>Confidence</Label>
-            <Chip tone="blue">{titleCase(confidence)}</Chip>
-          </SoftBox>
-          {result?.overall_risk&&(
-            <SoftBox>
-              <Label>Overall risk</Label>
-              <RiskBadge value={result.overall_risk}/>
-            </SoftBox>
-          )}
+        <CardHeader title="Applicable legislation" subtitle="All detected frameworks"/>
+        <div style={{padding:"10px 12px",display:"grid",gap:5}}>
+          {items.map(item=>{
+            const tone=directiveTone(item.directive_key||"OTHER");
+            const groupLabel=compactLegislationGroupLabel(item);
+            return (
+              <div key={`${item.code}-${item.directive_key}-${item.section_key}`}
+                style={{borderRadius:9,border:`1px solid ${tone.bd}`,background:tone.bg,padding:"9px 11px",display:"grid",gap:4}}>
+                <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:5,alignItems:"center"}}>
+                    <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+                    <span style={{fontSize:12,fontWeight:700,color:tone.text,fontFamily:"'DM Mono',ui-monospace,monospace"}}>{item.code}</span>
+                  </div>
+                  <span style={{fontSize:9,opacity:0.65,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:tone.text}}>
+                    {groupLabel}
+                  </span>
+                </div>
+                <div style={{fontSize:11,lineHeight:1.5,color:T.textSub}}>{item.title}</div>
+              </div>
+            );
+          })}
         </div>
       </Card>
     </aside>
@@ -599,23 +639,26 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
         title="Product description"
         subtitle="Type · connectivity · power · functions · sensors · materials · battery"
       />
-      <div style={{padding:"16px 18px",display:"grid",gap:14}}>
+      <div style={{padding:"18px 20px",display:"grid",gap:16}}>
 
+        {/* Quick fill templates */}
         <div>
-          <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:8}}>
+          <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:9}}>
             Quick fill
           </div>
           <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
             {templates.slice(0,4).map(template=>(
               <button key={template.label} onClick={()=>{ setDescription(template.text); onDirty(true); }} style={{
                 appearance:"none",cursor:"pointer",borderRadius:8,
-                border:`1px solid rgba(99,172,255,0.20)`,background:"rgba(99,172,255,0.07)",
-                color:T.blue,padding:"6px 13px",fontSize:12,fontWeight:600,transition:"all 0.15s",
+                border:`1px solid rgba(91,168,255,0.22)`,background:"rgba(91,168,255,0.07)",
+                color:T.blue,padding:"6px 14px",fontSize:12,fontWeight:600,
+                transition:"all 0.15s",letterSpacing:"0.01em",
               }}>{template.label}</button>
             ))}
           </div>
         </div>
 
+        {/* Textarea */}
         <div style={{position:"relative"}}>
           <textarea
             value={description}
@@ -626,23 +669,28 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
             rows={6}
             maxLength={charMax}
             style={{
-              width:"100%",borderRadius:12,resize:"vertical",minHeight:140,lineHeight:1.7,
+              width:"100%",borderRadius:12,resize:"vertical",minHeight:148,lineHeight:1.75,
               border:`1px solid ${focused?T.lineFocus:T.lineStrong}`,
-              background:"rgba(0,0,0,0.22)",padding:"12px 14px 32px",
+              background:focused?"rgba(0,0,0,0.30)":"rgba(0,0,0,0.22)",
+              padding:"13px 15px 34px",
               color:T.text,outline:"none",fontSize:14,
-              boxShadow:focused?"0 0 0 3px rgba(99,172,255,0.08)":"none",
-              transition:"border-color 0.2s,box-shadow 0.2s",
+              boxShadow:focused?"0 0 0 3px rgba(91,168,255,0.09), inset 0 1px 4px rgba(0,0,0,0.3)":"inset 0 1px 4px rgba(0,0,0,0.2)",
+              transition:"border-color 0.2s,box-shadow 0.2s,background 0.2s",
               boxSizing:"border-box",
             }}
           />
-          <div style={{position:"absolute",bottom:10,right:12,pointerEvents:"none"}}>
+          <div style={{position:"absolute",bottom:10,right:13,pointerEvents:"none",display:"flex",alignItems:"center",gap:8}}>
+            {wordCount>0&&!busy&&(
+              <span style={{fontSize:10.5,color:T.textMuted,fontStyle:"italic"}}>{wordCount}w</span>
+            )}
             <CharCounter value={description} max={charMax}/>
           </div>
         </div>
 
+        {/* Add-detail chips */}
         {chips.length>0&&(
           <div>
-            <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.10em",marginBottom:8}}>
+            <div style={{fontSize:10,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:9}}>
               Add detail
             </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
@@ -655,8 +703,9 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
           </div>
         )}
 
-        <div style={{display:"flex",gap:9,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
-          <div style={{display:"flex",gap:9,flexWrap:"wrap"}}>
+        {/* Actions */}
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",paddingTop:2}}>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <PrimaryBtn onClick={onAnalyze} disabled={busy||!description.trim()}>
               {busy?(
                 <span style={{display:"flex",alignItems:"center",gap:8}}>
@@ -666,9 +715,6 @@ function InputComposer({ description, setDescription, templates, chips, onAnalyz
             </PrimaryBtn>
             <SecondaryBtn onClick={()=>{ setDescription(""); onDirty(true); }} disabled={!description}>Clear</SecondaryBtn>
           </div>
-          {wordCount>0&&!busy&&(
-            <span style={{fontSize:11,color:T.textMuted,fontStyle:"italic"}}>{wordCount} word{wordCount!==1?"s":""}</span>
-          )}
         </div>
       </div>
     </Card>
@@ -683,30 +729,35 @@ function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
 
   const highCount=items.filter(i=>i.importance==="high").length;
   const accentColor=highCount>0?T.amber:T.textMuted;
-  const accentBd=highCount>0?"rgba(251,191,36,0.20)":"rgba(255,255,255,0.08)";
-  const accentBg=highCount>0?"rgba(251,191,36,0.04)":"rgba(255,255,255,0.02)";
+  const accentBd=highCount>0?"rgba(245,184,48,0.18)":"rgba(255,255,255,0.07)";
+  const accentBg=highCount>0?"rgba(245,184,48,0.04)":"rgba(255,255,255,0.02)";
 
   return (
     <div style={{borderRadius:12,border:`1px solid ${accentBd}`,background:accentBg,overflow:"hidden"}}>
       <div
-        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",cursor:"pointer",userSelect:"none",flexWrap:"wrap"}}
+        style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",cursor:"pointer",userSelect:"none",flexWrap:"wrap"}}
         onClick={()=>setOpen(v=>!v)}
       >
-        <span style={{fontSize:12,color:accentColor,flexShrink:0}}>{open?"▾":"▸"}</span>
-        <span style={{fontSize:12,fontWeight:700,color:accentColor,whiteSpace:"nowrap"}}>
-          {items.length} clarification{items.length!==1?"s":""} that may refine this route
+        {/* Chevron */}
+        <span style={{
+          fontSize:10,color:accentColor,flexShrink:0,
+          display:"inline-block",transition:"transform 0.2s",
+          transform:open?"rotate(90deg)":"rotate(0deg)",
+        }}>▶</span>
+        <span style={{fontSize:12.5,fontWeight:700,color:accentColor,whiteSpace:"nowrap"}}>
+          {items.length} clarification{items.length!==1?"s":""} may refine this route
         </span>
         <div style={{display:"flex",gap:5,flexWrap:"wrap",flex:1,minWidth:0}}>
           {items.slice(0,3).map(item=>{
             const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
             return (
               <span key={item.key} style={{
-                fontSize:10,fontWeight:600,borderRadius:5,padding:"2px 7px",
+                fontSize:10,fontWeight:600,borderRadius:5,padding:"2px 8px",
                 background:tone.bg,border:`1px solid ${tone.bd}`,color:tone.text,whiteSpace:"nowrap",
               }}>{item.title}</span>
             );
           })}
-          {items.length>3&&<span style={{fontSize:10,color:T.textMuted,alignSelf:"center"}}>+{items.length-3}</span>}
+          {items.length>3&&<span style={{fontSize:10,color:T.textMuted,alignSelf:"center"}}>+{items.length-3} more</span>}
         </div>
         {dirty&&(
           <button
@@ -715,25 +766,28 @@ function GuidanceStrip({ result, dirty, busy, onReanalyze, onApply }){
             style={{
               appearance:"none",cursor:"pointer",borderRadius:7,border:"none",
               background:`linear-gradient(135deg,${T.blue},${T.teal})`,
-              color:"#000",padding:"5px 12px",fontWeight:700,fontSize:11,
-              flexShrink:0,opacity:busy?0.5:1,whiteSpace:"nowrap",
+              color:"#050810",padding:"5px 13px",fontWeight:700,fontSize:11,
+              flexShrink:0,opacity:busy?0.5:1,whiteSpace:"nowrap",letterSpacing:"0.01em",
             }}
-          >{busy?"…":"Refresh →"}</button>
+          >{busy?"…":"Re-analyze →"}</button>
         )}
         {dirty&&!busy&&(
-          <span style={{fontSize:10,color:T.amber,fontWeight:600,flexShrink:0,whiteSpace:"nowrap"}}>● Updated</span>
+          <span style={{fontSize:10,color:T.amber,fontWeight:600,flexShrink:0,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
+            <span style={{width:5,height:5,borderRadius:999,background:T.amber,display:"inline-block"}}/>
+            Updated
+          </span>
         )}
       </div>
       {open&&(
-        <div style={{borderTop:`1px solid rgba(255,255,255,0.06)`,padding:"10px 14px 12px",display:"flex",gap:6,flexWrap:"wrap"}}>
+        <div style={{borderTop:`1px solid rgba(255,255,255,0.05)`,padding:"12px 16px 14px",display:"flex",gap:6,flexWrap:"wrap"}}>
           {items.flatMap(item=>item.choices.map(choice=>{
             const tone=IMPORTANCE[item.importance]||IMPORTANCE.medium;
             return (
               <button key={item.key+choice} onClick={()=>onApply(choice)} style={{
-                appearance:"none",cursor:"pointer",borderRadius:6,
-                border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.18)",
-                color:tone.text,padding:"4px 9px",fontSize:11,fontWeight:600,
-                transition:"filter 0.15s",
+                appearance:"none",cursor:"pointer",borderRadius:7,
+                border:`1px solid ${tone.bd}`,background:"rgba(0,0,0,0.20)",
+                color:tone.text,padding:"5px 11px",fontSize:11,fontWeight:600,
+                transition:"filter 0.15s",letterSpacing:"0.01em",
               }}>+ {choice}</button>
             );
           }))}
@@ -750,19 +804,26 @@ function RoutePills({ result }){
   const total=breakdown.reduce((n,{count})=>n+count,0);
   return (
     <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-      <span style={{fontSize:11,color:T.textMuted,fontWeight:500,marginRight:2}}>
-        {total} standards —
+      <span style={{
+        fontSize:11,color:T.textMuted,fontWeight:600,marginRight:3,
+        fontVariantNumeric:"tabular-nums",
+      }}>
+        {total} total —
       </span>
       {breakdown.map(({key,count})=>{
         const tone=directiveTone(key);
         return (
           <span key={key} style={{
-            display:"inline-flex",alignItems:"center",gap:4,
+            display:"inline-flex",alignItems:"center",gap:5,
             borderRadius:20,border:`1px solid ${tone.bd}`,background:tone.bg,
-            color:tone.text,padding:"2px 8px",fontSize:10.5,fontWeight:700,whiteSpace:"nowrap",
+            color:tone.text,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap",
           }}>
-            <span style={{width:4,height:4,borderRadius:999,background:tone.dot,flexShrink:0}}/>
-            {directiveShort(key)}<span style={{opacity:0.6,fontWeight:400,marginLeft:2}}>{count}</span>
+            <span style={{width:5,height:5,borderRadius:999,background:tone.dot,flexShrink:0}}/>
+            {directiveShort(key)}
+            <span style={{
+              opacity:0.55,fontWeight:500,marginLeft:1,
+              fontVariantNumeric:"tabular-nums",
+            }}>{count}</span>
           </span>
         );
       })}
@@ -775,92 +836,166 @@ function StandardCard({ item, sectionKey }){
   const dirKey=normalizeStandardDirective(item);
   const dirTone=directiveTone(dirKey);
   const sectionTone=SECTION_TONES[sectionKey]||SECTION_TONES.unknown;
-  const evidence=sentenceCaseList(item.evidence_hint||[]).join(" · ");
+  const evidenceList=sentenceCaseList(item.evidence_hint||[]);
   const summary=item.standard_summary||item.reason||item.notes||item.title;
 
   const metaFields=[
     {label:"Harmonized Ref.",   value:prettyValue(item.harmonized_reference)},
-    {label:"Evidence Expected", value:prettyValue(evidence||"—")},
     {label:"Harmonized Ver.",   value:prettyValue(item.dated_version)},
     {label:"EU Latest Ver.",    value:prettyValue(item.version)},
-  ];
+  ].filter(f=>f.value&&f.value!=="—");
 
   return (
     <div className="standard-card" style={{
-      borderRadius:14,
-      border:`1.5px solid ${dirTone.bd}`,
-      background:`linear-gradient(160deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.015) 100%)`,
+      borderRadius:13,
+      border:`1px solid ${dirTone.bd}`,
+      background:`linear-gradient(165deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.01) 100%)`,
       overflow:"hidden",
-      boxShadow:"0 4px 22px rgba(0,0,0,0.35)",
+      boxShadow:"0 3px 18px rgba(0,0,0,0.38)",
       transition:"box-shadow 0.2s,transform 0.2s",
     }}>
-      {/* Header band */}
+      {/* Accent top bar */}
+      <div style={{height:2,background:`linear-gradient(90deg,${dirTone.dot},transparent 70%)`}}/>
+
+      {/* Header */}
       <div style={{
-        padding:"14px 18px 12px",
-        background:`linear-gradient(135deg,${dirTone.bg} 0%,transparent 70%)`,
-        borderBottom:`1px solid rgba(255,255,255,0.07)`,
+        padding:"13px 16px 11px",
+        background:`linear-gradient(140deg,${dirTone.bg} 0%,transparent 65%)`,
+        borderBottom:`1px solid rgba(255,255,255,0.05)`,
       }}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:10,flexWrap:"wrap"}}>
-          <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10,marginBottom:9}}>
+          <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",flex:1,minWidth:0}}>
             <DirPill dirKey={dirKey}/>
             <span style={{
               display:"inline-flex",alignItems:"center",borderRadius:5,
               background:sectionTone.tag,border:`1px solid ${sectionTone.bd}`,
               color:sectionTone.tagText,padding:"2px 7px",
-              fontSize:9.5,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",
+              fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.09em",
             }}>{titleCase(item.harmonization_status||"unknown")}</span>
           </div>
           <span style={{
-            display:"inline-flex",alignItems:"center",
-            borderRadius:8,background:dirTone.dot,color:"#000",
-            padding:"5px 12px",fontSize:12.5,fontWeight:900,
-            letterSpacing:"-0.01em",whiteSpace:"nowrap",flexShrink:0,
+            display:"inline-flex",alignItems:"center",flexShrink:0,
+            borderRadius:7,background:dirTone.dot,color:"#050810",
+            padding:"4px 11px",fontSize:12,fontWeight:800,
+            letterSpacing:"-0.01em",whiteSpace:"nowrap",
             fontFamily:"'DM Mono',ui-monospace,monospace",
           }}>{item.code}</span>
         </div>
 
-        <div style={{fontSize:15,fontWeight:700,color:T.text,lineHeight:1.35,marginBottom:summary&&summary!==item.title?6:0,letterSpacing:"-0.015em"}}>
+        <div style={{fontSize:14.5,fontWeight:700,color:T.text,lineHeight:1.35,marginBottom:summary&&summary!==item.title?7:0,letterSpacing:"-0.015em"}}>
           {item.title}
         </div>
 
         {summary&&summary!==item.title&&(
-          <div style={{fontSize:12.5,color:"rgba(180,187,212,0.85)",lineHeight:1.7,fontStyle:"italic"}}>
+          <div style={{fontSize:12,color:"rgba(168,178,204,0.80)",lineHeight:1.7,fontStyle:"italic"}}>
             {summary}
           </div>
         )}
       </div>
 
-      {/* Meta grid */}
-      <div className="standard-meta-grid" style={{
-        padding:"12px 16px 14px",
-        display:"grid",
-        gridTemplateColumns:"repeat(2,minmax(0,1fr))",
-        gap:7,
-        background:"rgba(0,0,0,0.18)",
-      }}>
-        {metaFields.map(({label,value})=>(
-          <div key={label} style={{
-            borderRadius:8,padding:"9px 11px",
-            background:"rgba(255,255,255,0.035)",
-            border:"1px solid rgba(255,255,255,0.06)",
+      {/* Footer: meta + evidence */}
+      <div style={{padding:"11px 14px 13px",background:"rgba(0,0,0,0.20)",display:"grid",gap:9}}>
+        {metaFields.length>0&&(
+          <div className="standard-meta-grid" style={{
+            display:"grid",
+            gridTemplateColumns:`repeat(${Math.min(metaFields.length,3)},minmax(0,1fr))`,
+            gap:6,
           }}>
-            <div style={{fontSize:9,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.11em",marginBottom:5}}>
-              {label}
-            </div>
-            <div style={{
-              lineHeight:1.5,fontWeight:value==="—"?400:500,
-              color:value==="—"?T.textMuted:T.text,
-              fontFamily:value==="—"?"inherit":"'DM Mono',ui-monospace,monospace",
-              fontSize:value==="—"?12.5:12,
-            }}>{value}</div>
+            {metaFields.map(({label,value})=>(
+              <div key={label} style={{
+                borderRadius:7,padding:"8px 10px",
+                background:"rgba(255,255,255,0.03)",
+                border:"1px solid rgba(255,255,255,0.055)",
+              }}>
+                <div style={{fontSize:8.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4}}>
+                  {label}
+                </div>
+                <div style={{
+                  lineHeight:1.4,fontWeight:500,color:T.text,
+                  fontFamily:"'DM Mono',ui-monospace,monospace",
+                  fontSize:11.5,
+                }}>{value}</div>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
+        {evidenceList.length>0&&(
+          <div>
+            <div style={{fontSize:8.5,fontWeight:700,color:T.textLabel,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6}}>Evidence Expected</div>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              {evidenceList.map(ev=>(
+                <span key={ev} style={{
+                  fontSize:10.5,fontWeight:500,color:T.textSub,
+                  background:"rgba(255,255,255,0.04)",border:`1px solid rgba(255,255,255,0.07)`,
+                  borderRadius:5,padding:"2px 8px",
+                }}>{ev}</span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 // ─── Standards section ────────────────────────────────────────────────────────
+function DirectiveGroup({ section, index }){
+  const [open,setOpen]=useState(true);
+  const tone=directiveTone(section.key);
+  const count=section.count||0;
+  return (
+    <div style={{
+      borderRadius:13,
+      border:`1px solid ${tone.bd}`,
+      background:`linear-gradient(150deg,${tone.bg} 0%,transparent 75%)`,
+      overflow:"hidden",
+      animation:`fadeUp 0.3s ease ${index*0.06}s both`,
+    }}>
+      <div
+        onClick={()=>setOpen(v=>!v)}
+        style={{
+          padding:"11px 16px",borderBottom:open?`1px solid ${tone.bd}`:"none",
+          display:"flex",justifyContent:"space-between",gap:10,alignItems:"center",
+          cursor:"pointer",userSelect:"none",
+          background:"rgba(0,0,0,0.16)",transition:"background 0.15s",
+        }}
+      >
+        <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+          <span style={{
+            fontSize:9,color:tone.text,opacity:0.7,flexShrink:0,
+            display:"inline-block",transition:"transform 0.2s",
+            transform:open?"rotate(90deg)":"rotate(0deg)",
+          }}>▶</span>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:700,color:T.text,letterSpacing:"-0.01em",lineHeight:1.3}}>
+              {section.title||directiveShort(section.key)}
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:7,flexShrink:0}}>
+          <span style={{
+            fontSize:10,fontWeight:700,color:tone.text,
+            background:tone.bg,border:`1px solid ${tone.bd}`,
+            borderRadius:5,padding:"2px 7px",fontVariantNumeric:"tabular-nums",
+          }}>{count} item{count!==1?"s":""}</span>
+          <DirPill dirKey={section.key}/>
+        </div>
+      </div>
+      {open&&(
+        <div style={{padding:"13px",display:"grid",gap:11}}>
+          {(section.items||[]).map(item=>(
+            <StandardCard
+              key={`${section.key}-${item.code}-${item.title}`}
+              item={item}
+              sectionKey={item.harmonization_status||"unknown"}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StandardsSection({ result }){
   const sections=(result?.standard_sections||[])
     .map(section=>({
@@ -874,57 +1009,24 @@ function StandardsSection({ result }){
   return (
     <Card>
       <div style={{
-        padding:"16px 20px 14px",
+        padding:"15px 20px 13px",
         borderBottom:`1px solid ${T.line}`,
         background:T.bgCardDeep,
         display:"grid",gap:10,
       }}>
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
           <div>
-            <div style={{fontSize:14,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>Standards route</div>
-            <div style={{marginTop:3,fontSize:11,color:T.textMuted}}>Primary output · ordered LVD → EMC → RED → RED Cyber</div>
+            <div style={{fontSize:13,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>Standards route</div>
+            <div style={{marginTop:3,fontSize:11,color:T.textMuted,letterSpacing:"0.005em"}}>Primary output · ordered LVD → EMC → RED → RED Cyber</div>
           </div>
         </div>
         <RoutePills result={result}/>
       </div>
 
-      <div style={{padding:"16px 16px 20px",display:"grid",gap:16}}>
-        {sections.map((section,i)=>{
-          const tone=directiveTone(section.key);
-          return (
-            <div key={section.key} style={{
-              borderRadius:14,
-              border:`1px solid ${tone.bd}`,
-              background:`linear-gradient(145deg,${tone.bg},transparent 80%)`,
-              overflow:"hidden",
-            }}>
-              <div style={{
-                padding:"11px 15px",borderBottom:`1px solid ${tone.bd}`,
-                display:"flex",justifyContent:"space-between",gap:10,alignItems:"center",flexWrap:"wrap",
-                background:"rgba(0,0,0,0.14)",
-              }}>
-                <div>
-                  <div style={{fontSize:13,fontWeight:700,color:T.text,letterSpacing:"-0.01em"}}>
-                    {section.title||directiveShort(section.key)}
-                  </div>
-                  <div style={{marginTop:2,fontSize:11,color:T.textMuted}}>
-                    {section.count||0} item{(section.count||0)!==1?"s":""}
-                  </div>
-                </div>
-                <DirPill dirKey={section.key}/>
-              </div>
-              <div style={{padding:"14px",display:"grid",gap:12}}>
-                {(section.items||[]).map(item=>(
-                  <StandardCard
-                    key={`${section.key}-${item.code}-${item.title}-${i}`}
-                    item={item}
-                    sectionKey={item.harmonization_status||"unknown"}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      <div style={{padding:"14px 14px 18px",display:"grid",gap:12}}>
+        {sections.map((section,i)=>(
+          <DirectiveGroup key={section.key} section={section} index={i}/>
+        ))}
       </div>
     </Card>
   );
@@ -938,27 +1040,60 @@ function DiagnosticsPanel({ result }){
   if(!diagnostics.length&&!traits.length) return null;
   return (
     <Card>
-      <CardHeader
-        title="Advanced diagnostics"
-        subtitle="Trait detection and engine output."
-        right={<GhostBtn onClick={()=>setOpen(v=>!v)}>{open?"Hide":"Show diagnostics"}</GhostBtn>}
-      />
+      <div style={{
+        padding:"12px 20px",
+        borderBottom:open?`1px solid ${T.line}`:"none",
+        background:T.bgCardDeep,
+        display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,
+        cursor:"pointer",userSelect:"none",
+      }} onClick={()=>setOpen(v=>!v)}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{
+            fontSize:9,color:T.textMuted,
+            display:"inline-block",transition:"transform 0.2s",
+            transform:open?"rotate(90deg)":"rotate(0deg)",
+          }}>▶</span>
+          <div>
+            <div style={{fontSize:12.5,fontWeight:700,color:T.textSub,letterSpacing:"-0.005em"}}>Advanced diagnostics</div>
+            {!open&&traits.length>0&&(
+              <div style={{fontSize:10.5,color:T.textMuted,marginTop:1}}>
+                {traits.length} trait{traits.length!==1?"s":""} detected
+                {diagnostics.length>0?` · ${diagnostics.length} engine message${diagnostics.length!==1?"s":""}`:null}
+              </div>
+            )}
+          </div>
+        </div>
+        <span style={{fontSize:11,color:T.textMuted,fontWeight:500}}>
+          {open?"Hide":"Show"}
+        </span>
+      </div>
       {open&&(
-        <div style={{padding:"12px 16px 16px",display:"grid",gap:10}}>
+        <div style={{padding:"14px 16px 18px",display:"grid",gap:12,animation:"fadeIn 0.2s ease both"}}>
           {traits.length>0&&(
             <SoftBox>
               <Label>All traits detected</Label>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:7}}>
-                {traits.map(trait=><Chip key={trait}>{titleCase(trait)}</Chip>)}
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:8}}>
+                {traits.map(trait=>(
+                  <span key={trait} style={{
+                    fontSize:11,fontWeight:500,color:T.textSub,
+                    background:"rgba(255,255,255,0.05)",border:`1px solid rgba(255,255,255,0.08)`,
+                    borderRadius:6,padding:"3px 9px",
+                  }}>{titleCase(trait)}</span>
+                ))}
               </div>
             </SoftBox>
           )}
           {diagnostics.length>0&&(
             <SoftBox>
               <Label>Engine diagnostics</Label>
-              <div style={{marginTop:7,display:"grid",gap:5}}>
+              <div style={{marginTop:8,display:"grid",gap:4}}>
                 {diagnostics.map((line,i)=>(
-                  <div key={line+i} style={{fontSize:12,color:T.textSub,lineHeight:1.6,paddingLeft:11,borderLeft:`2px solid ${T.line}`}}>{line}</div>
+                  <div key={line+i} style={{
+                    fontSize:11,color:T.textSub,lineHeight:1.65,
+                    paddingLeft:12,paddingTop:4,paddingBottom:4,
+                    borderLeft:`2px solid rgba(255,255,255,0.08)`,
+                    fontFamily:"'DM Mono',ui-monospace,monospace",
+                  }}>{line}</div>
                 ))}
               </div>
             </SoftBox>
@@ -989,53 +1124,75 @@ function CopyResultsButton({ result, description }){
       "Applicable legislation:",
       ...buildCompactLegislationItems(result).map(item=>`- ${item.code} — ${item.title}`),
     ].join("\n");
-    try{ await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2400); }catch(_){}
+    try{ await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2600); }catch(_){}
   };
   return (
-    <SecondaryBtn onClick={handleCopy} style={copied?{color:T.green,borderColor:"rgba(74,222,128,0.28)"}:{}}>
-      {copied?"✓ Copied":"Copy summary"}
-    </SecondaryBtn>
+    <button onClick={handleCopy} style={{
+      appearance:"none",cursor:"pointer",borderRadius:10,
+      border:`1px solid ${copied?"rgba(63,217,122,0.30)":T.lineStrong}`,
+      background:copied?"rgba(63,217,122,0.08)":"rgba(255,255,255,0.04)",
+      color:copied?T.green:T.textSub,
+      padding:"10px 18px",fontWeight:600,fontSize:13,
+      display:"flex",alignItems:"center",gap:7,
+      transition:"all 0.25s",
+    }}>
+      {copied?(
+        <>
+          <span style={{fontSize:14}}>✓</span>
+          Copied to clipboard
+        </>
+      ):(
+        <>
+          <span style={{fontSize:13,opacity:0.7}}>⎘</span>
+          Copy summary
+        </>
+      )}
+    </button>
   );
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 function EmptyState(){
   const steps=[
-    {n:"01",label:"Describe the product",text:"Product type, power source, connectivity, key functions."},
-    {n:"02",label:"Add detail",text:"Materials (food-contact), sensors, battery, certifications needed."},
-    {n:"03",label:"Refine iteratively",text:"Use clarification hints to sharpen the route."},
+    {n:"01",label:"Describe the product",text:"Type, power source, connectivity, key functions and sensors."},
+    {n:"02",label:"Add material detail",text:"Food-contact materials, battery type, certifications needed."},
+    {n:"03",label:"Refine iteratively",text:"Use clarification hints to sharpen the compliance route."},
   ];
   return (
-    <Card style={{border:`1px dashed rgba(255,255,255,0.08)`}}>
-      <div style={{padding:"clamp(24px,5vw,44px) clamp(16px,5vw,32px)",display:"grid",gap:22,justifyItems:"center",textAlign:"center"}}>
+    <Card style={{border:`1px dashed rgba(255,255,255,0.07)`}}>
+      <div style={{padding:"clamp(28px,5vw,52px) clamp(18px,5vw,36px)",display:"grid",gap:24,justifyItems:"center",textAlign:"center"}}>
         <div style={{
-          width:52,height:52,borderRadius:16,
-          border:`1px solid rgba(99,172,255,0.18)`,background:"rgba(99,172,255,0.06)",
-          display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,
+          width:56,height:56,borderRadius:18,
+          border:`1px solid rgba(91,168,255,0.20)`,
+          background:"linear-gradient(140deg,rgba(91,168,255,0.10),rgba(34,211,196,0.06))",
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,
+          boxShadow:"0 0 24px rgba(91,168,255,0.08)",
         }}>⬡</div>
         <div>
-          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:"clamp(18px,3vw,22px)",color:T.text,marginBottom:7}}>
+          <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:"clamp(18px,3vw,24px)",color:T.text,marginBottom:8,letterSpacing:"-0.02em"}}>
             Ready for analysis
           </div>
-          <div style={{fontSize:13,color:T.textSub,lineHeight:1.75,maxWidth:400}}>
-            Enter a product description above to generate the standards route and legislation overview.
+          <div style={{fontSize:13.5,color:T.textSub,lineHeight:1.8,maxWidth:420}}>
+            Enter a product description above to generate the EU standards route and applicable legislation.
           </div>
         </div>
-        <div style={{display:"grid",gap:8,width:"100%",maxWidth:440,textAlign:"left"}}>
-          {steps.map(step=>(
+        <div style={{display:"grid",gap:8,width:"100%",maxWidth:460,textAlign:"left"}}>
+          {steps.map((step,i)=>(
             <div key={step.n} style={{
-              display:"flex",gap:13,alignItems:"flex-start",
-              padding:"10px 14px",borderRadius:11,
-              background:"rgba(255,255,255,0.025)",border:`1px solid ${T.line}`,
+              display:"flex",gap:14,alignItems:"flex-start",
+              padding:"12px 16px",borderRadius:12,
+              background:"rgba(255,255,255,0.022)",border:`1px solid ${T.line}`,
+              animation:`fadeUp 0.35s ease ${0.05+i*0.07}s both`,
             }}>
               <span style={{
-                fontSize:9.5,fontWeight:800,color:T.blue,letterSpacing:"0.08em",
-                background:"rgba(99,172,255,0.09)",border:`1px solid rgba(99,172,255,0.16)`,
-                borderRadius:6,padding:"3px 6px",flexShrink:0,marginTop:1,
+                fontSize:9,fontWeight:800,color:T.blue,letterSpacing:"0.10em",
+                background:"rgba(91,168,255,0.10)",border:`1px solid rgba(91,168,255,0.18)`,
+                borderRadius:6,padding:"3px 7px",flexShrink:0,marginTop:2,
+                fontVariantNumeric:"tabular-nums",
               }}>{step.n}</span>
               <div>
-                <div style={{fontSize:12,fontWeight:700,color:T.text,marginBottom:2}}>{step.label}</div>
-                <div style={{fontSize:12,color:T.textSub,lineHeight:1.6}}>{step.text}</div>
+                <div style={{fontSize:12.5,fontWeight:700,color:T.text,marginBottom:3}}>{step.label}</div>
+                <div style={{fontSize:12,color:T.textSub,lineHeight:1.65}}>{step.text}</div>
               </div>
             </div>
           ))}
@@ -1049,14 +1206,20 @@ function EmptyState(){
 function ErrorCard({ message }){
   return (
     <div style={{
-      borderRadius:13,border:`1px solid rgba(248,113,113,0.25)`,
-      background:"rgba(248,113,113,0.06)",padding:"13px 17px",
-      display:"flex",gap:11,alignItems:"flex-start",
+      borderRadius:12,border:`1px solid rgba(240,107,107,0.22)`,
+      background:"rgba(240,107,107,0.05)",padding:"14px 18px",
+      display:"flex",gap:12,alignItems:"flex-start",
+      animation:"fadeUp 0.2s ease both",
     }}>
-      <span style={{fontSize:15,flexShrink:0,marginTop:1,color:T.rose}}>⚠</span>
-      <div>
-        <div style={{fontSize:13,fontWeight:700,color:"#fb7185",marginBottom:4}}>Analysis error</div>
-        <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>{message}</div>
+      <div style={{
+        width:28,height:28,borderRadius:8,flexShrink:0,marginTop:1,
+        background:"rgba(240,107,107,0.12)",border:"1px solid rgba(240,107,107,0.20)",
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:13,color:T.rose,
+      }}>⚠</div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#f87185",marginBottom:4,letterSpacing:"-0.005em"}}>Analysis error</div>
+        <div style={{fontSize:13,color:T.textSub,lineHeight:1.65}}>{message}</div>
       </div>
     </div>
   );
@@ -1068,13 +1231,18 @@ function ScrollTopBtn({ visible }){
     <button
       onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}
       style={{
-        position:"fixed",bottom:24,right:20,zIndex:200,
-        width:38,height:38,borderRadius:11,
-        border:`1px solid ${T.lineStrong}`,background:T.bgCard,
-        color:T.textSub,fontSize:15,cursor:"pointer",
-        boxShadow:T.shadow,display:"flex",alignItems:"center",justifyContent:"center",
+        position:"fixed",bottom:24,right:22,zIndex:200,
+        width:40,height:40,borderRadius:12,
+        border:`1px solid rgba(255,255,255,0.10)`,
+        background:"rgba(13,15,24,0.90)",
+        backdropFilter:"blur(12px)",
+        WebkitBackdropFilter:"blur(12px)",
+        color:T.textSub,fontSize:16,cursor:"pointer",
+        boxShadow:"0 4px 20px rgba(0,0,0,0.5)",
+        display:"flex",alignItems:"center",justifyContent:"center",
         opacity:visible?1:0,pointerEvents:visible?"auto":"none",
-        transition:"opacity 0.25s",
+        transition:"opacity 0.25s,transform 0.25s",
+        transform:visible?"translateY(0)":"translateY(8px)",
       }}
       title="Back to top"
     >↑</button>
@@ -1156,7 +1324,7 @@ export default function App(){
       <style>{globalCss}</style>
       <Topbar result={result} onReset={resetAnalysis}/>
 
-      <div style={{maxWidth:1360,margin:"0 auto",padding:"clamp(12px,3vw,22px) clamp(12px,3vw,20px) 80px"}}>
+      <div style={{maxWidth:1380,margin:"0 auto",padding:"clamp(14px,3vw,24px) clamp(14px,3vw,22px) 96px"}}>
         <div className="app-shell-grid">
           <div className="left-rail-slot">{result?<SidebarRail result={result}/>:null}</div>
 
@@ -1176,7 +1344,7 @@ export default function App(){
             {!result?(
               <EmptyState/>
             ):(
-              <>
+              <div style={{display:"grid",gap:12,animation:"fadeIn 0.3s ease both"}}>
                 <GuidanceStrip
                   result={result}
                   dirty={clarifyDirty}
@@ -1188,10 +1356,17 @@ export default function App(){
                 />
                 <StandardsSection result={result}/>
                 <DiagnosticsPanel result={result}/>
-                <div style={{display:"flex",justifyContent:"flex-end",gap:8,flexWrap:"wrap",paddingTop:4}}>
+                <div style={{
+                  display:"flex",justifyContent:"space-between",alignItems:"center",
+                  gap:8,flexWrap:"wrap",paddingTop:2,
+                  borderTop:`1px solid ${T.line}`,paddingTop:12,
+                }}>
+                  <span style={{fontSize:11,color:T.textMuted}}>
+                    {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})} · RuleGrid
+                  </span>
                   <CopyResultsButton result={result} description={description}/>
                 </div>
-              </>
+              </div>
             )}
           </main>
         </div>
@@ -1204,7 +1379,7 @@ export default function App(){
 
 // ─── Global CSS ───────────────────────────────────────────────────────────────
 const globalCss=`
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500;600&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1219,36 +1394,68 @@ const globalCss=`
 
   button, input, select, textarea { font: inherit; color: inherit; }
 
-  textarea::placeholder { color: ${T.textMuted}; }
-  textarea::-webkit-scrollbar { width: 4px; }
+  textarea::placeholder { color: ${T.textMuted}; opacity: 1; }
+  textarea::-webkit-scrollbar { width: 5px; }
   textarea::-webkit-scrollbar-track { background: transparent; }
-  textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 4px; }
+  textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.09); border-radius: 4px; }
+
+  /* Custom scrollbar for page */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: ${T.bg}; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 6px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 
   /* Layout */
   .app-shell-grid {
     display: grid;
-    grid-template-columns: 240px minmax(0,1fr);
+    grid-template-columns: 248px minmax(0,1fr);
     gap: 14px;
     align-items: start;
   }
   .left-rail-slot { min-width: 0; }
 
+  /* Animations */
   @keyframes spin { to { transform: rotate(360deg); } }
-  .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+  .spin { animation: spin 0.75s linear infinite; display: inline-block; }
 
-  /* Standard card hover lift */
-  .standard-card:hover {
-    box-shadow: 0 8px 36px rgba(0,0,0,0.5) !important;
-    transform: translateY(-1px);
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 
-  button:not(:disabled):hover { filter: brightness(1.10); }
-  button:not(:disabled):active { filter: brightness(0.94); transform: scale(0.985); }
+  /* Standard card hover lift */
+  .standard-card {
+    transition: box-shadow 0.22s ease, transform 0.22s ease;
+  }
+  .standard-card:hover {
+    box-shadow: 0 10px 40px rgba(0,0,0,0.55) !important;
+    transform: translateY(-2px);
+  }
+
+  /* Button interactions */
+  button:not(:disabled) { transition: filter 0.15s, transform 0.12s, opacity 0.15s; }
+  button:not(:disabled):hover { filter: brightness(1.12); }
+  button:not(:disabled):active { filter: brightness(0.92); transform: scale(0.982); }
+
+  /* Focus ring */
+  button:focus-visible, textarea:focus-visible {
+    outline: 2px solid rgba(91,168,255,0.55);
+    outline-offset: 2px;
+  }
+
+  /* Topbar reset button hover */
+  .topbar-reset-btn:hover {
+    background: rgba(91,168,255,0.14) !important;
+    border-color: rgba(91,168,255,0.42) !important;
+  }
 
   /* ── Responsive ────────────────────────────────────────── */
 
-  /* Sidebar collapses below 1040px — moves below main */
-  @media (max-width: 1040px) {
+  @media (max-width: 1060px) {
     .app-shell-grid {
       grid-template-columns: 1fr;
     }
@@ -1260,15 +1467,13 @@ const globalCss=`
     main { order: 1; }
   }
 
-  /* Tablet: meta grid goes single column */
   @media (max-width: 768px) {
     .standard-meta-grid {
-      grid-template-columns: 1fr !important;
+      grid-template-columns: 1fr 1fr !important;
     }
     .topbar-subtitle { display: none; }
   }
 
-  /* Mobile: further simplify topbar */
   @media (max-width: 480px) {
     .standard-meta-grid {
       grid-template-columns: 1fr !important;
