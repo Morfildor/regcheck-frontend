@@ -119,14 +119,7 @@ function ImportancePill({ value }) {
   );
 }
 
-function MetricCard({ label, value }) {
-  return (
-    <div className="metric-card">
-      <div className="metric-card__label">{label}</div>
-      <div className="metric-card__value">{value}</div>
-    </div>
-  );
-}
+
 
 function TopBar({ result, totalStandards, onReset }) {
   return (
@@ -168,7 +161,6 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
-  const primaryRegimes = hero.primary_regimes || [];
 
   /* ── Empty / Landing state: compact strip ── */
   if (!result) {
