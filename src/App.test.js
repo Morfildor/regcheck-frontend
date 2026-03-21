@@ -23,7 +23,7 @@ test("renders the product analysis workspace", async () => {
 
   expect(
     screen.getByRole("heading", {
-      name: /professional regulatory scoping for dense product decisions/i,
+      name: /professional regulatory scoping for complex product decisions/i,
     })
   ).toBeInTheDocument();
 

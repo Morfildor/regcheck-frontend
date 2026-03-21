@@ -116,12 +116,11 @@ function ImportancePill({ value }) {
   );
 }
 
-function MetricCard({ label, value, detail }) {
+function MetricCard({ label, value }) {
   return (
     <div className="metric-card">
       <div className="metric-card__label">{label}</div>
       <div className="metric-card__value">{value}</div>
-      {detail ? <div className="metric-card__detail">{detail}</div> : null}
     </div>
   );
 }
@@ -132,11 +131,11 @@ function TopBar({ result, totalStandards, onReset }) {
       <div className="page-shell topbar__inner">
         <div className="brand">
           <div className="brand__mark">
-            <Waypoints size={16} strokeWidth={2.3} />
+            <Waypoints size={15} strokeWidth={2.2} />
           </div>
           <div>
             <div className="brand__title">RuleGrid</div>
-            <div className="brand__subtitle">Guided EU regulatory scoping</div>
+            <div className="brand__subtitle">EU regulatory scoping</div>
           </div>
         </div>
 
@@ -144,14 +143,14 @@ function TopBar({ result, totalStandards, onReset }) {
           {result ? (
             <>
               <RiskPill value={result?.overall_risk || "MEDIUM"} />
-              <span className="topbar__count">{totalStandards} standards in route</span>
+              <span className="topbar__count">{totalStandards} standards</span>
               <button type="button" className="button button--secondary" onClick={onReset}>
-                <RefreshCcw size={14} />
+                <RefreshCcw size={13} />
                 New analysis
               </button>
             </>
           ) : (
-            <span className="topbar__hint">Cleaner hierarchy, same depth of output</span>
+            <span className="topbar__hint">Describe the product — get a standards route</span>
           )}
         </div>
       </div>
@@ -164,48 +163,46 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
   const title = result
-    ? hero.title || `Review the ${formatUiLabel(result?.product_type || "product")} route`
-    : "Professional regulatory scoping for dense product decisions";
+    ? hero.title || `${formatUiLabel(result?.product_type || "Product")} regulatory route`
+    : "Professional regulatory scoping for complex product decisions";
   const subtitle = result
-    ? result?.summary ||
-      hero.subtitle ||
-      "Use the overview first, then work through clarifications and route sections."
-    : "Describe the actual product configuration and RuleGrid returns a standards route, legislation context, and the questions that materially change scope.";
+    ? result?.summary || hero.subtitle || ""
+    : "Describe the real operating configuration and RuleGrid returns a standards route, legislation context, and the scope-changing questions.";
   const primaryRegimes = hero.primary_regimes || [];
 
   const supportItems = result
     ? [
         {
-          icon: <ListChecks size={16} />,
+          icon: <ListChecks size={14} />,
           title: `${routeSections.length} route sections`,
-          text: "Standards are grouped so safety, EMC, radio, and cybersecurity are easier to scan.",
+          text: "Standards grouped by regime for a faster first pass.",
         },
         {
-          icon: <ShieldCheck size={16} />,
+          icon: <ShieldCheck size={14} />,
           title: `${legislationItems.length} legislation items`,
-          text: "Applicable frameworks stay visible in the side rail while you read the route.",
+          text: "Applicable frameworks pinned in the side rail.",
         },
         {
-          icon: <Search size={16} />,
-          title: `${guidanceItems.length} clarification prompts`,
-          text: "These are the details most likely to change the scope of the result.",
+          icon: <Search size={14} />,
+          title: `${guidanceItems.length} clarifications`,
+          text: "Details most likely to shift scope.",
         },
       ]
     : [
         {
-          icon: <Search size={16} />,
+          icon: <Search size={14} />,
           title: "Power and major function",
-          text: "Call out mains power, battery, heating, motors, pumps, sensors, or cameras.",
+          text: "Mains, battery, heating, motors, pumps, sensors, cameras.",
         },
         {
-          icon: <Waypoints size={16} />,
+          icon: <Waypoints size={14} />,
           title: "Connectivity and updates",
-          text: "Mention Wi-Fi, Bluetooth, cloud dependency, app control, and OTA firmware updates.",
+          text: "Wi-Fi, Bluetooth, cloud dependency, app control, OTA.",
         },
         {
-          icon: <ShieldCheck size={16} />,
+          icon: <ShieldCheck size={14} />,
           title: "Materials and contact paths",
-          text: "Include wetted paths, food-contact parts, battery chemistry, or replaceable parts.",
+          text: "Wetted paths, food-contact parts, battery chemistry.",
         },
       ];
 
@@ -219,21 +216,21 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
                 <RiskPill value={result?.overall_risk || "MEDIUM"} />
                 <span className="soft-tag">Confidence: {formatUiLabel(confidence)}</span>
                 {result?.product_type ? (
-                  <span className="soft-tag">Product: {formatUiLabel(result.product_type)}</span>
+                  <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
                 ) : null}
               </>
             ) : (
               <>
                 <span className="soft-tag">
-                  <Sparkles size={14} />
+                  <Sparkles size={13} />
                   Guided clarifications
                 </span>
                 <span className="soft-tag">
-                  <ListChecks size={14} />
+                  <ListChecks size={13} />
                   Standards route
                 </span>
                 <span className="soft-tag">
-                  <ShieldCheck size={14} />
+                  <ShieldCheck size={13} />
                   Legislation context
                 </span>
               </>
@@ -252,8 +249,8 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
 
       <Panel
         className="panel--support"
-        eyebrow={result ? "Current Output" : "Best Input"}
-        title={result ? "What this analysis covers" : "What to include in the description"}
+        eyebrow={result ? "This output" : "What to include"}
+        title={result ? "What's covered" : "For a precise route"}
       >
         <div className="support-list">
           {supportItems.map((item) => (
@@ -285,8 +282,8 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
     <Panel
       eyebrow="Input"
       title="Describe the product"
-      subtitle="Use the real operating setup, not marketing copy. Clear technical detail produces a more stable route."
-      action={<span className="keyboard-hint">Ctrl / Cmd + Enter to analyze</span>}
+      subtitle="Use the real operating setup, not marketing copy. Technical detail produces a more accurate route."
+      action={<span className="keyboard-hint">⌘ + Enter to analyze</span>}
     >
       <div className="composer">
         <div className="composer__block">
@@ -321,28 +318,26 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
                 onAnalyze();
               }
             }}
-            placeholder="Example: Connected espresso machine with Wi-Fi radio, OTA updates, cloud account, mains power, grinder, pressure system, and food-contact brew path."
-            rows={8}
+            placeholder="e.g. Connected espresso machine with Wi-Fi, OTA updates, cloud account, mains power, grinder, pressure system, food-contact brew path."
+            rows={7}
             maxLength={charMax}
             spellCheck={false}
             className="composer__textarea"
           />
           <div className="composer__field-footer">
             <div className="composer__helper">
-              Mention power, radios, cloud dependency, updates, core functions, key sensors, and any food-contact or wetted-path detail.
+              Include: power source · radios · cloud/OTA · core functions · sensors · food-contact or wetted paths
             </div>
             <div className={`counter ${usageState}`.trim()}>
-              {wordCount ? <span>{wordCount} words</span> : null}
-              <span>
-                {description.length} / {charMax}
-              </span>
+              {wordCount ? <span>{wordCount}w</span> : null}
+              <span>{description.length} / {charMax}</span>
             </div>
           </div>
         </label>
 
         {chips.length ? (
           <div className="composer__block">
-            <div className="micro-label">Add missing detail fast</div>
+            <div className="micro-label">Add missing detail</div>
             <div className="template-row">
               {chips.map((chip) => (
                 <button
@@ -368,8 +363,8 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
             onClick={onAnalyze}
             disabled={busy || !description.trim()}
           >
-            {busy ? <LoaderCircle size={16} className="spin" /> : <Search size={16} />}
-            {busy ? "Analyzing" : "Analyze product"}
+            {busy ? <LoaderCircle size={15} className="spin" /> : <Search size={15} />}
+            {busy ? "Analyzing…" : "Analyze product"}
           </button>
 
           <button
@@ -404,7 +399,7 @@ function OverviewPanel({ result, routeSections, legislationItems, directiveBreak
     <Panel
       eyebrow="Overview"
       title="Analysis overview"
-      subtitle="Start here before reading the route cards. This panel keeps the high-level outcome compact."
+      subtitle="High-level outcome before working through the route."
     >
       <div className="overview-grid">
         <div className="overview-grid__summary">
@@ -419,24 +414,24 @@ function OverviewPanel({ result, routeSections, legislationItems, directiveBreak
         </div>
 
         <div className="metric-grid">
-          <MetricCard label="Detected product" value={formatUiLabel(result?.product_type || "unclear")} />
+          <MetricCard label="Product" value={formatUiLabel(result?.product_type || "unclear")} />
           <MetricCard label="Confidence" value={formatUiLabel(confidence)} />
-          <MetricCard label="Overall risk" value={formatUiLabel(result?.overall_risk || "MEDIUM")} />
+          <MetricCard label="Risk" value={formatUiLabel(result?.overall_risk || "MEDIUM")} />
           <MetricCard label="Standards" value={String(totalStandards)} />
           <MetricCard label="Legislation" value={String(legislationItems.length)} />
         </div>
-      </div>
 
-      {directiveBreakdown.length ? (
-        <div className="route-breakdown">
-          {directiveBreakdown.map(({ key, count }) => (
-            <span key={key} className="breakdown-pill">
-              <DirectivePill dirKey={key} />
-              <span className="breakdown-pill__count">{count}</span>
-            </span>
-          ))}
-        </div>
-      ) : null}
+        {directiveBreakdown.length ? (
+          <div className="route-breakdown">
+            {directiveBreakdown.map(({ key, count }) => (
+              <span key={key} className="breakdown-pill">
+                <DirectivePill dirKey={key} />
+                <span className="breakdown-pill__count">{count}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </Panel>
   );
 }
@@ -460,8 +455,8 @@ function SnapshotRail({ result, routeSections, legislationGroups, description })
       <Panel
         className="panel--sidebar"
         eyebrow="Snapshot"
-        title="Keep the context visible"
-        subtitle="The route is on the left. Product identity and legislation stay pinned here."
+        title="Context"
+        subtitle="Product identity and legislation pinned alongside the route."
       >
         <div className="snapshot-list">
           {[
@@ -533,16 +528,16 @@ function ClarificationsPanel({ items, dirty, busy, onReanalyze, onApply }) {
   return (
     <Panel
       eyebrow="Clarifications"
-      title="Questions that materially change scope"
+      title="Questions that change scope"
       subtitle="Use these prompts to strengthen the description before trusting the route."
       action={
         dirty ? (
           <button type="button" className="button button--primary" onClick={onReanalyze} disabled={busy}>
-            {busy ? <LoaderCircle size={16} className="spin" /> : <RefreshCcw size={16} />}
+            {busy ? <LoaderCircle size={15} className="spin" /> : <RefreshCcw size={15} />}
             {busy ? "Re-running" : "Re-run analysis"}
           </button>
         ) : (
-          <span className="keyboard-hint">Apply a detail below to update the description</span>
+          <span className="keyboard-hint">Apply a detail below to update</span>
         )
       }
     >
@@ -597,8 +592,8 @@ function StandardItem({ item, sectionKey }) {
   const summary = item.standard_summary || item.reason || item.notes || "";
   const metaFields = [
     { label: "Harmonized ref.", value: prettyValue(item.harmonized_reference) },
-    { label: "Harmonized version", value: prettyValue(item.dated_version) },
-    { label: "EU latest version", value: prettyValue(item.version) },
+    { label: "Harmonized ver.", value: prettyValue(item.dated_version) },
+    { label: "EU latest", value: prettyValue(item.version) },
   ].filter((field) => field.value && field.value !== "—");
 
   return (
@@ -683,18 +678,17 @@ function RouteSection({ section }) {
               <h3>{title}</h3>
               <DirectivePill dirKey={section.key} />
             </div>
-            <p>
-              {section.count || 0} standard{section.count === 1 ? "" : "s"}
-              {subtitle ? ` • ${subtitle}` : ""}
-            </p>
+            {subtitle ? (
+              <p>{subtitle}</p>
+            ) : null}
           </div>
         </div>
 
         <div className="route-section__meta">
           <span className="route-section__count">
-            {section.count || 0} item{section.count === 1 ? "" : "s"}
+            {section.count || 0} standard{section.count === 1 ? "" : "s"}
           </span>
-          {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
       </button>
 
@@ -718,12 +712,13 @@ function StandardsRoutePanel({ sections, directiveBreakdown }) {
 
   return (
     <Panel
+      className="panel--standards"
       eyebrow="Primary Output"
       title="Standards route"
-      subtitle="Grouped by route so you can scan the decision path without losing the item-level detail."
+      subtitle="Grouped by regime — scan the path without losing item-level detail."
     >
       {directiveBreakdown.length ? (
-        <div className="route-breakdown">
+        <div className="route-breakdown" style={{ marginBottom: "4px" }}>
           {directiveBreakdown.map(({ key, count }) => (
             <span key={key} className="breakdown-pill">
               <DirectivePill dirKey={key} />
@@ -805,13 +800,13 @@ function DetailsPanel({ result }) {
     <Panel
       eyebrow="Full Detail"
       title="Structured analysis details"
-      subtitle="Nothing is removed. The dense output is grouped so it reads cleanly without hiding the backend response."
+      subtitle="Complete backend output, grouped for legibility."
     >
       <div className="details-stack">
         {missingItems.length ? (
           <DetailBlock
-            title="Missing information from the current description"
-            subtitle="These are the direct prompts returned by the analysis."
+            title="Missing information"
+            subtitle="Direct prompts returned by the analysis engine."
           >
             <div className="detail-grid">
               {missingItems.map((item) => (
@@ -838,8 +833,8 @@ function DetailsPanel({ result }) {
 
         {inputGapItems.length ? (
           <DetailBlock
-            title="Input gaps panel"
-            subtitle="This mirrors the backend panel items separately from the shorter clarification list."
+            title="Input gaps"
+            subtitle="Backend panel items, separate from the clarification list."
           >
             <div className="detail-grid">
               {inputGapItems.map((item) => (
@@ -891,7 +886,7 @@ function DetailsPanel({ result }) {
         {additionalEntries.length ? (
           <DetailBlock
             title="Additional structured output"
-            subtitle="Top-level response fields not already surfaced elsewhere."
+            subtitle="Top-level response fields not surfaced elsewhere."
           >
             <div className="detail-grid">
               {additionalEntries.map(([key, value]) => (
@@ -937,8 +932,8 @@ function CopyResultsButton({ result, description, routeSections, legislationGrou
 
   return (
     <button type="button" className="button button--secondary button--full" onClick={handleCopy}>
-      {copied ? <Check size={16} /> : <Copy size={16} />}
-      {copied ? "Copied summary" : "Copy analysis summary"}
+      {copied ? <Check size={15} /> : <Copy size={15} />}
+      {copied ? "Copied" : "Copy analysis summary"}
     </button>
   );
 }
@@ -946,7 +941,7 @@ function CopyResultsButton({ result, description, routeSections, legislationGrou
 function ErrorBanner({ message }) {
   return (
     <div className="error-banner" role="alert">
-      <TriangleAlert size={18} />
+      <TriangleAlert size={16} />
       <div>
         <div className="error-banner__title">Analysis error</div>
         <div className="error-banner__text">{message}</div>
@@ -958,19 +953,19 @@ function ErrorBanner({ message }) {
 function EmptyState() {
   const items = [
     {
-      icon: <Search size={18} />,
+      icon: <Search size={16} />,
       title: "1. Describe the real product",
       text: "Include power, radios, control model, updates, materials, and any sensitive functions.",
     },
     {
-      icon: <Waypoints size={18} />,
+      icon: <Waypoints size={16} />,
       title: "2. Review the route first",
-      text: "The analysis overview and route grouping are designed to make the first pass fast.",
+      text: "The overview and route grouping are designed to make the first pass fast.",
     },
     {
-      icon: <ShieldCheck size={18} />,
+      icon: <ShieldCheck size={16} />,
       title: "3. Refine with clarifications",
-      text: "Use guided prompts to add scope-changing details, then run the analysis again.",
+      text: "Use guided prompts to add scope-changing details, then re-run.",
     },
   ];
 
@@ -978,8 +973,8 @@ function EmptyState() {
     <Panel
       className="panel--empty"
       eyebrow="Workflow"
-      title="A cleaner route starts with a specific product description"
-      subtitle="The UI stays simple until there is output, then the route expands into guided sections instead of equal-weight cards."
+      title="A precise route starts with a specific description"
+      subtitle="The UI expands into guided sections once output is ready — not before."
     >
       <div className="empty-grid">
         {items.map((item) => (
@@ -1002,7 +997,7 @@ function ScrollTopButton({ visible }) {
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label="Back to top"
     >
-      <ArrowUp size={16} />
+      <ArrowUp size={15} />
     </button>
   );
 }
@@ -1028,9 +1023,7 @@ export default function App() {
 
     fetch(METADATA_URL, { signal: controller.signal })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Metadata failed (${response.status})`);
-        }
+        if (!response.ok) throw new Error(`Metadata failed (${response.status})`);
         return response.json();
       })
       .then((data) => setMetadata(data))
@@ -1048,11 +1041,12 @@ export default function App() {
     return dynamic.length ? dynamic : DEFAULT_TEMPLATES;
   }, [metadata]);
 
-  const routeSections = useMemo(() => buildRouteSections(result), [result]);
-  const guidanceItems = useMemo(() => buildGuidanceItems(result), [result]);
-  const legislationItems = useMemo(() => buildCompactLegislationItems(result), [result]);
-  const legislationGroups = useMemo(() => buildLegislationGroups(result), [result]);
+  const routeSections      = useMemo(() => buildRouteSections(result),          [result]);
+  const guidanceItems      = useMemo(() => buildGuidanceItems(result),           [result]);
+  const legislationItems   = useMemo(() => buildCompactLegislationItems(result), [result]);
+  const legislationGroups  = useMemo(() => buildLegislationGroups(result),       [result]);
   const directiveBreakdown = useMemo(() => buildDirectiveBreakdown(routeSections), [routeSections]);
+
   const totalStandards = useMemo(
     () => routeSections.reduce((count, section) => count + (section.items || []).length, 0),
     [routeSections]
@@ -1147,6 +1141,8 @@ export default function App() {
                 directiveBreakdown={directiveBreakdown}
               />
 
+              <StandardsRoutePanel sections={routeSections} directiveBreakdown={directiveBreakdown} />
+
               <ClarificationsPanel
                 items={guidanceItems}
                 dirty={clarifyDirty}
@@ -1155,15 +1151,12 @@ export default function App() {
                 onApply={(text) => {
                   setDescription((current) => {
                     const next = joinText(current, text);
-                    if (next !== current) {
-                      setClarifyDirty(true);
-                    }
+                    if (next !== current) setClarifyDirty(true);
                     return next;
                   });
                 }}
               />
 
-              <StandardsRoutePanel sections={routeSections} directiveBreakdown={directiveBreakdown} />
               <DetailsPanel result={result} />
 
               <div className="footer-note">
