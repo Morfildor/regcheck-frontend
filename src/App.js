@@ -168,6 +168,7 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
+  const primaryRegimes = hero.primary_regimes || [];
 
   /* ── Empty / Landing state: compact strip ── */
   if (!result) {
@@ -478,40 +479,36 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
 
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
-  const primaryRegimes = result?.hero_summary?.primary_regimes || [];
   const totalStandards = routeSections.reduce(
     (count, section) => count + (section.items || []).length,
     0
   );
 
+  const metrics = [
+    { label: "Product",     value: formatUiLabel(result?.product_type || "unclear") },
+    { label: "Risk",        value: formatUiLabel(result?.overall_risk || "MEDIUM"),
+      highlight: (result?.overall_risk || "MEDIUM").toUpperCase() === "HIGH" },
+    { label: "Confidence",  value: formatUiLabel(confidence) },
+    { label: "Standards",   value: String(totalStandards) },
+    { label: "Legislation", value: String(legislationItems.length) },
+  ];
+
   return (
-    <Panel
-      eyebrow="Overview"
-      title="Analysis overview"
-      subtitle="High-level outcome before working through the route."
-    >
-      <div className="overview-grid">
-        <div className="overview-grid__summary">
-          <div className="lead-copy">{result?.summary || "No summary returned from the analysis."}</div>
-          {primaryRegimes.length ? (
-            <div className="tag-row">
-              {primaryRegimes.map((dirKey) => (
-                <DirectivePill key={dirKey} dirKey={dirKey} />
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="metric-grid">
-          <MetricCard label="Product" value={formatUiLabel(result?.product_type || "unclear")} />
-          <MetricCard label="Confidence" value={formatUiLabel(confidence)} />
-          <MetricCard label="Risk" value={formatUiLabel(result?.overall_risk || "MEDIUM")} />
-          <MetricCard label="Standards" value={String(totalStandards)} />
-          <MetricCard label="Legislation" value={String(legislationItems.length)} />
-        </div>
-
+    <div className="overview-bar">
+      <p className="overview-bar__summary">
+        {result?.summary || "Analysis complete."}
+      </p>
+      <div className="overview-bar__metrics">
+        {metrics.map(({ label, value, highlight }) => (
+          <div key={label} className="overview-metric">
+            <span className="overview-metric__label">{label}</span>
+            <span className={`overview-metric__value${highlight ? " overview-metric__value--high" : ""}`}>
+              {value}
+            </span>
+          </div>
+        ))}
       </div>
-    </Panel>
+    </div>
   );
 }
 
@@ -794,6 +791,35 @@ function RouteSection({ section }) {
   );
 }
 
+function RegimeNav({ directiveBreakdown }) {
+  if (!directiveBreakdown.length) return null;
+  return (
+    <div className="regime-nav">
+      <div className="regime-nav__inner">
+        {directiveBreakdown.map(({ key, count }) => {
+          const tone = directiveTone(key);
+          return (
+            <div
+              key={key}
+              className="regime-chip"
+              style={{
+                "--chip-dot": tone.dot,
+                "--chip-bg": tone.bg,
+                "--chip-border": tone.bd,
+                "--chip-text": tone.text,
+              }}
+            >
+              <span className="regime-chip__dot" />
+              <span className="regime-chip__label">{directiveShort(key)}</span>
+              <span className="regime-chip__count">{count}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function StandardsRoutePanel({ sections, directiveBreakdown }) {
   if (!sections.length) return null;
 
@@ -804,16 +830,7 @@ function StandardsRoutePanel({ sections, directiveBreakdown }) {
       title="Standards route"
       subtitle="Grouped by regime — scan the path without losing item-level detail."
     >
-      {directiveBreakdown.length ? (
-        <div className="route-breakdown" style={{ marginBottom: "4px" }}>
-          {directiveBreakdown.map(({ key, count }) => (
-            <span key={key} className="breakdown-pill">
-              <DirectivePill dirKey={key} />
-              <span className="breakdown-pill__count">{count}</span>
-            </span>
-          ))}
-        </div>
-      ) : null}
+      <RegimeNav directiveBreakdown={directiveBreakdown} />
 
       <div className="route-stack">
         {sections.map((section) => (

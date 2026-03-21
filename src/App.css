@@ -767,7 +767,127 @@ code {
   gap: 14px;
 }
 
-/* ── Overview Panel ───────────────────────────────────────── */
+/* route-stack inside standards panel gets extra top breathing room */
+.panel--standards .route-stack {
+  margin-top: 4px;
+}
+
+/* ── Overview Bar — minimal summary + inline metrics ─────── */
+.overview-bar {
+  background: linear-gradient(160deg, var(--surface-1), var(--surface-0));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: grid;
+  gap: 18px;
+  box-shadow: var(--shadow);
+}
+
+.overview-bar__summary {
+  font-size: 0.97rem;
+  line-height: 1.75;
+  color: var(--text-muted);
+  max-width: 80ch;
+}
+
+.overview-bar__metrics {
+  display: flex;
+  gap: 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-sm);
+  overflow: hidden;
+}
+
+.overview-metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 11px 18px;
+  border-right: 1px solid var(--border-sm);
+}
+
+.overview-metric:last-child { border-right: none; }
+
+.overview-metric__label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.overview-metric__value {
+  font-size: 1.0rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+.overview-metric__value--high {
+  color: #f08078;
+}
+
+/* ── Regime Nav — centered, scannable directive strip ─────── */
+.regime-nav {
+  margin: 0 24px 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-sm);
+  display: flex;
+  justify-content: center;
+}
+
+.regime-nav__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.regime-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--chip-border, rgba(255,255,255,0.08));
+  background: var(--chip-bg, rgba(255,255,255,0.04));
+  cursor: default;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.regime-chip__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--chip-dot);
+  flex-shrink: 0;
+}
+
+.regime-chip__label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--chip-text, var(--text-muted));
+  letter-spacing: 0.02em;
+}
+
+.regime-chip__count {
+  min-width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.07);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.70rem;
+  font-weight: 700;
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--text-soft);
+  padding: 0 4px;
+}
+
+/* ── Legacy overview / metric grid (kept for potential reuse) */
 .overview-grid {
   display: grid;
   gap: 16px;
@@ -1465,6 +1585,18 @@ code {
   }
 
   .metric-card:last-child { border-bottom: none; }
+
+  .overview-bar__metrics { flex-direction: column; }
+
+  .overview-metric {
+    border-right: none;
+    border-bottom: 1px solid var(--border-sm);
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .overview-metric:last-child { border-bottom: none; }
 
   .landing-strip__title {
     font-size: clamp(1.7rem, 8vw, 2.4rem);
