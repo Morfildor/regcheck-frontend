@@ -627,6 +627,23 @@ const BASE_SAFETY_ROUTE_COPY = {
   },
 };
 
+function baseSafetyRouteTone(route) {
+  if (route?.key === "EN_62368") {
+    return {
+      bg: "rgba(185,162,255,0.14)",
+      bd: "rgba(185,162,255,0.30)",
+      text: "#cab7ff",
+      dot: "#b9a2ff",
+    };
+  }
+  return {
+    bg: "rgba(143,218,184,0.14)",
+    bd: "rgba(143,218,184,0.30)",
+    text: "#9ee7c4",
+    dot: "#8fdab8",
+  };
+}
+
 function inferBaseSafetyRoute(result, routeSections) {
   if (!result) return null;
 
@@ -722,9 +739,25 @@ function inferBaseSafetyRoute(result, routeSections) {
   return null;
 }
 
-function lvdBaseSafetyLabel(route) {
-  if (!route) return "";
-  return route.key === "EN_62368" ? "Base safety: EN 62368-1" : "Base safety: EN 60335-1";
+function BaseSafetyRoutePill({ route, compact = false, labelOverride = "" }) {
+  if (!route) return null;
+  const tone = baseSafetyRouteTone(route);
+  const Icon = route.key === "EN_62368" ? Cpu : ShieldCheck;
+
+  return (
+    <span
+      className={`base-route-pill${compact ? " base-route-pill--compact" : ""}`}
+      style={{
+        "--base-route-bg": tone.bg,
+        "--base-route-border": tone.bd,
+        "--base-route-text": tone.text,
+        "--base-route-dot": tone.dot,
+      }}
+    >
+      <Icon size={12} />
+      <span>{labelOverride || route.label}</span>
+    </span>
+  );
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -1288,6 +1321,10 @@ function RouteSection({ section, baseSafetyRoute }) {
   const title = routeTitle(section);
   const subtitle =
     section.title && titleCaseMinor(section.title) !== title ? titleCaseMinor(section.title) : "";
+  const lvdBaseSafetyLabel =
+    section.key === "LVD" && baseSafetyRoute
+      ? `Base safety: ${baseSafetyRoute.key === "EN_62368" ? "EN 62368-1" : "EN 60335-1"}`
+      : "";
 
   return (
     <section
@@ -1305,8 +1342,8 @@ function RouteSection({ section, baseSafetyRoute }) {
             <div className="route-section__title-row">
               <h3>{title}</h3>
               <DirectivePill dirKey={section.key} />
-              {section.key === "LVD" && baseSafetyRoute ? (
-                <span className="soft-tag">{lvdBaseSafetyLabel(baseSafetyRoute)}</span>
+              {lvdBaseSafetyLabel ? (
+                <BaseSafetyRoutePill route={baseSafetyRoute} compact labelOverride={lvdBaseSafetyLabel} />
               ) : null}
             </div>
             {subtitle ? <p>{subtitle}</p> : null}
@@ -1712,7 +1749,7 @@ export default function App() {
               routeSections={routeSections}
               legislationGroups={legislationGroups}
               description={description}
-                />
+            />
           </div>
         ) : null}
       </main>

@@ -637,13 +637,65 @@ export function compactLegislationGroupLabel(item) {
   return titleCase(key);
 }
 
-export function sortStandardItems(items) {
+function standardCodeLabel(item) {
+  return `${String(item?.code || "")} ${String(item?.title || "")}`.trim();
+}
+
+function standardCodeNumber(item) {
+  return String(item?.code || "").replace(/\s+/g, " ").trim();
+}
+
+function lvdPrimaryRank(item) {
+  const label = standardCodeLabel(item);
+  const code = standardCodeNumber(item);
+
+  if (/(?:^|\b)(?:EN|IEC)\s*60335\s*-\s*1(?:\b|$)/i.test(label)) {
+    return [0, 0, 0];
+  }
+  if (/(?:^|\b)(?:EN|IEC)\s*62368\s*-\s*1(?:\b|$)/i.test(label)) {
+    return [0, 1, 0];
+  }
+
+  const part2Match = code.match(/(?:EN|IEC)\s*60335\s*-\s*2\s*-\s*(\d+)/i);
+  if (part2Match) {
+    return [1, Number(part2Match[1] || 0), 0];
+  }
+
+  if (/(?:^|\b)(?:EN|IEC)\s*62233(?:\b|$)/i.test(label)) {
+    return [2, 0, 0];
+  }
+  if (/(?:^|\b)(?:EN|IEC)\s*62311(?:\b|$)/i.test(label)) {
+    return [2, 1, 0];
+  }
+
+  if (/(?:^|\b)(?:EN|IEC)\s*60825(?:-\d+)?(?:\b|$)/i.test(label) || /\blaser\b/i.test(label)) {
+    const laserPartMatch = code.match(/(?:EN|IEC)\s*60825\s*-\s*(\d+)/i);
+    return [3, Number(laserPartMatch?.[1] || 0), 0];
+  }
+
+  return [4, 0, 0];
+}
+
+export function sortStandardItems(items, sectionKey = null) {
   return [...(items || [])].sort((a, b) => {
-    const aDirective = normalizeStandardDirective(a);
-    const bDirective = normalizeStandardDirective(b);
+    const aDirective = sectionKey || normalizeStandardDirective(a);
+    const bDirective = sectionKey || normalizeStandardDirective(b);
+
+    if (aDirective === "LVD" && bDirective === "LVD") {
+      const aRank = lvdPrimaryRank(a);
+      const bRank = lvdPrimaryRank(b);
+      const rankDiff =
+        aRank[0] - bRank[0] ||
+        aRank[1] - bRank[1] ||
+        aRank[2] - bRank[2];
+
+      if (rankDiff !== 0) return rankDiff;
+    }
+
     return (
       directiveRank(aDirective) - directiveRank(bDirective) ||
-      String(a.code || "").localeCompare(String(b.code || ""))
+      String(a.code || "").localeCompare(String(b.code || ""), undefined, { numeric: true, sensitivity: "base" }) ||
+      String(a.title || "").localeCompare(String(b.title || ""), undefined, { sensitivity: "base" })
     );
   });
 }
@@ -657,7 +709,8 @@ export function buildRouteSections(result) {
           ...item,
           harmonization_status:
             item.harmonization_status || (item.item_type === "review" ? "review" : "unknown"),
-        }))
+        })),
+        section.key
       ),
       count: (section.items || []).length,
     }))
@@ -695,7 +748,7 @@ export function buildRouteSections(result) {
   return Object.values(grouped)
     .map((section) => ({
       ...section,
-      items: sortStandardItems(section.items),
+      items: sortStandardItems(section.items, section.key),
       count: section.items.length,
     }))
     .sort((a, b) => directiveRank(a.key) - directiveRank(b.key));
