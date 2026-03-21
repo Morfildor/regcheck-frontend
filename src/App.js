@@ -12,10 +12,14 @@ import {
   ShieldCheck,
   Sparkles,
   TriangleAlert,
-  Waypoints,
   Zap,
-  Radio,
   FlaskConical,
+  Wifi,
+  Cloud,
+  Cpu,
+  Droplets,
+  Leaf,
+  ShoppingCart,
 } from "lucide-react";
 import "./App.css";
 import {
@@ -30,24 +34,294 @@ import {
   buildDirectiveBreakdown,
   buildDynamicTemplates,
   buildGuidanceItems,
-  buildGuidedChips,
   buildLegislationGroups,
   buildRouteSections,
   directiveShort,
   directiveTone,
   formatUiLabel,
-  gapLabel,
-  getAdditionalEntries,
   joinText,
   normalizeStandardDirective,
   prettyValue,
   routeTitle,
   sentenceCaseList,
-  serializePreview,
-  titleCase,
   titleCaseMinor,
-  uniqueBy,
 } from "./appHelpers";
+
+/* ================================================================
+   SMART SUGGESTION ENGINE v2
+   Detects traits from free text, surfaces high-impact missing ones.
+   Grounded in traits.yaml + legislation_catalog.yaml triggers.
+   ================================================================ */
+
+// Text → trait signal map (order matters — more specific first)
+const TEXT_SIGNALS = [
+  // Power
+  { re: /\b(mains|230v|240v|plug.?in|corded|wall.?socket|ac.?power)\b/i,  trait: "mains_powered" },
+  { re: /\b(battery|rechargeable|cordless|lithium)\b/i,                    trait: "battery_powered" },
+  { re: /\b(usb.?c?|usb.powered)\b/i,                                      trait: "usb_powered" },
+  { re: /\b(external.*(psu|adapter|adaptor)|power.?supply|charger.?brick)\b/i, trait: "external_psu" },
+  // Radio / connectivity
+  { re: /\b(wi.?fi|wireless.*connect|802\.11)\b/i,                         trait: "wifi" },
+  { re: /\b(bluetooth|ble\b)\b/i,                                           trait: "bluetooth" },
+  { re: /\b(app.?control|mobile.?app|smartphone.?app|ios.*android|android.*ios)\b/i, trait: "app_control" },
+  { re: /\b(cloud|remote.?server|vendor.?backend)\b/i,                     trait: "cloud" },
+  { re: /\b(ota|over.?the.?air|firmware.?update|software.?update)\b/i,     trait: "ota" },
+  { re: /\b(internet|online.?service)\b/i,                                  trait: "internet" },
+  { re: /\b(account|user.?login|sign.?in)\b/i,                             trait: "account" },
+  { re: /\b(password|pin\b|authentication)\b/i,                            trait: "authentication" },
+  { re: /\b(cellular|4g|5g|lte|sim.?card)\b/i,                             trait: "cellular" },
+  { re: /\b(zigbee)\b/i,                                                    trait: "zigbee" },
+  { re: /\b(thread.?protocol|thread.?mesh)\b/i,                            trait: "thread" },
+  { re: /\b(matter.?protocol|matter.?smart)\b/i,                           trait: "matter" },
+  { re: /\b(nfc)\b/i,                                                       trait: "nfc" },
+  // Food / materials
+  { re: /\b(food.?contact|wetted.?path|brew.?path|in.?contact.?with.?food)\b/i, trait: "food_contact" },
+  { re: /\b(no.*(food|beverage).?contact|does.?not.?contact.?food)\b/i,   trait: "no_food_contact" },
+  // Product features
+  { re: /\b(pressure|bar\b|pump|pressuri[sz]ed)\b/i,                      trait: "pressure" },
+  { re: /\b(steam|steamer)\b/i,                                             trait: "steam" },
+  { re: /\b(outdoor|outside|weather|ip[456][0-9]|ipx)\b/i,                trait: "outdoor_use" },
+  { re: /\b(indoor.?only|indoor.?use)\b/i,                                 trait: "indoor_use" },
+  { re: /\b(camera|webcam|video.?capture)\b/i,                             trait: "camera" },
+  { re: /\b(microphone|voice.?(control|command)|alexa|google.?assistant)\b/i, trait: "microphone" },
+  { re: /\b(ai\b|machine.?learning|ml.?model|neural)\b/i,                  trait: "ai_related" },
+  { re: /\b(payment|subscription|transaction|wallet|order.?within)\b/i,   trait: "monetary_transaction" },
+  { re: /\b(motor|motorized|compressor|turbine)\b/i,                       trait: "motorized" },
+  { re: /\b(no.?wire|no.?radio|local.?only|no.?connect)\b/i,              trait: "local_only" },
+];
+
+// Product keyword → context traits implied by the product type
+const PRODUCT_CONTEXTS = [
+  { re: /\b(kettle|water.?boiler)\b/i,
+    implied: ["liquid_heating","water_heating","food_contact","mains_power_likely","heating"] },
+  { re: /\b(espresso|coffee.?machine|coffee.?maker|bean.?to.?cup)\b/i,
+    implied: ["coffee_brewing","beverage_preparation","food_contact","mains_power_likely"] },
+  { re: /\b(coffee.?grinder|bean.?grinder)\b/i,
+    implied: ["coffee_grinding","food_contact","motorized","mains_power_likely"] },
+  { re: /\b(fridge|refrigerator|fridge.?freezer)\b/i,
+    implied: ["refrigeration","cooling","food_contact","mains_power_likely","motorized"] },
+  { re: /\b(freezer)\b/i,
+    implied: ["refrigeration","cooling","food_contact","mains_power_likely","motorized"] },
+  { re: /\b(air.?fry|airfry)\b/i,
+    implied: ["cooking","heating","food_preparation","mains_power_likely"] },
+  { re: /\b(robot.?vacuum|robovac|robotic.?clean)\b/i,
+    implied: ["surface_cleaning","motorized","battery_powered"] },
+  { re: /\b(vacuum.?cleaner|hoover)\b/i,
+    implied: ["surface_cleaning","motorized"] },
+  { re: /\b(dishwasher)\b/i,
+    implied: ["washing","water_contact","motorized","mains_power_likely","food_contact"] },
+  { re: /\b(washing.?machine|washer)\b/i,
+    implied: ["washing","textile_care","motorized","mains_power_likely"] },
+  { re: /\b(tumble.?dryer|clothes.?dryer)\b/i,
+    implied: ["drying","textile_care","motorized","mains_power_likely"] },
+  { re: /\b(microwave)\b/i,
+    implied: ["cooking","heating","mains_power_likely"] },
+  { re: /\b(toaster)\b/i,
+    implied: ["cooking","heating","food_contact","mains_power_likely"] },
+  { re: /\b(oven|bake.?oven)\b/i,
+    implied: ["cooking","heating","mains_power_likely"] },
+  { re: /\b(blender|smoothie.?maker|juicer)\b/i,
+    implied: ["food_preparation","motorized","food_contact","mains_power_likely"] },
+  { re: /\b(food.?processor|stand.?mixer|mixer)\b/i,
+    implied: ["food_preparation","motorized","food_contact","mains_power_likely"] },
+  { re: /\b(air.?purifier|air.?cleaner)\b/i,
+    implied: ["air_cleaning","air_treatment","motorized","mains_power_likely"] },
+  { re: /\b(fan\b|desk.?fan|tower.?fan|ceiling.?fan)\b/i,
+    implied: ["ventilation","motorized","mains_power_likely"] },
+  { re: /\b(heater|space.?heater|electric.?heater|radiator)\b/i,
+    implied: ["heating","heating_personal_environment","mains_power_likely"] },
+  { re: /\b(air.?con|aircon|air.?conditioner)\b/i,
+    implied: ["air_treatment","cooling","heating","mains_power_likely","motorized"] },
+  { re: /\b(lawn.?mower|robot.?mow|robotic.?mow)\b/i,
+    implied: ["garden_use","outdoor_use","motorized"] },
+  { re: /\b(smart.?plug|power.?strip|smart.?socket)\b/i,
+    implied: ["mains_powered","electrical"] },
+  { re: /\b(smart.?speaker|voice.?assistant)\b/i,
+    implied: ["speaker","microphone","wifi","cloud","mains_power_likely"] },
+  { re: /\b(doorbell|video.?door)\b/i,
+    implied: ["camera","outdoor_use","fixed_installation"] },
+  { re: /\b(security.?camera|ip.?camera|surveillance)\b/i,
+    implied: ["camera","outdoor_use","data_storage"] },
+  { re: /\b(pet.?feeder|automatic.?feeder)\b/i,
+    implied: ["animal_use","food_contact"] },
+  { re: /\b(electric.?toothbrush|oral irrigator)\b/i,
+    implied: ["oral_care","personal_care","skin_contact","wet_environment","battery_powered"] },
+  { re: /\b(hair.?dryer|hair.?straighten|hair.?curler|curling.?iron)\b/i,
+    implied: ["hair_care","personal_care","mains_power_likely","heating"] },
+];
+
+// Suggestion tiers — evaluated in order, first matching tier shown
+// Each tier specifies when to show (requires_*) and what to offer
+const SUGGESTION_TIERS = [
+  {
+    id: "power",
+    label: "Power source",
+    icon: "zap",
+    // Show when: product detected but no power source mentioned
+    show_if: (det) => det.hasProduct && !det.hasPower,
+    suggestions: [
+      { label: "Mains powered",    text: "mains powered (230 V AC)",                           icon: "zap" },
+      { label: "Battery",          text: "battery powered with rechargeable pack",              icon: "zap" },
+      { label: "External adapter", text: "powered via external AC/DC power supply adapter",    icon: "zap" },
+      { label: "USB-C powered",    text: "USB-C powered (low-voltage supply)",                  icon: "zap" },
+    ],
+  },
+  {
+    id: "connectivity",
+    label: "Connectivity",
+    icon: "wifi",
+    // Show when: no radio connectivity mentioned yet
+    show_if: (det) => !det.hasRadio && !det.hasLocalOnly && (det.hasProduct || det.hasPower),
+    suggestions: [
+      { label: "Wi-Fi",        text: "Wi-Fi connected (2.4 GHz)",                              icon: "wifi" },
+      { label: "Bluetooth",    text: "Bluetooth connected (BLE)",                              icon: "wifi" },
+      { label: "App control",  text: "controllable via mobile app (iOS and Android)",          icon: "wifi" },
+      { label: "No wireless",  text: "no wireless connectivity — fully local operation",       icon: "wifi" },
+    ],
+  },
+  {
+    id: "cloud_software",
+    label: "Cloud & software",
+    icon: "cloud",
+    // Show when: radio detected but no cloud/ota/account mentioned
+    show_if: (det) => det.hasRadio && !det.hasCloud && !det.hasOTA && !det.hasAccount,
+    suggestions: [
+      { label: "Cloud account",  text: "with cloud account and user login (email + password)", icon: "cloud" },
+      { label: "OTA updates",    text: "with over-the-air firmware updates",                   icon: "cloud" },
+      { label: "Local only",     text: "local network only — no cloud or OTA dependency",      icon: "cloud" },
+    ],
+  },
+  {
+    id: "food_contact",
+    label: "Food & materials",
+    icon: "flask",
+    // Show when: food/beverage product detected but no food-contact statement
+    show_if: (det) => det.hasFoodContext && !det.hasFoodContact && !det.hasNoFoodContact,
+    suggestions: [
+      { label: "Food-contact path",  text: "food-contact wetted path (plastic and metal parts contact food or beverages)", icon: "flask" },
+      { label: "Plastic food parts", text: "plastic food-contact parts in brew or food path",  icon: "flask" },
+      { label: "No food contact",    text: "no direct food or beverage contact",               icon: "flask" },
+    ],
+  },
+  {
+    id: "pressure_steam",
+    label: "Pressure & steam",
+    icon: "droplets",
+    // Show when: coffee/espresso but no pressure/steam mentioned
+    show_if: (det) => det.hasCoffeeContext && !det.hasPressure && !det.hasSteam,
+    suggestions: [
+      { label: "Pressure system", text: "pressurised brew system (15-bar pump)",  icon: "droplets" },
+      { label: "Steam wand",      text: "steam wand for milk frothing",           icon: "droplets" },
+      { label: "No pressure",     text: "drip or filter brew — no pressure",      icon: "droplets" },
+    ],
+  },
+  {
+    id: "outdoor_context",
+    label: "Use environment",
+    icon: "leaf",
+    // Show when: outdoor/garden product but no environment stated
+    show_if: (det) => det.hasOutdoorContext && !det.hasOutdoor && !det.hasIndoor,
+    suggestions: [
+      { label: "Outdoor rated",  text: "for outdoor use — weather and dust exposure (IP-rated enclosure)", icon: "leaf" },
+      { label: "Indoor only",    text: "indoor use only — not weather exposed",   icon: "leaf" },
+    ],
+  },
+  {
+    id: "cybersecurity",
+    label: "Account & auth",
+    icon: "cpu",
+    // Show when: cloud/internet detected but no account/auth mentioned
+    show_if: (det) => (det.hasCloud || det.hasInternet) && !det.hasAccount && !det.hasAuthentication,
+    suggestions: [
+      { label: "User account",     text: "requires user account creation (email, password, profile)", icon: "cpu" },
+      { label: "Authentication",   text: "password and multi-factor authentication for device access",  icon: "cpu" },
+      { label: "No account",       text: "no user account required — device works standalone",          icon: "cpu" },
+    ],
+  },
+  {
+    id: "payments",
+    label: "Transactions",
+    icon: "cart",
+    // Show when: app + connected but no payments mentioned
+    show_if: (det) => det.hasAppControl && !det.hasMonetary,
+    suggestions: [
+      { label: "In-app purchase",  text: "supports in-app purchases or subscription billing", icon: "cart" },
+      { label: "No payments",      text: "no monetary transactions or subscription functions", icon: "cart" },
+    ],
+  },
+];
+
+// Derive a detection state object from free text
+function detectTraits(text) {
+  const t = text.toLowerCase();
+  const signals = new Set();
+
+  for (const { re, trait } of TEXT_SIGNALS) {
+    if (re.test(t)) signals.add(trait);
+  }
+
+  let impliedTraits = new Set();
+  let hasProduct = false;
+  for (const { re, implied } of PRODUCT_CONTEXTS) {
+    if (re.test(t)) {
+      hasProduct = true;
+      implied.forEach(i => impliedTraits.add(i));
+    }
+  }
+
+  const has = (trait) => signals.has(trait) || impliedTraits.has(trait);
+
+  return {
+    hasProduct,
+    hasPower:          has("mains_powered") || has("battery_powered") || has("usb_powered") || has("external_psu") || has("mains_power_likely"),
+    hasRadio:          has("wifi") || has("bluetooth") || has("cellular") || has("zigbee") || has("thread") || has("nfc"),
+    hasAppControl:     has("app_control"),
+    hasCloud:          has("cloud"),
+    hasOTA:            has("ota"),
+    hasInternet:       has("internet"),
+    hasAccount:        has("account"),
+    hasAuthentication: has("authentication"),
+    hasLocalOnly:      has("local_only"),
+    hasFoodContext:    has("food_contact") || has("food_preparation") || has("beverage_preparation") || has("liquid_heating") || has("coffee_brewing"),
+    hasFoodContact:    has("food_contact"),
+    hasNoFoodContact:  has("no_food_contact"),
+    hasCoffeeContext:  has("coffee_brewing") || t.includes("espresso") || t.includes("coffee"),
+    hasPressure:       has("pressure"),
+    hasSteam:          has("steam"),
+    hasOutdoorContext: has("outdoor_use") || has("garden_use"),
+    hasOutdoor:        signals.has("outdoor_use"),
+    hasIndoor:         has("indoor_use"),
+    hasMonetary:       has("monetary_transaction"),
+    raw: signals,
+  };
+}
+
+function useSmartSuggestions(description, backendChips) {
+  return useMemo(() => {
+    const text = (description || "").trim();
+
+    // After analysis: backend chips take priority, fill remaining slots with smart ones
+    if (backendChips && backendChips.length) {
+      return [{ id: "backend", label: "Suggested additions", suggestions: backendChips.slice(0, 6) }];
+    }
+
+    // No text yet — return empty
+    if (text.length < 5) return [];
+
+    const det = detectTraits(text);
+    const groups = [];
+
+    for (const tier of SUGGESTION_TIERS) {
+      if (tier.show_if(det)) {
+        groups.push({ id: tier.id, label: tier.label, icon: tier.icon, suggestions: tier.suggestions });
+        if (groups.length >= 3) break; // max 3 groups at once to avoid overwhelm
+      }
+    }
+
+    return groups;
+  }, [description, backendChips]);
+}
+
 
 function Panel({ eyebrow, title, subtitle, action, className = "", children }) {
   return (
@@ -120,14 +394,13 @@ function ImportancePill({ value }) {
 }
 
 
-
 function TopBar({ result, totalStandards, onReset }) {
   return (
     <header className="topbar">
       <div className="page-shell topbar__inner">
         <div className="brand">
           <div className="brand__mark">
-            <Waypoints size={15} strokeWidth={2.2} />
+            <img src="/logo512.png" alt="RuleGrid" className="brand__logo" />
           </div>
           <div>
             <div className="brand__title">RuleGrid</div>
@@ -241,9 +514,53 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
 }
 
 /* ──────────────────────────────────────────────────────────
-   ComposerPanel — landing variant is large & input-first
+   SmartSuggestionsPanel — live-updating chips from trait engine
    ────────────────────────────────────────────────────────── */
-function ComposerPanel({ description, setDescription, templates, chips, onAnalyze, busy, onDirty, isLanding }) {
+const SUGGESTION_ICONS = {
+  zap:      <Zap size={11} />,
+  wifi:     <Wifi size={11} />,
+  cloud:    <Cloud size={11} />,
+  cpu:      <Cpu size={11} />,
+  flask:    <FlaskConical size={11} />,
+  droplets: <Droplets size={11} />,
+  leaf:     <Leaf size={11} />,
+  cart:     <ShoppingCart size={11} />,
+};
+
+function SmartSuggestionsPanel({ description, onApply, backendChips }) {
+  const groups = useSmartSuggestions(description, backendChips);
+  if (!groups.length) return null;
+
+  return (
+    <div className="smart-suggestions">
+      {groups.map((group) => (
+        <div key={group.id} className="smart-suggestions__group">
+          <div className="smart-suggestions__label">
+            {group.icon ? SUGGESTION_ICONS[group.icon] : null}
+            {group.label}
+          </div>
+          <div className="smart-suggestions__chips">
+            {group.suggestions.map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                className="smart-chip"
+                onClick={() => onApply(s.text)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────
+   ComposerPanel — landing & refinement variants
+   ────────────────────────────────────────────────────────── */
+function ComposerPanel({ description, setDescription, templates, backendChips, onAnalyze, busy, onDirty, isLanding }) {
   const charMax = 1200;
   const wordCount = description.trim() ? description.trim().split(/\s+/).length : 0;
   const usageState =
@@ -255,13 +572,18 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
 
   const textareaRef = useRef(null);
 
-  /* Landing: focus textarea on mount */
   useEffect(() => {
     if (isLanding && textareaRef.current) {
       const t = setTimeout(() => textareaRef.current?.focus(), 120);
       return () => clearTimeout(t);
     }
   }, [isLanding]);
+
+  const handleApply = useCallback((text) => {
+    setDescription((current) => joinText(current, text));
+    onDirty(true);
+    textareaRef.current?.focus();
+  }, [setDescription, onDirty]);
 
   const sharedTextarea = (
     <label className={isLanding ? "landing-composer__field" : "composer__field"}>
@@ -279,7 +601,7 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
           }
         }}
         placeholder="e.g. Connected espresso machine with Wi-Fi, OTA updates, cloud account, mains power, grinder, pressure system, food-contact brew path."
-        rows={isLanding ? 8 : 7}
+        rows={isLanding ? 7 : 6}
         maxLength={charMax}
         spellCheck={false}
         className={isLanding ? "landing-composer__textarea" : "composer__textarea"}
@@ -287,7 +609,7 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
       {!isLanding && (
         <div className="composer__field-footer">
           <div className="composer__helper">
-            Include: power source · radios · cloud/OTA · core functions · sensors · food-contact or wetted paths
+            Include: power · radios · cloud/OTA · core functions · food-contact paths
           </div>
           <div className={`counter ${usageState}`.trim()}>
             {wordCount ? <span>{wordCount}w</span> : null}
@@ -302,7 +624,7 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
   if (isLanding) {
     return (
       <div className="landing-composer">
-        {/* Quick start chips — compact, above the input */}
+        {/* Quick-start templates */}
         <div className="landing-composer__quickstart">
           <span className="micro-label">Quick start</span>
           <div className="template-row">
@@ -323,11 +645,9 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
           </div>
         </div>
 
-        {/* Textarea + CTA always together — never separated */}
+        {/* Textarea + CTA always locked together */}
         <div className="landing-composer__input-block">
           {sharedTextarea}
-
-          {/* CTA lives INSIDE the input block, always visible directly below */}
           <div className="landing-composer__cta-row">
             <div className={`counter ${usageState}`.trim()}>
               {wordCount ? <span>{wordCount}w</span> : null}
@@ -346,43 +666,28 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
           </div>
         </div>
 
-        {/* Hints — three inline pills, compact and discreet */}
+        {/* Static hints row */}
         <div className="input-hints">
           <div className="input-hint">
             <span className="input-hint__icon"><Zap size={11} /></span>
-            <span><strong>Power & function</strong> — mains, battery, heating, motors, sensors</span>
+            <span><strong>Power & function</strong> — mains, battery, motors, heating</span>
           </div>
           <div className="input-hint">
-            <span className="input-hint__icon"><Radio size={11} /></span>
+            <span className="input-hint__icon"><Wifi size={11} /></span>
             <span><strong>Connectivity</strong> — Wi-Fi, Bluetooth, cloud, OTA</span>
           </div>
           <div className="input-hint">
             <span className="input-hint__icon"><FlaskConical size={11} /></span>
-            <span><strong>Materials</strong> — wetted paths, food-contact, battery chemistry</span>
+            <span><strong>Materials</strong> — wetted paths, food-contact</span>
           </div>
         </div>
 
-        {/* Guided chips — only shown if backend provides them, collapsed by default feel */}
-        {chips.length ? (
-          <div className="landing-composer__chips">
-            <div className="micro-label">Add detail</div>
-            <div className="template-row">
-              {chips.map((chip) => (
-                <button
-                  key={`${chip.label}-${chip.text}`}
-                  type="button"
-                  className="chip-button chip-button--soft"
-                  onClick={() => {
-                    setDescription((current) => joinText(current, chip.text));
-                    onDirty(true);
-                  }}
-                >
-                  + {chip.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        {/* Dynamic smart suggestions — updates as you type */}
+        <SmartSuggestionsPanel
+          description={description}
+          onApply={handleApply}
+          backendChips={null}
+        />
       </div>
     );
   }
@@ -393,7 +698,7 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
       eyebrow="Input"
       title="Refine description"
       subtitle="Add missing detail and re-run to tighten the route."
-      action={<span className="keyboard-hint">⌘ + Enter to analyze</span>}
+      action={<span className="keyboard-hint">⌘ + Enter</span>}
     >
       <div className="composer">
         <div className="composer__block">
@@ -404,10 +709,7 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
                 key={template.label}
                 type="button"
                 className="chip-button"
-                onClick={() => {
-                  setDescription(template.text);
-                  onDirty(true);
-                }}
+                onClick={() => { setDescription(template.text); onDirty(true); }}
               >
                 {template.label}
               </button>
@@ -417,26 +719,12 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
 
         {sharedTextarea}
 
-        {chips.length ? (
-          <div className="composer__block">
-            <div className="micro-label">Add missing detail</div>
-            <div className="template-row">
-              {chips.map((chip) => (
-                <button
-                  key={`${chip.label}-${chip.text}`}
-                  type="button"
-                  className="chip-button chip-button--soft"
-                  onClick={() => {
-                    setDescription((current) => joinText(current, chip.text));
-                    onDirty(true);
-                  }}
-                >
-                  + {chip.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        {/* Smart suggestions — backend chips post-result, live inference pre-result */}
+        <SmartSuggestionsPanel
+          description={description}
+          onApply={handleApply}
+          backendChips={backendChips}
+        />
 
         <div className="composer__actions">
           <button
@@ -448,14 +736,10 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
             {busy ? <LoaderCircle size={15} className="spin" /> : <Search size={15} />}
             {busy ? "Analyzing…" : "Analyze product"}
           </button>
-
           <button
             type="button"
             className="button button--secondary"
-            onClick={() => {
-              setDescription("");
-              onDirty(true);
-            }}
+            onClick={() => { setDescription(""); onDirty(true); }}
             disabled={!description}
           >
             Clear
@@ -465,6 +749,7 @@ function ComposerPanel({ description, setDescription, templates, chips, onAnalyz
     </Panel>
   );
 }
+
 
 function OverviewPanel({ result, routeSections, legislationItems }) {
   if (!result) return null;
@@ -833,196 +1118,6 @@ function StandardsRoutePanel({ sections, directiveBreakdown }) {
   );
 }
 
-function DetailBlock({ title, subtitle, children }) {
-  return (
-    <section className="detail-block">
-      <div className="detail-block__header">
-        <h3>{title}</h3>
-        {subtitle ? <p>{subtitle}</p> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function StructuredValue({ value }) {
-  const text = serializePreview(value);
-
-  if (Array.isArray(value)) {
-    const primitiveArray = value.every(
-      (item) =>
-        item === null ||
-        item === undefined ||
-        ["string", "number", "boolean"].includes(typeof item)
-    );
-    if (primitiveArray) {
-      return (
-        <div className="tag-row">
-          {value.length ? (
-            value.map((item, index) => (
-              <span key={`${String(item)}-${index}`} className="soft-tag">
-                {String(item)}
-              </span>
-            ))
-          ) : (
-            <span className="empty-copy">No values</span>
-          )}
-        </div>
-      );
-    }
-  }
-
-  if (typeof value === "object" && value !== null) {
-    return <pre className="json-preview">{text}</pre>;
-  }
-
-  return <div className="detail-value">{text}</div>;
-}
-
-function DetailsPanel({ result }) {
-  const [open, setOpen] = useState(false);
-
-  if (!result) return null;
-
-  const missingItems = result?.missing_information_items || [];
-  const inputGapItems = uniqueBy(result?.input_gaps_panel?.items || [], (item) => item.key || item.message);
-  const traits = result?.all_traits || [];
-  const diagnostics = result?.diagnostics || [];
-  const additionalEntries = getAdditionalEntries(result);
-
-  if (!missingItems.length && !inputGapItems.length && !traits.length && !diagnostics.length && !additionalEntries.length) {
-    return null;
-  }
-
-  const sectionCount = [
-    missingItems.length,
-    inputGapItems.length,
-    traits.length,
-    diagnostics.length,
-    additionalEntries.length,
-  ].filter(Boolean).length;
-
-  return (
-    <section className="panel">
-      <button
-        type="button"
-        className={`details-toggle ${open ? "details-toggle--open" : ""}`}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <div className="details-toggle__left">
-          <span className="details-toggle__eyebrow">Full Detail</span>
-          <span className="details-toggle__title">
-            Structured analysis — {sectionCount} section{sectionCount === 1 ? "" : "s"}
-          </span>
-        </div>
-        <ChevronDown size={15} className="details-toggle__chevron" />
-      </button>
-
-      {open ? (
-        <div className="details-panel-body">
-          {missingItems.length ? (
-            <DetailBlock
-              title="Missing information"
-              subtitle="Direct prompts returned by the analysis engine."
-            >
-              <div className="detail-grid">
-                {missingItems.map((item) => (
-                  <article key={`${item.key}-${item.message}`} className="detail-card">
-                    <div className="detail-card__header">
-                      <div className="detail-card__title">{gapLabel(item.key)}</div>
-                      {item.importance ? <ImportancePill value={item.importance} /> : null}
-                    </div>
-                    <p className="detail-card__text">{item.message || "No message returned."}</p>
-                    {item.examples?.length ? (
-                      <div className="tag-row">
-                        {item.examples.map((example) => (
-                          <span key={example} className="soft-tag">{example}</span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
-            </DetailBlock>
-          ) : null}
-
-          {inputGapItems.length ? (
-            <DetailBlock
-              title="Input gaps"
-              subtitle="Backend panel items, separate from the clarification list."
-            >
-              <div className="detail-grid">
-                {inputGapItems.map((item) => (
-                  <article key={`${item.key}-${item.message}`} className="detail-card">
-                    <div className="detail-card__header">
-                      <div className="detail-card__title">{gapLabel(item.key)}</div>
-                      {item.importance ? <ImportancePill value={item.importance} /> : null}
-                    </div>
-                    <p className="detail-card__text">{item.message || "No message returned."}</p>
-                    {item.examples?.length ? (
-                      <div className="tag-row">
-                        {item.examples.map((example) => (
-                          <span key={example} className="soft-tag">{example}</span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
-            </DetailBlock>
-          ) : null}
-
-          {traits.length ? (
-            <DetailBlock title="Detected traits">
-              <div className="tag-row">
-                {traits.map((trait) => (
-                  <span key={trait} className="soft-tag">{titleCase(trait)}</span>
-                ))}
-              </div>
-            </DetailBlock>
-          ) : null}
-
-          {diagnostics.length ? (
-            <details className="raw-json">
-              <summary>Engine diagnostics ({diagnostics.length})</summary>
-              <div style={{ margin: "0 15px 15px" }}>
-                <div className="diagnostic-list">
-                  {diagnostics.map((line, index) => (
-                    <div key={`${line}-${index}`} className="diagnostic-line">{line}</div>
-                  ))}
-                </div>
-              </div>
-            </details>
-          ) : null}
-
-          {additionalEntries.length ? (
-            <DetailBlock
-              title="Additional structured output"
-              subtitle="Top-level response fields not surfaced elsewhere."
-            >
-              <div className="detail-grid">
-                {additionalEntries.map(([key, value]) => (
-                  <article key={key} className="detail-card">
-                    <div className="detail-card__header">
-                      <div className="detail-card__title">{titleCaseMinor(key)}</div>
-                    </div>
-                    <StructuredValue value={value} />
-                  </article>
-                ))}
-              </div>
-            </DetailBlock>
-          ) : null}
-
-          <details className="raw-json">
-            <summary>Raw analysis JSON</summary>
-            <pre>{JSON.stringify(result, null, 2)}</pre>
-          </details>
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
 function CopyResultsButton({ result, description, routeSections, legislationGroups }) {
   const [copied, setCopied] = useState(false);
 
@@ -1160,14 +1255,13 @@ export default function App() {
     [routeSections]
   );
 
-  const chips = useMemo(() => {
-    const backend = (result?.suggested_quick_adds || []).map((item) => ({
-      label: titleCase(item.label),
+  const backendChips = useMemo(() => {
+    if (!result) return null;
+    return (result?.suggested_quick_adds || []).map((item) => ({
+      label: item.label,
       text: item.text,
     }));
-    const frontend = buildGuidedChips(metadata, result);
-    return uniqueBy([...backend, ...frontend], (item) => item.text).slice(0, 12);
-  }, [metadata, result]);
+  }, [result]);
 
   useEffect(() => {
     if (!result || !resultsRef.current) return;
@@ -1229,7 +1323,7 @@ export default function App() {
           description={description}
           setDescription={setDescription}
           templates={templates}
-          chips={chips}
+          backendChips={backendChips}
           onAnalyze={runAnalysis}
           busy={busy}
           onDirty={setClarifyDirty}
@@ -1267,8 +1361,6 @@ export default function App() {
                   });
                 }}
               />
-
-              <DetailsPanel result={result} />
 
               <div className="footer-note">
                 <span>
