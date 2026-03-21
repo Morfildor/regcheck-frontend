@@ -527,7 +527,7 @@ function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, on
 }
 
 
-function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
+function HeroPanel({ result, routeSections, legislationItems, guidanceItems, baseSafetyRoute }) {
   const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
@@ -583,6 +583,7 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
             {result?.product_type ? (
               <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
             ) : null}
+            <BaseSafetyRoutePill route={baseSafetyRoute} compact />
           </div>
         </div>
       </Panel>
@@ -604,6 +605,181 @@ function HeroPanel({ result, routeSections, legislationItems, guidanceItems }) {
   );
 }
 
+
+
+const BASE_SAFETY_ROUTE_COPY = {
+  EN_60335: {
+    key: "EN_60335",
+    label: "EN 60335 appliance route",
+    shortLabel: "EN 60335",
+    description:
+      "Primary function points to household and similar appliance safety under EN 60335-1 with the relevant Part 2 standard.",
+    note:
+      "Connected features do not move an appliance into EN 62368-1 when the primary function remains cooking, cleaning, heating, cooling, or a similar physical appliance function.",
+  },
+  EN_62368: {
+    key: "EN_62368",
+    label: "EN 62368 AV/ICT route",
+    shortLabel: "EN 62368",
+    description:
+      "Primary function points to audio/video, information, or communications equipment safety under EN 62368-1.",
+    note:
+      "This is the base safety path for products such as routers, smart displays, laptops, monitors, speakers, and other AV/ICT equipment.",
+  },
+};
+
+function baseSafetyRouteTone(route) {
+  if (route?.key === "EN_62368") {
+    return {
+      bg: "rgba(185,162,255,0.14)",
+      bd: "rgba(185,162,255,0.30)",
+      text: "#cab7ff",
+      dot: "#b9a2ff",
+    };
+  }
+  return {
+    bg: "rgba(143,218,184,0.14)",
+    bd: "rgba(143,218,184,0.30)",
+    text: "#9ee7c4",
+    dot: "#8fdab8",
+  };
+}
+
+function inferBaseSafetyRoute(result, routeSections) {
+  if (!result) return null;
+
+  const rows = (routeSections || []).flatMap((section) => section.items || []);
+  const codeStrings = rows.map((item) => String(item?.code || "").toUpperCase());
+  const titleStrings = rows.map((item) => String(item?.title || "").toLowerCase());
+
+  const has60335 =
+    codeStrings.some((code) => /(?:^|\b)(?:EN|IEC)\s*60335(?:-\d+)?(?:\b|\s|$)/i.test(code)) ||
+    titleStrings.some((title) => title.includes("household and similar electrical appliances"));
+
+  const has62368 =
+    codeStrings.some((code) => /(?:^|\b)(?:EN|IEC)\s*62368(?:-\d+)?(?:\b|\s|$)/i.test(code)) ||
+    titleStrings.some(
+      (title) =>
+        title.includes("audio/video") ||
+        title.includes("information and communication technology") ||
+        title.includes("communications technology equipment")
+    );
+
+  const productText = [
+    result?.product_type || "",
+    result?.summary || "",
+    ...(result?.all_traits || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const applianceHints = [
+    /coffee/,
+    /espresso/,
+    /kettle/,
+    /air.?fry/,
+    /oven/,
+    /vacuum/,
+    /robot.?vac/,
+    /air.?purifier/,
+    /fan\b/,
+    /heater/,
+    /dishwasher/,
+    /washing.?machine/,
+    /dryer/,
+    /blender/,
+    /mixer/,
+    /toaster/,
+    /fridge/,
+    /freezer/,
+    /appliance/,
+  ];
+
+  const avictHints = [
+    /router/,
+    /modem/,
+    /gateway/,
+    /access.?point/,
+    /switch\b/,
+    /laptop/,
+    /desktop/,
+    /server/,
+    /nas\b/,
+    /monitor/,
+    /display/,
+    /smart.?display/,
+    /smart.?speaker/,
+    /speaker/,
+    /television/,
+    /smart.?tv/,
+    /stream(ing)?/,
+    /set.?top/,
+    /projector/,
+    /voip/,
+    /ict/,
+    /communications?/,
+    /audio/,
+    /video/,
+    /network/,
+  ];
+
+  const hasApplianceHint = applianceHints.some((re) => re.test(productText));
+  const hasAvictHint = avictHints.some((re) => re.test(productText));
+
+  if (has60335 && !has62368) return BASE_SAFETY_ROUTE_COPY.EN_60335;
+  if (has62368 && !has60335) return BASE_SAFETY_ROUTE_COPY.EN_62368;
+
+  if (has60335 && has62368) {
+    if (hasApplianceHint && !hasAvictHint) return BASE_SAFETY_ROUTE_COPY.EN_60335;
+    if (hasAvictHint && !hasApplianceHint) return BASE_SAFETY_ROUTE_COPY.EN_62368;
+  }
+
+  if (hasAvictHint && !hasApplianceHint) return BASE_SAFETY_ROUTE_COPY.EN_62368;
+  if (hasApplianceHint && !hasAvictHint) return BASE_SAFETY_ROUTE_COPY.EN_60335;
+
+  return null;
+}
+
+function BaseSafetyRoutePill({ route, compact = false }) {
+  if (!route) return null;
+  const tone = baseSafetyRouteTone(route);
+  const Icon = route.key === "EN_62368" ? Cpu : ShieldCheck;
+
+  return (
+    <span
+      className={`base-route-pill${compact ? " base-route-pill--compact" : ""}`}
+      style={{
+        "--base-route-bg": tone.bg,
+        "--base-route-border": tone.bd,
+        "--base-route-text": tone.text,
+        "--base-route-dot": tone.dot,
+      }}
+    >
+      <Icon size={12} />
+      <span>{route.label}</span>
+    </span>
+  );
+}
+
+function BaseSafetyRouteBanner({ route }) {
+  if (!route) return null;
+  return (
+    <div
+      className="base-route-banner"
+      style={{
+        "--base-route-bg": baseSafetyRouteTone(route).bg,
+        "--base-route-border": baseSafetyRouteTone(route).bd,
+      }}
+    >
+      <div className="base-route-banner__eyebrow">Base safety route</div>
+      <div className="base-route-banner__content">
+        <BaseSafetyRoutePill route={route} />
+        <p className="base-route-banner__text">{route.description}</p>
+        <p className="base-route-banner__note">{route.note}</p>
+      </div>
+    </div>
+  );
+}
 
 /* ──────────────────────────────────────────────────────────
    SmartSuggestionsPanel — IMPROVEMENT #2
@@ -902,7 +1078,7 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
   );
 }
 
-function SnapshotRail({ result, routeSections, legislationGroups, description }) {
+function SnapshotRail({ result, routeSections, legislationGroups, description, baseSafetyRoute }) {
   if (!result) return null;
 
   const confidence =
@@ -927,6 +1103,7 @@ function SnapshotRail({ result, routeSections, legislationGroups, description })
         <div className="snapshot-list">
           {[
             ["Product", formatUiLabel(result?.product_type || "unclear")],
+            ["Base safety", baseSafetyRoute?.label || "Not resolved"],
             ["Confidence", formatUiLabel(confidence)],
             ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
             ["Standards", totalStandards],
@@ -1240,7 +1417,7 @@ function RegimeNav({ directiveBreakdown }) {
   );
 }
 
-function StandardsRoutePanel({ sections, directiveBreakdown }) {
+function StandardsRoutePanel({ sections, directiveBreakdown, baseSafetyRoute }) {
   if (!sections.length) return null;
 
   return (
@@ -1250,6 +1427,7 @@ function StandardsRoutePanel({ sections, directiveBreakdown }) {
       title="Standards route"
       subtitle="Grouped by regime — scan the path without losing item-level detail."
     >
+      <BaseSafetyRouteBanner route={baseSafetyRoute} />
       <RegimeNav directiveBreakdown={directiveBreakdown} />
 
       <div className="route-stack">
@@ -1411,6 +1589,7 @@ export default function App() {
   const legislationItems   = useMemo(() => buildCompactLegislationItems(result), [result]);
   const legislationGroups  = useMemo(() => buildLegislationGroups(result),       [result]);
   const directiveBreakdown = useMemo(() => buildDirectiveBreakdown(routeSections), [routeSections]);
+  const baseSafetyRoute  = useMemo(() => inferBaseSafetyRoute(result, routeSections), [result, routeSections]);
 
   const totalStandards = useMemo(
     () => routeSections.reduce((count, section) => count + (section.items || []).length, 0),
@@ -1521,6 +1700,7 @@ export default function App() {
           routeSections={routeSections}
           legislationItems={legislationItems}
           guidanceItems={guidanceItems}
+          baseSafetyRoute={baseSafetyRoute}
         />
 
         <ComposerPanel
@@ -1553,7 +1733,7 @@ export default function App() {
                 directiveBreakdown={directiveBreakdown}
               />
 
-              <StandardsRoutePanel sections={routeSections} directiveBreakdown={directiveBreakdown} />
+              <StandardsRoutePanel sections={routeSections} directiveBreakdown={directiveBreakdown} baseSafetyRoute={baseSafetyRoute} />
 
               <ClarificationsPanel
                 items={guidanceItems}
@@ -1586,6 +1766,7 @@ export default function App() {
               routeSections={routeSections}
               legislationGroups={legislationGroups}
               description={description}
+              baseSafetyRoute={baseSafetyRoute}
             />
           </div>
         ) : null}

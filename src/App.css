@@ -1187,6 +1187,66 @@ code {
   color: #f08078;
 }
 
+
+/* ── Base Safety Route ────────────────────────────────────── */
+.base-route-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--base-route-border, var(--border));
+  background: var(--base-route-bg, var(--surface-glass));
+  color: var(--base-route-text, var(--text));
+  font-size: 0.80rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.base-route-pill--compact {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+}
+
+.base-route-banner {
+  margin: 0 24px 18px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--base-route-border, var(--border-sm));
+  background:
+    linear-gradient(180deg, var(--base-route-bg, rgba(255,255,255,0.02)), rgba(255,255,255,0.02));
+  display: grid;
+  gap: 10px;
+}
+
+.base-route-banner__eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.base-route-banner__content {
+  display: grid;
+  gap: 9px;
+}
+
+.base-route-banner__text {
+  margin: 0;
+  font-size: 0.89rem;
+  line-height: 1.58;
+  color: var(--text);
+}
+
+.base-route-banner__note {
+  margin: 0;
+  font-size: 0.79rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
 /* ── Regime Nav — centered, scannable directive strip ─────── */
 .regime-nav {
   margin: 0 24px 20px;
@@ -2005,6 +2065,10 @@ code {
   }
 
   .button, .chip-button { justify-content: center; }
+
+  .base-route-banner {
+    margin: 0 16px 16px;
+  }
 
   .route-section__toggle,
   .clarification-card__header,
