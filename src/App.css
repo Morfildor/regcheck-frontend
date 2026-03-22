@@ -2644,3 +2644,172 @@ code {
     background: #111f30;
   }
 }
+
+/* ===============================
+   2026 frontend overhaul overrides
+   =============================== */
+
+.analysis-progress--honest {
+  padding: 14px 18px;
+}
+
+.analysis-progress__honest-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.analysis-progress__spinner-wrap {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(125, 185, 255, 0.12);
+  border: 1px solid rgba(125, 185, 255, 0.22);
+  color: #93c5ff;
+}
+
+.analysis-progress__copy {
+  display: grid;
+  gap: 2px;
+}
+
+.analysis-progress__title {
+  font-size: 0.91rem;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.analysis-progress__text {
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--text-soft);
+}
+
+.analysis-progress__bar--indeterminate {
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.analysis-progress__fill--indeterminate {
+  width: 36%;
+  animation: analysisIndeterminate 1.4s ease-in-out infinite;
+}
+
+@keyframes analysisIndeterminate {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(320%); }
+}
+
+.panel--sidebar-compact .panel__body {
+  gap: 16px;
+}
+
+.sidebar-tag-row {
+  margin-top: 10px;
+}
+
+.clarify-prompt--collapsed {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.clarify-prompt__collapsed-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-sm);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.clarify-prompt__collapsed-link {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.clarify-prompt__header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clarify-prompt__toggle {
+  border: 1px solid var(--border-sm);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.clarify-prompt__item-text {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
+.legislation-route-section .route-section__toggle {
+  align-items: start;
+}
+
+.legislation-section__summary-line {
+  margin-top: 4px;
+  max-width: 62ch;
+  font-size: 0.83rem;
+  line-height: 1.58;
+  color: var(--text-soft);
+}
+
+.leg-section__body {
+  display: grid;
+  gap: 14px;
+}
+
+.leg-detail-block {
+  display: grid;
+  gap: 8px;
+}
+
+.leg-detail-block__text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.66;
+  color: var(--text-muted);
+}
+
+.leg-detail-block__list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.87rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .analysis-progress__honest-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .clarify-prompt__header {
+    align-items: start;
+  }
+
+  .clarify-prompt__header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
