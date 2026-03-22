@@ -312,14 +312,41 @@ function detectTraits(text) {
   };
 }
 
-function useSmartSuggestions(description, backendChips) {
+function useSmartSuggestions(description, backendChips, guidanceItems) {
   return useMemo(() => {
     const text = (description || "").trim();
 
+    // Post-analysis: build chips from guidance items (scope-changing clarifications)
+    if (guidanceItems && guidanceItems.length) {
+      const groups = guidanceItems
+        .filter((item) => item.choices && item.choices.length)
+        .slice(0, 4)
+        .map((item) => ({
+          id: item.key,
+          label: item.title,
+          icon: (() => {
+            const k = item.key || "";
+            if (k.includes("radio") || k.includes("connect")) return "wifi";
+            if (k.includes("cloud") || k.includes("ota") || k.includes("account")) return "cloud";
+            if (k.includes("food") || k.includes("material")) return "flask";
+            if (k.includes("battery") || k.includes("power")) return "zap";
+            if (k.includes("data") || k.includes("privacy") || k.includes("cyber")) return "cpu";
+            return "zap";
+          })(),
+          suggestions: item.choices.slice(0, 4).map((choice) => ({
+            label: choice.length > 28 ? choice.slice(0, 26) + "…" : choice,
+            text: choice,
+          })),
+        }));
+      if (groups.length) return groups;
+    }
+
+    // Post-analysis: use backend quick-add chips
     if (backendChips && backendChips.length) {
       return [{ id: "backend", label: "Suggested additions", suggestions: backendChips.slice(0, 6) }];
     }
 
+    // Pre-analysis: use smart trait detection
     if (text.length < 5) return [];
 
     const det = detectTraits(text);
@@ -333,7 +360,7 @@ function useSmartSuggestions(description, backendChips) {
     }
 
     return groups;
-  }, [description, backendChips]);
+  }, [description, backendChips, guidanceItems]);
 }
 
 
@@ -775,8 +802,8 @@ const SUGGESTION_ICONS = {
   cart:     <ShoppingCart size={11} />,
 };
 
-function SmartSuggestionsPanel({ description, onApply, backendChips, appliedChipTexts = new Set() }) {
-  const groups = useSmartSuggestions(description, backendChips);
+function SmartSuggestionsPanel({ description, onApply, backendChips, guidanceItems, appliedChipTexts = new Set() }) {
+  const groups = useSmartSuggestions(description, backendChips, guidanceItems);
   if (!groups.length) return null;
 
   return (
@@ -816,7 +843,7 @@ function SmartSuggestionsPanel({ description, onApply, backendChips, appliedChip
 /* ──────────────────────────────────────────────────────────
    ComposerPanel
    ────────────────────────────────────────────────────────── */
-function ComposerPanel({ description, setDescription, templates, backendChips, onAnalyze, busy, onDirty, isLanding }) {
+function ComposerPanel({ description, setDescription, templates, backendChips, guidanceItems, onAnalyze, busy, onDirty, isLanding }) {
   const charMax = 1200;
   const wordCount = description.trim() ? description.trim().split(/\s+/).length : 0;
   const usageState =
@@ -955,6 +982,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
           description={description}
           onApply={handleApply}
           backendChips={null}
+          guidanceItems={null}
           appliedChipTexts={appliedChipTexts}
         />
       </div>
@@ -996,6 +1024,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
           description={description}
           onApply={handleApply}
           backendChips={backendChips}
+          guidanceItems={guidanceItems}
           appliedChipTexts={appliedChipTexts}
         />
 
@@ -1184,7 +1213,7 @@ function SnapshotRail({ result, routeSections, description, onCopy, copied, legi
               <div className="sidebar-section__heading">Applicable legislation</div>
               <div className="sidebar-section__subheading">Full detail shown in main panel below</div>
               <div className="sidebar-legislation-list">
-                {allLegislationNames.slice(0, 10).map((leg, i) => {
+                {allLegislationNames.map((leg, i) => {
                   const tone = directiveTone(leg.dirKey);
                   return (
                     <div key={`sidebar-leg-${i}`} className="sidebar-leg-item">
@@ -1193,11 +1222,6 @@ function SnapshotRail({ result, routeSections, description, onCopy, copied, legi
                     </div>
                   );
                 })}
-                {allLegislationNames.length > 10 ? (
-                  <div className="sidebar-leg-item sidebar-leg-item--more">
-                    +{allLegislationNames.length - 10} more
-                  </div>
-                ) : null}
               </div>
             </div>
           ) : null}
@@ -2098,6 +2122,7 @@ export default function App() {
           setDescription={setDescription}
           templates={templates}
           backendChips={backendChips}
+          guidanceItems={result ? guidanceItems : null}
           onAnalyze={runAnalysis}
           busy={busy}
           onDirty={setClarifyDirty}
@@ -2122,6 +2147,22 @@ export default function App() {
               />
 
               <ErrorBoundary
+                key={`clarifications-${resultRevision}`}
+                label="Clarifications could not be rendered"
+              >
+                <MinimalClarificationPrompt
+                  items={guidanceItems}
+                  onApply={(text) => {
+                    setDescription((current) => {
+                      const next = joinText(current, text);
+                      if (next !== current) setClarifyDirty(true);
+                      return next;
+                    });
+                  }}
+                />
+              </ErrorBoundary>
+
+              <ErrorBoundary
                 key={`standards-${resultRevision}`}
                 label="Standards route could not be rendered"
               >
@@ -2137,22 +2178,6 @@ export default function App() {
                 label="Legislation panel could not be rendered"
               >
                 <ParallelObligationsPanel legislationGroups={legislationGroups} />
-              </ErrorBoundary>
-
-              <ErrorBoundary
-                key={`clarifications-${resultRevision}`}
-                label="Clarifications could not be rendered"
-              >
-                <MinimalClarificationPrompt
-                  items={guidanceItems}
-                  onApply={(text) => {
-                    setDescription((current) => {
-                      const next = joinText(current, text);
-                      if (next !== current) setClarifyDirty(true);
-                      return next;
-                    });
-                  }}
-                />
               </ErrorBoundary>
 
               <div className="footer-note">
