@@ -26,7 +26,6 @@ import {
 import "./App.css";
 import {
   ANALYZE_URL,
-  DEFAULT_TEMPLATES,
   IMPORTANCE,
   METADATA_URL,
   SECTION_TONES,
@@ -1296,9 +1295,7 @@ function MinimalClarificationPrompt({ items, onApply }) {
 /* ──────────────────────────────────────────────────────────
    ClarificationsPanel (kept for ErrorBoundary label compat)
    ────────────────────────────────────────────────────────── */
-function ClarificationsPanel({ items, onApply }) {
-  return <MinimalClarificationPrompt items={items} onApply={onApply} />;
-}
+
 
 
 function StandardItem({ item, sectionKey }) {
