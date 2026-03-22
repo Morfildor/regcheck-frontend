@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
-  ListChecks,
   LoaderCircle,
   RefreshCcw,
   Search,
@@ -28,7 +27,6 @@ import {
   ANALYZE_URL,
   DEFAULT_TEMPLATES,
   IMPORTANCE,
-  METADATA_URL,
   SECTION_TONES,
   STATUS,
   buildClipboardSummary,
@@ -45,9 +43,7 @@ import {
   formatUiLabel,
   joinText,
   normalizeStandardDirective,
-  prettyValue,
   routeTitle,
-  sentenceCaseList,
   titleCaseMinor,
   formatStageLabel,
 } from "./appHelpers";
@@ -383,21 +379,6 @@ function Panel({ eyebrow, title, subtitle, action, className = "", children }) {
 
 function InlineTag({ children, tone = "neutral", className = "" }) {
   return <span className={cx("inline-tag", `inline-tag--${tone}`, className)}>{children}</span>;
-}
-
-function RiskPill({ value }) {
-  const normalized = String(value || "").toUpperCase();
-  const map = {
-    LOW: "success",
-    MEDIUM: "warn",
-    HIGH: "danger",
-    UNKNOWN: "neutral",
-  };
-  return (
-    <InlineTag tone={map[normalized] || "neutral"}>
-      {formatUiLabel(normalized || "Unknown")}
-    </InlineTag>
-  );
 }
 
 function StatusPill({ value }) {
@@ -1471,8 +1452,7 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
 
 export default function App() {
   const [description, setDescription] = useState("");
-  const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
-  const [metadata, setMetadata] = useState(null);
+  const [templates] = useState(DEFAULT_TEMPLATES);
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -1481,20 +1461,6 @@ export default function App() {
   const [resultRevision, setResultRevision] = useState(0);
 
   const resultsRef = useRef(null);
-
-  useEffect(() => {
-    let mounted = true;
-    fetch(METADATA_URL)
-      .then((res) => res.json())
-      .then((json) => {
-        if (!mounted) return;
-        setMetadata(json);
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const routeSections = useMemo(() => buildRouteSections(result), [result]);
   const legislationItems = useMemo(() => buildCompactLegislationItems(result), [result]);
