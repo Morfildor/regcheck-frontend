@@ -26,7 +26,6 @@ import {
 import "./App.css";
 import {
   ANALYZE_URL,
-  DEFAULT_TEMPLATES,
   IMPORTANCE,
   METADATA_URL,
   SECTION_TONES,
@@ -1293,12 +1292,6 @@ function MinimalClarificationPrompt({ items, onApply }) {
 }
 
 
-/* ──────────────────────────────────────────────────────────
-   ClarificationsPanel (kept for ErrorBoundary label compat)
-   ────────────────────────────────────────────────────────── */
-function ClarificationsPanel({ items, onApply }) {
-  return <MinimalClarificationPrompt items={items} onApply={onApply} />;
-}
 
 
 function StandardItem({ item, sectionKey }) {
@@ -1597,15 +1590,6 @@ function LegislationSection({ item, groupKey, open, onToggle }) {
   const tone = directiveTone(dirKey);
   const categoryLabel = LEGISLATION_CATEGORY_LABELS[groupKey] || "Legislation";
   const bodyId = `leg-section-body-${dirKey}-${item.code || item.title}`;
-
-  const metaFields = [
-    { label: "Reference / Code",    value: item.code },
-    { label: "Category",            value: categoryLabel },
-    { label: "Effective date",      value: item.effective_date || item.date },
-    { label: "Review / repeal",     value: item.review_date || item.repeal_date },
-    { label: "Official Journal ref",value: item.oj_reference || item.oj_ref },
-    { label: "Transposition",       value: item.transposition },
-  ].filter((f) => f.value && String(f.value).trim());
 
   const allMetaFields = [
     { label: "Reference / Code",    value: item.code },
