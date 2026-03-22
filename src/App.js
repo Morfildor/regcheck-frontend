@@ -438,24 +438,54 @@ function ImportancePill({ value }) {
 /* ──────────────────────────────────────────────────────────
    AnalysisProgressBanner
    ────────────────────────────────────────────────────────── */
+const PROGRESS_STEPS = [
+  "Parsing product traits",
+  "Detecting applicable regimes",
+  "Matching standards route",
+  "Generating clarifications",
+];
+const STEP_DELAYS_MS = [0, 2200, 4400, 6800];
+
 function AnalysisProgressBanner({ busy }) {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (!busy) {
+      setStepIndex(0);
+      return;
+    }
+    const timers = STEP_DELAYS_MS.slice(1).map((delay, i) =>
+      window.setTimeout(() => setStepIndex(i + 1), delay)
+    );
+    return () => timers.forEach(window.clearTimeout);
+  }, [busy]);
+
   if (!busy) return null;
 
   return (
-    <div className="analysis-progress analysis-progress--honest" role="status" aria-live="polite">
-      <div className="analysis-progress__honest-row">
-        <div className="analysis-progress__spinner-wrap">
-          <LoaderCircle size={15} className="spin" />
-        </div>
-        <div className="analysis-progress__copy">
-          <div className="analysis-progress__title">Analyzing product</div>
-          <div className="analysis-progress__text">
-            Checking the product description against the compliance engine and building the route.
+    <div className="analysis-progress" role="status" aria-live="polite">
+      <div className="analysis-progress__steps">
+        {PROGRESS_STEPS.map((step, i) => (
+          <div
+            key={step}
+            className={[
+              "analysis-progress__step",
+              i < stepIndex  ? "analysis-progress__step--done"   : "",
+              i === stepIndex ? "analysis-progress__step--active" : "",
+            ].filter(Boolean).join(" ")}
+          >
+            <div className="analysis-progress__dot">
+              {i < stepIndex ? <Check size={9} /> : null}
+            </div>
+            <span>{step}{i === stepIndex ? "…" : ""}</span>
           </div>
-        </div>
+        ))}
       </div>
-      <div className="analysis-progress__bar analysis-progress__bar--indeterminate">
-        <div className="analysis-progress__fill analysis-progress__fill--indeterminate" />
+      <div className="analysis-progress__bar">
+        <div
+          className="analysis-progress__fill"
+          style={{ width: `${((stepIndex + 1) / PROGRESS_STEPS.length) * 100}%` }}
+        />
       </div>
     </div>
   );
@@ -890,7 +920,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, g
         <div className="landing-composer__quickstart">
           <span className="micro-label">Quick start</span>
           <div className="template-row">
-            {templates.slice(0, 10).map((template) => (
+            {templates.slice(0, 7).map((template) => (
               <button
                 key={template.label}
                 type="button"
@@ -971,7 +1001,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, g
         <div className="composer__block">
           <div className="micro-label">Quick start</div>
           <div className="template-row">
-            {templates.slice(0, 6).map((template) => (
+            {templates.slice(0, 4).map((template) => (
               <button
                 key={template.label}
                 type="button"
@@ -1117,6 +1147,17 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
    Added: active directives pills
    ────────────────────────────────────────────────────────── */
 function SnapshotRail({ result, routeSections, description, onCopy, copied, legislationGroups }) {
+  // Collect all legislation item names for compact sidebar summary
+  const allLegislationNames = useMemo(() => {
+    const names = [];
+    (legislationGroups || []).forEach((group) => {
+      (group.items || []).forEach((item) => {
+        if (item.title) names.push({ title: item.title, code: item.code, dirKey: item.directive_key || "OTHER" });
+      });
+    });
+    return names;
+  }, [legislationGroups]);
+
   if (!result) return null;
 
   const totalStandards = routeSections.reduce(
@@ -1128,27 +1169,24 @@ function SnapshotRail({ result, routeSections, description, onCopy, copied, legi
     (a, b) => directiveRank(a) - directiveRank(b)
   );
 
-  const futureWatch = (result?.future_watchlist || []).slice(0, 3);
-  const sideMetrics = [
-    ["Product", formatUiLabel(result?.product_type || "unclear")],
-    ["Family", formatUiLabel(result?.product_family || "unclear")],
-    ["Subtype", result?.product_subtype ? formatUiLabel(result.product_subtype) : "Not locked"],
-    ["Stage", formatStageLabel(result?.product_match_stage)],
-    ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
-    ["Standards", totalStandards],
-  ];
-
   return (
     <aside className="side-column">
       <div className="side-column__sticky">
         <Panel
-          className="panel--sidebar panel--sidebar-compact"
+          className="panel--sidebar"
           eyebrow="Snapshot"
           title="Context"
-          subtitle="Primary route context pinned while you review the standards."
+          subtitle="Product identity pinned alongside the route."
         >
           <div className="snapshot-list">
-            {sideMetrics.map(([label, value]) => (
+            {[
+              ["Product", formatUiLabel(result?.product_type || "unclear")],
+              ["Family", formatUiLabel(result?.product_family || "unclear")],
+              ["Subtype", result?.product_subtype ? formatUiLabel(result.product_subtype) : "Not locked"],
+              ["Stage", formatStageLabel(result?.product_match_stage)],
+              ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
+              ["Standards", totalStandards],
+            ].map(([label, value]) => (
               <div key={label} className="snapshot-row">
                 <span className="snapshot-row__label">{label}</span>
                 <strong>{value}</strong>
@@ -1161,8 +1199,8 @@ function SnapshotRail({ result, routeSections, description, onCopy, copied, legi
           {triggeredDirectives.length ? (
             <div className="sidebar-section">
               <div className="sidebar-section__heading">Active directives</div>
-              <div className="sidebar-section__subheading">Covered in the standards route</div>
-              <div className="tag-row sidebar-tag-row">
+              <div className="sidebar-section__subheading">Regimes covered in the standards route</div>
+              <div className="tag-row" style={{ marginTop: 10 }}>
                 {triggeredDirectives.map((key) => (
                   <DirectivePill key={key} dirKey={key} />
                 ))}
@@ -1170,12 +1208,29 @@ function SnapshotRail({ result, routeSections, description, onCopy, copied, legi
             </div>
           ) : null}
 
-          {futureWatch.length ? (
+          {allLegislationNames.length ? (
+            <div className="sidebar-section">
+              <div className="sidebar-section__heading">Applicable legislation</div>
+              <div className="sidebar-section__subheading">Full detail shown in main panel below</div>
+              <div className="sidebar-legislation-list">
+                {allLegislationNames.map((leg, i) => {
+                  const tone = directiveTone(leg.dirKey);
+                  return (
+                    <div key={`sidebar-leg-${i}`} className="sidebar-leg-item">
+                      <span className="sidebar-leg-item__dot" style={{ background: tone.dot }} />
+                      <span className="sidebar-leg-item__name">{leg.code ? `${leg.code} — ` : ""}{leg.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {(result?.future_watchlist || []).length ? (
             <div className="sidebar-section">
               <div className="sidebar-section__heading">Future watchlist</div>
-              <div className="sidebar-section__subheading">Short horizon items worth tracking</div>
-              <div className="tag-row sidebar-tag-row">
-                {futureWatch.map((item) => (
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {(result.future_watchlist || []).slice(0, 6).map((item) => (
                   <InlineTag key={`sidebar-watch-${item}`}>{titleCaseMinor(item)}</InlineTag>
                 ))}
               </div>
@@ -1194,36 +1249,20 @@ function SnapshotRail({ result, routeSections, description, onCopy, copied, legi
 function MinimalClarificationPrompt({ items, onApply }) {
   const [appliedKeys, setAppliedKeys] = useState(new Set());
   const [dismissed, setDismissed] = useState(false);
-  const [showAll, setShowAll] = useState(false);
 
   const handleApply = useCallback((itemKey, choiceText) => {
     setAppliedKeys((prev) => new Set([...prev, itemKey]));
     onApply(choiceText);
   }, [onApply]);
 
-  const visibleItems = (items || []).filter(
-    (item) => item.importance === "high" || item.importance === "medium"
-  );
+  if (!items.length || dismissed) return null;
 
-  if (!visibleItems.length) return null;
+  // Show only high/medium importance items, max 3
+  const topItems = items
+    .filter((item) => item.importance === "high" || item.importance === "medium")
+    .slice(0, 3);
 
-  const primaryItems = showAll ? visibleItems : visibleItems.slice(0, 3);
-
-  if (dismissed) {
-    return (
-      <div className="clarify-prompt clarify-prompt--collapsed">
-        <button
-          type="button"
-          className="clarify-prompt__collapsed-btn"
-          onClick={() => setDismissed(false)}
-        >
-          <Sparkles size={12} />
-          <span>{visibleItems.length} clarification{visibleItems.length === 1 ? "" : "s"} hidden</span>
-          <span className="clarify-prompt__collapsed-link">Show clarifications</span>
-        </button>
-      </div>
-    );
-  }
+  if (!topItems.length) return null;
 
   return (
     <div className="clarify-prompt">
@@ -1232,29 +1271,17 @@ function MinimalClarificationPrompt({ items, onApply }) {
           <Sparkles size={12} />
           <span>Scope-changing details detected</span>
         </div>
-        <div className="clarify-prompt__header-actions">
-          {visibleItems.length > 3 ? (
-            <button
-              type="button"
-              className="clarify-prompt__toggle"
-              onClick={() => setShowAll((current) => !current)}
-            >
-              {showAll ? "Show fewer" : `Show all (${visibleItems.length})`}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="clarify-prompt__dismiss"
-            onClick={() => setDismissed(true)}
-            aria-label="Dismiss"
-          >
-            <X size={13} />
-          </button>
-        </div>
+        <button
+          type="button"
+          className="clarify-prompt__dismiss"
+          onClick={() => setDismissed(true)}
+          aria-label="Dismiss"
+        >
+          <X size={13} />
+        </button>
       </div>
-
       <div className="clarify-prompt__items">
-        {primaryItems.map((item) => {
+        {topItems.map((item) => {
           const isApplied = appliedKeys.has(item.key);
           return (
             <div
@@ -1266,12 +1293,9 @@ function MinimalClarificationPrompt({ items, onApply }) {
                 <span>{item.title}</span>
                 {isApplied ? <Check size={11} style={{ color: "var(--accent-teal)", marginLeft: 6 }} /> : null}
               </div>
-              {item.description ? (
-                <div className="clarify-prompt__item-text">{item.description}</div>
-              ) : null}
               {!isApplied && item.choices?.length ? (
                 <div className="clarify-prompt__choices">
-                  {item.choices.slice(0, showAll ? 5 : 3).map((choice) => (
+                  {item.choices.slice(0, 3).map((choice) => (
                     <button
                       key={`${item.key}-${choice}`}
                       type="button"
@@ -1290,6 +1314,9 @@ function MinimalClarificationPrompt({ items, onApply }) {
     </div>
   );
 }
+
+
+
 
 function StandardItem({ item, sectionKey }) {
   const dirKey = normalizeStandardDirective(item);
@@ -1588,22 +1615,14 @@ function LegislationSection({ item, groupKey, open, onToggle }) {
   const categoryLabel = LEGISLATION_CATEGORY_LABELS[groupKey] || "Legislation";
   const bodyId = `leg-section-body-${dirKey}-${item.code || item.title}`;
 
-  const actionLikeItems = (item.actions || item.key_obligations || item.evidence_hint || []).filter(Boolean);
-  const summary =
-    item.obligation_summary ||
-    item.rationale ||
-    item.scope ||
-    item.notes ||
-    "";
-
   const allMetaFields = [
-    { label: "Reference / Code", value: item.code },
-    { label: "Category", value: categoryLabel },
-    { label: "Effective date", value: item.effective_date || item.date },
-    { label: "Review / repeal", value: item.review_date || item.repeal_date },
-    { label: "Official Journal ref", value: item.oj_reference || item.oj_ref },
-    { label: "Transposition", value: item.transposition },
-  ].filter((field) => field.value);
+    { label: "Reference / Code",    value: item.code },
+    { label: "Category",            value: categoryLabel },
+    { label: "Effective date",      value: item.effective_date || item.date },
+    { label: "Review / repeal",     value: item.review_date || item.repeal_date },
+    { label: "Official Journal ref",value: item.oj_reference || item.oj_ref },
+    { label: "Transposition",       value: item.transposition },
+  ];
 
   const obligationTags = [
     item.compliance_path,
@@ -1613,7 +1632,7 @@ function LegislationSection({ item, groupKey, open, onToggle }) {
 
   return (
     <section
-      className="route-section legislation-route-section"
+      className="route-section"
       style={{
         "--route-tone-bg": tone.bg,
         "--route-tone-border": tone.bd,
@@ -1633,51 +1652,39 @@ function LegislationSection({ item, groupKey, open, onToggle }) {
             <div className="route-section__title-row">
               <h3>{titleCaseMinor(item.title || "Untitled legislation")}</h3>
               <DirectivePill dirKey={dirKey} />
-              {item.code ? <span className="code-chip">{item.code}</span> : null}
+              {item.code ? (
+                <span className="code-chip">{item.code}</span>
+              ) : null}
             </div>
-            <p className="legislation-section__summary-line">
-              {summary || "Additional product obligations may apply beyond the CE route."}
-            </p>
+            {categoryLabel ? (
+              <p style={{ fontSize: "0.80rem", color: "var(--text-soft)", marginTop: 3 }}>
+                {categoryLabel}
+              </p>
+            ) : null}
           </div>
         </div>
 
         <div className="route-section__meta">
-          <span className="route-section__count">{open ? "collapse" : "expand"}</span>
+          <span className="route-section__count">expand</span>
           {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
       </button>
 
       {open ? (
         <div id={bodyId} className="route-section__body leg-section__body">
+          {/* Summary */}
           {item.obligation_summary ? (
             <div className="leg-detail-block">
-              <div className="micro-label">What this means</div>
+              <div className="micro-label">Obligation summary</div>
               <p className="leg-detail-block__text">{item.obligation_summary}</p>
             </div>
           ) : null}
 
+          {/* Rationale / notes */}
           {item.rationale ? (
             <div className="leg-detail-block">
-              <div className="micro-label">Why it applies</div>
+              <div className="micro-label">Rationale</div>
               <p className="leg-detail-block__text">{item.rationale}</p>
-            </div>
-          ) : null}
-
-          {actionLikeItems.length ? (
-            <div className="leg-detail-block">
-              <div className="micro-label">Likely actions / evidence</div>
-              <ul className="leg-detail-block__list">
-                {actionLikeItems.map((entry, index) => (
-                  <li key={`${entry}-${index}`}>{entry}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {item.scope ? (
-            <div className="leg-detail-block">
-              <div className="micro-label">Scope</div>
-              <p className="leg-detail-block__text">{item.scope}</p>
             </div>
           ) : null}
 
@@ -1688,20 +1695,52 @@ function LegislationSection({ item, groupKey, open, onToggle }) {
             </div>
           ) : null}
 
-          {allMetaFields.length ? (
-            <div className="standard-item__meta-grid">
-              {allMetaFields.map((f) => (
-                <LegislationDetailField key={f.label} label={f.label} value={f.value} />
-              ))}
+          {/* Key obligations list */}
+          {(item.key_obligations || []).length ? (
+            <div className="leg-detail-block">
+              <div className="micro-label">Key obligations</div>
+              <ul className="leg-detail-block__list">
+                {item.key_obligations.map((ob, i) => (
+                  <li key={i}>{ob}</li>
+                ))}
+              </ul>
             </div>
           ) : null}
 
+          {/* Scope */}
+          {item.scope ? (
+            <div className="leg-detail-block">
+              <div className="micro-label">Scope</div>
+              <p className="leg-detail-block__text">{item.scope}</p>
+            </div>
+          ) : null}
+
+          {/* Meta grid — reference, dates, etc. */}
+          <div className="standard-item__meta-grid">
+            {allMetaFields.map((f) => (
+              <LegislationDetailField key={f.label} label={f.label} value={f.value} />
+            ))}
+          </div>
+
+          {/* Compliance tags */}
           {obligationTags.length ? (
             <div className="standard-item__evidence">
               <div className="micro-label">Compliance path</div>
               <div className="tag-row">
                 {obligationTags.map((tag) => (
                   <span key={tag} className="soft-tag">{titleCaseMinor(tag)}</span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Evidence / actions */}
+          {(item.evidence_hint || item.actions || []).length ? (
+            <div className="standard-item__evidence">
+              <div className="micro-label">Actions / evidence expected</div>
+              <div className="tag-row">
+                {(item.evidence_hint || item.actions || []).map((a) => (
+                  <span key={a} className="soft-tag">{a}</span>
                 ))}
               </div>
             </div>
