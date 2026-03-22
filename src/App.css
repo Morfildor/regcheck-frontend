@@ -1519,17 +1519,21 @@ code {
 }
 
 .par-item {
-  padding: 11px 13px 11px 17px;
   border-radius: var(--radius);
   border: 1px solid rgba(255, 255, 255, 0.055);
   background: rgba(255, 255, 255, 0.026);
   position: relative;
+  overflow: hidden;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.par-item:hover {
-  background: rgba(255, 255, 255, 0.042);
+.par-item--open {
   border-color: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.038);
+}
+
+.par-item--expandable .par-item__toggle:hover {
+  background: rgba(255, 255, 255, 0.028);
 }
 
 .par-item::before {
@@ -1539,11 +1543,45 @@ code {
   width: 3px;
   border-radius: var(--radius) 0 0 var(--radius);
   background: linear-gradient(180deg, var(--par-dot), transparent 90%);
+  pointer-events: none;
+}
+
+.par-item__toggle {
+  all: unset;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 13px 11px 17px;
+  cursor: default;
+  box-sizing: border-box;
+}
+
+.par-item--expandable .par-item__toggle {
+  cursor: pointer;
+}
+
+.par-item__toggle:disabled {
+  cursor: default;
+}
+
+.par-item__chevron {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-soft);
+  transition: color 0.15s;
+}
+
+.par-item--open .par-item__chevron {
+  color: var(--text-muted);
 }
 
 .par-item__header {
   display: grid;
   gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
 .par-item__chips {
@@ -1575,11 +1613,140 @@ code {
   color: var(--text-strong);
 }
 
+.par-item__detail {
+  padding: 0 13px 12px 17px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 0;
+  display: grid;
+  gap: 6px;
+}
+
 .par-item__summary {
-  margin: 6px 0 0;
+  margin: 0;
   font-size: 0.82rem;
   line-height: 1.60;
   color: var(--text-muted);
+}
+
+.par-item__notes {
+  margin: 0;
+  font-size: 0.80rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
+/* ── Sidebar legislation list ─────────────────────────────── */
+.sidebar-legislation-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.sidebar-leg-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.sidebar-leg-item__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.sidebar-leg-item__name {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-leg-item--more {
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  font-style: italic;
+  padding-left: 14px;
+}
+
+/* ── Minimal clarification prompt ────────────────────────── */
+.clarify-prompt {
+  background: linear-gradient(135deg, rgba(125,185,255,0.05), rgba(120,213,193,0.04));
+  border: 1px solid rgba(125, 185, 255, 0.14);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.clarify-prompt__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.clarify-prompt__left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.clarify-prompt__dismiss {
+  all: unset;
+  cursor: pointer;
+  color: var(--text-soft);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.clarify-prompt__dismiss:hover { color: var(--text-muted); }
+
+.clarify-prompt__items {
+  display: grid;
+  gap: 10px;
+}
+
+.clarify-prompt__item {
+  display: grid;
+  gap: 7px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.clarify-prompt__item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.clarify-prompt__item--applied {
+  opacity: 0.55;
+}
+
+.clarify-prompt__item-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  flex-wrap: wrap;
+}
+
+.clarify-prompt__choices {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 /* ── Legacy overview / metric grid ───────────────────────── */
@@ -1643,7 +1810,22 @@ code {
 }
 
 /* ── Snapshot Rail (Sidebar) ──────────────────────────────── */
-.side-column { display: grid; gap: 14px; align-items: start; }
+.side-column {
+  display: grid;
+  gap: 14px;
+  align-items: start;
+  /* Sticky container: stays in column flow, child scrolls with it */
+}
+
+.side-column__sticky {
+  position: sticky;
+  top: calc(var(--topbar-h) + 16px);
+  max-height: calc(100vh - var(--topbar-h) - 32px);
+  overflow-y: auto;
+  /* Subtle scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
 
 .snapshot-row {
   display: flex;

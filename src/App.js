@@ -894,7 +894,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
         <div className="landing-composer__quickstart">
           <span className="micro-label">Quick start</span>
           <div className="template-row">
-            {templates.slice(0, 5).map((template) => (
+            {templates.slice(0, 7).map((template) => (
               <button
                 key={template.label}
                 type="button"
@@ -1119,6 +1119,17 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
    Added: active directives pills
    ────────────────────────────────────────────────────────── */
 function SnapshotRail({ result, routeSections, description, onCopy, copied, legislationGroups }) {
+  // Collect all legislation item names for compact sidebar summary
+  const allLegislationNames = useMemo(() => {
+    const names = [];
+    (legislationGroups || []).forEach((group) => {
+      (group.items || []).forEach((item) => {
+        if (item.title) names.push({ title: item.title, code: item.code, dirKey: item.directive_key || "OTHER" });
+      });
+    });
+    return names;
+  }, [legislationGroups]);
+
   if (!result) return null;
 
   const totalStandards = routeSections.reduce(
@@ -1132,149 +1143,161 @@ function SnapshotRail({ result, routeSections, description, onCopy, copied, legi
 
   return (
     <aside className="side-column">
-      <Panel
-        className="panel--sidebar"
-        eyebrow="Snapshot"
-        title="Context"
-        subtitle="Product identity pinned alongside the route."
-      >
-        <div className="snapshot-list">
-          {[
-            ["Product", formatUiLabel(result?.product_type || "unclear")],
-            ["Family", formatUiLabel(result?.product_family || "unclear")],
-            ["Subtype", result?.product_subtype ? formatUiLabel(result.product_subtype) : "Not locked"],
-            ["Stage", formatStageLabel(result?.product_match_stage)],
-            ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
-            ["Standards", totalStandards],
-          ].map(([label, value]) => (
-            <div key={label} className="snapshot-row">
-              <span className="snapshot-row__label">{label}</span>
-              <strong>{value}</strong>
-            </div>
-          ))}
-        </div>
-
-        <CopyResultsButton onCopy={onCopy} copied={copied} />
-
-        {triggeredDirectives.length ? (
-          <div className="sidebar-section">
-            <div className="sidebar-section__heading">Active directives</div>
-            <div className="sidebar-section__subheading">Regimes covered in the standards route</div>
-            <div className="tag-row" style={{ marginTop: 10 }}>
-              {triggeredDirectives.map((key) => (
-                <DirectivePill key={key} dirKey={key} />
-              ))}
-            </div>
+      <div className="side-column__sticky">
+        <Panel
+          className="panel--sidebar"
+          eyebrow="Snapshot"
+          title="Context"
+          subtitle="Product identity pinned alongside the route."
+        >
+          <div className="snapshot-list">
+            {[
+              ["Product", formatUiLabel(result?.product_type || "unclear")],
+              ["Family", formatUiLabel(result?.product_family || "unclear")],
+              ["Subtype", result?.product_subtype ? formatUiLabel(result.product_subtype) : "Not locked"],
+              ["Stage", formatStageLabel(result?.product_match_stage)],
+              ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
+              ["Standards", totalStandards],
+            ].map(([label, value]) => (
+              <div key={label} className="snapshot-row">
+                <span className="snapshot-row__label">{label}</span>
+                <strong>{value}</strong>
+              </div>
+            ))}
           </div>
-        ) : null}
 
-        {(result?.future_watchlist || []).length ? (
-          <div className="sidebar-section">
-            <div className="sidebar-section__heading">Future watchlist</div>
-            <div className="tag-row" style={{ marginTop: 8 }}>
-              {(result.future_watchlist || []).slice(0, 6).map((item) => (
-                <InlineTag key={`sidebar-watch-${item}`}>{titleCaseMinor(item)}</InlineTag>
-              ))}
+          <CopyResultsButton onCopy={onCopy} copied={copied} />
+
+          {triggeredDirectives.length ? (
+            <div className="sidebar-section">
+              <div className="sidebar-section__heading">Active directives</div>
+              <div className="sidebar-section__subheading">Regimes covered in the standards route</div>
+              <div className="tag-row" style={{ marginTop: 10 }}>
+                {triggeredDirectives.map((key) => (
+                  <DirectivePill key={key} dirKey={key} />
+                ))}
+              </div>
             </div>
-          </div>
-        ) : null}
-      </Panel>
+          ) : null}
 
-      <ParallelObligationsPanel legislationGroups={legislationGroups} />
+          {allLegislationNames.length ? (
+            <div className="sidebar-section">
+              <div className="sidebar-section__heading">Applicable legislation</div>
+              <div className="sidebar-section__subheading">Full detail shown in main panel below</div>
+              <div className="sidebar-legislation-list">
+                {allLegislationNames.slice(0, 10).map((leg, i) => {
+                  const tone = directiveTone(leg.dirKey);
+                  return (
+                    <div key={`sidebar-leg-${i}`} className="sidebar-leg-item">
+                      <span className="sidebar-leg-item__dot" style={{ background: tone.dot }} />
+                      <span className="sidebar-leg-item__name">{leg.code ? `${leg.code} — ` : ""}{leg.title}</span>
+                    </div>
+                  );
+                })}
+                {allLegislationNames.length > 10 ? (
+                  <div className="sidebar-leg-item sidebar-leg-item--more">
+                    +{allLegislationNames.length - 10} more
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          {(result?.future_watchlist || []).length ? (
+            <div className="sidebar-section">
+              <div className="sidebar-section__heading">Future watchlist</div>
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {(result.future_watchlist || []).slice(0, 6).map((item) => (
+                  <InlineTag key={`sidebar-watch-${item}`}>{titleCaseMinor(item)}</InlineTag>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </Panel>
+      </div>
     </aside>
   );
 }
 
 
 /* ──────────────────────────────────────────────────────────
-   ClarificationsPanel
+   MinimalClarificationPrompt — replaces ClarificationsPanel
    ────────────────────────────────────────────────────────── */
-function ClarificationsPanel({ items, onApply }) {
+function MinimalClarificationPrompt({ items, onApply }) {
   const [appliedKeys, setAppliedKeys] = useState(new Set());
+  const [dismissed, setDismissed] = useState(false);
 
-  const handleCardApply = useCallback((itemKey, choiceText) => {
+  const handleApply = useCallback((itemKey, choiceText) => {
     setAppliedKeys((prev) => new Set([...prev, itemKey]));
     onApply(choiceText);
   }, [onApply]);
 
-  if (!items.length) return null;
+  if (!items.length || dismissed) return null;
 
-  const appliedCount = appliedKeys.size;
+  // Show only high/medium importance items, max 3
+  const topItems = items
+    .filter((item) => item.importance === "high" || item.importance === "medium")
+    .slice(0, 3);
+
+  if (!topItems.length) return null;
 
   return (
-    <section className="panel">
-      <div className="clarifications-header">
-        <div className="clarifications-header__left">
-          <span className="clarifications-header__eyebrow">Clarifications</span>
-          <span className="clarifications-header__subtitle">
-            {items.length} question{items.length === 1 ? "" : "s"} that may change scope
-            {appliedCount > 0 ? (
-              <span className="clarifications-applied-tally"> · {appliedCount} applied</span>
-            ) : null}
-          </span>
+    <div className="clarify-prompt">
+      <div className="clarify-prompt__header">
+        <div className="clarify-prompt__left">
+          <Sparkles size={12} />
+          <span>Scope-changing details detected</span>
         </div>
-        <span className="keyboard-hint">Apply a detail below to update</span>
+        <button
+          type="button"
+          className="clarify-prompt__dismiss"
+          onClick={() => setDismissed(true)}
+          aria-label="Dismiss"
+        >
+          <X size={13} />
+        </button>
       </div>
-      <div className="panel__body">
-        <div className="clarification-list">
-          {items.map((item, index) => {
-            const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
-            const isApplied = appliedKeys.has(item.key);
-            return (
-              <article
-                key={item.key}
-                className={`clarification-card${isApplied ? " clarification-card--applied" : ""}`}
-                style={{
-                  "--card-accent": isApplied ? "#78d5c1" : tone.dot,
-                  "--card-border": isApplied ? "rgba(120, 213, 193, 0.30)" : tone.bd,
-                  "--card-bg": tone.bg,
-                }}
-              >
-                <div className="clarification-card__header">
-                  <div className="clarification-card__title-group">
-                    <ImportancePill value={item.importance} />
-                    <h3>{item.title}</h3>
-                  </div>
-                  {isApplied ? (
-                    <span className="clarification-applied-badge">
-                      <Check size={10} />
-                      Applied
-                    </span>
-                  ) : (
-                    <div className="clarification-card__index">{String(index + 1).padStart(2, "0")}</div>
-                  )}
+      <div className="clarify-prompt__items">
+        {topItems.map((item) => {
+          const isApplied = appliedKeys.has(item.key);
+          return (
+            <div
+              key={item.key}
+              className={`clarify-prompt__item${isApplied ? " clarify-prompt__item--applied" : ""}`}
+            >
+              <div className="clarify-prompt__item-title">
+                <ImportancePill value={item.importance} />
+                <span>{item.title}</span>
+                {isApplied ? <Check size={11} style={{ color: "var(--accent-teal)", marginLeft: 6 }} /> : null}
+              </div>
+              {!isApplied && item.choices?.length ? (
+                <div className="clarify-prompt__choices">
+                  {item.choices.slice(0, 3).map((choice) => (
+                    <button
+                      key={`${item.key}-${choice}`}
+                      type="button"
+                      className="chip-button chip-button--soft"
+                      onClick={() => handleApply(item.key, choice)}
+                    >
+                      + {choice}
+                    </button>
+                  ))}
                 </div>
-                <p className="clarification-card__text">{item.why}</p>
-                {item.routeImpact?.length ? (
-                  <div className="tag-row" style={{ marginBottom: 10 }}>
-                    {item.routeImpact.map((route) => (
-                      <InlineTag key={`${item.key}-impact-${route}`} tone="caution">
-                        Impacts {route}
-                      </InlineTag>
-                    ))}
-                  </div>
-                ) : null}
-                {item.choices?.length ? (
-                  <div className="template-row">
-                    {item.choices.map((choice) => (
-                      <button
-                        key={`${item.key}-${choice}`}
-                        type="button"
-                        className={`chip-button chip-button--soft${isApplied ? " chip-button--muted" : ""}`}
-                        onClick={() => handleCardApply(item.key, choice)}
-                      >
-                        + {choice}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </article>
-            );
-          })}
-        </div>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
-    </section>
+    </div>
   );
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   ClarificationsPanel (kept for ErrorBoundary label compat)
+   ────────────────────────────────────────────────────────── */
+function ClarificationsPanel({ items, onApply }) {
+  return <MinimalClarificationPrompt items={items} onApply={onApply} />;
 }
 
 
@@ -1560,12 +1583,14 @@ const LEGISLATION_GROUP_LABELS = {
 };
 
 function ParallelGroupItem({ item }) {
+  const [open, setOpen] = useState(false);
   const dirKey = item.directive_key || "OTHER";
   const tone = directiveTone(dirKey);
+  const hasDetail = !!(item.obligation_summary || item.notes || item.rationale);
 
   return (
     <article
-      className="par-item"
+      className={`par-item${open ? " par-item--open" : ""}${hasDetail ? " par-item--expandable" : ""}`}
       style={{
         "--par-dot": tone.dot,
         "--par-bg": tone.bg,
@@ -1573,22 +1598,46 @@ function ParallelGroupItem({ item }) {
         "--par-text": tone.text,
       }}
     >
-      <div className="par-item__header">
-        <div className="par-item__chips">
-          {item.code ? (
-            <span
-              className="par-item__code-chip"
-              style={{ borderColor: tone.bd, background: tone.bg, color: tone.text }}
-            >
-              {item.code}
-            </span>
-          ) : null}
-          <DirectivePill dirKey={dirKey} />
+      <button
+        type="button"
+        className="par-item__toggle"
+        onClick={() => hasDetail && setOpen((prev) => !prev)}
+        aria-expanded={open}
+        disabled={!hasDetail}
+      >
+        <div className="par-item__header">
+          <div className="par-item__chips">
+            {item.code ? (
+              <span
+                className="par-item__code-chip"
+                style={{ borderColor: tone.bd, background: tone.bg, color: tone.text }}
+              >
+                {item.code}
+              </span>
+            ) : null}
+            <DirectivePill dirKey={dirKey} />
+          </div>
+          <h4 className="par-item__title">{item.title}</h4>
         </div>
-        <h4 className="par-item__title">{item.title}</h4>
-      </div>
-      {item.obligation_summary ? (
-        <p className="par-item__summary">{item.obligation_summary}</p>
+        {hasDetail ? (
+          <div className="par-item__chevron">
+            {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </div>
+        ) : null}
+      </button>
+
+      {open && hasDetail ? (
+        <div className="par-item__detail">
+          {item.obligation_summary ? (
+            <p className="par-item__summary">{item.obligation_summary}</p>
+          ) : null}
+          {item.notes ? (
+            <p className="par-item__notes">{item.notes}</p>
+          ) : null}
+          {item.rationale ? (
+            <p className="par-item__notes">{item.rationale}</p>
+          ) : null}
+        </div>
       ) : null}
     </article>
   );
@@ -1760,6 +1809,8 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const resultsRef = useRef(null);
   const analysisAbortRef = useRef(null);
+  // Stable per-session random order for templates
+  const [templateOrder] = useState(() => Array.from({ length: 50 }, () => Math.random()));
 
   const [prevResult, setPrevResult] = useState(null);
   const [prevDescription, setPrevDescription] = useState("");
@@ -1795,9 +1846,13 @@ export default function App() {
   }, []);
 
   const templates = useMemo(() => {
-    const dynamic = buildDynamicTemplates(metadata?.products || []);
-    return dynamic.length ? dynamic : DEFAULT_TEMPLATES;
-  }, [metadata]);
+    const pool = buildDynamicTemplates(metadata?.products || []);
+    // Shuffle using stable per-session order
+    return [...pool]
+      .map((item, i) => ({ item, sort: templateOrder[i % templateOrder.length] }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ item }) => item);
+  }, [metadata, templateOrder]);
 
   const routeSections      = useMemo(() => buildRouteSections(result),          [result]);
   const guidanceItems      = useMemo(() => buildGuidanceItems(result),           [result]);
@@ -1981,10 +2036,17 @@ export default function App() {
               </ErrorBoundary>
 
               <ErrorBoundary
+                key={`legislation-${resultRevision}`}
+                label="Legislation panel could not be rendered"
+              >
+                <ParallelObligationsPanel legislationGroups={legislationGroups} />
+              </ErrorBoundary>
+
+              <ErrorBoundary
                 key={`clarifications-${resultRevision}`}
                 label="Clarifications could not be rendered"
               >
-                <ClarificationsPanel
+                <MinimalClarificationPrompt
                   items={guidanceItems}
                   onApply={(text) => {
                     setDescription((current) => {

@@ -233,6 +233,42 @@ export const DEFAULT_TEMPLATES = [
     label: "Robot vacuum",
     text: "Robot vacuum cleaner with rechargeable lithium battery, Wi-Fi and Bluetooth, cloud account, OTA firmware updates, LiDAR navigation, and camera.",
   },
+  {
+    label: "Air fryer",
+    text: "Connected air fryer with mains power, heating element, motorized fan, food-contact cooking basket, Wi-Fi app control, OTA updates, and cloud account.",
+  },
+  {
+    label: "Smart speaker",
+    text: "Smart speaker with mains power, Wi-Fi and Bluetooth, cloud account, microphone array, voice assistant, OTA firmware updates, and app control.",
+  },
+  {
+    label: "Robot lawn mower",
+    text: "Robotic lawn mower with rechargeable lithium battery, outdoor IP-rated enclosure, Wi-Fi and Bluetooth, cloud account, OTA updates, motorized blade, and app control.",
+  },
+  {
+    label: "Blender",
+    text: "Countertop blender with mains power, motorized high-speed motor, food-contact jug and blades, electronic speed controls, and no wireless connectivity.",
+  },
+  {
+    label: "Smart plug",
+    text: "Smart plug with mains power input and output, Wi-Fi connectivity, energy monitoring, app control, OTA firmware updates, and cloud account.",
+  },
+  {
+    label: "Pet feeder",
+    text: "Automatic pet feeder with mains and battery backup power, food-contact hopper and dispenser, Wi-Fi app control, camera, cloud account, and OTA updates.",
+  },
+  {
+    label: "Air conditioner",
+    text: "Portable air conditioner with mains power, compressor, refrigerant loop, motorized fan, Wi-Fi app control, OTA firmware updates, and indoor use only.",
+  },
+  {
+    label: "Coffee grinder",
+    text: "Electric coffee grinder with mains power, motorized burr grinding mechanism, food-contact grind path and hopper, and no wireless connectivity.",
+  },
+  {
+    label: "Stick vacuum",
+    text: "Cordless stick vacuum cleaner with rechargeable lithium battery, motorized suction head, Bluetooth connectivity, app control, and OTA firmware updates.",
+  },
 ];
 
 const KNOWN_RESULT_KEYS = new Set([
@@ -489,10 +525,10 @@ export function buildDynamicTemplates(products) {
     "Robot vacuum"
   );
 
-  return uniqueBy(templates.length ? templates : DEFAULT_TEMPLATES, (item) => item.label).slice(
-    0,
-    4
-  );
+  // Return the full discovered pool merged with defaults; randomization happens in the component
+  const base = uniqueBy(templates.length ? templates : [], (item) => item.label);
+  const merged = uniqueBy([...base, ...DEFAULT_TEMPLATES], (item) => item.label);
+  return merged;
 }
 
 export function buildGuidedChips(metadata, result) {
