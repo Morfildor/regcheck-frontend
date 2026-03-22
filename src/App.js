@@ -1542,6 +1542,148 @@ const LEGISLATION_CATEGORY_LABELS = {
   other:     "Other",
 };
 
+/* ──────────────────────────────────────────────────────────
+   LEGISLATION_ENRICHMENT
+   Provides rich default content for known directive keys when
+   the API response carries only thin / fallback data.
+   ────────────────────────────────────────────────────────── */
+const LEGISLATION_ENRICHMENT = {
+  REACH: {
+    obligation_summary:
+      "Check all articles placed on the EU market against the ECHA SVHC candidate list. Article 33 communication duties apply where SVHCs exceed 0.1 % w/w in a product or article.",
+    rationale:
+      "REACH Article 33 applies regardless of product category. The ECHA candidate list is updated biannually; substance surveillance must be ongoing throughout the product lifecycle.",
+    actions: [
+      "Screen the full BOM against the current ECHA SVHC candidate list",
+      "Issue Article 33 notifications to downstream recipients where the 0.1 % threshold is exceeded",
+      "Provide substance information to consumers within 45 days of request",
+      "Maintain substance compliance records in the technical file",
+    ],
+    scope:
+      "Applies to all articles placed on the EU market. Distinct from and additional to RoHS restricted-substance obligations.",
+  },
+  BATTERY: {
+    obligation_summary:
+      "Battery category classification is the first step — portable consumer batteries trigger labelling, EPR registration, and end-of-life duties; LMT batteries add performance reporting requirements.",
+    rationale:
+      "Regulation 2023/1542/EU replaces the Battery Directive. Obligations are tiered by category (portable, LMT, SLI, industrial, EV). Removability requirements, QR-code labelling, and EPR registration are among the most impactful for consumer product manufacturers.",
+    actions: [
+      "Classify the battery as portable, LMT, SLI, industrial, or EV",
+      "Review labelling requirements: capacity, recycled content, chemistry symbol, QR code",
+      "Assess removability and replaceability obligations for embedded batteries",
+      "Register with the national EPR scheme in each EU Member State of sale",
+      "Confirm end-of-life take-back information is provided in product documentation",
+    ],
+    notes:
+      "Treat battery-as-component separately from battery-as-product. Portable consumer products will usually trigger portable-battery review; e-bikes and e-scooters may trigger LMT review; larger packs may move to industrial or EV categories.",
+  },
+  GPSR: {
+    obligation_summary:
+      "Horizontal consumer safety obligations apply from 13 December 2024 for products not fully governed by sector-specific harmonised legislation — covering traceability, post-market surveillance, and online marketplace requirements.",
+    rationale:
+      "GPSR replaced the GPSD and directly strengthens economic operator obligations. Products with CE marking may still face residual GPSR obligations for hazards not addressed by the sector legislation.",
+    actions: [
+      "Verify the product meets the GPSR 'safe product' definition",
+      "Ensure traceability information is present on the product and packaging (batch, serial, manufacturer details)",
+      "Review incident reporting and post-market surveillance processes",
+      "Confirm online listing compliance: safety information must be visible at point of sale",
+      "Check notified safety risks are reported to the Safety Gate portal where required",
+    ],
+    scope:
+      "Applies to all consumer products placed on the EU market. A product may face residual GPSR obligations even where harmonised sector legislation applies.",
+  },
+  WEEE: {
+    obligation_summary:
+      "Crossed-out wheelie-bin marking, EPR producer registration, and end-of-life obligations apply for all finished EEE placed on the EU market unless a specific exclusion applies.",
+    rationale:
+      "WEEE follows an open-scope model since August 2018: all EEE is in scope unless explicitly excluded. Producer registration is required per Member State and must precede first placement on that market.",
+    actions: [
+      "Classify the product under the correct Annex III WEEE category",
+      "Apply the crossed-out wheeled-bin symbol to the product and packaging",
+      "Register as a producer (or appoint a representative) in each EU Member State of sale",
+      "Provide end-of-life disposal information to end users in product documentation",
+    ],
+    notes:
+      "Treat WEEE as a parallel end-of-life and producer-responsibility layer, not as a CE marking route. Exclude obvious fixed-installation and industrial-infrastructure cases from automatic consumer-style WEEE matching.",
+  },
+  GDPR: {
+    obligation_summary:
+      "Data-protection obligations apply where the product processes personal data — including via cloud accounts, cameras, microphones, location, or usage analytics. Lawful basis, data minimisation, and retention limits must all be assessed.",
+    rationale:
+      "Connected consumer products typically act as data controllers. GDPR requires a lawful basis for each processing activity, appropriate privacy notices, and data-subject rights support. The controller–processor relationship with cloud backend operators must be documented.",
+    actions: [
+      "Identify all personal data categories collected by the product and companion app",
+      "Establish a lawful basis for each processing activity (consent, contract, legitimate interest, etc.)",
+      "Draft or update the privacy notice and user consent flows in the product app",
+      "Assess the controller vs processor role for cloud backend and third-party integrations",
+      "Review data retention schedules and implement deletion mechanisms",
+      "Conduct a DPIA where processing is likely to result in high risk to individuals",
+    ],
+    scope:
+      "Applies to all products processing personal data of EU residents, regardless of where the manufacturer or processor is established.",
+  },
+  CRA: {
+    obligation_summary:
+      "Products with digital elements must meet horizontal cybersecurity lifecycle requirements from 11 December 2027 — covering secure-by-design, vulnerability handling, SBOM, security update obligations, and conformity assessment.",
+    rationale:
+      "The CRA introduces lifecycle security obligations distinct from the RED DA cybersecurity route. It classifies products as default, important (Class I), or critical (Class II), with higher classes requiring third-party conformity assessment.",
+    actions: [
+      "Classify the product as default or important/critical under CRA Annex III and IV",
+      "Establish a software bill of materials (SBOM) and keep it updated",
+      "Define a vulnerability disclosure and coordinated handling procedure",
+      "Plan a security update channel and minimum active support period",
+      "Assess the conformity route: self-assessment or third-party audit",
+      "Prepare EU Declaration of Conformity and technical documentation for CRA",
+    ],
+    scope:
+      "Applies from 11 December 2027. Coexists with RED DA cybersecurity obligations, which remain applicable for radio equipment under the CE marking route.",
+  },
+  AI_Act: {
+    obligation_summary:
+      "AI system classification review is required where the product includes AI or machine-learning functionality. Provider and deployer obligations depend on risk tier — prohibited, high-risk, limited-risk, or minimal-risk.",
+    rationale:
+      "The AI Act applies from 2 August 2026 for most obligations. AI-integrated consumer products must be classified. High-risk AI systems require a conformity assessment, technical documentation, and registration in the EU AI database.",
+    actions: [
+      "Classify AI functionality by risk tier: prohibited, high-risk, limited-risk, or minimal-risk",
+      "Determine provider vs deployer role in the AI system value chain",
+      "Review technical documentation and logging requirements for high-risk AI systems",
+      "Assess EU AI database registration obligation if the system is classified high-risk",
+      "Confirm transparency obligations for AI systems interacting with natural persons",
+    ],
+    scope:
+      "Applies from 2 August 2026. Prohibited AI practice provisions applied from 2 February 2025. GPAI model obligations apply from 2 August 2025.",
+  },
+  FCM: {
+    obligation_summary:
+      "Compliance declarations and supporting evidence are required for all materials and articles in the food-contact wetted path — including plastics, metals, rubbers, and coatings intended for direct or indirect contact with food or beverages.",
+    rationale:
+      "Regulation 1935/2004 sets the framework for all food-contact materials. Specific measures such as Regulation 10/2011 for plastics add migration limits and positive lists. Supplier declarations alone are insufficient without supporting evidence.",
+    actions: [
+      "Identify all materials in the food-contact wetted path (brew path, jug, lid, seals, coatings)",
+      "Obtain food-contact compliance declarations from all component suppliers",
+      "Review against applicable specific measures: plastics (10/2011), metals, ceramics as relevant",
+      "Maintain food-contact compliance records in the technical file",
+    ],
+    scope:
+      "Applies to all materials and articles intended for contact with food or beverages, including coatings, seals, and indirect-contact components.",
+  },
+  FCM_PLASTIC: {
+    obligation_summary:
+      "Plastic food-contact parts must comply with the positive list of authorised monomers and additives under Regulation 10/2011 and must not exceed specific migration limits (SMLs) or the overall migration limit (OML = 10 mg/dm²).",
+    rationale:
+      "Regulation 10/2011 requires a Declaration of Compliance for plastic food-contact materials, supported by migration test evidence. Non-listed substances must not be intentionally used in the plastic food path.",
+    actions: [
+      "Identify all plastic food-contact materials and articles in the product",
+      "Obtain supplier Declarations of Compliance explicitly referencing Regulation 10/2011",
+      "Review migration testing evidence for specific and overall migration limits",
+      "Verify no non-listed substances are used in the plastic food-contact path",
+    ],
+    scope:
+      "Applies specifically to plastic materials and articles in food contact. Separate specific measures apply to metals, ceramics, and rubbers.",
+  },
+  WEEE_GPSR_DEFAULT: null, // placeholder — prevents enrichment map from being treated as sparse
+};
+
 function LegislationDetailField({ label, value }) {
   const display = value && String(value).trim() ? String(value) : "—";
   return (
@@ -1554,25 +1696,39 @@ function LegislationDetailField({ label, value }) {
   );
 }
 
+const GENERIC_SUMMARY = "Additional product obligations may apply beyond the CE route.";
+
 function LegislationSection({ item, groupKey, open, onToggle }) {
   const dirKey = item.directive_key || "OTHER";
   const tone = directiveTone(dirKey);
   const categoryLabel = LEGISLATION_CATEGORY_LABELS[groupKey] || "Legislation";
+  const isUpcoming = groupKey === "future";
   const slug = (str) => String(str || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const bodyId = `leg-section-body-${slug(dirKey)}-${slug(item.code || item.title)}`;
 
-  const actionLikeItems = (item.actions || item.key_obligations || item.evidence_hint || []).filter(Boolean);
-  const summary =
-    item.obligation_summary ||
-    item.rationale ||
-    item.scope ||
-    item.notes ||
-    "";
+  // Merge API data with enrichment — API data always wins, enrichment fills gaps
+  const enrich = LEGISLATION_ENRICHMENT[dirKey] || {};
+
+  const apiSummary = item.obligation_summary && item.obligation_summary !== GENERIC_SUMMARY
+    ? item.obligation_summary
+    : null;
+
+  const summary = apiSummary || item.rationale || item.scope || item.notes || enrich.obligation_summary || GENERIC_SUMMARY;
+  const rationaleText = item.rationale || enrich.rationale || "";
+  const scopeText = item.scope || enrich.scope || "";
+  const notesText = item.notes || enrich.notes || "";
+  const effectiveDate = item.effective_date || item.applicable_from || item.date;
+
+  const apiActions = (item.actions || item.key_obligations || item.evidence_hint || []).filter(Boolean);
+  const actionItems = apiActions.length ? apiActions : (enrich.actions || []);
+
+  // Suppress redundant "What this means" block when it would repeat the summary line verbatim
+  const showObligationBlock = apiSummary && apiSummary !== summary;
 
   const allMetaFields = [
     { label: "Reference / Code", value: item.code },
     { label: "Category", value: categoryLabel },
-    { label: "Effective date", value: item.effective_date || item.date },
+    { label: "Effective from", value: effectiveDate },
     { label: "Review / repeal", value: item.review_date || item.repeal_date },
     { label: "Official Journal ref", value: item.oj_reference || item.oj_ref },
     { label: "Transposition", value: item.transposition },
@@ -1586,7 +1742,7 @@ function LegislationSection({ item, groupKey, open, onToggle }) {
 
   return (
     <section
-      className="route-section legislation-route-section"
+      className={`route-section legislation-route-section${isUpcoming ? " legislation-route-section--upcoming" : ""}`.trim()}
       style={{
         "--route-tone-bg": tone.bg,
         "--route-tone-border": tone.bd,
@@ -1602,15 +1758,18 @@ function LegislationSection({ item, groupKey, open, onToggle }) {
       >
         <div className="route-section__title-wrap">
           <div className="route-section__indicator" />
-          <div>
+          <div className="leg-section__header-content">
             <div className="route-section__title-row">
               <h3>{titleCaseMinor(item.title || "Untitled legislation")}</h3>
               <DirectivePill dirKey={dirKey} />
               {item.code ? <span className="code-chip">{item.code}</span> : null}
+              {isUpcoming && effectiveDate ? (
+                <span className="leg-effective-chip">
+                  Effective {effectiveDate}
+                </span>
+              ) : null}
             </div>
-            <p className="legislation-section__summary-line">
-              {summary || "Additional product obligations may apply beyond the CE route."}
-            </p>
+            <p className="legislation-section__summary-line">{summary}</p>
           </div>
         </div>
 
@@ -1622,42 +1781,46 @@ function LegislationSection({ item, groupKey, open, onToggle }) {
 
       {open ? (
         <div id={bodyId} className="route-section__body leg-section__body">
-          {item.obligation_summary ? (
+
+          {showObligationBlock ? (
             <div className="leg-detail-block">
               <div className="micro-label">What this means</div>
               <p className="leg-detail-block__text">{item.obligation_summary}</p>
             </div>
           ) : null}
 
-          {item.rationale ? (
+          {rationaleText ? (
             <div className="leg-detail-block">
               <div className="micro-label">Why it applies</div>
-              <p className="leg-detail-block__text">{item.rationale}</p>
+              <p className="leg-detail-block__text">{rationaleText}</p>
             </div>
           ) : null}
 
-          {actionLikeItems.length ? (
+          {actionItems.length ? (
             <div className="leg-detail-block">
-              <div className="micro-label">Likely actions / evidence</div>
-              <ul className="leg-detail-block__list">
-                {actionLikeItems.map((entry, index) => (
-                  <li key={`${entry}-${index}`}>{entry}</li>
+              <div className="micro-label">Key actions &amp; evidence</div>
+              <ul className="leg-detail-block__list leg-detail-block__list--actions">
+                {actionItems.map((entry, index) => (
+                  <li key={`${entry}-${index}`} className="leg-action-item">
+                    <Check size={12} className="leg-action-item__icon" />
+                    <span>{entry}</span>
+                  </li>
                 ))}
               </ul>
             </div>
           ) : null}
 
-          {item.scope ? (
-            <div className="leg-detail-block">
+          {scopeText ? (
+            <div className="leg-detail-block leg-detail-block--scope">
               <div className="micro-label">Scope</div>
-              <p className="leg-detail-block__text">{item.scope}</p>
+              <p className="leg-detail-block__text">{scopeText}</p>
             </div>
           ) : null}
 
-          {item.notes ? (
+          {notesText ? (
             <div className="leg-detail-block">
               <div className="micro-label">Notes</div>
-              <p className="leg-detail-block__text">{item.notes}</p>
+              <p className="leg-detail-block__text">{notesText}</p>
             </div>
           ) : null}
 

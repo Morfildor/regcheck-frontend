@@ -2763,12 +2763,42 @@ code {
   align-items: start;
 }
 
+/* Header content wrapper — allows summary to wrap cleanly below title row */
+.leg-section__header-content {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
 .legislation-section__summary-line {
-  margin-top: 4px;
-  max-width: 62ch;
+  margin-top: 2px;
+  max-width: 66ch;
   font-size: 0.83rem;
-  line-height: 1.58;
+  line-height: 1.6;
   color: var(--text-soft);
+}
+
+/* Upcoming future-legislation tint */
+.legislation-route-section--upcoming {
+  background: rgba(185, 162, 255, 0.03);
+  border-color: rgba(185, 162, 255, 0.18);
+}
+
+/* Effective-date chip for upcoming legislation */
+.leg-effective-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 20px;
+  background: rgba(185, 162, 255, 0.12);
+  border: 1px solid rgba(185, 162, 255, 0.28);
+  color: rgba(202, 183, 255, 0.9);
+  font-size: 0.72rem;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .leg-section__body {
@@ -2781,6 +2811,15 @@ code {
   gap: 8px;
 }
 
+/* Scope block — subtle left-border accent */
+.leg-detail-block--scope {
+  padding: 10px 12px;
+  background: rgba(125, 185, 255, 0.04);
+  border: 1px solid rgba(125, 185, 255, 0.10);
+  border-left: 2px solid rgba(125, 185, 255, 0.30);
+  border-radius: 6px;
+}
+
 .leg-detail-block__text {
   margin: 0;
   font-size: 0.88rem;
@@ -2790,12 +2829,37 @@ code {
 
 .leg-detail-block__list {
   margin: 0;
-  padding-left: 18px;
+  padding: 0;
+  list-style: none;
   display: grid;
   gap: 6px;
   color: var(--text-muted);
   font-size: 0.87rem;
   line-height: 1.6;
+}
+
+/* Actions list — checkmark icon row */
+.leg-detail-block__list--actions {
+  gap: 7px;
+}
+
+.leg-action-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.leg-action-item__icon {
+  flex-shrink: 0;
+  color: rgba(143, 218, 184, 0.65);
+  margin-top: 2px;
+  position: relative;
+  top: 1px;
+}
+
+.leg-action-item span {
+  flex: 1;
+  min-width: 0;
 }
 
 @media (max-width: 900px) {
