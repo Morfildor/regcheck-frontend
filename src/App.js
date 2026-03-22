@@ -31,6 +31,8 @@ import {
   METADATA_URL,
   SECTION_TONES,
   STATUS,
+  buildAuditSnapshot,
+  buildCatalogSummary,
   buildClipboardSummary,
   buildCompactLegislationItems,
   buildDirectiveBreakdown,
@@ -38,6 +40,7 @@ import {
   buildGuidanceItems,
   buildLegislationGroups,
   buildRouteSections,
+  buildTraitBuckets,
   directiveRank,
   directiveShort,
   directiveTone,
@@ -48,6 +51,7 @@ import {
   routeTitle,
   sentenceCaseList,
   titleCaseMinor,
+  formatStageLabel,
 } from "./appHelpers";
 
 /* ================================================================
@@ -1048,6 +1052,339 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
 /* ──────────────────────────────────────────────────────────
    OverviewPanel — summary text + inline metric strip
    ────────────────────────────────────────────────────────── */
+
+function InlineTag({ children, tone = "default" }) {
+  const tones = {
+    default: {
+      bg: "rgba(167,183,203,0.11)",
+      bd: "rgba(167,183,203,0.22)",
+      text: "#c0cbda",
+    },
+    positive: {
+      bg: "rgba(128,214,168,0.13)",
+      bd: "rgba(128,214,168,0.26)",
+      text: "#9ce0bc",
+    },
+    caution: {
+      bg: "rgba(240,192,103,0.14)",
+      bd: "rgba(240,192,103,0.28)",
+      text: "#f5cc81",
+    },
+    strong: {
+      bg: "rgba(125,185,255,0.13)",
+      bd: "rgba(125,185,255,0.28)",
+      text: "#93c5ff",
+    },
+  };
+  const style = tones[tone] || tones.default;
+  return (
+    <span
+      className="soft-tag"
+      style={{
+        background: style.bg,
+        borderColor: style.bd,
+        color: style.text,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function CompactKeyValue({ label, value }) {
+  return (
+    <div className="snapshot-row" style={{ minHeight: 30 }}>
+      <span className="snapshot-row__label">{label}</span>
+      <strong style={{ textAlign: "right" }}>{value || "—"}</strong>
+    </div>
+  );
+}
+
+function CatalogIdentityPanel({ result }) {
+  const summary = useMemo(() => buildCatalogSummary(result), [result]);
+  const audit = useMemo(() => buildAuditSnapshot(result), [result]);
+
+  if (!summary) return null;
+
+  const statItems = [
+    ["Current standards", String(summary?.stats?.standards_count ?? 0)],
+    ["Review items", String(summary?.stats?.review_items_count ?? 0)],
+    ["Product-gated", String(summary?.stats?.product_gated_standards_count ?? 0)],
+    ["Ambiguity flags", String(summary?.stats?.ambiguity_flag_count ?? 0)],
+  ];
+
+  return (
+    <Panel
+      eyebrow="Catalog match"
+      title="Detected product structure"
+      subtitle="Family, subtype, candidates, and the route basis from the new catalog system."
+    >
+      <div className="snapshot-list" style={{ gap: 8 }}>
+        <CompactKeyValue label="Detected product" value={summary.product} />
+        <CompactKeyValue label="Family" value={`${summary.family} · ${summary.familyConfidence}`} />
+        <CompactKeyValue
+          label="Subtype"
+          value={summary.subtype ? `${summary.subtype} · ${summary.subtypeConfidence}` : "Not locked"}
+        />
+        <CompactKeyValue label="Match stage" value={summary.stage} />
+      </div>
+
+      <div className="sidebar-section" style={{ marginTop: 14 }}>
+        <div className="sidebar-section__heading">Catalog interpretation</div>
+        <div className="tag-row">
+          {summary.confirmedFunctionalClasses.length
+            ? summary.confirmedFunctionalClasses.map((item) => (
+                <InlineTag key={`confirmed-${item}`} tone="positive">
+                  {item}
+                </InlineTag>
+              ))
+            : summary.functionalClasses.map((item) => (
+                <InlineTag key={`functional-${item}`} tone="strong">
+                  {item}
+                </InlineTag>
+              ))}
+          {!summary.confirmedFunctionalClasses.length && !summary.functionalClasses.length ? (
+            <InlineTag>No functional classes exposed</InlineTag>
+          ) : null}
+        </div>
+      </div>
+
+      {summary.candidates.length ? (
+        <div className="sidebar-section" style={{ marginTop: 14 }}>
+          <div className="sidebar-section__heading">Top candidates</div>
+          <div className="clarification-list" style={{ gap: 10 }}>
+            {summary.candidates.map((candidate, index) => (
+              <article
+                key={candidate.id}
+                className="clarification-card"
+                style={{
+                  "--card-accent": index === 0 ? "#7db9ff" : "#a7b7cb",
+                  "--card-border": index === 0 ? "rgba(125,185,255,0.28)" : "rgba(167,183,203,0.22)",
+                  "--card-bg": index === 0 ? "rgba(125,185,255,0.08)" : "rgba(167,183,203,0.06)",
+                }}
+              >
+                <div className="clarification-card__header">
+                  <div className="clarification-card__title-group">
+                    <InlineTag tone={index === 0 ? "strong" : "default"}>
+                      {index === 0 ? "Winner" : `Alt ${index}`}
+                    </InlineTag>
+                    <h3 style={{ fontSize: "0.95rem" }}>{candidate.label}</h3>
+                  </div>
+                  <div className="clarification-card__index">{candidate.confidence}</div>
+                </div>
+                <p className="clarification-card__text" style={{ marginBottom: 8 }}>
+                  Score {candidate.score}
+                  {candidate.matchedAlias ? ` · alias: ${candidate.matchedAlias}` : ""}
+                </p>
+                <div className="tag-row">
+                  {candidate.reasons.length ? (
+                    candidate.reasons.map((reason) => <InlineTag key={`${candidate.id}-${reason}`}>{reason}</InlineTag>)
+                  ) : (
+                    <InlineTag>No candidate reasons exposed</InlineTag>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {audit?.ambiguityReason ? (
+        <div className="sidebar-section" style={{ marginTop: 14 }}>
+          <div className="sidebar-section__heading">Ambiguity note</div>
+          <p className="standard-item__summary" style={{ marginTop: 6 }}>
+            {audit.ambiguityReason}
+          </p>
+        </div>
+      ) : null}
+
+      {(summary.currentPath.length || summary.futureWatchlist.length || summary.topActions.length) ? (
+        <div
+          className="standard-item__meta-grid"
+          style={{ marginTop: 14, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}
+        >
+          {summary.currentPath.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Current path</div>
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {summary.currentPath.map((entry) => (
+                  <InlineTag key={`path-${entry}`} tone="strong">
+                    {entry}
+                  </InlineTag>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {summary.topActions.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Top actions</div>
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {summary.topActions.slice(0, 4).map((entry) => (
+                  <InlineTag key={`action-${entry}`} tone="caution">
+                    {entry}
+                  </InlineTag>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {summary.futureWatchlist.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Future watchlist</div>
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {summary.futureWatchlist.slice(0, 4).map((entry) => (
+                  <InlineTag key={`watch-${entry}`}>{entry}</InlineTag>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div
+        className="standard-item__meta-grid"
+        style={{ marginTop: 14, gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
+      >
+        {statItems.map(([label, value]) => (
+          <div key={label} className="standard-item__meta-card">
+            <div className="micro-label">{label}</div>
+            <div className="standard-item__meta-value">{value}</div>
+          </div>
+        ))}
+        {summary.knowledgeBaseMeta ? (
+          <div className="standard-item__meta-card">
+            <div className="micro-label">Catalog coverage</div>
+            <div className="standard-item__meta-value">
+              {summary.knowledgeBaseMeta.products || 0} products · {summary.knowledgeBaseMeta.genres || 0} genres
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </Panel>
+  );
+}
+
+function TraitEvidencePanel({ result }) {
+  const buckets = useMemo(() => buildTraitBuckets(result), [result]);
+  const audit = useMemo(() => buildAuditSnapshot(result), [result]);
+
+  const groups = [
+    {
+      key: "explicit",
+      title: "Explicit",
+      subtitle: "Directly stated in the product description.",
+      items: buckets.explicit,
+      tone: "positive",
+    },
+    {
+      key: "confirmed",
+      title: "Confirmed",
+      subtitle: "Strongly supported by product match or text evidence.",
+      items: buckets.confirmed,
+      tone: "strong",
+    },
+    {
+      key: "inferred",
+      title: "Inferred",
+      subtitle: "Useful assumptions that may still change route selection.",
+      items: buckets.inferred,
+      tone: "caution",
+    },
+  ].filter((group) => group.items.length);
+
+  if (!groups.length && !audit) return null;
+
+  return (
+    <Panel
+      eyebrow="Evidence model"
+      title="Traits and audit signals"
+      subtitle="Shows what the engine saw explicitly, what it confirmed, and what it only inferred."
+    >
+      {groups.length ? (
+        <div
+          className="standard-item__meta-grid"
+          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}
+        >
+          {groups.map((group) => (
+            <div key={group.key} className="standard-item__meta-card">
+              <div className="micro-label">{group.title}</div>
+              <p className="standard-item__summary" style={{ marginTop: 6 }}>
+                {group.subtitle}
+              </p>
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {group.items.slice(0, 12).map((item) => (
+                  <InlineTag key={`${group.key}-${item.key}`} tone={group.tone}>
+                    {item.label}
+                  </InlineTag>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {(audit?.aliasHits?.length || audit?.clueHits?.length || audit?.retrievalBasis?.length || audit?.negations?.length) ? (
+        <div
+          className="standard-item__meta-grid"
+          style={{ marginTop: 14, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}
+        >
+          {audit?.aliasHits?.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Alias hits</div>
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {audit.aliasHits.map((entry) => (
+                  <InlineTag key={`alias-${entry}`} tone="positive">
+                    {entry}
+                  </InlineTag>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {audit?.clueHits?.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Clue hits</div>
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {audit.clueHits.map((entry) => (
+                  <InlineTag key={`clue-${entry}`} tone="strong">
+                    {entry}
+                  </InlineTag>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {audit?.retrievalBasis?.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Retrieval basis</div>
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {audit.retrievalBasis.map((entry) => (
+                  <InlineTag key={`retrieval-${entry}`}>{entry}</InlineTag>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {audit?.negations?.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Negations detected</div>
+              <div className="tag-row" style={{ marginTop: 8 }}>
+                {audit.negations.map((entry) => (
+                  <InlineTag key={`negation-${entry}`} tone="caution">
+                    {entry}
+                  </InlineTag>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </Panel>
+  );
+}
+
+
 function OverviewPanel({ result, routeSections, legislationItems }) {
   if (!result) return null;
 
@@ -1059,11 +1396,15 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
   );
 
   const metrics = [
-    { label: "Product",     value: formatUiLabel(result?.product_type || "unclear") },
-    { label: "Risk",        value: formatUiLabel(result?.overall_risk || "MEDIUM"),
-      highlight: (result?.overall_risk || "MEDIUM").toUpperCase() === "HIGH" },
-    { label: "Confidence",  value: formatUiLabel(confidence) },
-    { label: "Standards",   value: String(totalStandards) },
+    { label: "Product", value: formatUiLabel(result?.product_type || "unclear") },
+    { label: "Stage", value: formatStageLabel(result?.product_match_stage) },
+    {
+      label: "Risk",
+      value: formatUiLabel(result?.overall_risk || "MEDIUM"),
+      highlight: (result?.overall_risk || "MEDIUM").toUpperCase() === "HIGH",
+    },
+    { label: "Confidence", value: formatUiLabel(confidence) },
+    { label: "Standards", value: String(totalStandards) },
     { label: "Legislation", value: String(legislationItems.length) },
   ];
 
@@ -1116,8 +1457,11 @@ function SnapshotRail({ result, routeSections, legislationGroups, description, o
           {/* FIX #1: removed Confidence row — it lives in the overview bar */}
           {[
             ["Product", formatUiLabel(result?.product_type || "unclear")],
-            ["Risk",    formatUiLabel(result?.overall_risk || "MEDIUM")],
-            ["Standards",   totalStandards],
+            ["Family", formatUiLabel(result?.product_family || "unclear")],
+            ["Subtype", result?.product_subtype ? formatUiLabel(result.product_subtype) : "Not locked"],
+            ["Stage", formatStageLabel(result?.product_match_stage)],
+            ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
+            ["Standards", totalStandards],
             ["Legislation", totalLegislation],
           ].map(([label, value]) => (
             <div key={label} className="snapshot-row">
@@ -1129,6 +1473,17 @@ function SnapshotRail({ result, routeSections, legislationGroups, description, o
 
         {/* FIX #3: CopyResultsButton is props-driven; state lives in App */}
         <CopyResultsButton onCopy={onCopy} copied={copied} />
+
+        {(result?.future_watchlist || []).length ? (
+          <div className="sidebar-section">
+            <div className="sidebar-section__heading">Future watchlist</div>
+            <div className="tag-row" style={{ marginTop: 8 }}>
+              {(result.future_watchlist || []).slice(0, 6).map((item) => (
+                <InlineTag key={`sidebar-watch-${item}`}>{titleCaseMinor(item)}</InlineTag>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="sidebar-section">
           <div className="sidebar-section__heading">Applicable legislation</div>
@@ -1242,6 +1597,15 @@ function ClarificationsPanel({ items, onApply }) {
                   )}
                 </div>
                 <p className="clarification-card__text">{item.why}</p>
+                {item.routeImpact?.length ? (
+                  <div className="tag-row" style={{ marginBottom: 10 }}>
+                    {item.routeImpact.map((route) => (
+                      <InlineTag key={`${item.key}-impact-${route}`} tone="caution">
+                        Impacts {route}
+                      </InlineTag>
+                    ))}
+                  </div>
+                ) : null}
                 {item.choices?.length ? (
                   <div className="template-row">
                     {item.choices.map((choice) => (
@@ -1271,6 +1635,7 @@ function StandardItem({ item, sectionKey }) {
   const dirTone = directiveTone(dirKey);
   const sectionTone = SECTION_TONES[sectionKey] || SECTION_TONES.unknown;
   const evidenceList = sentenceCaseList(item.evidence_hint || []);
+  const matchedTraits = sentenceCaseList(item.matched_traits_all || item.matched_traits_any || []);
   const summary = item.standard_summary || item.reason || item.notes || "";
   const metaFields = [
     { label: "Legislation",   value: prettyValue(item.harmonized_reference) },
@@ -1301,6 +1666,9 @@ function StandardItem({ item, sectionKey }) {
           >
             {formatUiLabel(item.harmonization_status || sectionKey || "unknown")}
           </span>
+          {item.match_basis ? <InlineTag tone="strong">{formatUiLabel(item.match_basis)}</InlineTag> : null}
+          {item.fact_basis ? <InlineTag tone={item.fact_basis === "confirmed" ? "positive" : "caution"}>{formatUiLabel(item.fact_basis)}</InlineTag> : null}
+          {item.selection_group ? <InlineTag>{titleCaseMinor(item.selection_group)}</InlineTag> : null}
         </div>
         <h4 className="standard-item__title">{titleCaseMinor(item.title || "Untitled standard")}</h4>
       </div>
@@ -1325,6 +1693,19 @@ function StandardItem({ item, sectionKey }) {
           <div className="micro-label">Evidence expected</div>
           <div className="tag-row">
             {evidenceList.map((entry) => (
+              <span key={entry} className="soft-tag">
+                {entry}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {matchedTraits.length ? (
+        <div className="standard-item__evidence">
+          <div className="micro-label">Matched traits</div>
+          <div className="tag-row">
+            {matchedTraits.slice(0, 8).map((entry) => (
               <span key={entry} className="soft-tag">
                 {entry}
               </span>
@@ -1809,6 +2190,20 @@ export default function App() {
                 routeSections={routeSections}
                 legislationItems={legislationItems}
               />
+
+              <ErrorBoundary
+                key={`catalog-${resultRevision}`}
+                label="Catalog interpretation could not be rendered"
+              >
+                <CatalogIdentityPanel result={result} />
+              </ErrorBoundary>
+
+              <ErrorBoundary
+                key={`traits-${resultRevision}`}
+                label="Trait evidence could not be rendered"
+              >
+                <TraitEvidencePanel result={result} />
+              </ErrorBoundary>
 
               {/* FIX #11: ErrorBoundary wraps volatile panels */}
               <ErrorBoundary

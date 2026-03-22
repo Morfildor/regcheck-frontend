@@ -249,6 +249,27 @@ const KNOWN_RESULT_KEYS = new Set([
   "all_traits",
   "diagnostics",
   "suggested_quick_adds",
+  "product_family",
+  "product_family_confidence",
+  "product_subtype",
+  "product_subtype_confidence",
+  "product_match_stage",
+  "product_candidates",
+  "functional_classes",
+  "confirmed_functional_classes",
+  "explicit_traits",
+  "confirmed_traits",
+  "inferred_traits",
+  "trait_evidence",
+  "product_match_audit",
+  "standard_match_audit",
+  "stats",
+  "knowledge_base_meta",
+  "analysis_audit",
+  "top_actions",
+  "current_path",
+  "future_watchlist",
+  "suggested_questions",
 ]);
 
 const LEGISLATION_GROUP_ORDER = ["ce", "non_ce", "future", "framework", "other"];
@@ -544,6 +565,7 @@ export function buildGuidanceItems(result) {
       why,
       importance,
       choices: choices.filter(Boolean).slice(0, 3),
+      routeImpact: [],
     });
   };
 
@@ -601,9 +623,13 @@ export function buildGuidanceItems(result) {
     );
   }
 
-  rawItems.forEach((item) =>
-    add(item.key, gapLabel(item.key), item.message, item.importance || "medium", item.examples || [])
-  );
+  rawItems.forEach((item) => {
+    add(item.key, gapLabel(item.key), item.message, item.importance || "medium", item.examples || []);
+    const target = items.find((entry) => entry.key === item.key);
+    if (target) {
+      target.routeImpact = sentenceCaseList(item.route_impact || []);
+    }
+  });
 
   return items.slice(0, 6);
 }
@@ -808,6 +834,104 @@ export function buildLegislationGroups(result) {
 
 export function getAdditionalEntries(result) {
   return Object.entries(result || {}).filter(([key]) => !KNOWN_RESULT_KEYS.has(key));
+}
+
+
+export function formatStageLabel(stage) {
+  const map = {
+    family: "Family match",
+    subtype: "Subtype match",
+    ambiguous: "Ambiguous",
+  };
+  return map[String(stage || "").toLowerCase()] || formatUiLabel(stage || "unknown");
+}
+
+export function buildCatalogSummary(result) {
+  if (!result) return null;
+
+  const productCandidates = (result?.product_candidates || []).slice(0, 3).map((candidate) => ({
+    id: candidate.id,
+    label: formatUiLabel(candidate.label || candidate.id),
+    confidence: formatUiLabel(candidate.confidence || "medium"),
+    matchedAlias: candidate.matched_alias || "",
+    score: candidate.score ?? 0,
+    reasons: (candidate.reasons || []).slice(0, 3).map((reason) => titleCaseMinor(reason)),
+  }));
+
+  return {
+    product: formatUiLabel(result?.product_type || "unclear"),
+    family: formatUiLabel(result?.product_family || "unclear"),
+    familyConfidence: formatUiLabel(result?.product_family_confidence || "low"),
+    subtype: result?.product_subtype ? formatUiLabel(result.product_subtype) : "",
+    subtypeConfidence: formatUiLabel(result?.product_subtype_confidence || "low"),
+    stage: formatStageLabel(result?.product_match_stage),
+    candidates: productCandidates,
+    functionalClasses: sentenceCaseList(result?.functional_classes || []),
+    confirmedFunctionalClasses: sentenceCaseList(result?.confirmed_functional_classes || []),
+    currentPath: (result?.current_path || []).map((entry) => titleCaseMinor(entry)),
+    topActions: (result?.top_actions || []).filter(Boolean),
+    futureWatchlist: (result?.future_watchlist || []).filter(Boolean).map((entry) => titleCaseMinor(entry)),
+    stats: result?.stats || {},
+    knowledgeBaseMeta: result?.knowledge_base_meta || null,
+  };
+}
+
+export function buildTraitBuckets(result) {
+  const explicit = new Set(result?.explicit_traits || []);
+  const confirmed = new Set(result?.confirmed_traits || []);
+  const inferred = new Set(result?.inferred_traits || []);
+
+  const evidenceByTrait = new Map(
+    (result?.trait_evidence || []).map((item) => [item.trait, item])
+  );
+
+  const decorate = (trait) => {
+    const evidence = evidenceByTrait.get(trait) || {};
+    return {
+      key: trait,
+      label: titleCaseMinor(trait),
+      state: formatUiLabel(evidence.state || ""),
+      factBasis: formatUiLabel(evidence.fact_basis || ""),
+      confirmed: Boolean(evidence.confirmed),
+      evidence: (evidence.evidence || []).slice(0, 3).map((entry) => titleCaseMinor(entry)),
+    };
+  };
+
+  return {
+    explicit: Array.from(explicit).sort().map(decorate),
+    confirmed: Array.from(confirmed).sort().map(decorate),
+    inferred: Array.from(inferred).sort().map(decorate),
+  };
+}
+
+export function buildAuditSnapshot(result) {
+  if (!result) return null;
+
+  const productAudit = result?.product_match_audit || {};
+  const standardAudit = result?.standard_match_audit || {};
+  const selected = standardAudit?.selected || [];
+  const review = standardAudit?.review || [];
+  const rejected = standardAudit?.rejected || [];
+
+  return {
+    ambiguityReason: productAudit?.ambiguity_reason || "",
+    aliasHits: (productAudit?.alias_hits || []).slice(0, 4),
+    clueHits: (productAudit?.clue_hits || []).slice(0, 4),
+    retrievalBasis: (productAudit?.retrieval_basis || []).slice(0, 4).map((entry) => titleCaseMinor(entry)),
+    negations: (productAudit?.negations || []).slice(0, 3).map((entry) => titleCaseMinor(entry)),
+    standardContextTags: (standardAudit?.context_tags || []).slice(0, 8).map((entry) => titleCaseMinor(entry)),
+    selectedPreview: selected.slice(0, 4).map((item) => ({
+      code: item.code,
+      reason: item.reason || "",
+      factBasis: formatUiLabel(item.fact_basis || ""),
+      confidence: formatUiLabel(item.confidence || ""),
+    })),
+    counts: {
+      selected: selected.length,
+      review: review.length,
+      rejected: rejected.length,
+    },
+  };
 }
 
 export function buildClipboardSummary({ result, description, routeSections, legislationGroups }) {
