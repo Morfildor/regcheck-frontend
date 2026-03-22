@@ -221,536 +221,327 @@ const SUGGESTION_TIERS = [
     id: "food_contact",
     label: "Food & materials",
     icon: "flask",
-    show_if: (det) => det.hasFoodContext && !det.hasFoodContact && !det.hasNoFoodContact,
+    show_if: (det) => det.likelyFood && !det.hasFoodContact && !det.hasNoFoodContact,
     suggestions: [
-      { label: "Food-contact path",  text: "food-contact wetted path (plastic and metal parts contact food or beverages)" },
-      { label: "Plastic food parts", text: "plastic food-contact parts in brew or food path" },
-      { label: "No food contact",    text: "no direct food or beverage contact" },
+      { label: "Food-contact path",   text: "food-contact / wetted path present" },
+      { label: "No food contact",     text: "no food-contact materials in normal use" },
+      { label: "Pressure + steam",    text: "contains pressurized and steam-generating system" },
     ],
   },
   {
-    id: "pressure_steam",
-    label: "Pressure & steam",
+    id: "environment",
+    label: "Environment",
     icon: "droplets",
-    show_if: (det) => det.hasCoffeeContext && !det.hasPressure && !det.hasSteam,
+    show_if: (det) => det.hasProduct && !det.hasIndoorOutdoor,
     suggestions: [
-      { label: "Pressure system", text: "pressurised brew system (15-bar pump)" },
-      { label: "Steam wand",      text: "steam wand for milk frothing" },
-      { label: "No pressure",     text: "drip or filter brew — no pressure" },
+      { label: "Indoor only",   text: "indoor use only" },
+      { label: "Outdoor use",   text: "intended for outdoor use / weather exposure" },
+      { label: "Wet environment", text: "used in wet / splash-prone environment" },
     ],
   },
   {
-    id: "outdoor_context",
-    label: "Use environment",
-    icon: "leaf",
-    show_if: (det) => det.hasOutdoorContext && !det.hasOutdoor && !det.hasIndoor,
-    suggestions: [
-      { label: "Outdoor rated",  text: "for outdoor use — weather and dust exposure (IP-rated enclosure)" },
-      { label: "Indoor only",    text: "indoor use only — not weather exposed" },
-    ],
-  },
-  {
-    id: "cybersecurity",
-    label: "Account & auth",
+    id: "privacy_sensors",
+    label: "Sensors & privacy",
     icon: "cpu",
-    show_if: (det) => (det.hasCloud || det.hasInternet) && !det.hasAccount && !det.hasAuthentication,
+    show_if: (det) => det.hasRadio && !det.hasCamera && !det.hasMicrophone && !det.hasDataStorage,
     suggestions: [
-      { label: "User account",     text: "requires user account creation (email, password, profile)" },
-      { label: "Authentication",   text: "password and multi-factor authentication for device access" },
-      { label: "No account",       text: "no user account required — device works standalone" },
+      { label: "Camera",       text: "includes camera / video capture" },
+      { label: "Microphone",   text: "includes microphone / voice control" },
+      { label: "Stores personal data", text: "stores user or personal data locally or in cloud" },
     ],
   },
   {
-    id: "payments",
-    label: "Transactions",
-    icon: "cart",
-    show_if: (det) => det.hasAppControl && !det.hasMonetary,
+    id: "sustainability",
+    label: "Lifecycle hints",
+    icon: "leaf",
+    show_if: (det) => det.hasProduct,
     suggestions: [
-      { label: "In-app purchase",  text: "supports in-app purchases or subscription billing" },
-      { label: "No payments",      text: "no monetary transactions or subscription functions" },
+      { label: "Battery replaceability", text: "battery is user-removable / replaceable" },
+      { label: "Spare parts available",  text: "spare parts and service information are available" },
+      { label: "Repairable design",      text: "designed for repair / maintenance access" },
+    ],
+  },
+  {
+    id: "commerce",
+    label: "Commercial model",
+    icon: "cart",
+    show_if: (det) => det.hasRadio && !det.hasMonetary,
+    suggestions: [
+      { label: "Subscription", text: "subscription or paid cloud feature model" },
+      { label: "In-app orders", text: "allows monetary transactions / ordering within app" },
     ],
   },
 ];
 
-function detectTraits(text) {
-  const t = text.toLowerCase();
-  const signals = new Set();
+function detectSuggestionState(description) {
+  const text = String(description || "");
+  const lower = text.toLowerCase();
 
-  for (const { re, trait } of TEXT_SIGNALS) {
-    if (re.test(t)) signals.add(trait);
+  const present = new Set();
+  for (const sig of TEXT_SIGNALS) {
+    if (sig.re.test(text)) present.add(sig.trait);
   }
-
-  let impliedTraits = new Set();
-  let hasProduct = false;
-  for (const { re, implied } of PRODUCT_CONTEXTS) {
-    if (re.test(t)) {
-      hasProduct = true;
-      implied.forEach(i => impliedTraits.add(i));
+  for (const ctx of PRODUCT_CONTEXTS) {
+    if (ctx.re.test(text)) {
+      ctx.implied.forEach((trait) => present.add(trait));
     }
   }
 
-  const has = (trait) => signals.has(trait) || impliedTraits.has(trait);
+  const hasProduct = PRODUCT_CONTEXTS.some((ctx) => ctx.re.test(text)) || lower.length > 10;
+  const hasPower =
+    present.has("mains_powered") ||
+    present.has("battery_powered") ||
+    present.has("usb_powered") ||
+    present.has("external_psu") ||
+    present.has("mains_power_likely");
+
+  const hasRadio =
+    present.has("wifi") ||
+    present.has("bluetooth") ||
+    present.has("cellular") ||
+    present.has("zigbee") ||
+    present.has("thread") ||
+    present.has("matter") ||
+    present.has("nfc");
+
+  const likelyFood =
+    present.has("food_contact") ||
+    present.has("coffee_brewing") ||
+    present.has("beverage_preparation") ||
+    present.has("food_preparation") ||
+    present.has("cooking") ||
+    /\b(food|coffee|espresso|beverage|drink|brew|kitchen)\b/i.test(text);
 
   return {
     hasProduct,
-    hasPower:          has("mains_powered") || has("battery_powered") || has("usb_powered") || has("external_psu") || has("mains_power_likely"),
-    hasRadio:          has("wifi") || has("bluetooth") || has("cellular") || has("zigbee") || has("thread") || has("nfc"),
-    hasAppControl:     has("app_control"),
-    hasCloud:          has("cloud"),
-    hasOTA:            has("ota"),
-    hasInternet:       has("internet"),
-    hasAccount:        has("account"),
-    hasAuthentication: has("authentication"),
-    hasLocalOnly:      has("local_only"),
-    hasFoodContext:    has("food_contact") || has("food_preparation") || has("beverage_preparation") || has("liquid_heating") || has("coffee_brewing"),
-    hasFoodContact:    has("food_contact"),
-    hasNoFoodContact:  has("no_food_contact"),
-    hasCoffeeContext:  has("coffee_brewing") || t.includes("espresso") || t.includes("coffee"),
-    hasPressure:       has("pressure"),
-    hasSteam:          has("steam"),
-    hasOutdoorContext: has("outdoor_use") || has("garden_use"),
-    hasOutdoor:        signals.has("outdoor_use"),
-    hasIndoor:         has("indoor_use"),
-    hasMonetary:       has("monetary_transaction"),
-    raw: signals,
+    hasPower,
+    hasRadio,
+    hasCloud: present.has("cloud"),
+    hasOTA: present.has("ota"),
+    hasAccount: present.has("account") || present.has("authentication"),
+    hasFoodContact: present.has("food_contact"),
+    hasNoFoodContact: present.has("no_food_contact"),
+    likelyFood,
+    hasIndoorOutdoor: present.has("indoor_use") || present.has("outdoor_use"),
+    hasCamera: present.has("camera"),
+    hasMicrophone: present.has("microphone"),
+    hasDataStorage: present.has("data_storage"),
+    hasMonetary: present.has("monetary_transaction"),
+    hasLocalOnly: present.has("local_only"),
   };
 }
 
 function useSmartSuggestions(description, backendChips) {
   return useMemo(() => {
-    const text = (description || "").trim();
-
-    if (backendChips && backendChips.length) {
-      return [{ id: "backend", label: "Suggested additions", suggestions: backendChips.slice(0, 6) }];
-    }
-
-    if (text.length < 5) return [];
-
-    const det = detectTraits(text);
-    const groups = [];
-
-    for (const tier of SUGGESTION_TIERS) {
-      if (tier.show_if(det)) {
-        groups.push({ id: tier.id, label: tier.label, icon: tier.icon, suggestions: tier.suggestions });
-        if (groups.length >= 3) break;
+    if (backendChips?.length) {
+      const grouped = [];
+      const chunks = [
+        { id: "backend", label: "Suggested details", icon: "cpu", suggestions: backendChips },
+      ];
+      for (const c of chunks) {
+        if (c.suggestions?.length) grouped.push(c);
       }
+      return grouped;
     }
 
-    return groups;
+    const det = detectSuggestionState(description);
+    return SUGGESTION_TIERS
+      .filter((tier) => tier.show_if(det))
+      .map((tier) => ({
+        ...tier,
+        suggestions: tier.suggestions,
+      }))
+      .filter((tier) => tier.suggestions.length > 0);
   }, [description, backendChips]);
 }
 
+/* ================================================================
+   UI HELPERS
+   ================================================================ */
+
+function cx(...parts) {
+  return parts.filter(Boolean).join(" ");
+}
 
 function Panel({ eyebrow, title, subtitle, action, className = "", children }) {
   return (
-    <section className={`panel ${className}`.trim()}>
+    <section className={cx("panel", className)}>
       {(eyebrow || title || subtitle || action) && (
-        <header className="panel__header">
-          <div className="panel__heading">
-            {eyebrow ? <div className="panel__eyebrow">{eyebrow}</div> : null}
+        <div className="panel__header">
+          <div className="panel__titlewrap">
+            {eyebrow ? <span className="panel__eyebrow">{eyebrow}</span> : null}
             {title ? <h2 className="panel__title">{title}</h2> : null}
             {subtitle ? <p className="panel__subtitle">{subtitle}</p> : null}
           </div>
           {action ? <div className="panel__action">{action}</div> : null}
-        </header>
+        </div>
       )}
       <div className="panel__body">{children}</div>
     </section>
   );
 }
 
-function DirectivePill({ dirKey }) {
-  const tone = directiveTone(dirKey);
-  return (
-    <span
-      className="directive-pill"
-      style={{
-        "--pill-bg": tone.bg,
-        "--pill-border": tone.bd,
-        "--pill-text": tone.text,
-        "--pill-dot": tone.dot,
-      }}
-    >
-      <span className="directive-pill__dot" />
-      {directiveShort(dirKey)}
-    </span>
-  );
+function InlineTag({ children, tone = "neutral", className = "" }) {
+  return <span className={cx("inline-tag", `inline-tag--${tone}`, className)}>{children}</span>;
 }
 
 function RiskPill({ value }) {
-  const tone = STATUS[value] || STATUS.MEDIUM;
+  const normalized = String(value || "").toUpperCase();
+  const map = {
+    LOW: "success",
+    MEDIUM: "warn",
+    HIGH: "danger",
+    UNKNOWN: "neutral",
+  };
   return (
-    <span
-      className="status-pill"
-      style={{
-        "--pill-bg": tone.bg,
-        "--pill-border": tone.bd,
-        "--pill-text": tone.text,
-      }}
-    >
-      {formatUiLabel(value || "MEDIUM")} risk
-    </span>
+    <InlineTag tone={map[normalized] || "neutral"}>
+      {formatUiLabel(normalized || "Unknown")}
+    </InlineTag>
+  );
+}
+
+function StatusPill({ value }) {
+  const info = STATUS[value] || STATUS.conditional;
+  return (
+    <InlineTag tone={info.tone}>
+      {info.label}
+    </InlineTag>
   );
 }
 
 function ImportancePill({ value }) {
-  const tone = IMPORTANCE[value] || IMPORTANCE.medium;
+  const key = String(value || "medium").toLowerCase();
+  const tone = IMPORTANCE[key] || IMPORTANCE.medium;
   return (
     <span
       className="importance-pill"
       style={{
-        "--pill-bg": tone.bg,
-        "--pill-border": tone.bd,
-        "--pill-text": tone.text,
-        "--pill-dot": tone.dot,
+        "--importance-dot": tone.dot,
+        "--importance-bg": tone.bg,
+        "--importance-border": tone.bd,
+        "--importance-text": tone.text,
       }}
     >
       <span className="importance-pill__dot" />
-      {formatUiLabel(value)}
+      {tone.label}
     </span>
   );
 }
 
+function DirectivePill({ dirKey }) {
+  const tone = directiveTone(dirKey || "OTHER");
+  const short = directiveShort(dirKey || "OTHER");
+  return (
+    <span
+      className="directive-pill"
+      style={{
+        "--directive-pill-bg": tone.bg,
+        "--directive-pill-border": tone.bd,
+        "--directive-pill-text": tone.text,
+      }}
+    >
+      {short}
+    </span>
+  );
+}
 
-/* ──────────────────────────────────────────────────────────
-   AnalysisProgressBanner — multi-step animated progress
-   ────────────────────────────────────────────────────────── */
-const PROGRESS_STEPS = [
-  "Parsing product traits",
-  "Detecting applicable regimes",
-  "Matching standards route",
-  "Generating clarifications",
-];
-const STEP_DELAYS_MS = [0, 2200, 4400, 6800];
+function NotesList({ items = [] }) {
+  if (!items.length) return null;
+  return (
+    <ul className="notes-list">
+      {items.map((item, idx) => (
+        <li key={`${item}-${idx}`}>{titleCaseMinor(item)}</li>
+      ))}
+    </ul>
+  );
+}
+
+function EmptyState() {
+  return (
+    <section className="empty-state">
+      <div className="empty-state__orb" />
+      <div className="empty-state__content">
+        <div className="empty-state__eyebrow">
+          <Sparkles size={12} />
+          Ready to analyze
+        </div>
+        <h2 className="empty-state__title">Build the route with one precise description</h2>
+        <p className="empty-state__copy">
+          Mention the main function, power source, radios, cloud/OTA features, and any
+          food-contact or safety-relevant details.
+        </p>
+        <div className="empty-state__tips">
+          <span>Wi-Fi / Bluetooth</span>
+          <span>Mains / battery</span>
+          <span>Cloud account</span>
+          <span>Food-contact path</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ErrorBanner({ message }) {
+  return (
+    <div className="banner banner--error" role="alert">
+      <TriangleAlert size={15} />
+      <span>{message}</span>
+    </div>
+  );
+}
 
 function AnalysisProgressBanner({ busy }) {
-  const [stepIndex, setStepIndex] = useState(0);
-
-  useEffect(() => {
-    if (!busy) {
-      setStepIndex(0);
-      return;
-    }
-    const timers = STEP_DELAYS_MS.slice(1).map((delay, i) =>
-      window.setTimeout(() => setStepIndex(i + 1), delay)
-    );
-    return () => timers.forEach(window.clearTimeout);
-  }, [busy]);
-
   if (!busy) return null;
-
   return (
-    <div className="analysis-progress" role="status" aria-live="polite">
-      <div className="analysis-progress__steps">
-        {PROGRESS_STEPS.map((step, i) => (
-          <div
-            key={step}
-            className={[
-              "analysis-progress__step",
-              i < stepIndex  ? "analysis-progress__step--done"   : "",
-              i === stepIndex ? "analysis-progress__step--active" : "",
-            ].filter(Boolean).join(" ")}
-          >
-            <div className="analysis-progress__dot">
-              {i < stepIndex ? <Check size={9} /> : null}
-            </div>
-            <span>{step}{i === stepIndex ? "…" : ""}</span>
-          </div>
-        ))}
+    <div className="banner banner--progress" role="status" aria-live="polite">
+      <LoaderCircle size={15} className="spin" />
+      <span>Running standards route, legislation mapping, and clarification checks…</span>
+    </div>
+  );
+}
+
+function CopyResultsButton({ onCopy, copied }) {
+  return (
+    <button type="button" className="button button--ghost button--copy" onClick={onCopy}>
+      {copied ? <Check size={14} /> : <Copy size={14} />}
+      {copied ? "Copied" : "Copy summary"}
+    </button>
+  );
+}
+
+function DirtyBanner({ dirty, onAnalyze, busy, onReset }) {
+  if (!dirty) return null;
+  return (
+    <div className="dirty-banner" role="status" aria-live="polite">
+      <div className="dirty-banner__copy">
+        <span className="dirty-banner__title">Description changed</span>
+        <span className="dirty-banner__text">Re-run to refresh the route.</span>
       </div>
-      <div className="analysis-progress__bar">
-        <div
-          className="analysis-progress__fill"
-          style={{ width: `${((stepIndex + 1) / PROGRESS_STEPS.length) * 100}%` }}
-        />
+      <div className="dirty-banner__actions">
+        <button
+          type="button"
+          className="button button--secondary"
+          onClick={onReset}
+          disabled={busy}
+        >
+          <RefreshCcw size={14} />
+          Reset
+        </button>
+        <button
+          type="button"
+          className="button button--primary"
+          onClick={onAnalyze}
+          disabled={busy}
+        >
+          {busy ? <LoaderCircle size={14} className="spin" /> : <Search size={14} />}
+          {busy ? "Updating…" : "Re-run analysis"}
+        </button>
       </div>
     </div>
   );
 }
 
-
-/* ──────────────────────────────────────────────────────────
-   DirtyBanner — sticky nudge when description edited post-analysis
-   FIX #4: Added onDismiss (✕) so users can close without re-running
-   FIX #2: This is now the ONLY "re-run" CTA — removed from ClarificationsPanel
-   ────────────────────────────────────────────────────────── */
-function DirtyBanner({ dirty, busy, onReanalyze, onDismiss }) {
-  return (
-    <div className={`dirty-banner ${dirty ? "dirty-banner--visible" : ""}`} aria-hidden={!dirty}>
-      <div className="page-shell dirty-banner__inner">
-        <div className="dirty-banner__left">
-          <span className="dirty-banner__dot" />
-          <span>Description updated — re-run to apply changes</span>
-        </div>
-        <div className="dirty-banner__actions">
-          <button
-            type="button"
-            className="button button--primary dirty-banner__btn"
-            onClick={onReanalyze}
-            disabled={busy}
-            tabIndex={dirty ? 0 : -1}
-          >
-            {busy ? <LoaderCircle size={13} className="spin" /> : <RefreshCcw size={13} />}
-            {busy ? "Re-running…" : "Re-run analysis"}
-          </button>
-          <button
-            type="button"
-            className="dirty-banner__dismiss"
-            onClick={onDismiss}
-            tabIndex={dirty ? 0 : -1}
-            aria-label="Dismiss"
-            title="Dismiss — keep current analysis"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   TopBar
-   ────────────────────────────────────────────────────────── */
-function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, onCopy, copied }) {
-  return (
-    <header className="topbar">
-      <div className="page-shell topbar__inner">
-        <div className="brand">
-          <div className="brand__mark">
-            <img src="/logo512.png" alt="RuleGrid" className="brand__logo" />
-          </div>
-          <div>
-            <div className="brand__title">RuleGrid</div>
-            <div className="brand__subtitle">EU regulatory scoping</div>
-          </div>
-        </div>
-
-        <div className="topbar__meta">
-          {result ? (
-            <>
-              <RiskPill value={result?.overall_risk || "MEDIUM"} />
-              <span className="topbar__count topbar__count--hideable">{totalStandards} standards</span>
-
-              {/* FIX #3: shared copy state — same handler as sidebar button */}
-              <button
-                type="button"
-                className="button button--secondary topbar__action-btn"
-                onClick={onCopy}
-                title="Copy analysis summary to clipboard"
-              >
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-                <span className="topbar__btn-label">{copied ? "Copied" : "Copy"}</span>
-              </button>
-
-              {prevResult ? (
-                <button
-                  type="button"
-                  className="button button--secondary topbar__action-btn"
-                  onClick={onRestorePrev}
-                  title="Restore previous analysis"
-                >
-                  <ArrowLeft size={13} />
-                  <span className="topbar__btn-label">Previous</span>
-                </button>
-              ) : null}
-
-              <button type="button" className="button button--secondary" onClick={onReset}>
-                <RefreshCcw size={13} />
-                New analysis
-              </button>
-            </>
-          ) : (
-            <span className="topbar__hint">Describe the product — get a standards route</span>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   HeroPanel
-   FIX #1 / #10: Replaced "What's covered" side panel with
-   "Directives triggered" panel showing actual regime pills.
-   Removed duplicate RiskPill from hero tags (already in topbar
-   and overview bar).
-   ────────────────────────────────────────────────────────── */
-function HeroPanel({ result, routeSections = [], legislationItems = [], guidanceItems = [] }) {
-  const hero = result?.hero_summary || {};
-  const confidence =
-    result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
-
-  if (!result) {
-    return (
-      <div className="landing-strip">
-        <div className="landing-strip__inner">
-          <div className="landing-strip__eyebrow">
-            <Sparkles size={11} />
-            Guided Workspace
-          </div>
-          <h1 className="landing-strip__title">
-            EU regulatory scoping,<br />
-            <span className="landing-strip__title--accent">instantly</span>
-          </h1>
-          <p className="landing-strip__sub">
-            Describe the product below and get the applicable standards route, legislation context, and scope-changing clarifications.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const title = hero.title || `${formatUiLabel(result?.product_type || "Product")} regulatory route`;
-  const subtitle = result?.summary || hero.subtitle || "";
-
-  // Unique directive keys in order — power the "Directives triggered" panel
-  const triggeredDirectives = [...new Set(routeSections.map((s) => s.key))].sort(
-    (a, b) => directiveRank(a) - directiveRank(b)
-  );
-
-  const totalStandards = routeSections.reduce((n, s) => n + (s.count || 0), 0);
-
-  return (
-    <div className="hero-grid">
-      <Panel className="panel--hero" eyebrow="Guided Workspace" title={title} subtitle={subtitle}>
-        <div className="hero-panel__content">
-          <div className="hero-panel__tags">
-            {/* RiskPill removed — already shown in topbar and overview bar */}
-            <span className="soft-tag">Confidence: {formatUiLabel(confidence)}</span>
-            {result?.product_type ? (
-              <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
-            ) : null}
-          </div>
-        </div>
-      </Panel>
-
-      {/* FIX #10: replaced "What's covered" static copy with live directive scope panel */}
-      <Panel className="panel--support" eyebrow="Directives triggered" title="Scope">
-        <div className="directive-scope-list">
-          {triggeredDirectives.length ? (
-            <div className="directive-scope-pills">
-              {triggeredDirectives.map((key) => (
-                <DirectivePill key={key} dirKey={key} />
-              ))}
-            </div>
-          ) : (
-            <span className="soft-tag" style={{ color: "var(--text-soft)" }}>No directives detected</span>
-          )}
-          <p className="directive-scope-hint">
-            {totalStandards} standard{totalStandards === 1 ? "" : "s"} across{" "}
-            {routeSections.length} regime{routeSections.length === 1 ? "" : "s"} —
-            {" "}{legislationItems.length} legislation item{legislationItems.length === 1 ? "" : "s"} —
-            {" "}{guidanceItems.length} clarification{guidanceItems.length === 1 ? "" : "s"}.
-          </p>
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-
-const BASE_SAFETY_ROUTE_COPY = {
-  EN_60335: {
-    key: "EN_60335",
-    label: "EN 60335 appliance route",
-    shortLabel: "EN 60335",
-    description:
-      "Primary function points to household and similar appliance safety under EN 60335-1 with the relevant Part 2 standard.",
-    note:
-      "Connected features do not move an appliance into EN 62368-1 when the primary function remains cooking, cleaning, heating, cooling, or a similar physical appliance function.",
-  },
-  EN_62368: {
-    key: "EN_62368",
-    label: "EN 62368 AV/ICT route",
-    shortLabel: "EN 62368",
-    description:
-      "Primary function points to audio/video, information, or communications equipment safety under EN 62368-1.",
-    note:
-      "This is the base safety path for products such as routers, smart displays, laptops, monitors, speakers, and other AV/ICT equipment.",
-  },
-};
-
-function baseSafetyRouteTone(route) {
-  if (route?.key === "EN_62368") {
-    return {
-      bg: "rgba(185,162,255,0.14)",
-      bd: "rgba(185,162,255,0.30)",
-      text: "#cab7ff",
-      dot: "#b9a2ff",
-    };
-  }
-  return {
-    bg: "rgba(143,218,184,0.14)",
-    bd: "rgba(143,218,184,0.30)",
-    text: "#9ee7c4",
-    dot: "#8fdab8",
-  };
-}
-
-function inferBaseSafetyRoute(result, routeSections) {
-  if (!result) return null;
-
-  const rows = (routeSections || []).flatMap((section) => section.items || []);
-  const codeStrings = rows.map((item) => String(item?.code || "").toUpperCase());
-  const titleStrings = rows.map((item) => String(item?.title || "").toLowerCase());
-
-  const has60335 =
-    codeStrings.some((code) => /(?:^|\b)(?:EN|IEC)\s*60335(?:-\d+)?(?:\b|\s|$)/i.test(code)) ||
-    titleStrings.some((title) => title.includes("household and similar electrical appliances"));
-
-  const has62368 =
-    codeStrings.some((code) => /(?:^|\b)(?:EN|IEC)\s*62368(?:-\d+)?(?:\b|\s|$)/i.test(code)) ||
-    titleStrings.some(
-      (title) =>
-        title.includes("audio/video") ||
-        title.includes("information and communication technology") ||
-        title.includes("communications technology equipment")
-    );
-
-  const productText = [
-    result?.product_type || "",
-    result?.summary || "",
-    ...(result?.all_traits || []),
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  const applianceHints = [
-    /coffee/, /espresso/, /kettle/, /air.?fry/, /oven/, /vacuum/,
-    /robot.?vac/, /air.?purifier/, /fan\b/, /heater/, /dishwasher/,
-    /washing.?machine/, /dryer/, /blender/, /mixer/, /toaster/,
-    /fridge/, /freezer/, /appliance/,
-  ];
-
-  const avictHints = [
-    /router/, /modem/, /gateway/, /access.?point/, /switch\b/, /laptop/,
-    /desktop/, /server/, /nas\b/, /monitor/, /display/, /smart.?display/,
-    /smart.?speaker/, /speaker/, /television/, /smart.?tv/, /stream(ing)?/,
-    /set.?top/, /projector/, /voip/, /ict/, /communications?/, /audio/,
-    /video/, /network/,
-  ];
-
-  const hasApplianceHint = applianceHints.some((re) => re.test(productText));
-  const hasAvictHint = avictHints.some((re) => re.test(productText));
-
-  if (has60335 && !has62368) return BASE_SAFETY_ROUTE_COPY.EN_60335;
-  if (has62368 && !has60335) return BASE_SAFETY_ROUTE_COPY.EN_62368;
-
-  if (has60335 && has62368) {
-    if (hasApplianceHint && !hasAvictHint) return BASE_SAFETY_ROUTE_COPY.EN_60335;
-    if (hasAvictHint && !hasApplianceHint) return BASE_SAFETY_ROUTE_COPY.EN_62368;
-  }
-
-  if (hasAvictHint && !hasApplianceHint) return BASE_SAFETY_ROUTE_COPY.EN_62368;
-  if (hasApplianceHint && !hasAvictHint) return BASE_SAFETY_ROUTE_COPY.EN_60335;
-
-  return null;
-}
-
-function BaseSafetyRoutePill({ route, compact = false, labelOverride = "" }) {
+function baseSafetyRoutePill({ route, compact = false, labelOverride = "" }) {
   if (!route) return null;
   const tone = baseSafetyRouteTone(route);
   const Icon = route.key === "EN_62368" ? Cpu : ShieldCheck;
@@ -844,10 +635,8 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
 
   const textareaRef = useRef(null);
 
-  // FIX #9: explicit chip tracking instead of substring scan
   const [appliedChipTexts, setAppliedChipTexts] = useState(() => new Set());
 
-  // Reset chip tracking when switching between landing and result states
   useEffect(() => {
     setAppliedChipTexts(new Set());
   }, [isLanding]);
@@ -905,7 +694,6 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
     </label>
   );
 
-  /* ── Landing variant ── */
   if (isLanding) {
     return (
       <div className="landing-composer">
@@ -980,7 +768,6 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
     );
   }
 
-  /* ── Refinement variant (post-result) ── */
   return (
     <Panel
       eyebrow="Input"
@@ -1038,6 +825,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
             }}
             disabled={!description}
           >
+            <X size={14} />
             Clear
           </button>
         </div>
@@ -1046,208 +834,176 @@ function ComposerPanel({ description, setDescription, templates, backendChips, o
   );
 }
 
-
-/* ──────────────────────────────────────────────────────────
-   OverviewPanel — summary text + inline metric strip
-   ────────────────────────────────────────────────────────── */
-
-function InlineTag({ children, tone = "default" }) {
-  const tones = {
-    default: {
-      bg: "rgba(167,183,203,0.11)",
-      bd: "rgba(167,183,203,0.22)",
-      text: "#c0cbda",
-    },
-    positive: {
-      bg: "rgba(128,214,168,0.13)",
-      bd: "rgba(128,214,168,0.26)",
-      text: "#9ce0bc",
-    },
-    caution: {
-      bg: "rgba(240,192,103,0.14)",
-      bd: "rgba(240,192,103,0.28)",
-      text: "#f5cc81",
-    },
-    strong: {
-      bg: "rgba(125,185,255,0.13)",
-      bd: "rgba(125,185,255,0.28)",
-      text: "#93c5ff",
-    },
-  };
-  const style = tones[tone] || tones.default;
-  return (
-    <span
-      className="soft-tag"
-      style={{
-        background: style.bg,
-        borderColor: style.bd,
-        color: style.text,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-function OverviewPanel({ result, routeSections, legislationItems }) {
-  if (!result) return null;
-
+function HeroPanel({ result, routeSections = [], legislationItems = [], guidanceItems = [] }) {
+  const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
-  const totalStandards = routeSections.reduce(
-    (count, section) => count + (section.items || []).length,
-    0
+
+  if (!result) {
+    return (
+      <div className="landing-strip">
+        <div className="landing-strip__inner">
+          <div className="landing-strip__eyebrow">
+            <Sparkles size={11} />
+            Guided Workspace
+          </div>
+          <h1 className="landing-strip__title">
+            EU regulatory scoping,<br />
+            <span className="landing-strip__title--accent">instantly</span>
+          </h1>
+          <p className="landing-strip__sub">
+            Describe the product below and get the applicable standards route, legislation context, and scope-changing clarifications.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const title = hero.title || `${formatUiLabel(result?.product_type || "Product")} regulatory route`;
+  const subtitle = result?.summary || hero.subtitle || "";
+
+  const triggeredDirectives = [...new Set(routeSections.map((s) => s.key))].sort(
+    (a, b) => directiveRank(a) - directiveRank(b)
   );
 
-  const metrics = [
-    { label: "Product", value: formatUiLabel(result?.product_type || "unclear") },
-    { label: "Stage", value: formatStageLabel(result?.product_match_stage) },
-    {
-      label: "Risk",
-      value: formatUiLabel(result?.overall_risk || "MEDIUM"),
-      highlight: (result?.overall_risk || "MEDIUM").toUpperCase() === "HIGH",
-    },
-    { label: "Confidence", value: formatUiLabel(confidence) },
-    { label: "Standards", value: String(totalStandards) },
-    { label: "Legislation", value: String(legislationItems.length) },
-  ];
+  const totalStandards = routeSections.reduce((n, s) => n + (s.count || 0), 0);
 
   return (
-    <div className="overview-bar">
-      <p className="overview-bar__summary">
-        {result?.summary || "Analysis complete."}
-      </p>
-      <div className="overview-bar__metrics">
-        {metrics.map(({ label, value, highlight }) => (
-          <div key={label} className="overview-metric">
-            <span className="overview-metric__label">{label}</span>
-            <span className={`overview-metric__value${highlight ? " overview-metric__value--high" : ""}`}>
-              {value}
-            </span>
+    <div className="hero-grid">
+      <Panel className="panel--hero" eyebrow="Guided Workspace" title={title} subtitle={subtitle}>
+        <div className="hero-panel__content">
+          <div className="hero-panel__tags">
+            <span className="soft-tag">Confidence: {formatUiLabel(confidence)}</span>
+            {result?.product_type ? (
+              <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
+            ) : null}
           </div>
-        ))}
-      </div>
+        </div>
+      </Panel>
+
+      <Panel className="panel--support" eyebrow="Directives triggered" title="Scope">
+        <div className="directive-scope-list">
+          {triggeredDirectives.length ? (
+            <div className="directive-scope-pills">
+              {triggeredDirectives.map((key) => (
+                <DirectivePill key={key} dirKey={key} />
+              ))}
+            </div>
+          ) : (
+            <span className="soft-tag" style={{ color: "var(--text-soft)" }}>No directives detected</span>
+          )}
+          <p className="directive-scope-hint">
+            {totalStandards} standard{totalStandards === 1 ? "" : "s"} across{" "}
+            {routeSections.length} regime{routeSections.length === 1 ? "" : "s"}.
+          </p>
+        </div>
+      </Panel>
     </div>
   );
 }
 
 
-/* ──────────────────────────────────────────────────────────
-   SnapshotRail — sticky sidebar
-   FIX #1: removed "Confidence" from snapshot list (in overview bar)
-   FIX #3: onCopy/copied come from App for shared state
-   ────────────────────────────────────────────────────────── */
-function EngineDetailsSection({ result }) {
-  const engine = useMemo(() => buildEngineSidebarSections(result), [result]);
-  const [open, setOpen] = useState(false);
+const BASE_SAFETY_ROUTE_COPY = {
+  EN_60335: {
+    key: "EN_60335",
+    label: "EN 60335 appliance route",
+    shortLabel: "EN 60335",
+    description:
+      "Primary function points to household and similar appliance safety under EN 60335-1 with the relevant Part 2 standard.",
+    note:
+      "Connected features do not move an appliance into EN 62368-1 when the primary function remains cooking, cleaning, heating, cooling, or a similar physical appliance function.",
+  },
+  EN_62368: {
+    key: "EN_62368",
+    label: "EN 62368 AV/ICT route",
+    shortLabel: "EN 62368",
+    description:
+      "Primary function points to audio/video, information, or communications equipment safety under EN 62368-1.",
+    note:
+      "This is the base safety path for products such as routers, smart displays, laptops, monitors, speakers, and other AV/ICT equipment.",
+  },
+};
 
-  if (!engine) return null;
+function baseSafetyRouteTone(route) {
+  if (route?.key === "EN_62368") {
+    return {
+      bg: "rgba(185,162,255,0.14)",
+      bd: "rgba(185,162,255,0.30)",
+      text: "#cab7ff",
+      dot: "#b9a2ff",
+    };
+  }
+  return {
+    bg: "rgba(143,218,184,0.14)",
+    bd: "rgba(143,218,184,0.30)",
+    text: "#9ee7c4",
+    dot: "#8fdab8",
+  };
+}
+
+function inferBaseSafetyRoute(result, routeSections) {
+  if (!result) return null;
+
+  const rows = (routeSections || []).flatMap((section) => section.items || []);
+  const codeStrings = rows.map((item) => String(item?.code || "").toUpperCase());
+  const titleStrings = rows.map((item) => String(item?.title || "").toLowerCase());
+
+  const has60335 =
+    codeStrings.some((code) => code.includes("60335")) ||
+    titleStrings.some((title) => title.includes("household and similar electrical appliances"));
+
+  const has62368 =
+    codeStrings.some((code) => code.includes("62368")) ||
+    titleStrings.some((title) => title.includes("audio/video") || title.includes("ict"));
+
+  if (has60335 && !has62368) return BASE_SAFETY_ROUTE_COPY.EN_60335;
+  if (has62368 && !has60335) return BASE_SAFETY_ROUTE_COPY.EN_62368;
+
+  const family = String(result?.product_family || "").toLowerCase();
+  const type = String(result?.product_type || "").toLowerCase();
+  const subtype = String(result?.product_subtype || "").toLowerCase();
+  const joined = `${family} ${type} ${subtype}`;
+
+  const applianceHints = [
+    "coffee", "espresso", "kettle", "toaster", "oven", "air fryer", "vacuum", "fan",
+    "purifier", "dishwasher", "washing machine", "dryer", "heater", "fridge", "freezer",
+    "blender", "mixer", "food processor",
+  ];
+  const ictHints = [
+    "router", "speaker", "display", "monitor", "tv", "laptop", "tablet", "camera",
+    "doorbell", "printer", "scanner", "headset", "vr", "ar", "set-top",
+  ];
+
+  if (applianceHints.some((hint) => joined.includes(hint))) return BASE_SAFETY_ROUTE_COPY.EN_60335;
+  if (ictHints.some((hint) => joined.includes(hint))) return BASE_SAFETY_ROUTE_COPY.EN_62368;
+
+  return null;
+}
+
+function SnapshotMetric({ label, value }) {
+  return (
+    <div className="snapshot-metric">
+      <div className="snapshot-metric__label">{label}</div>
+      <div className="snapshot-metric__value">{value}</div>
+    </div>
+  );
+}
+
+function EngineDetailsSection({ result }) {
+  const items = buildEngineSidebarSections(result);
+  if (!items.length) return null;
 
   return (
     <div className="sidebar-section">
-      <button
-        type="button"
-        className="sidebar-section__toggle"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          background: "transparent",
-          border: "1px solid rgba(167,183,203,0.16)",
-          borderRadius: 14,
-          padding: "11px 12px",
-          color: "#d9e3f0",
-          cursor: "pointer",
-        }}
-      >
-        <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
-          <span className="sidebar-section__heading" style={{ margin: 0 }}>Engine details</span>
-          <span className="sidebar-section__subheading" style={{ margin: 0 }}>
-            Optional catalog and audit verification details.
-          </span>
-        </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#9fb0c7" }}>
-          <InlineTag>{engine.stage || "Match info"}</InlineTag>
-          {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-        </span>
-      </button>
-
-      {open ? (
-        <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
-          {engine.ambiguityReason ? (
-            <div className="standard-item__meta-card">
-              <div className="micro-label">Ambiguity note</div>
-              <p className="standard-item__summary" style={{ marginTop: 6 }}>{engine.ambiguityReason}</p>
-            </div>
-          ) : null}
-
-          {engine.candidates.length ? (
-            <div className="standard-item__meta-card">
-              <div className="micro-label">Top candidates</div>
-              <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
-                {engine.candidates.map((candidate) => (
-                  <div key={candidate.key} style={{ paddingBottom: 10, borderBottom: "1px solid rgba(167,183,203,0.12)" }}>
-                    <div style={{ fontWeight: 600 }}>{candidate.title}</div>
-                    {candidate.detail ? (
-                      <div className="sidebar-section__subheading" style={{ marginTop: 4 }}>{candidate.detail}</div>
-                    ) : null}
-                    {candidate.tags.length ? (
-                      <div className="tag-row" style={{ marginTop: 8 }}>
-                        {candidate.tags.map((tag) => <InlineTag key={`${candidate.key}-${tag}`}>{tag}</InlineTag>)}
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {engine.evidenceGroups.length ? (
-            <div className="standard-item__meta-card">
-              <div className="micro-label">Trait evidence</div>
-              <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
-                {engine.evidenceGroups.map((group) => (
-                  <div key={group.key}>
-                    <div className="sidebar-section__heading" style={{ fontSize: "0.76rem", marginBottom: 6 }}>{group.title}</div>
-                    <div className="tag-row">
-                      {group.items.map((item) => <InlineTag key={`${group.key}-${item}`}>{item}</InlineTag>)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {engine.signalGroups.length ? (
-            <div className="standard-item__meta-card">
-              <div className="micro-label">Audit signals</div>
-              <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
-                {engine.signalGroups.map((group) => (
-                  <div key={group.key}>
-                    <div className="sidebar-section__heading" style={{ fontSize: "0.76rem", marginBottom: 6 }}>{group.title}</div>
-                    <div className="tag-row">
-                      {group.items.map((item) => <InlineTag key={`${group.key}-${item}`}>{item}</InlineTag>)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="standard-item__meta-grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
-            {engine.stats.map((stat) => (
-              <div key={stat.key} className="standard-item__meta-card">
-                <div className="micro-label">{stat.label}</div>
-                <div className="standard-item__meta-value">{stat.value}</div>
-              </div>
-            ))}
+      <div className="sidebar-section__heading">Engine detail</div>
+      <div className="sidebar-metadata-list">
+        {items.map((item) => (
+          <div key={item.label} className="sidebar-metadata-row">
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
           </div>
-        </div>
-      ) : null}
+        ))}
+      </div>
     </div>
   );
 }
@@ -1273,7 +1029,6 @@ function SnapshotRail({ result, routeSections, legislationGroups, description, o
         subtitle="Product identity and legislation pinned alongside the route."
       >
         <div className="snapshot-list">
-          {/* FIX #1: removed Confidence row — it lives in the overview bar */}
           {[
             ["Product", formatUiLabel(result?.product_type || "unclear")],
             ["Family", formatUiLabel(result?.product_family || "unclear")],
@@ -1290,7 +1045,6 @@ function SnapshotRail({ result, routeSections, legislationGroups, description, o
           ))}
         </div>
 
-        {/* FIX #3: CopyResultsButton is props-driven; state lives in App */}
         <CopyResultsButton onCopy={onCopy} copied={copied} />
 
         {(result?.future_watchlist || []).length ? (
@@ -1354,86 +1108,160 @@ function SnapshotRail({ result, routeSections, legislationGroups, description, o
   );
 }
 
+function getParallelObligationGroups(legislationGroups) {
+  return (legislationGroups || [])
+    .filter((group) => ["non_ce", "future", "framework", "other"].includes(group?.key))
+    .filter((group) => (group.items || []).length > 0);
+}
+
+function ParallelObligationsPanel({ legislationGroups }) {
+  const groups = getParallelObligationGroups(legislationGroups);
+
+  if (!groups.length) return null;
+
+  const totalItems = groups.reduce((count, group) => count + (group.items || []).length, 0);
+
+  return (
+    <Panel
+      className="panel--parallel"
+      eyebrow="Additional requirements"
+      title="Parallel obligations"
+      subtitle="Shown in the main route as well, not only in the sidebar."
+    >
+      <div className="parallel-obligations">
+        <div className="parallel-obligations__summary">
+          <span className="soft-tag">
+            {totalItems} obligation{totalItems === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        <div className="parallel-obligations__groups">
+          {groups.map((group) => (
+            <section key={group.key || group.title} className="parallel-group">
+              <div className="parallel-group__header">
+                <div className="parallel-group__title-wrap">
+                  <span className="parallel-group__title">{titleCaseMinor(group.title || group.key)}</span>
+                  <span className="parallel-group__count">
+                    {(group.items || []).length}
+                  </span>
+                </div>
+              </div>
+
+              <div className="parallel-group__items">
+                {(group.items || []).map((item) => {
+                  const tone = directiveTone(item.directive_key || "OTHER");
+                  return (
+                    <article
+                      key={`${group.key}-${item.code || item.title}-${item.directive_key || "OTHER"}`}
+                      className="parallel-item"
+                      style={{
+                        "--parallel-dot": tone.dot,
+                        "--parallel-bg": tone.bg,
+                        "--parallel-border": tone.bd,
+                        "--parallel-text": tone.text,
+                      }}
+                    >
+                      <div className="parallel-item__top">
+                        <DirectivePill dirKey={item.directive_key || "OTHER"} />
+                        {item.code ? <span className="code-chip">{item.code}</span> : null}
+                      </div>
+
+                      <h4 className="parallel-item__title">
+                        {titleCaseMinor(item.title || "Untitled obligation")}
+                      </h4>
+
+                      {item.notes ? (
+                        <p className="parallel-item__text">{titleCaseMinor(item.notes)}</p>
+                      ) : item.reason ? (
+                        <p className="parallel-item__text">{titleCaseMinor(item.reason)}</p>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
 
 /* ──────────────────────────────────────────────────────────
    ClarificationsPanel
-   FIX #2: Removed duplicate "Re-run analysis" button. The sticky
-   DirtyBanner is the canonical re-run CTA. This panel now always
-   shows the keyboard-hint, which is more contextually honest.
    ────────────────────────────────────────────────────────── */
 function ClarificationsPanel({ items, onApply }) {
   const [appliedKeys, setAppliedKeys] = useState(new Set());
 
-  const handleCardApply = useCallback((itemKey, choiceText) => {
-    setAppliedKeys((prev) => new Set([...prev, itemKey]));
-    onApply(choiceText);
-  }, [onApply]);
+  const handleCardApply = useCallback(
+    (itemKey, choiceText) => {
+      setAppliedKeys((prev) => new Set([...prev, itemKey]));
+      onApply(choiceText);
+    },
+    [onApply]
+  );
 
   if (!items.length) return null;
 
   const appliedCount = appliedKeys.size;
 
   return (
-    <section className="panel">
-      <div className="clarifications-header">
-        <div className="clarifications-header__left">
+    <section className="panel panel--clarifications-compact">
+      <div className="clarifications-header clarifications-header--compact">
+        <div className="clarifications-header__left clarifications-header__left--stack">
           <span className="clarifications-header__eyebrow">Clarifications</span>
           <span className="clarifications-header__subtitle">
-            {items.length} question{items.length === 1 ? "" : "s"} that may change scope
+            {items.length} item{items.length === 1 ? "" : "s"} may change the route
             {appliedCount > 0 ? (
               <span className="clarifications-applied-tally"> · {appliedCount} applied</span>
             ) : null}
           </span>
         </div>
-        {/* FIX #2: always show keyboard-hint; re-run lives in DirtyBanner */}
-        <span className="keyboard-hint">Apply a detail below to update</span>
+        <span className="keyboard-hint">Tap one detail to add it to the description</span>
       </div>
-      <div className="panel__body">
-        <div className="clarification-list">
-          {items.map((item, index) => {
+
+      <div className="panel__body panel__body--compact">
+        <div className="clarification-list clarification-list--compact">
+          {items.map((item) => {
             const tone = IMPORTANCE[item.importance] || IMPORTANCE.medium;
             const isApplied = appliedKeys.has(item.key);
+
             return (
               <article
                 key={item.key}
-                className={`clarification-card${isApplied ? " clarification-card--applied" : ""}`}
+                className={`clarification-card clarification-card--compact${
+                  isApplied ? " clarification-card--applied" : ""
+                }`}
                 style={{
                   "--card-accent": isApplied ? "#78d5c1" : tone.dot,
                   "--card-border": isApplied ? "rgba(120, 213, 193, 0.30)" : tone.bd,
                   "--card-bg": tone.bg,
                 }}
               >
-                <div className="clarification-card__header">
-                  <div className="clarification-card__title-group">
+                <div className="clarification-card__header clarification-card__header--compact">
+                  <div className="clarification-card__title-group clarification-card__title-group--compact">
                     <ImportancePill value={item.importance} />
                     <h3>{item.title}</h3>
                   </div>
+
                   {isApplied ? (
                     <span className="clarification-applied-badge">
                       <Check size={10} />
                       Applied
                     </span>
-                  ) : (
-                    <div className="clarification-card__index">{String(index + 1).padStart(2, "0")}</div>
-                  )}
+                  ) : null}
                 </div>
-                <p className="clarification-card__text">{item.why}</p>
-                {item.routeImpact?.length ? (
-                  <div className="tag-row" style={{ marginBottom: 10 }}>
-                    {item.routeImpact.map((route) => (
-                      <InlineTag key={`${item.key}-impact-${route}`} tone="caution">
-                        Impacts {route}
-                      </InlineTag>
-                    ))}
-                  </div>
-                ) : null}
+
                 {item.choices?.length ? (
-                  <div className="template-row">
+                  <div className="template-row template-row--compact">
                     {item.choices.map((choice) => (
                       <button
                         key={`${item.key}-${choice}`}
                         type="button"
-                        className={`chip-button chip-button--soft${isApplied ? " chip-button--muted" : ""}`}
+                        className={`chip-button chip-button--soft${
+                          isApplied ? " chip-button--muted" : ""
+                        }`}
                         onClick={() => handleCardApply(item.key, choice)}
                       >
                         + {choice}
@@ -1450,256 +1278,158 @@ function ClarificationsPanel({ items, onApply }) {
   );
 }
 
-
-function StandardItem({ item, sectionKey }) {
-  const dirKey = normalizeStandardDirective(item);
-  const dirTone = directiveTone(dirKey);
-  const sectionTone = SECTION_TONES[sectionKey] || SECTION_TONES.unknown;
-  const evidenceList = sentenceCaseList(item.evidence_hint || []);
-  const matchedTraits = sentenceCaseList(item.matched_traits_all || item.matched_traits_any || []);
-  const summary = item.standard_summary || item.reason || item.notes || "";
-  const metaFields = [
-    { label: "Legislation",   value: prettyValue(item.harmonized_reference) },
-    { label: "EU Harmonized", value: prettyValue(item.dated_version) },
-    { label: "EU Latest",     value: prettyValue(item.version) },
-  ].filter((field) => field.value && field.value !== "—");
-
-  return (
-    <article
-      className="standard-item"
-      style={{
-        "--item-accent": dirTone.dot,
-        "--item-accent-bg": dirTone.bg,
-        "--item-accent-border": dirTone.bd,
-      }}
-    >
-      <div className="standard-item__header">
-        <div className="standard-item__chips">
-          <span className="code-chip">{item.code || "No code"}</span>
-          <DirectivePill dirKey={dirKey} />
-          <span
-            className="status-pill status-pill--soft"
-            style={{
-              "--pill-bg": sectionTone.bg,
-              "--pill-border": sectionTone.bd,
-              "--pill-text": sectionTone.text,
-            }}
-          >
-            {formatUiLabel(item.harmonization_status || sectionKey || "unknown")}
-          </span>
-          {item.match_basis ? <InlineTag tone="strong">{formatUiLabel(item.match_basis)}</InlineTag> : null}
-          {item.fact_basis ? <InlineTag tone={item.fact_basis === "confirmed" ? "positive" : "caution"}>{formatUiLabel(item.fact_basis)}</InlineTag> : null}
-          {item.selection_group ? <InlineTag>{titleCaseMinor(item.selection_group)}</InlineTag> : null}
-        </div>
-        <h4 className="standard-item__title">{titleCaseMinor(item.title || "Untitled standard")}</h4>
-      </div>
-
-      {summary && summary !== item.title ? (
-        <p className="standard-item__summary">{summary}</p>
-      ) : null}
-
-      {metaFields.length ? (
-        <div className="standard-item__meta-grid">
-          {metaFields.map((field) => (
-            <div key={field.label} className="standard-item__meta-card">
-              <div className="micro-label">{field.label}</div>
-              <div className="standard-item__meta-value">{field.value}</div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {evidenceList.length ? (
-        <div className="standard-item__evidence">
-          <div className="micro-label">Evidence expected</div>
-          <div className="tag-row">
-            {evidenceList.map((entry) => (
-              <span key={entry} className="soft-tag">
-                {entry}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {matchedTraits.length ? (
-        <div className="standard-item__evidence">
-          <div className="micro-label">Matched traits</div>
-          <div className="tag-row">
-            {matchedTraits.slice(0, 8).map((entry) => (
-              <span key={entry} className="soft-tag">
-                {entry}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </article>
-  );
-}
-
-
 /* ──────────────────────────────────────────────────────────
-   RouteSection
-   FIX #5: open state is now lifted to StandardsRoutePanel.
-           First section opens by default; all others start closed.
-   FIX #6 (aria): aria-expanded and aria-controls added.
+   StandardsRouteSection
    ────────────────────────────────────────────────────────── */
-function RouteSection({ section, baseSafetyRoute, open, onToggle }) {
-  const tone = directiveTone(section.key);
-  const title = routeTitle(section);
-  const subtitle =
-    section.title && titleCaseMinor(section.title) !== title ? titleCaseMinor(section.title) : "";
-  const lvdBaseSafetyLabel =
-    section.key === "LVD" && baseSafetyRoute
-      ? `Base safety: ${baseSafetyRoute.key === "EN_62368" ? "EN 62368-1" : "EN 60335-1"}`
-      : "";
-
-  const bodyId = `route-section-body-${section.key}`;
+function StandardsRouteSection({ section, baseSafetyRoute, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const tone = SECTION_TONES[section.key] || SECTION_TONES.OTHER;
 
   return (
     <section
       className="route-section"
       style={{
-        "--route-tone-bg": tone.bg,
-        "--route-tone-border": tone.bd,
-        "--route-tone-dot": tone.dot,
+        "--section-dot": tone.dot,
+        "--section-bg": tone.bg,
+        "--section-border": tone.bd,
+        "--section-text": tone.text,
       }}
     >
       <button
         type="button"
-        className="route-section__toggle"
-        onClick={onToggle}
+        className="route-section__header"
+        onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        aria-controls={bodyId}
       >
-        <div className="route-section__title-wrap">
-          <div className="route-section__indicator" />
+        <div className="route-section__titlewrap">
+          <DirectivePill dirKey={section.key} />
           <div>
-            <div className="route-section__title-row">
-              <h3>{title}</h3>
-              <DirectivePill dirKey={section.key} />
-              {lvdBaseSafetyLabel ? (
-                <BaseSafetyRoutePill route={baseSafetyRoute} compact labelOverride={lvdBaseSafetyLabel} />
-              ) : null}
-            </div>
-            {subtitle ? <p>{subtitle}</p> : null}
+            <h3 className="route-section__title">{routeTitle(section.key)}</h3>
+            <p className="route-section__subtitle">
+              {section.count} standard{section.count === 1 ? "" : "s"}
+            </p>
           </div>
+          {section.key === "LVD" && baseSafetyRoute ? (
+            <div className="route-section__base-route">
+              {baseSafetyRoutePill({ route: baseSafetyRoute, compact: true })}
+            </div>
+          ) : null}
         </div>
-
-        <div className="route-section__meta">
-          <span className="route-section__count">
-            {section.count || 0} standard{section.count === 1 ? "" : "s"}
-          </span>
+        <span className="route-section__chevron">
           {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </div>
+        </span>
       </button>
 
       {open ? (
-        <div id={bodyId} className="route-section__body">
-          {(section.items || []).map((item) => (
-            <StandardItem
-              key={`${section.key}-${item.code || item.title}-${item.version || ""}`}
-              item={item}
-              sectionKey={item.harmonization_status || "unknown"}
-            />
-          ))}
+        <div className="route-section__body">
+          {(section.items || []).map((item) => {
+            const standardDirective = normalizeStandardDirective(item.directive_key || section.key);
+            const itemTone = directiveTone(standardDirective);
+            return (
+              <article
+                key={`${section.key}-${item.code}-${item.title}`}
+                className="standard-card"
+                style={{
+                  "--card-dot": itemTone.dot,
+                  "--card-bg": itemTone.bg,
+                  "--card-border": itemTone.bd,
+                  "--card-text": itemTone.text,
+                }}
+              >
+                <div className="standard-card__top">
+                  <div className="standard-card__badges">
+                    <DirectivePill dirKey={standardDirective} />
+                    {item.tag ? <InlineTag>{item.tag}</InlineTag> : null}
+                    {item.route_role ? <InlineTag tone="neutral">{titleCaseMinor(item.route_role)}</InlineTag> : null}
+                  </div>
+                  <StatusPill value={item.status} />
+                </div>
+
+                <div className="standard-card__header">
+                  <h4 className="standard-card__title">
+                    {item.code ? `${item.code} — ` : ""}
+                    {titleCaseMinor(item.title || "Untitled standard")}
+                  </h4>
+                  {item.short_note ? (
+                    <p className="standard-card__intro">{titleCaseMinor(item.short_note)}</p>
+                  ) : null}
+                </div>
+
+                <div className="standard-card__meta-grid">
+                  {item.harmonized_reference ? (
+                    <div className="standard-card__meta">
+                      <span className="standard-card__meta-label">Harmonized</span>
+                      <strong>{item.harmonized_reference}</strong>
+                    </div>
+                  ) : null}
+
+                  {item.latest_reference ? (
+                    <div className="standard-card__meta">
+                      <span className="standard-card__meta-label">State of the art</span>
+                      <strong>{item.latest_reference}</strong>
+                    </div>
+                  ) : null}
+
+                  {item.evidence_expected ? (
+                    <div className="standard-card__meta">
+                      <span className="standard-card__meta-label">Evidence expected</span>
+                      <strong>{titleCaseMinor(item.evidence_expected)}</strong>
+                    </div>
+                  ) : null}
+
+                  {item.scope_gate ? (
+                    <div className="standard-card__meta">
+                      <span className="standard-card__meta-label">Scope gate</span>
+                      <strong>{titleCaseMinor(item.scope_gate)}</strong>
+                    </div>
+                  ) : null}
+                </div>
+
+                {item.notes?.length ? <NotesList items={item.notes} /> : null}
+              </article>
+            );
+          })}
         </div>
       ) : null}
     </section>
   );
 }
 
-function RegimeNav({ directiveBreakdown }) {
-  if (!directiveBreakdown.length) return null;
-  return (
-    <div className="regime-nav">
-      <div className="regime-nav__inner">
-        {directiveBreakdown.map(({ key, count }) => {
-          const tone = directiveTone(key);
-          return (
-            <div
-              key={key}
-              className="regime-chip"
-              style={{
-                "--chip-dot": tone.dot,
-                "--chip-bg": tone.bg,
-                "--chip-border": tone.bd,
-                "--chip-text": tone.text,
-              }}
-            >
-              <span className="regime-chip__dot" />
-              <span className="regime-chip__label">{directiveShort(key)}</span>
-              <span className="regime-chip__count">{count}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-
 /* ──────────────────────────────────────────────────────────
    StandardsRoutePanel
-   FIX #5: open state lifted here. First section starts open,
-           rest start collapsed. Expand / Collapse all toggle
-           added to the panel header action slot.
    ────────────────────────────────────────────────────────── */
 function StandardsRoutePanel({ sections, directiveBreakdown, baseSafetyRoute }) {
-  const [openSet, setOpenSet] = useState(
-    () => new Set(sections.slice(0, 1).map((s) => s.key))
-  );
-
-  const allOpen = sections.length > 0 && openSet.size === sections.length;
-
-  const toggleSection = useCallback((key) => {
-    setOpenSet((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
-
-  const toggleAll = useCallback(() => {
-    if (allOpen) {
-      setOpenSet(new Set());
-    } else {
-      setOpenSet(new Set(sections.map((s) => s.key)));
-    }
-  }, [allOpen, sections]);
-
   if (!sections.length) return null;
 
   return (
     <Panel
-      className="panel--standards"
-      eyebrow="Primary Output"
+      eyebrow="Main route"
       title="Standards route"
-      subtitle="Grouped by regime — scan the path without losing item-level detail."
-      action={
-        <button
-          type="button"
-          className="button button--secondary expand-all-btn"
-          onClick={toggleAll}
-          title={allOpen ? "Collapse all sections" : "Expand all sections"}
-        >
-          {allOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          <span className="expand-all-btn__label">{allOpen ? "Collapse all" : "Expand all"}</span>
-        </button>
-      }
+      subtitle="Primary harmonized and supporting standards, grouped by regime."
     >
-      <RegimeNav directiveBreakdown={directiveBreakdown} />
+      <div className="route-summary-strip">
+        {directiveBreakdown.map((item) => (
+          <SnapshotMetric key={item.key} label={directiveShort(item.key)} value={item.count} />
+        ))}
+      </div>
 
-      <div className="route-stack">
-        {sections.map((section) => (
-          <RouteSection
-            key={section.key || section.title}
+      {baseSafetyRoute ? (
+        <div className="base-route-callout">
+          <div className="base-route-callout__top">
+            {baseSafetyRoutePill({ route: baseSafetyRoute })}
+          </div>
+          <p className="base-route-callout__text">{baseSafetyRoute.description}</p>
+          <p className="base-route-callout__note">{baseSafetyRoute.note}</p>
+        </div>
+      ) : null}
+
+      <div className="route-section-list">
+        {sections.map((section, index) => (
+          <StandardsRouteSection
+            key={section.key}
             section={section}
             baseSafetyRoute={baseSafetyRoute}
-            open={openSet.has(section.key)}
-            onToggle={() => toggleSection(section.key)}
+            defaultOpen={index === 0}
           />
         ))}
       </div>
@@ -1707,281 +1437,164 @@ function StandardsRoutePanel({ sections, directiveBreakdown, baseSafetyRoute }) 
   );
 }
 
-
 /* ──────────────────────────────────────────────────────────
-   CopyResultsButton
-   FIX #3: state removed — onCopy/copied come from App so
-           topbar and sidebar buttons share a single state.
+   OverviewPanel — summary text + inline metric strip
    ────────────────────────────────────────────────────────── */
-function CopyResultsButton({ onCopy, copied }) {
-  return (
-    <button type="button" className="button button--copy-rail button--full" onClick={onCopy}>
-      {copied ? <Check size={15} /> : <Copy size={15} />}
-      {copied ? "Copied to clipboard" : "Copy analysis summary"}
-    </button>
-  );
-}
+function OverviewPanel({ result, routeSections, legislationItems }) {
+  if (!result) return null;
 
-function ErrorBanner({ message }) {
-  return (
-    <div className="error-banner" role="alert">
-      <TriangleAlert size={16} />
-      <div>
-        <div className="error-banner__title">Analysis error</div>
-        <div className="error-banner__text">{message}</div>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState() {
-  const items = [
-    {
-      icon: <Search size={16} />,
-      title: "1. Describe the real product",
-      text: "Include power, radios, control model, updates, materials, and any sensitive functions.",
-    },
-    {
-      icon: <ListChecks size={16} />,
-      title: "2. Review the route first",
-      text: "The overview and route grouping are designed to make the first pass fast.",
-    },
-    {
-      icon: <ShieldCheck size={16} />,
-      title: "3. Refine with clarifications",
-      text: "Use guided prompts to add scope-changing details, then re-run.",
-    },
+  const confidence = result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
+  const metrics = [
+    ["Confidence", formatUiLabel(confidence)],
+    ["Risk", formatUiLabel(result?.overall_risk || "medium")],
+    ["Regimes", routeSections.length],
+    ["Legislation", legislationItems.length],
   ];
 
   return (
-    <div className="empty-state-compact">
-      {items.map((item) => (
-        <div key={item.title} className="empty-state-step">
-          <div className="empty-state-step__icon">{item.icon}</div>
-          <div>
-            <div className="empty-state-step__title">{item.title}</div>
-            <div className="empty-state-step__text">{item.text}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ScrollTopButton({ visible }) {
-  return (
-    <button
-      type="button"
-      className={`scroll-top ${visible ? "scroll-top--visible" : ""}`.trim()}
-      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="Back to top"
+    <Panel
+      eyebrow="Overview"
+      title={result?.summary_title || "Assessment overview"}
+      subtitle={result?.summary || "Review the route, supporting legislation, and missing detail below."}
     >
-      <ArrowUp size={15} />
-    </button>
+      <div className="overview-metrics">
+        {metrics.map(([label, value]) => (
+          <div key={label} className="overview-metric">
+            <span className="overview-metric__label">{label}</span>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+    </Panel>
   );
 }
 
-
-/* ================================================================
-   App — root component
-   ================================================================ */
 export default function App() {
   const [description, setDescription] = useState("");
-  const [result, setResult] = useState(null);
-  const [resultRevision, setResultRevision] = useState(0);
+  const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
   const [metadata, setMetadata] = useState(null);
+  const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
   const [clarifyDirty, setClarifyDirty] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [resultRevision, setResultRevision] = useState(0);
+
   const resultsRef = useRef(null);
-  const analysisAbortRef = useRef(null);
-
-  // One-level session history
-  const [prevResult, setPrevResult] = useState(null);
-  const [prevDescription, setPrevDescription] = useState("");
-
-  // FIX #3: single copy state shared by topbar + sidebar button
-  const [analysisCopied, setAnalysisCopied] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 360);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(METADATA_URL, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error(`Metadata failed (${response.status})`);
-        return response.json();
+    let mounted = true;
+    fetch(METADATA_URL)
+      .then((res) => res.json())
+      .then((json) => {
+        if (!mounted) return;
+        setMetadata(json);
       })
-      .then((data) => setMetadata(data))
-      .catch((fetchError) => {
-        if (fetchError.name !== "AbortError") {
-          setMetadata({ traits: [], products: [], legislations: [] });
-        }
-      });
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
+      .catch(() => {});
     return () => {
-      analysisAbortRef.current?.abort();
-      analysisAbortRef.current = null;
+      mounted = false;
     };
   }, []);
 
-  const templates = useMemo(() => {
-    const dynamic = buildDynamicTemplates(metadata?.products || []);
-    return dynamic.length ? dynamic : DEFAULT_TEMPLATES;
-  }, [metadata]);
-
-  const routeSections      = useMemo(() => buildRouteSections(result),          [result]);
-  const guidanceItems      = useMemo(() => buildGuidanceItems(result),           [result]);
-  const legislationItems   = useMemo(() => buildCompactLegislationItems(result), [result]);
-  const legislationGroups  = useMemo(() => buildLegislationGroups(result),       [result]);
+  const routeSections = useMemo(() => buildRouteSections(result), [result]);
+  const legislationItems = useMemo(() => buildCompactLegislationItems(result), [result]);
+  const legislationGroups = useMemo(() => buildLegislationGroups(result), [result]);
+  const guidanceItems = useMemo(() => buildGuidanceItems(result), [result]);
   const directiveBreakdown = useMemo(() => buildDirectiveBreakdown(routeSections), [routeSections]);
-  const baseSafetyRoute    = useMemo(() => inferBaseSafetyRoute(result, routeSections), [result, routeSections]);
-
-  const totalStandards = useMemo(
-    () => routeSections.reduce((count, section) => count + (section.items || []).length, 0),
-    [routeSections]
-  );
-
-  const backendChips = useMemo(() => {
-    if (!result) return null;
-    return (result?.suggested_quick_adds || []).map((item) => ({
-      label: item.label,
-      text: item.text,
-    }));
-  }, [result]);
-
-  useEffect(() => {
-    if (!result || !resultsRef.current) return;
-    const timer = window.setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
-    return () => window.clearTimeout(timer);
-  }, [result]);
-
-  const cancelActiveAnalysis = useCallback(() => {
-    const controller = analysisAbortRef.current;
-    if (controller) {
-      analysisAbortRef.current = null;
-      controller.abort();
-    }
-    setBusy(false);
-  }, []);
+  const backendChips = useMemo(() => buildDynamicTemplates(result), [result]);
+  const baseSafetyRoute = useMemo(() => inferBaseSafetyRoute(result, routeSections), [result, routeSections]);
 
   const runAnalysis = useCallback(async () => {
-    const payloadDescription = String(description || "").trim();
-    if (!payloadDescription || busy || analysisAbortRef.current) return;
-
-    if (result) {
-      setPrevResult(result);
-      setPrevDescription(description);
-    }
-
-    const controller = new AbortController();
-    analysisAbortRef.current = controller;
+    if (!description.trim()) return;
     setBusy(true);
     setError("");
+    setCopied(false);
 
     try {
-      const response = await fetch(ANALYZE_URL, {
+      const res = await fetch(ANALYZE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: payloadDescription, depth: "deep" }),
-        signal: controller.signal,
+        body: JSON.stringify({ description }),
       });
 
-      const data = await response.json().catch(() => ({}));
-      if (analysisAbortRef.current !== controller) {
-        return;
-      }
-      if (!response.ok) {
-        throw new Error(data?.detail || `Analysis failed (${response.status})`);
+      if (!res.ok) {
+        throw new Error("Analysis request failed");
       }
 
+      const data = await res.json();
       setResult(data);
-      setResultRevision((current) => current + 1);
       setClarifyDirty(false);
-    } catch (requestError) {
-      if (requestError?.name !== "AbortError" && analysisAbortRef.current === controller) {
-        setError(requestError?.message || "Analysis failed.");
-      }
-    } finally {
-      if (analysisAbortRef.current === controller) {
-        analysisAbortRef.current = null;
-        setBusy(false);
-      }
-    }
-  }, [busy, description, result]);
+      setResultRevision((v) => v + 1);
 
-  const restorePrev = useCallback(() => {
-    if (!prevResult) return;
-    cancelActiveAnalysis();
-    setResult(prevResult);
-    setResultRevision((current) => current + 1);
-    setDescription(prevDescription);
-    setError("");
-    setClarifyDirty(false);
-    setPrevResult(null);
-    setPrevDescription("");
-  }, [cancelActiveAnalysis, prevResult, prevDescription]);
+      requestAnimationFrame(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    } catch (err) {
+      setError(err?.message || "Could not analyze the product.");
+    } finally {
+      setBusy(false);
+    }
+  }, [description]);
+
+  const handleCopy = useCallback(async () => {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(buildClipboardSummary(result));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  }, [result]);
 
   const resetAnalysis = useCallback(() => {
-    cancelActiveAnalysis();
     setResult(null);
-    setDescription("");
     setError("");
+    setCopied(false);
     setClarifyDirty(false);
-    setPrevResult(null);
-    setPrevDescription("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [cancelActiveAnalysis]);
-
-  // FIX #3: single copy handler shared by topbar and sidebar
-  const handleCopyAnalysis = useCallback(async () => {
-    if (!result) return;
-    const text = buildClipboardSummary({ result, description, routeSections, legislationGroups });
-    try {
-      await navigator.clipboard.writeText(text);
-      setAnalysisCopied(true);
-      window.setTimeout(() => setAnalysisCopied(false), 2400);
-    } catch (_) {}
-  }, [result, description, routeSections, legislationGroups]);
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }, []);
 
   return (
     <div className="app-shell">
-      <TopBar
-        result={result}
-        totalStandards={totalStandards}
-        onReset={resetAnalysis}
-        prevResult={prevResult}
-        onRestorePrev={restorePrev}
-        onCopy={handleCopyAnalysis}
-        copied={analysisCopied}
-      />
+      <div className="app-frame">
+        <header className="topbar">
+          <div className="topbar__left">
+            {result ? (
+              <button type="button" className="button button--ghost" onClick={resetAnalysis}>
+                <ArrowLeft size={14} />
+                New analysis
+              </button>
+            ) : null}
+          </div>
+          <div className="topbar__right">
+            {result ? (
+              <button
+                type="button"
+                className="button button--ghost"
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              >
+                <ArrowUp size={14} />
+                Top
+              </button>
+            ) : null}
+          </div>
+        </header>
 
-      {/* FIX #4: DirtyBanner now has onDismiss to clear without re-running */}
-      {result ? (
-        <DirtyBanner
-          dirty={clarifyDirty}
-          busy={busy}
-          onReanalyze={runAnalysis}
-          onDismiss={() => setClarifyDirty(false)}
-        />
-      ) : null}
-
-      <main className={`page-shell page-main ${!result ? "page-main--landing" : ""}`.trim()}>
         <HeroPanel
           result={result}
           routeSections={routeSections}
           legislationItems={legislationItems}
           guidanceItems={guidanceItems}
+        />
+
+        <DirtyBanner
+          dirty={clarifyDirty}
+          onAnalyze={runAnalysis}
+          busy={busy}
+          onReset={() => setClarifyDirty(false)}
         />
 
         <ComposerPanel
@@ -2012,7 +1625,22 @@ export default function App() {
                 legislationItems={legislationItems}
               />
 
-              {/* FIX #11: ErrorBoundary wraps volatile panels */}
+              <ErrorBoundary
+                key={`clarifications-${resultRevision}`}
+                label="Clarifications could not be rendered"
+              >
+                <ClarificationsPanel
+                  items={guidanceItems}
+                  onApply={(text) => {
+                    setDescription((current) => {
+                      const next = joinText(current, text);
+                      if (next !== current) setClarifyDirty(true);
+                      return next;
+                    });
+                  }}
+                />
+              </ErrorBoundary>
+
               <ErrorBoundary
                 key={`standards-${resultRevision}`}
                 label="Standards route could not be rendered"
@@ -2025,20 +1653,10 @@ export default function App() {
               </ErrorBoundary>
 
               <ErrorBoundary
-                key={`clarifications-${resultRevision}`}
-                label="Clarifications could not be rendered"
+                key={`parallel-${resultRevision}`}
+                label="Parallel obligations could not be rendered"
               >
-                {/* FIX #2: removed dirty/busy/onReanalyze — DirtyBanner is the canonical CTA */}
-                <ClarificationsPanel
-                  items={guidanceItems}
-                  onApply={(text) => {
-                    setDescription((current) => {
-                      const next = joinText(current, text);
-                      if (next !== current) setClarifyDirty(true);
-                      return next;
-                    });
-                  }}
-                />
+                <ParallelObligationsPanel legislationGroups={legislationGroups} />
               </ErrorBoundary>
 
               <div className="footer-note">
@@ -2053,25 +1671,17 @@ export default function App() {
               </div>
             </div>
 
-            <ErrorBoundary
-              key={`sidebar-${resultRevision}`}
-              label="Sidebar could not be rendered"
-            >
-              {/* FIX #3: shared copy state passed down */}
-              <SnapshotRail
-                result={result}
-                routeSections={routeSections}
-                legislationGroups={legislationGroups}
-                description={description}
-                onCopy={handleCopyAnalysis}
-                copied={analysisCopied}
-              />
-            </ErrorBoundary>
+            <SnapshotRail
+              result={result}
+              routeSections={routeSections}
+              legislationGroups={legislationGroups}
+              description={description}
+              onCopy={handleCopy}
+              copied={copied}
+            />
           </div>
         ) : null}
-      </main>
-
-      <ScrollTopButton visible={scrolled} />
+      </div>
     </div>
   );
 }
