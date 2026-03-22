@@ -26,6 +26,7 @@ import {
 import "./App.css";
 import {
   ANALYZE_URL,
+  DEFAULT_TEMPLATES,
   IMPORTANCE,
   METADATA_URL,
   SECTION_TONES,
@@ -1295,7 +1296,9 @@ function MinimalClarificationPrompt({ items, onApply }) {
 /* ──────────────────────────────────────────────────────────
    ClarificationsPanel (kept for ErrorBoundary label compat)
    ────────────────────────────────────────────────────────── */
-
+function ClarificationsPanel({ items, onApply }) {
+  return <MinimalClarificationPrompt items={items} onApply={onApply} />;
+}
 
 
 function StandardItem({ item, sectionKey }) {
@@ -1567,151 +1570,260 @@ function StandardsRoutePanel({ sections, directiveBreakdown, baseSafetyRoute }) 
 
 
 /* ──────────────────────────────────────────────────────────
-   ParallelObligationsPanel — NEW
-   Displays all legislation groups (CE marking + parallel
-   frameworks) after the standards route in the main column.
+   LegislationSection — mirrors RouteSection exactly.
+   Each non-CE legislation item gets its own expandable card.
    ────────────────────────────────────────────────────────── */
-const LEGISLATION_GROUP_LABELS = {
-  ce:        { label: "CE marking",            hint: "Obligations required for the CE mark declaration" },
-  non_ce:    { label: "Parallel obligations",  hint: "Frameworks that apply alongside but outside CE marking" },
-  future:    { label: "Upcoming legislation",  hint: "Future-dated obligations to plan ahead for" },
-  framework: { label: "Additional frameworks", hint: "Sector-level and cross-cutting regulatory context" },
-  other:     { label: "Other",                 hint: "Further applicable requirements" },
+const LEGISLATION_CATEGORY_LABELS = {
+  non_ce:    "Parallel obligation",
+  future:    "Upcoming",
+  framework: "Framework",
+  other:     "Other",
 };
 
-function ParallelGroupItem({ item }) {
-  const [open, setOpen] = useState(false);
+function LegislationDetailField({ label, value }) {
+  const display = value && String(value).trim() ? String(value) : "—";
+  return (
+    <div className="standard-item__meta-card">
+      <div className="micro-label">{label}</div>
+      <div className={`standard-item__meta-value${display === "—" ? " standard-item__meta-value--empty" : ""}`}>
+        {display}
+      </div>
+    </div>
+  );
+}
+
+function LegislationSection({ item, groupKey, open, onToggle }) {
   const dirKey = item.directive_key || "OTHER";
   const tone = directiveTone(dirKey);
-  const hasDetail = !!(item.obligation_summary || item.notes || item.rationale);
+  const categoryLabel = LEGISLATION_CATEGORY_LABELS[groupKey] || "Legislation";
+  const bodyId = `leg-section-body-${dirKey}-${item.code || item.title}`;
+
+  const metaFields = [
+    { label: "Reference / Code",    value: item.code },
+    { label: "Category",            value: categoryLabel },
+    { label: "Effective date",      value: item.effective_date || item.date },
+    { label: "Review / repeal",     value: item.review_date || item.repeal_date },
+    { label: "Official Journal ref",value: item.oj_reference || item.oj_ref },
+    { label: "Transposition",       value: item.transposition },
+  ].filter((f) => f.value && String(f.value).trim());
+
+  const allMetaFields = [
+    { label: "Reference / Code",    value: item.code },
+    { label: "Category",            value: categoryLabel },
+    { label: "Effective date",      value: item.effective_date || item.date },
+    { label: "Review / repeal",     value: item.review_date || item.repeal_date },
+    { label: "Official Journal ref",value: item.oj_reference || item.oj_ref },
+    { label: "Transposition",       value: item.transposition },
+  ];
+
+  const obligationTags = [
+    item.compliance_path,
+    item.conformity_route,
+    item.enforcement_body,
+  ].filter(Boolean);
 
   return (
-    <article
-      className={`par-item${open ? " par-item--open" : ""}${hasDetail ? " par-item--expandable" : ""}`}
+    <section
+      className="route-section"
       style={{
-        "--par-dot": tone.dot,
-        "--par-bg": tone.bg,
-        "--par-bd": tone.bd,
-        "--par-text": tone.text,
+        "--route-tone-bg": tone.bg,
+        "--route-tone-border": tone.bd,
+        "--route-tone-dot": tone.dot,
       }}
     >
       <button
         type="button"
-        className="par-item__toggle"
-        onClick={() => hasDetail && setOpen((prev) => !prev)}
+        className="route-section__toggle"
+        onClick={onToggle}
         aria-expanded={open}
-        disabled={!hasDetail}
+        aria-controls={bodyId}
       >
-        <div className="par-item__header">
-          <div className="par-item__chips">
-            {item.code ? (
-              <span
-                className="par-item__code-chip"
-                style={{ borderColor: tone.bd, background: tone.bg, color: tone.text }}
-              >
-                {item.code}
-              </span>
+        <div className="route-section__title-wrap">
+          <div className="route-section__indicator" />
+          <div>
+            <div className="route-section__title-row">
+              <h3>{titleCaseMinor(item.title || "Untitled legislation")}</h3>
+              <DirectivePill dirKey={dirKey} />
+              {item.code ? (
+                <span className="code-chip">{item.code}</span>
+              ) : null}
+            </div>
+            {categoryLabel ? (
+              <p style={{ fontSize: "0.80rem", color: "var(--text-soft)", marginTop: 3 }}>
+                {categoryLabel}
+              </p>
             ) : null}
-            <DirectivePill dirKey={dirKey} />
           </div>
-          <h4 className="par-item__title">{item.title}</h4>
         </div>
-        {hasDetail ? (
-          <div className="par-item__chevron">
-            {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          </div>
-        ) : null}
+
+        <div className="route-section__meta">
+          <span className="route-section__count">expand</span>
+          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </div>
       </button>
 
-      {open && hasDetail ? (
-        <div className="par-item__detail">
+      {open ? (
+        <div id={bodyId} className="route-section__body leg-section__body">
+          {/* Summary */}
           {item.obligation_summary ? (
-            <p className="par-item__summary">{item.obligation_summary}</p>
+            <div className="leg-detail-block">
+              <div className="micro-label">Obligation summary</div>
+              <p className="leg-detail-block__text">{item.obligation_summary}</p>
+            </div>
           ) : null}
-          {item.notes ? (
-            <p className="par-item__notes">{item.notes}</p>
-          ) : null}
+
+          {/* Rationale / notes */}
           {item.rationale ? (
-            <p className="par-item__notes">{item.rationale}</p>
+            <div className="leg-detail-block">
+              <div className="micro-label">Rationale</div>
+              <p className="leg-detail-block__text">{item.rationale}</p>
+            </div>
+          ) : null}
+
+          {item.notes ? (
+            <div className="leg-detail-block">
+              <div className="micro-label">Notes</div>
+              <p className="leg-detail-block__text">{item.notes}</p>
+            </div>
+          ) : null}
+
+          {/* Key obligations list */}
+          {(item.key_obligations || []).length ? (
+            <div className="leg-detail-block">
+              <div className="micro-label">Key obligations</div>
+              <ul className="leg-detail-block__list">
+                {item.key_obligations.map((ob, i) => (
+                  <li key={i}>{ob}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {/* Scope */}
+          {item.scope ? (
+            <div className="leg-detail-block">
+              <div className="micro-label">Scope</div>
+              <p className="leg-detail-block__text">{item.scope}</p>
+            </div>
+          ) : null}
+
+          {/* Meta grid — reference, dates, etc. */}
+          <div className="standard-item__meta-grid">
+            {allMetaFields.map((f) => (
+              <LegislationDetailField key={f.label} label={f.label} value={f.value} />
+            ))}
+          </div>
+
+          {/* Compliance tags */}
+          {obligationTags.length ? (
+            <div className="standard-item__evidence">
+              <div className="micro-label">Compliance path</div>
+              <div className="tag-row">
+                {obligationTags.map((tag) => (
+                  <span key={tag} className="soft-tag">{titleCaseMinor(tag)}</span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Evidence / actions */}
+          {(item.evidence_hint || item.actions || []).length ? (
+            <div className="standard-item__evidence">
+              <div className="micro-label">Actions / evidence expected</div>
+              <div className="tag-row">
+                {(item.evidence_hint || item.actions || []).map((a) => (
+                  <span key={a} className="soft-tag">{a}</span>
+                ))}
+              </div>
+            </div>
           ) : null}
         </div>
       ) : null}
-    </article>
+    </section>
   );
 }
 
+
+/* ──────────────────────────────────────────────────────────
+   ParallelObligationsPanel
+   CE group is excluded — it is covered by the standards route.
+   All remaining items are flattened and rendered as
+   LegislationSection cards (same style as RouteSection).
+   ────────────────────────────────────────────────────────── */
 function ParallelObligationsPanel({ legislationGroups }) {
-  const nonEmpty = useMemo(
-    () => (legislationGroups || []).filter((g) => (g.items || []).length > 0),
-    [legislationGroups]
-  );
+  // Flatten all non-CE items, tagging each with their group key
+  const flatItems = useMemo(() => {
+    const result = [];
+    (legislationGroups || []).forEach((group) => {
+      if (group.key === "ce") return; // CE marking excluded — covered above
+      (group.items || []).forEach((item) => {
+        result.push({ ...item, _groupKey: group.key });
+      });
+    });
+    return result;
+  }, [legislationGroups]);
 
-  const [openSet, setOpenSet] = useState(() => new Set(nonEmpty.map((g) => g.key)));
+  const [openSet, setOpenSet] = useState(() => new Set([flatItems[0]?._id || flatItems[0]?.code || flatItems[0]?.title]));
 
-  // Sync when groups change (new analysis)
   useEffect(() => {
-    setOpenSet(new Set(nonEmpty.map((g) => g.key)));
+    // Open first item by default on new analysis
+    const first = flatItems[0];
+    if (first) {
+      setOpenSet(new Set([first.code || first.title]));
+    }
   }, [legislationGroups]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!nonEmpty.length) return null;
+  if (!flatItems.length) return null;
 
-  const totalItems = nonEmpty.reduce((n, g) => n + (g.items || []).length, 0);
+  const getItemId = (item) => `${item._groupKey}-${item.code || item.title}`;
 
-  const toggle = (key) => {
+  const toggleItem = useCallback((id) => {
     setOpenSet((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
-  };
+  }, []);
+
+  const allOpen = flatItems.length > 0 && openSet.size === flatItems.length;
+  const toggleAll = useCallback(() => {
+    if (allOpen) {
+      setOpenSet(new Set());
+    } else {
+      setOpenSet(new Set(flatItems.map(getItemId)));
+    }
+  }, [allOpen, flatItems]);
 
   return (
     <Panel
       className="panel--parallel"
-      eyebrow="Parallel Obligations"
-      title="Applicable legislation"
-      subtitle="Regulatory frameworks that apply alongside the CE standards route."
+      eyebrow="Applicable Legislation"
+      title="Parallel obligations"
+      subtitle="Frameworks that apply alongside the CE standards route — excluding CE marking."
       action={
-        <span className="keyboard-hint">
-          {totalItems} item{totalItems !== 1 ? "s" : ""}
-        </span>
+        <button
+          type="button"
+          className="button button--secondary expand-all-btn"
+          onClick={toggleAll}
+          title={allOpen ? "Collapse all" : "Expand all"}
+        >
+          {allOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          <span className="expand-all-btn__label">{allOpen ? "Collapse all" : "Expand all"}</span>
+        </button>
       }
     >
-      <div className="par-groups">
-        {nonEmpty.map((group) => {
-          const open = openSet.has(group.key);
-          const meta = LEGISLATION_GROUP_LABELS[group.key] || { label: titleCaseMinor(group.title || group.key), hint: "" };
-
+      <div className="route-stack">
+        {flatItems.map((item) => {
+          const id = getItemId(item);
           return (
-            <div key={group.key} className="par-group">
-              <button
-                type="button"
-                className="par-group__toggle"
-                onClick={() => toggle(group.key)}
-                aria-expanded={open}
-              >
-                <div className="par-group__title-wrap">
-                  <span className="par-group__title">{meta.label}</span>
-                  {meta.hint ? <span className="par-group__hint">{meta.hint}</span> : null}
-                </div>
-                <div className="par-group__meta">
-                  <span className="par-group__count">{(group.items || []).length}</span>
-                  {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                </div>
-              </button>
-
-              {open ? (
-                <div className="par-group__items">
-                  {(group.items || []).map((item) => (
-                    <ParallelGroupItem
-                      key={`${group.key}-${item.code}-${item.title}`}
-                      item={item}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </div>
+            <LegislationSection
+              key={id}
+              item={item}
+              groupKey={item._groupKey}
+              open={openSet.has(id)}
+              onToggle={() => toggleItem(id)}
+            />
           );
         })}
       </div>
