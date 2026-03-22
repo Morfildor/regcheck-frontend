@@ -1773,9 +1773,10 @@ function ParallelObligationsPanel({ legislationGroups }) {
     }
   }, [legislationGroups]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!flatItems.length) return null;
-
-  const getItemId = (item) => `${item._groupKey}-${item.code || item.title}`;
+  const getItemId = useCallback(
+    (item) => `${item._groupKey}-${item.code || item.title}`,
+    []
+  );
 
   const toggleItem = useCallback((id) => {
     setOpenSet((prev) => {
@@ -1787,13 +1788,16 @@ function ParallelObligationsPanel({ legislationGroups }) {
   }, []);
 
   const allOpen = flatItems.length > 0 && openSet.size === flatItems.length;
+
   const toggleAll = useCallback(() => {
-    if (allOpen) {
-      setOpenSet(new Set());
-    } else {
-      setOpenSet(new Set(flatItems.map(getItemId)));
-    }
-  }, [allOpen, flatItems]);
+    setOpenSet((prev) =>
+      prev.size === flatItems.length
+        ? new Set()
+        : new Set(flatItems.map((item) => `${item._groupKey}-${item.code || item.title}`))
+    );
+  }, [flatItems]);
+
+  if (!flatItems.length) return null;
 
   return (
     <Panel
