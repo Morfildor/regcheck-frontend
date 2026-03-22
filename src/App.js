@@ -45,7 +45,7 @@ import {
   normalizeStandardDirective,
   prettyValue,
   routeTitle,
-  sentenceCaseList,
+  titleCaseList,
   titleCaseMinor,
   formatStageLabel,
 } from "./appHelpers";
@@ -564,7 +564,7 @@ function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, on
 /* ──────────────────────────────────────────────────────────
    HeroPanel
    ────────────────────────────────────────────────────────── */
-function HeroPanel({ result, routeSections = [], legislationItems = [], guidanceItems = [] }) {
+function HeroPanel({ result, routeSections = [], legislationItems = [], guidanceItems = [], totalStandards = 0, triggeredDirectives = [] }) {
   const hero = result?.hero_summary || {};
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
@@ -591,12 +591,6 @@ function HeroPanel({ result, routeSections = [], legislationItems = [], guidance
 
   const title = hero.title || `${formatUiLabel(result?.product_type || "Product")} regulatory route`;
   const subtitle = result?.summary || hero.subtitle || "";
-
-  const triggeredDirectives = [...new Set(routeSections.map((s) => s.key))].sort(
-    (a, b) => directiveRank(a) - directiveRank(b)
-  );
-
-  const totalStandards = routeSections.reduce((n, s) => n + (s.count || 0), 0);
 
   return (
     <div className="hero-grid">
@@ -660,20 +654,7 @@ const BASE_SAFETY_ROUTE_COPY = {
 };
 
 function baseSafetyRouteTone(route) {
-  if (route?.key === "EN_62368") {
-    return {
-      bg: "rgba(185,162,255,0.14)",
-      bd: "rgba(185,162,255,0.30)",
-      text: "#cab7ff",
-      dot: "#b9a2ff",
-    };
-  }
-  return {
-    bg: "rgba(143,218,184,0.14)",
-    bd: "rgba(143,218,184,0.30)",
-    text: "#9ee7c4",
-    dot: "#8fdab8",
-  };
+  return directiveTone(route?.key === "EN_62368" ? "RED_CYBER" : "LVD");
 }
 
 function inferBaseSafetyRoute(result, routeSections) {
@@ -867,7 +848,6 @@ function ComposerPanel({ description, setDescription, templates, backendChips, g
         maxLength={charMax}
         spellCheck={false}
         className={isLanding ? "landing-composer__textarea" : "composer__textarea"}
-        aria-label="Describe your product"
       />
       {!isLanding && (
         <div className="composer__field-footer">
@@ -980,6 +960,7 @@ function ComposerPanel({ description, setDescription, templates, backendChips, g
                   setDescription(template.text);
                   setAppliedChipTexts(new Set());
                   onDirty(true);
+                  textareaRef.current?.focus();
                 }}
               >
                 {template.label}
@@ -1116,17 +1097,8 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
    Removed: EngineDetailsSection, legislation groups section
    Added: active directives pills
    ────────────────────────────────────────────────────────── */
-function SnapshotRail({ result, routeSections, description, onCopy, copied, legislationGroups }) {
+function SnapshotRail({ result, routeSections, description, onCopy, copied, legislationGroups, totalStandards = 0, triggeredDirectives = [] }) {
   if (!result) return null;
-
-  const totalStandards = routeSections.reduce(
-    (count, section) => count + (section.items || []).length,
-    0
-  );
-
-  const triggeredDirectives = [...new Set(routeSections.map((s) => s.key))].sort(
-    (a, b) => directiveRank(a) - directiveRank(b)
-  );
 
   const futureWatch = (result?.future_watchlist || []).slice(0, 3);
   const sideMetrics = [
@@ -1295,8 +1267,8 @@ function StandardItem({ item, sectionKey }) {
   const dirKey = normalizeStandardDirective(item);
   const dirTone = directiveTone(dirKey);
   const sectionTone = SECTION_TONES[sectionKey] || SECTION_TONES.unknown;
-  const evidenceList = sentenceCaseList(item.evidence_hint || []);
-  const matchedTraits = sentenceCaseList(item.matched_traits_all || item.matched_traits_any || []);
+  const evidenceList = titleCaseList(item.evidence_hint || []);
+  const matchedTraits = titleCaseList(item.matched_traits_all || item.matched_traits_any || []);
   const summary = item.standard_summary || item.reason || item.notes || "";
   const metaFields = [
     { label: "Legislation",   value: prettyValue(item.harmonized_reference) },
@@ -1586,7 +1558,8 @@ function LegislationSection({ item, groupKey, open, onToggle }) {
   const dirKey = item.directive_key || "OTHER";
   const tone = directiveTone(dirKey);
   const categoryLabel = LEGISLATION_CATEGORY_LABELS[groupKey] || "Legislation";
-  const bodyId = `leg-section-body-${dirKey}-${item.code || item.title}`;
+  const slug = (str) => String(str || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const bodyId = `leg-section-body-${slug(dirKey)}-${slug(item.code || item.title)}`;
 
   const actionLikeItems = (item.actions || item.key_obligations || item.evidence_hint || []).filter(Boolean);
   const summary =
@@ -1732,15 +1705,12 @@ function ParallelObligationsPanel({ legislationGroups }) {
     return result;
   }, [legislationGroups]);
 
-  const [openSet, setOpenSet] = useState(() => new Set([flatItems[0]?._id || flatItems[0]?.code || flatItems[0]?.title]));
-
-  useEffect(() => {
-    // Open first item by default on new analysis
+  const [openSet, setOpenSet] = useState(() => {
     const first = flatItems[0];
-    if (first) {
-      setOpenSet(new Set([first.code || first.title]));
-    }
-  }, [legislationGroups]); // eslint-disable-line react-hooks/exhaustive-deps
+    return first
+      ? new Set([`${first._groupKey}-${first.code || first.title}`])
+      : new Set();
+  });
 
   const getItemId = useCallback(
     (item) => `${item._groupKey}-${item.code || item.title}`,
@@ -1948,6 +1918,14 @@ export default function App() {
     [routeSections]
   );
 
+  const triggeredDirectives = useMemo(
+    () =>
+      [...new Set(routeSections.map((s) => s.key))].sort(
+        (a, b) => directiveRank(a) - directiveRank(b)
+      ),
+    [routeSections]
+  );
+
   const backendChips = useMemo(() => {
     if (!result) return null;
     return (result?.suggested_quick_adds || []).map((item) => ({
@@ -2076,6 +2054,8 @@ export default function App() {
           routeSections={routeSections}
           legislationItems={legislationItems}
           guidanceItems={guidanceItems}
+          totalStandards={totalStandards}
+          triggeredDirectives={triggeredDirectives}
         />
 
         <ComposerPanel
@@ -2164,6 +2144,8 @@ export default function App() {
                 onCopy={handleCopyAnalysis}
                 copied={analysisCopied}
                 legislationGroups={legislationGroups}
+                totalStandards={totalStandards}
+                triggeredDirectives={triggeredDirectives}
               />
             </ErrorBoundary>
           </div>

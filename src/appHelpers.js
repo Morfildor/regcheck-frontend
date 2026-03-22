@@ -379,7 +379,7 @@ export function gapLabel(key) {
   return labels[key] || titleCase(key);
 }
 
-export function sentenceCaseList(values) {
+export function titleCaseList(values) {
   return (values || []).map((value) => titleCase(String(value)));
 }
 
@@ -479,7 +479,10 @@ export function joinText(base, addition) {
 
   if (!next) return current;
   if (!current) return next;
-  if (current.toLowerCase().includes(next.toLowerCase())) return current;
+
+  // Whole-word match: avoids "no Wi-Fi" blocking the "Wi-Fi" chip
+  const escaped = next.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (new RegExp(`(?<![a-z\\d])${escaped}(?![a-z\\d])`, "i").test(current)) return current;
 
   const separator = /[\s,;:]$/.test(current) ? " " : current.endsWith(".") ? " " : ", ";
   return `${current}${separator}${next}`;
@@ -506,29 +509,6 @@ export function prettyValue(value) {
   return String(value);
 }
 
-export function serializePreview(value) {
-  if (value === null || value === undefined || value === "") {
-    return "—";
-  }
-
-  if (Array.isArray(value)) {
-    const primitiveArray = value.every(
-      (item) =>
-        item === null ||
-        item === undefined ||
-        ["string", "number", "boolean"].includes(typeof item)
-    );
-    if (primitiveArray) {
-      return value.length ? value.join(", ") : "[]";
-    }
-  }
-
-  if (typeof value === "object") {
-    return JSON.stringify(value, null, 2);
-  }
-
-  return String(value);
-}
 
 export function buildDynamicTemplates(products) {
   const lookup = new Map((products || []).map((product) => [product.id, product]));
@@ -601,60 +581,6 @@ addTemplate(
   return merged;
 }
 
-export function buildGuidedChips(metadata, result) {
-  const productId = result?.product_type;
-  const product = (metadata?.products || []).find((item) => item.id === productId);
-  const traits = new Set(result?.all_traits || []);
-  const missingItems = result?.missing_information_items || [];
-  const chips = [];
-
-  const push = (label, text) => {
-    if (!label || !text) return;
-    if (!chips.some((item) => item.text === text)) {
-      chips.push({ label, text });
-    }
-  };
-
-  missingItems.forEach((item) =>
-    (item.examples || []).slice(0, 2).forEach((example) => push(gapLabel(item.key), example))
-  );
-
-  if (product?.implied_traits?.includes("food_contact") || traits.has("food_contact")) {
-    push("Food contact", "food-contact plastics, coatings, silicone, rubber, and metal parts");
-    push("Water path", "wetted path materials, seals, and water tank");
-  }
-  if (product?.implied_traits?.includes("motorized") || traits.has("motorized")) {
-    push("Motor", "motorized function");
-    push("Pump", "pump or fluid transfer function");
-  }
-  if (traits.has("radio")) {
-    push("Wi-Fi", "Wi-Fi radio");
-    push("Bluetooth", "Bluetooth LE radio");
-    push("OTA", "OTA firmware updates");
-  }
-  if (!traits.has("radio") && (traits.has("app_control") || traits.has("cloud") || traits.has("ota"))) {
-    push("Wi-Fi", "Wi-Fi radio");
-    push("Bluetooth", "Bluetooth LE radio");
-  }
-  if (traits.has("cloud") || traits.has("app_control") || traits.has("internet")) {
-    push("Cloud", "cloud account required");
-    push("Local control", "local LAN control without cloud dependency");
-    push("Patching", "security and firmware patching over the air");
-  }
-  if (traits.has("battery_powered")) push("Battery", "rechargeable lithium battery");
-  if (traits.has("camera")) push("Camera", "integrated camera");
-  if (traits.has("microphone")) push("Microphone", "microphone or voice input");
-
-  if (!chips.length) {
-    push("Mains", "230 V mains powered");
-    push("Consumer", "consumer household use");
-    push("App control", "mobile app control");
-    push("Wi-Fi", "Wi-Fi radio");
-    push("Food contact", "food-contact plastics or coatings");
-  }
-
-  return chips.slice(0, 10);
-}
 
 export function buildGuidanceItems(result) {
   const traits = new Set(result?.all_traits || []);
@@ -733,11 +659,14 @@ export function buildGuidanceItems(result) {
     add(item.key, gapLabel(item.key), item.message, item.importance || "medium", item.examples || []);
     const target = items.find((entry) => entry.key === item.key);
     if (target) {
-      target.routeImpact = sentenceCaseList(item.route_impact || []);
+      target.routeImpact = titleCaseList(item.route_impact || []);
     }
   });
 
-  return items.slice(0, 6);
+  const IMPORTANCE_RANK = { high: 0, medium: 1, low: 2 };
+  return items
+    .sort((a, b) => (IMPORTANCE_RANK[a.importance] ?? 1) - (IMPORTANCE_RANK[b.importance] ?? 1))
+    .slice(0, 6);
 }
 
 export function buildCompactLegislationItems(result) {
@@ -938,9 +867,6 @@ export function buildLegislationGroups(result) {
   );
 }
 
-export function getAdditionalEntries(result) {
-  return Object.entries(result || {}).filter(([key]) => !KNOWN_RESULT_KEYS.has(key));
-}
 
 
 export function formatStageLabel(stage) {
@@ -952,143 +878,11 @@ export function formatStageLabel(stage) {
   return map[String(stage || "").toLowerCase()] || formatUiLabel(stage || "unknown");
 }
 
-export function buildCatalogSummary(result) {
-  if (!result) return null;
-
-  const productCandidates = (result?.product_candidates || []).slice(0, 3).map((candidate) => ({
-    id: candidate.id,
-    label: formatUiLabel(candidate.label || candidate.id),
-    confidence: formatUiLabel(candidate.confidence || "medium"),
-    matchedAlias: candidate.matched_alias || "",
-    score: candidate.score ?? 0,
-    reasons: (candidate.reasons || []).slice(0, 3).map((reason) => titleCaseMinor(reason)),
-  }));
-
-  return {
-    product: formatUiLabel(result?.product_type || "unclear"),
-    family: formatUiLabel(result?.product_family || "unclear"),
-    familyConfidence: formatUiLabel(result?.product_family_confidence || "low"),
-    subtype: result?.product_subtype ? formatUiLabel(result.product_subtype) : "",
-    subtypeConfidence: formatUiLabel(result?.product_subtype_confidence || "low"),
-    stage: formatStageLabel(result?.product_match_stage),
-    candidates: productCandidates,
-    functionalClasses: sentenceCaseList(result?.functional_classes || []),
-    confirmedFunctionalClasses: sentenceCaseList(result?.confirmed_functional_classes || []),
-    currentPath: (result?.current_path || []).map((entry) => titleCaseMinor(entry)),
-    topActions: (result?.top_actions || []).filter(Boolean),
-    futureWatchlist: (result?.future_watchlist || []).filter(Boolean).map((entry) => titleCaseMinor(entry)),
-    stats: result?.stats || {},
-    knowledgeBaseMeta: result?.knowledge_base_meta || null,
-  };
-}
-
-export function buildTraitBuckets(result) {
-  const explicit = new Set(result?.explicit_traits || []);
-  const confirmed = new Set(result?.confirmed_traits || []);
-  const inferred = new Set(result?.inferred_traits || []);
-
-  const evidenceByTrait = new Map(
-    (result?.trait_evidence || []).map((item) => [item.trait, item])
-  );
-
-  const decorate = (trait) => {
-    const evidence = evidenceByTrait.get(trait) || {};
-    return {
-      key: trait,
-      label: titleCaseMinor(trait),
-      state: formatUiLabel(evidence.state || ""),
-      factBasis: formatUiLabel(evidence.fact_basis || ""),
-      confirmed: Boolean(evidence.confirmed),
-      evidence: (evidence.evidence || []).slice(0, 3).map((entry) => titleCaseMinor(entry)),
-    };
-  };
-
-  return {
-    explicit: Array.from(explicit).sort().map(decorate),
-    confirmed: Array.from(confirmed).sort().map(decorate),
-    inferred: Array.from(inferred).sort().map(decorate),
-  };
-}
-
-export function buildAuditSnapshot(result) {
-  if (!result) return null;
-
-  const productAudit = result?.product_match_audit || {};
-  const standardAudit = result?.standard_match_audit || {};
-  const selected = standardAudit?.selected || [];
-  const review = standardAudit?.review || [];
-  const rejected = standardAudit?.rejected || [];
-
-  return {
-    ambiguityReason: productAudit?.ambiguity_reason || "",
-    aliasHits: (productAudit?.alias_hits || []).slice(0, 4),
-    clueHits: (productAudit?.clue_hits || []).slice(0, 4),
-    retrievalBasis: (productAudit?.retrieval_basis || []).slice(0, 4).map((entry) => titleCaseMinor(entry)),
-    negations: (productAudit?.negations || []).slice(0, 3).map((entry) => titleCaseMinor(entry)),
-    standardContextTags: (standardAudit?.context_tags || []).slice(0, 8).map((entry) => titleCaseMinor(entry)),
-    selectedPreview: selected.slice(0, 4).map((item) => ({
-      code: item.code,
-      reason: item.reason || "",
-      factBasis: formatUiLabel(item.fact_basis || ""),
-      confidence: formatUiLabel(item.confidence || ""),
-    })),
-    counts: {
-      selected: selected.length,
-      review: review.length,
-      rejected: rejected.length,
-    },
-  };
-}
 
 
-export function buildEngineSidebarSections(result) {
-  const summary = buildCatalogSummary(result);
-  const traits = buildTraitBuckets(result);
-  const audit = buildAuditSnapshot(result);
 
-  if (!summary && !audit) return null;
 
-  const candidateItems = (summary?.candidates || []).slice(0, 3).map((candidate, index) => ({
-    key: candidate.id || `${candidate.label}-${index}`,
-    title: index === 0 ? `${candidate.label} · winner` : candidate.label,
-    detail: [
-      candidate.confidence && candidate.confidence !== '—' ? candidate.confidence : '',
-      Number.isFinite(candidate.score) ? `score ${candidate.score}` : '',
-      candidate.matchedAlias ? `alias ${candidate.matchedAlias}` : '',
-    ].filter(Boolean).join(' · '),
-    tags: (candidate.reasons || []).slice(0, 3),
-  }));
 
-  const evidenceGroups = [
-    { key: 'explicit', title: 'Explicit traits', items: (traits?.explicit || []).slice(0, 8).map((item) => item.label) },
-    { key: 'confirmed', title: 'Confirmed traits', items: (traits?.confirmed || []).slice(0, 8).map((item) => item.label) },
-    { key: 'inferred', title: 'Inferred traits', items: (traits?.inferred || []).slice(0, 8).map((item) => item.label) },
-  ].filter((group) => group.items.length);
-
-  const signalGroups = [
-    { key: 'alias_hits', title: 'Alias hits', items: audit?.aliasHits || [] },
-    { key: 'clue_hits', title: 'Clue hits', items: audit?.clueHits || [] },
-    { key: 'retrieval_basis', title: 'Retrieval basis', items: audit?.retrievalBasis || [] },
-    { key: 'negations', title: 'Negations', items: audit?.negations || [] },
-  ].filter((group) => group.items.length);
-
-  const stats = [
-    { key: 'selected', label: 'Selected', value: String(audit?.counts?.selected ?? summary?.stats?.standards_count ?? 0) },
-    { key: 'review', label: 'Review', value: String(audit?.counts?.review ?? summary?.stats?.review_items_count ?? 0) },
-    { key: 'rejected', label: 'Rejected', value: String(audit?.counts?.rejected ?? 0) },
-    { key: 'product_gated', label: 'Product-gated', value: String(summary?.stats?.product_gated_standards_count ?? 0) },
-    { key: 'ambiguity', label: 'Ambiguity', value: String(summary?.stats?.ambiguity_flag_count ?? 0) },
-  ];
-
-  return {
-    stage: summary?.stage || '',
-    ambiguityReason: audit?.ambiguityReason || '',
-    candidates: candidateItems,
-    evidenceGroups,
-    signalGroups,
-    stats,
-  };
-}
 export function buildClipboardSummary({ result, description, routeSections, legislationGroups }) {
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
