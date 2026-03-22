@@ -269,6 +269,50 @@ export const DEFAULT_TEMPLATES = [
     label: "Stick vacuum",
     text: "Cordless stick vacuum cleaner with rechargeable lithium battery, motorized suction head, Bluetooth connectivity, app control, and OTA firmware updates.",
   },
+{
+  label: "VR headset",
+  text: "Standalone VR headset with rechargeable lithium battery, USB-C charging, Wi-Fi and Bluetooth radios, app ecosystem, cloud account, sensors, cameras, microphone, speakers, and OTA firmware updates.",
+},
+{
+  label: "Smart display",
+  text: "Smart display with mains power, touchscreen, Wi-Fi and Bluetooth, microphone, camera, cloud account, voice assistant, app platform, and OTA software updates.",
+},
+{
+  label: "Router",
+  text: "Home Wi-Fi router with mains power, dual-band radio, Ethernet ports, web and app administration, cloud-assisted setup, and firmware updates.",
+},
+{
+  label: "Portable projector",
+  text: "Portable smart projector with mains and battery operation, Wi-Fi and Bluetooth, app platform, speakers, display optics, and OTA firmware updates.",
+},
+{
+  label: "Baby monitor",
+  text: "Connected baby monitor with camera, microphone, speaker, Wi-Fi radio, app control, cloud account, and remote viewing.",
+},
+{
+  label: "Electric toothbrush",
+  text: "Rechargeable electric toothbrush with battery charging base, motor drive, bathroom use, app connectivity, Bluetooth radio, and OTA-capable companion app ecosystem.",
+},
+{
+  label: "Hair dryer",
+  text: "Hair dryer with mains power, heating element, motorized fan, handheld personal care use, and no wireless connectivity.",
+},
+{
+  label: "Monitor",
+  text: "Computer monitor with mains power, display electronics, HDMI and USB connectivity, no wireless radio, and external peripherals.",
+},
+{
+  label: "Webcam",
+  text: "USB webcam with camera, microphone, indicator LEDs, USB power, desktop use, and no standalone wireless connectivity.",
+},
+{
+  label: "Smart lock",
+  text: "Connected smart lock with battery power, Bluetooth and Wi-Fi connectivity, mobile app control, cloud account, access credentials, and firmware updates.",
+},
+{
+  label: "Portable EV charger",
+  text: "Portable EV charging equipment with mains input, charging cable, control electronics, user interface, and optional app connectivity.",
+},
 ];
 
 const KNOWN_RESULT_KEYS = new Set([
@@ -524,6 +568,32 @@ export function buildDynamicTemplates(products) {
     "rechargeable battery, Wi-Fi and Bluetooth radio, cloud account, OTA updates, and LiDAR navigation",
     "Robot vacuum"
   );
+
+addTemplate(
+  "smart_display",
+  "mains power, touchscreen, Wi-Fi and Bluetooth radio, microphone, camera, cloud account, app ecosystem, and OTA updates",
+  "Smart display"
+);
+addTemplate(
+  "router",
+  "mains power, dual-band Wi-Fi radio, Ethernet ports, web administration, app setup, and firmware updates",
+  "Router"
+);
+addTemplate(
+  "vr_headset",
+  "rechargeable battery, Wi-Fi and Bluetooth radios, cameras, sensors, speakers, microphone, cloud account, and OTA updates",
+  "VR headset"
+);
+addTemplate(
+  "electric_toothbrush",
+  "rechargeable battery, charging base, motor drive, bathroom use, Bluetooth app sync, and consumer personal care use",
+  "Electric toothbrush"
+);
+addTemplate(
+  "baby_monitor",
+  "camera, microphone, speaker, Wi-Fi radio, app control, cloud account, and remote viewing",
+  "Baby monitor"
+);
 
   // Return the full discovered pool merged with defaults; randomization happens in the component
   const base = uniqueBy(templates.length ? templates : [], (item) => item.label);
