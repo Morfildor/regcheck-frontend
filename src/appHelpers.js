@@ -315,42 +315,6 @@ export const DEFAULT_TEMPLATES = [
 },
 ];
 
-const KNOWN_RESULT_KEYS = new Set([
-  "summary",
-  "product_type",
-  "product_match_confidence",
-  "overall_risk",
-  "standard_sections",
-  "standards",
-  "review_items",
-  "legislation_sections",
-  "missing_information_items",
-  "input_gaps_panel",
-  "all_traits",
-  "diagnostics",
-  "suggested_quick_adds",
-  "product_family",
-  "product_family_confidence",
-  "product_subtype",
-  "product_subtype_confidence",
-  "product_match_stage",
-  "product_candidates",
-  "functional_classes",
-  "confirmed_functional_classes",
-  "explicit_traits",
-  "confirmed_traits",
-  "inferred_traits",
-  "trait_evidence",
-  "product_match_audit",
-  "standard_match_audit",
-  "stats",
-  "knowledge_base_meta",
-  "analysis_audit",
-  "top_actions",
-  "current_path",
-  "future_watchlist",
-  "suggested_questions",
-]);
 
 const LEGISLATION_GROUP_ORDER = ["ce", "non_ce", "future", "framework", "other"];
 
