@@ -12,6 +12,10 @@ export const DIR_SHORT = {
   CRA: "CRA",
   ROHS: "RoHS",
   REACH: "REACH",
+  GPSR: "GPSR",
+  WEEE: "WEEE",
+  TOY: "Toy",
+  UAS: "Drone/UAS",
   GDPR: "GDPR",
   AI_Act: "AI Act",
   ESPR: "ESPR",
@@ -31,6 +35,10 @@ export const DIR_ORDER = [
   "RED_CYBER",
   "ROHS",
   "REACH",
+  "GPSR",
+  "TOY",
+  "UAS",
+  "WEEE",
   "GDPR",
   "FCM",
   "FCM_PLASTIC",
@@ -86,6 +94,30 @@ export const DIR_TONES = {
     bg: "rgba(239,179,130,0.13)",
     bd: "rgba(239,179,130,0.28)",
     text: "#f5c191",
+  },
+  GPSR: {
+    dot: "#a8d0ff",
+    bg: "rgba(168,208,255,0.12)",
+    bd: "rgba(168,208,255,0.26)",
+    text: "#bddcff",
+  },
+  WEEE: {
+    dot: "#9fdfa8",
+    bg: "rgba(159,223,168,0.12)",
+    bd: "rgba(159,223,168,0.26)",
+    text: "#b3e9bb",
+  },
+  TOY: {
+    dot: "#ffb3c7",
+    bg: "rgba(255,179,199,0.13)",
+    bd: "rgba(255,179,199,0.28)",
+    text: "#ffc2d2",
+  },
+  UAS: {
+    dot: "#9cc6ff",
+    bg: "rgba(156,198,255,0.13)",
+    bd: "rgba(156,198,255,0.28)",
+    text: "#b8d7ff",
   },
   GDPR: {
     dot: "#72d6c2",
@@ -327,7 +359,7 @@ export function titleCaseMinor(input) {
     .map((word, index) => {
       const upper = word.toUpperCase();
       if (
-        ["LVD", "EMC", "RED", "CRA", "GDPR", "ESPR", "ROHS", "REACH", "MD"].includes(
+        ["LVD", "EMC", "RED", "CRA", "GDPR", "ESPR", "ROHS", "REACH", "GPSR", "WEEE", "UAS", "MD"].includes(
           upper
         )
       ) {
@@ -353,6 +385,10 @@ export function routeTitle(section) {
     RED_CYBER: "RED cybersecurity route",
     ROHS: "RoHS materials route",
     REACH: "REACH chemicals route",
+    GPSR: "GPSR consumer safety route",
+    WEEE: "WEEE end-of-life route",
+    TOY: "Toy safety route",
+    UAS: "Drone / UAS route",
     GDPR: "GDPR data route",
     AI_Act: "AI Act route",
     ESPR: "ESPR route",
