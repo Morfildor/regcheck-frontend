@@ -27,6 +27,7 @@ import {
   ANALYZE_URL,
   DEFAULT_TEMPLATES,
   IMPORTANCE,
+  METADATA_URL,
   SECTION_TONES,
   STATUS,
   buildClipboardSummary,
@@ -34,6 +35,7 @@ import {
   buildDirectiveBreakdown,
   buildDynamicTemplates,
   buildEngineSidebarSections,
+  buildGuidedChips,
   buildGuidanceItems,
   buildLegislationGroups,
   buildRouteSections,
@@ -45,6 +47,7 @@ import {
   normalizeStandardDirective,
   routeTitle,
   titleCaseMinor,
+  uniqueBy,
   formatStageLabel,
 } from "./appHelpers";
 
@@ -1452,7 +1455,7 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
 
 export default function App() {
   const [description, setDescription] = useState("");
-  const [templates] = useState(DEFAULT_TEMPLATES);
+  const [metadata, setMetadata] = useState({ products: [], traits: [], legislations: [] });
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -1462,12 +1465,54 @@ export default function App() {
 
   const resultsRef = useRef(null);
 
+  useEffect(() => {
+    let mounted = true;
+    fetch(METADATA_URL)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Metadata request failed (${res.status})`);
+        }
+        return res.json();
+      })
+      .then((json) => {
+        if (mounted) {
+          setMetadata({
+            products: Array.isArray(json?.products) ? json.products : [],
+            traits: Array.isArray(json?.traits) ? json.traits : [],
+            legislations: Array.isArray(json?.legislations) ? json.legislations : [],
+          });
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setMetadata({ products: [], traits: [], legislations: [] });
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const routeSections = useMemo(() => buildRouteSections(result), [result]);
   const legislationItems = useMemo(() => buildCompactLegislationItems(result), [result]);
   const legislationGroups = useMemo(() => buildLegislationGroups(result), [result]);
   const guidanceItems = useMemo(() => buildGuidanceItems(result), [result]);
   const directiveBreakdown = useMemo(() => buildDirectiveBreakdown(routeSections), [routeSections]);
-  const backendChips = useMemo(() => buildDynamicTemplates(result), [result]);
+  const templates = useMemo(() => {
+    const dynamicTemplates = buildDynamicTemplates(metadata?.products);
+    return dynamicTemplates.length ? dynamicTemplates : DEFAULT_TEMPLATES;
+  }, [metadata]);
+  const backendChips = useMemo(() => {
+    const apiChips = (result?.suggested_quick_adds || []).map((item) => ({
+      label: formatUiLabel(item?.label || "Suggested detail"),
+      text: item?.text || "",
+    }));
+    const guidedChips = buildGuidedChips(metadata, result);
+    return uniqueBy(
+      [...apiChips, ...guidedChips].filter((item) => item.label && item.text),
+      (item) => item.text
+    ).slice(0, 12);
+  }, [metadata, result]);
   const baseSafetyRoute = useMemo(() => inferBaseSafetyRoute(result, routeSections), [result, routeSections]);
 
   const runAnalysis = useCallback(async () => {
@@ -1505,13 +1550,20 @@ export default function App() {
   const handleCopy = useCallback(async () => {
     if (!result) return;
     try {
-      await navigator.clipboard.writeText(buildClipboardSummary(result));
+      await navigator.clipboard.writeText(
+        buildClipboardSummary({
+          result,
+          description,
+          routeSections,
+          legislationGroups,
+        })
+      );
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
       setCopied(false);
     }
-  }, [result]);
+  }, [description, legislationGroups, result, routeSections]);
 
   const resetAnalysis = useCallback(() => {
     setResult(null);

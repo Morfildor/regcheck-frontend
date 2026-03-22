@@ -1019,7 +1019,15 @@ export function buildEngineSidebarSections(result) {
     stats,
   };
 }
-export function buildClipboardSummary({ result, description, routeSections, legislationGroups }) {
+export function buildClipboardSummary(input) {
+  const hasStructuredPayload =
+    input &&
+    typeof input === "object" &&
+    ("result" in input || "routeSections" in input || "legislationGroups" in input || "description" in input);
+  const result = hasStructuredPayload ? input.result : input;
+  const description = hasStructuredPayload ? input.description : "";
+  const routeSections = hasStructuredPayload ? input.routeSections || [] : buildRouteSections(result);
+  const legislationGroups = hasStructuredPayload ? input.legislationGroups || [] : buildLegislationGroups(result);
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
   const missingItems = result?.missing_information_items || [];
