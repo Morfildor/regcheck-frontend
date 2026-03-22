@@ -1118,7 +1118,7 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
    Removed: EngineDetailsSection, legislation groups section
    Added: active directives pills
    ────────────────────────────────────────────────────────── */
-function SnapshotRail({ result, routeSections, description, onCopy, copied }) {
+function SnapshotRail({ result, routeSections, description, onCopy, copied, legislationGroups }) {
   if (!result) return null;
 
   const totalStandards = routeSections.reduce(
@@ -1179,6 +1179,8 @@ function SnapshotRail({ result, routeSections, description, onCopy, copied }) {
           </div>
         ) : null}
       </Panel>
+
+      <ParallelObligationsPanel legislationGroups={legislationGroups} />
     </aside>
   );
 }
@@ -1560,10 +1562,9 @@ const LEGISLATION_GROUP_LABELS = {
 function ParallelGroupItem({ item }) {
   const dirKey = item.directive_key || "OTHER";
   const tone = directiveTone(dirKey);
-  const shortCode = directiveShort(dirKey);
 
   return (
-    <div
+    <article
       className="par-item"
       style={{
         "--par-dot": tone.dot,
@@ -1572,12 +1573,24 @@ function ParallelGroupItem({ item }) {
         "--par-text": tone.text,
       }}
     >
-      <div className="par-item__badge">{shortCode}</div>
-      <div className="par-item__copy">
-        <div className="par-item__title">{item.title}</div>
-        {item.code ? <div className="par-item__code">{item.code}</div> : null}
+      <div className="par-item__header">
+        <div className="par-item__chips">
+          {item.code ? (
+            <span
+              className="par-item__code-chip"
+              style={{ borderColor: tone.bd, background: tone.bg, color: tone.text }}
+            >
+              {item.code}
+            </span>
+          ) : null}
+          <DirectivePill dirKey={dirKey} />
+        </div>
+        <h4 className="par-item__title">{item.title}</h4>
       </div>
-    </div>
+      {item.obligation_summary ? (
+        <p className="par-item__summary">{item.obligation_summary}</p>
+      ) : null}
+    </article>
   );
 }
 
@@ -1967,14 +1980,6 @@ export default function App() {
                 />
               </ErrorBoundary>
 
-              {/* Parallel obligations — displayed after the standards route */}
-              <ErrorBoundary
-                key={`parallel-${resultRevision}`}
-                label="Applicable legislation could not be rendered"
-              >
-                <ParallelObligationsPanel legislationGroups={legislationGroups} />
-              </ErrorBoundary>
-
               <ErrorBoundary
                 key={`clarifications-${resultRevision}`}
                 label="Clarifications could not be rendered"
@@ -2013,6 +2018,7 @@ export default function App() {
                 description={description}
                 onCopy={handleCopyAnalysis}
                 copied={analysisCopied}
+                legislationGroups={legislationGroups}
               />
             </ErrorBoundary>
           </div>
