@@ -37,6 +37,7 @@ import {
   buildCompactLegislationItems,
   buildDirectiveBreakdown,
   buildDynamicTemplates,
+  buildEngineSidebarSections,
   buildGuidanceItems,
   buildLegislationGroups,
   buildRouteSections,
@@ -1433,6 +1434,121 @@ function OverviewPanel({ result, routeSections, legislationItems }) {
    FIX #1: removed "Confidence" from snapshot list (in overview bar)
    FIX #3: onCopy/copied come from App for shared state
    ────────────────────────────────────────────────────────── */
+function EngineDetailsSection({ result }) {
+  const engine = useMemo(() => buildEngineSidebarSections(result), [result]);
+  const [open, setOpen] = useState(false);
+
+  if (!engine) return null;
+
+  return (
+    <div className="sidebar-section">
+      <button
+        type="button"
+        className="sidebar-section__toggle"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          background: "transparent",
+          border: "1px solid rgba(167,183,203,0.16)",
+          borderRadius: 14,
+          padding: "11px 12px",
+          color: "#d9e3f0",
+          cursor: "pointer",
+        }}
+      >
+        <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+          <span className="sidebar-section__heading" style={{ margin: 0 }}>Engine details</span>
+          <span className="sidebar-section__subheading" style={{ margin: 0 }}>
+            Optional catalog and audit verification details.
+          </span>
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#9fb0c7" }}>
+          <InlineTag>{engine.stage || "Match info"}</InlineTag>
+          {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </span>
+      </button>
+
+      {open ? (
+        <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
+          {engine.ambiguityReason ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Ambiguity note</div>
+              <p className="standard-item__summary" style={{ marginTop: 6 }}>{engine.ambiguityReason}</p>
+            </div>
+          ) : null}
+
+          {engine.candidates.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Top candidates</div>
+              <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+                {engine.candidates.map((candidate) => (
+                  <div key={candidate.key} style={{ paddingBottom: 10, borderBottom: "1px solid rgba(167,183,203,0.12)" }}>
+                    <div style={{ fontWeight: 600 }}>{candidate.title}</div>
+                    {candidate.detail ? (
+                      <div className="sidebar-section__subheading" style={{ marginTop: 4 }}>{candidate.detail}</div>
+                    ) : null}
+                    {candidate.tags.length ? (
+                      <div className="tag-row" style={{ marginTop: 8 }}>
+                        {candidate.tags.map((tag) => <InlineTag key={`${candidate.key}-${tag}`}>{tag}</InlineTag>)}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {engine.evidenceGroups.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Trait evidence</div>
+              <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+                {engine.evidenceGroups.map((group) => (
+                  <div key={group.key}>
+                    <div className="sidebar-section__heading" style={{ fontSize: "0.76rem", marginBottom: 6 }}>{group.title}</div>
+                    <div className="tag-row">
+                      {group.items.map((item) => <InlineTag key={`${group.key}-${item}`}>{item}</InlineTag>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {engine.signalGroups.length ? (
+            <div className="standard-item__meta-card">
+              <div className="micro-label">Audit signals</div>
+              <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+                {engine.signalGroups.map((group) => (
+                  <div key={group.key}>
+                    <div className="sidebar-section__heading" style={{ fontSize: "0.76rem", marginBottom: 6 }}>{group.title}</div>
+                    <div className="tag-row">
+                      {group.items.map((item) => <InlineTag key={`${group.key}-${item}`}>{item}</InlineTag>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="standard-item__meta-grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+            {engine.stats.map((stat) => (
+              <div key={stat.key} className="standard-item__meta-card">
+                <div className="micro-label">{stat.label}</div>
+                <div className="standard-item__meta-value">{stat.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SnapshotRail({ result, routeSections, legislationGroups, description, onCopy, copied }) {
   if (!result) return null;
 
@@ -1484,6 +1600,8 @@ function SnapshotRail({ result, routeSections, legislationGroups, description, o
             </div>
           </div>
         ) : null}
+
+        <EngineDetailsSection result={result} />
 
         <div className="sidebar-section">
           <div className="sidebar-section__heading">Applicable legislation</div>
@@ -2190,20 +2308,6 @@ export default function App() {
                 routeSections={routeSections}
                 legislationItems={legislationItems}
               />
-
-              <ErrorBoundary
-                key={`catalog-${resultRevision}`}
-                label="Catalog interpretation could not be rendered"
-              >
-                <CatalogIdentityPanel result={result} />
-              </ErrorBoundary>
-
-              <ErrorBoundary
-                key={`traits-${resultRevision}`}
-                label="Trait evidence could not be rendered"
-              >
-                <TraitEvidencePanel result={result} />
-              </ErrorBoundary>
 
               {/* FIX #11: ErrorBoundary wraps volatile panels */}
               <ErrorBoundary

@@ -934,6 +934,55 @@ export function buildAuditSnapshot(result) {
   };
 }
 
+
+export function buildEngineSidebarSections(result) {
+  const summary = buildCatalogSummary(result);
+  const traits = buildTraitBuckets(result);
+  const audit = buildAuditSnapshot(result);
+
+  if (!summary && !audit) return null;
+
+  const candidateItems = (summary?.candidates || []).slice(0, 3).map((candidate, index) => ({
+    key: candidate.id || `${candidate.label}-${index}`,
+    title: index === 0 ? `${candidate.label} · winner` : candidate.label,
+    detail: [
+      candidate.confidence && candidate.confidence !== '—' ? candidate.confidence : '',
+      Number.isFinite(candidate.score) ? `score ${candidate.score}` : '',
+      candidate.matchedAlias ? `alias ${candidate.matchedAlias}` : '',
+    ].filter(Boolean).join(' · '),
+    tags: (candidate.reasons || []).slice(0, 3),
+  }));
+
+  const evidenceGroups = [
+    { key: 'explicit', title: 'Explicit traits', items: (traits?.explicit || []).slice(0, 8).map((item) => item.label) },
+    { key: 'confirmed', title: 'Confirmed traits', items: (traits?.confirmed || []).slice(0, 8).map((item) => item.label) },
+    { key: 'inferred', title: 'Inferred traits', items: (traits?.inferred || []).slice(0, 8).map((item) => item.label) },
+  ].filter((group) => group.items.length);
+
+  const signalGroups = [
+    { key: 'alias_hits', title: 'Alias hits', items: audit?.aliasHits || [] },
+    { key: 'clue_hits', title: 'Clue hits', items: audit?.clueHits || [] },
+    { key: 'retrieval_basis', title: 'Retrieval basis', items: audit?.retrievalBasis || [] },
+    { key: 'negations', title: 'Negations', items: audit?.negations || [] },
+  ].filter((group) => group.items.length);
+
+  const stats = [
+    { key: 'selected', label: 'Selected', value: String(audit?.counts?.selected ?? summary?.stats?.standards_count ?? 0) },
+    { key: 'review', label: 'Review', value: String(audit?.counts?.review ?? summary?.stats?.review_items_count ?? 0) },
+    { key: 'rejected', label: 'Rejected', value: String(audit?.counts?.rejected ?? 0) },
+    { key: 'product_gated', label: 'Product-gated', value: String(summary?.stats?.product_gated_standards_count ?? 0) },
+    { key: 'ambiguity', label: 'Ambiguity', value: String(summary?.stats?.ambiguity_flag_count ?? 0) },
+  ];
+
+  return {
+    stage: summary?.stage || '',
+    ambiguityReason: audit?.ambiguityReason || '',
+    candidates: candidateItems,
+    evidenceGroups,
+    signalGroups,
+    stats,
+  };
+}
 export function buildClipboardSummary({ result, description, routeSections, legislationGroups }) {
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
