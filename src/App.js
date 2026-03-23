@@ -1,6 +1,20 @@
 import { useState } from "react";
 import { BrowserRouter, Link, NavLink, Route, Routes } from "react-router-dom";
-import { ListChecks, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  FileText,
+  GitBranch,
+  Layers,
+  Mail,
+  Package,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Users,
+  Wifi,
+  Zap,
+} from "lucide-react";
 import AnalyzeWorkspace from "./AnalyzeWorkspace";
 import "./App.css";
 
@@ -65,77 +79,57 @@ function ShellPage({ children, cta }) {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   Home page
+   Shared micro-components
    ────────────────────────────────────────────────────────────── */
-function MarketingHero() {
+
+/* Reusable inner-page hero strip */
+function InnerHero({ eyebrow, title, text }) {
   return (
-    <section className="marketing-hero">
-      <div className="marketing-hero__grid">
-        <div className="marketing-hero__copy">
-          <span className="marketing-eyebrow">Compliance scoping workspace</span>
-          <h1 className="marketing-hero__title">
-            Turn product descriptions into a structured EU compliance starting point.
-          </h1>
-          <p className="marketing-hero__text">
-            RuleGrid helps teams identify likely directives, route families, harmonized standards
-            and adjacent obligations early, before a full expert review starts.
-          </p>
-
-          <div className="marketing-hero__actions">
-            <Link to="/analyze" className="button button--primary marketing-hero__btn">
-              <Sparkles size={14} />
-              Open analyzer
-            </Link>
-            <Link to="/tools" className="button button--secondary marketing-hero__btn">
-              <ListChecks size={14} />
-              Explore tools
-            </Link>
-          </div>
-
-          <div className="marketing-stats">
-            <div className="marketing-stat">
-              <div className="marketing-stat__value">Faster triage</div>
-              <div className="marketing-stat__label">
-                Product, directive and standards route in one pass
-              </div>
-            </div>
-            <div className="marketing-stat">
-              <div className="marketing-stat__value">Scope-first</div>
-              <div className="marketing-stat__label">
-                Clarifies power, radios, cloud, materials and use-case signals
-              </div>
-            </div>
-            <div className="marketing-stat">
-              <div className="marketing-stat__value">Team-ready</div>
-              <div className="marketing-stat__label">
-                Useful for RA, engineering, sourcing and consultant handovers
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="marketing-hero__panel">
-          <div className="marketing-card">
-            <div className="marketing-card__eyebrow">What the analyzer produces</div>
-            <ul className="marketing-list">
-              <li>Primary standards route by directive family</li>
-              <li>Parallel obligations such as RoHS, REACH, Battery, WEEE or FCM</li>
-              <li>Clarification prompts for missing scope-changing inputs</li>
-              <li>Compact output for internal review and consultant briefing</li>
-            </ul>
-          </div>
-          <div className="marketing-card">
-            <div className="marketing-card__eyebrow">Good example input</div>
-            <p className="marketing-card__text">
-              "Wi-Fi connected robot vacuum with charging dock, Li-ion battery, mobile app,
-              OTA firmware updates, cloud account and voice assistant support."
-            </p>
-          </div>
-        </div>
-      </div>
+    <section className="v2-inner-hero">
+      <span className="marketing-eyebrow">{eyebrow}</span>
+      <h1 className="v2-inner-hero__title">{title}</h1>
+      {text && <p className="v2-inner-hero__text">{text}</p>}
     </section>
   );
 }
+
+/* Reusable icon-row list item */
+function IconItem({ variant = "green", children }) {
+  return (
+    <div className="v2-icon-item">
+      <div className={`v2-icon-item__dot v2-icon-item__dot--${variant}`}>
+        {variant === "green" ? <Check size={9} /> : <ShieldCheck size={9} />}
+      </div>
+      <span>{children}</span>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Home page  (/v2)
+   ────────────────────────────────────────────────────────────── */
+const HOME_STEPS = [
+  {
+    n: "1",
+    title: "Describe your product",
+    text: "Include power, radios, software stack, materials, intended use and target market for best results.",
+  },
+  {
+    n: "2",
+    title: "Review the route",
+    text: "Inspect the returned directive families, standards route and parallel obligations.",
+  },
+  {
+    n: "3",
+    title: "Refine and re-run",
+    text: "Apply clarification prompts and re-run until the compliance route stabilises.",
+  },
+  {
+    n: "4",
+    title: "Hand off with context",
+    text: "Use the structured output as a briefing starting point for labs, notified bodies or consultants.",
+  },
+];
 
 function HomePage() {
   return (
@@ -146,134 +140,169 @@ function HomePage() {
         </Link>
       }
     >
-      <MarketingHero />
-
-      <section className="marketing-section-grid">
-        {/* FIX: added panel__heading wrapper + panel__eyebrow class + panel__body */}
-        <div className="panel">
-          <div className="panel__header">
-            <div className="panel__heading">
-              <div className="panel__eyebrow">What RuleGrid is for</div>
-              <h2 className="panel__title">A practical first-pass scoping layer</h2>
-              <p className="panel__subtitle">
-                Use it as a structured intake tool, not as the final legal conclusion.
-              </p>
-            </div>
-          </div>
-          <div className="panel__body">
-            <div className="marketing-columns">
-              <div className="marketing-card marketing-card--soft">
-                <div className="marketing-card__title">Early product intake</div>
-                <p className="marketing-card__text">
-                  Turn messy descriptions into a cleaner route before engineering and
-                  compliance teams go deep.
-                </p>
-              </div>
-              <div className="marketing-card marketing-card--soft">
-                <div className="marketing-card__title">Internal alignment</div>
-                <p className="marketing-card__text">
-                  Give sourcing, product and RA teams the same starting picture of
-                  applicable frameworks.
-                </p>
-              </div>
-              <div className="marketing-card marketing-card--soft">
-                <div className="marketing-card__title">Consultant handoff</div>
-                <p className="marketing-card__text">
-                  Use the structured output as a briefing draft for labs, notified
-                  bodies or external experts.
-                </p>
-              </div>
-            </div>
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <section className="v2-home-hero">
+        <div className="v2-home-hero__copy">
+          <span className="marketing-eyebrow">Compliance scoping workspace</span>
+          <h1 className="v2-home-hero__title">
+            From product description to EU compliance starting&nbsp;point.
+          </h1>
+          <p className="v2-home-hero__text">
+            RuleGrid identifies applicable directives, standards routes and parallel obligations
+            from a plain-language description — before formal expert review starts.
+          </p>
+          <div className="v2-home-hero__actions">
+            <Link to="/analyze" className="button button--primary">
+              <Sparkles size={14} />
+              Open analyzer
+            </Link>
+            <Link to="/about" className="button button--ghost">
+              How it works
+              <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
 
-        <div className="panel">
-          <div className="panel__header">
-            <div className="panel__heading">
-              <div className="panel__eyebrow">Navigation</div>
-              <h2 className="panel__title">Direct routes for the main product pages</h2>
-              <p className="panel__subtitle">
-                The site now has real top-level URLs that can be shared.
-              </p>
-            </div>
+        <div className="v2-preview-card">
+          <div className="v2-preview-card__label">Analysis returns</div>
+          <div className="v2-preview-card__items">
+            {[
+              "Applicable directive families",
+              "Primary harmonized standards route",
+              "Parallel obligations — RoHS, REACH, WEEE, Battery",
+              "Clarification prompts for scope-changing gaps",
+            ].map((item) => (
+              <div key={item} className="v2-preview-item">
+                <div className="v2-preview-item__check">
+                  <Check size={9} />
+                </div>
+                {item}
+              </div>
+            ))}
           </div>
-          <div className="panel__body">
-            <div className="quick-link-grid">
-              <Link to="/analyze" className="route-link-card">
-                <div className="route-link-card__title">Analyzer</div>
-                <div className="route-link-card__text">
-                  Run a product description and inspect the route.
-                </div>
-              </Link>
-              <Link to="/tools" className="route-link-card">
-                <div className="route-link-card__title">Tools</div>
-                <div className="route-link-card__text">
-                  See the modules and roadmap blocks around the core engine.
-                </div>
-              </Link>
-              <Link to="/about" className="route-link-card">
-                <div className="route-link-card__title">About</div>
-                <div className="route-link-card__text">
-                  Read the intended use, workflow and positioning.
-                </div>
-              </Link>
-              <Link to="/contact" className="route-link-card">
-                <div className="route-link-card__title">Contact</div>
-                <div className="route-link-card__text">
-                  Use the built-in form template to draft an inquiry.
-                </div>
-              </Link>
-            </div>
+          <div className="v2-preview-card__example">
+            <div className="v2-preview-card__example-label">Example input</div>
+            <p className="v2-preview-card__example-text">
+              "Wi-Fi connected robot vacuum with Li-ion battery, mobile app, OTA updates and
+              voice assistant support."
+            </p>
           </div>
         </div>
       </section>
+
+      {/* ── Three feature cards ──────────────────────────────── */}
+      <div className="v2-feature-grid">
+        <div className="v2-feature-card">
+          <div className="v2-feature-card__icon">
+            <Zap size={16} />
+          </div>
+          <div className="v2-feature-card__title">Faster first triage</div>
+          <p className="v2-feature-card__text">
+            Turn a rough description into a structured compliance starting point in one pass —
+            before engineering, sourcing or expert review goes deep.
+          </p>
+        </div>
+        <div className="v2-feature-card">
+          <div className="v2-feature-card__icon">
+            <Target size={16} />
+          </div>
+          <div className="v2-feature-card__title">Scope-shaping signals</div>
+          <p className="v2-feature-card__text">
+            Power, radios, cloud, materials and use-case details all change the route. RuleGrid
+            surfaces the questions that matter most — early.
+          </p>
+        </div>
+        <div className="v2-feature-card">
+          <div className="v2-feature-card__icon">
+            <Users size={16} />
+          </div>
+          <div className="v2-feature-card__title">Team-ready output</div>
+          <p className="v2-feature-card__text">
+            RA, engineering, sourcing and consultants all start from the same structured
+            picture — fewer repeated scoping conversations.
+          </p>
+        </div>
+      </div>
+
+      {/* ── How it works ─────────────────────────────────────── */}
+      <div className="panel">
+        <div className="panel__header">
+          <div className="panel__heading">
+            <div className="panel__eyebrow">Workflow</div>
+            <h2 className="panel__title">A practical scoping flow</h2>
+            <p className="panel__subtitle">
+              Four steps from rough product description to a useful compliance starting point.
+            </p>
+          </div>
+        </div>
+        <div className="panel__body">
+          <div className="v2-steps">
+            {HOME_STEPS.map(({ n, title, text }) => (
+              <div key={n} className="v2-step">
+                <div className="v2-step__num">{n}</div>
+                <div className="v2-step__title">{title}</div>
+                <p className="v2-step__text">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </ShellPage>
   );
 }
 
 /* ──────────────────────────────────────────────────────────────
-   Tools page
+   Tools page  (/tools)
    ────────────────────────────────────────────────────────────── */
-function ToolsPage() {
-  const tools = [
-    {
-      title: "Live analyzer",
-      status: "Available now",
-      text: "Current production workspace for first-pass scoping from natural-language product descriptions.",
-      cta: { to: "/analyze", label: "Open analyzer" },
-    },
-    {
-      title: "Declaration draft builder",
-      status: "Template-ready",
-      text: "Planned module to convert identified legislation and standards into a draft EU DoC starter.",
-      cta: { to: "/contact", label: "Request priority" },
-    },
-    {
-      title: "Evidence & gap engine",
-      status: "Roadmap focus",
-      text: "Planned layer for typical documents, expected reports, missing inputs and blocker-level evidence gaps.",
-      cta: { to: "/about", label: "Read workflow" },
-    },
-    {
-      title: "Consultant handoff pack",
-      status: "Concept ready",
-      text: "Structured export block for sharing product context, assumptions and identified routes with external experts.",
-      cta: { to: "/contact", label: "Discuss use case" },
-    },
-    {
-      title: "Standards map",
-      status: "Expanding",
-      text: "Directory-style route explorer for major directive families, showing primary standards and linked obligations.",
-      cta: { to: "/analyze", label: "Use current route" },
-    },
-    {
-      title: "Cyber route preview",
-      status: "Evolving",
-      text: "Focused workspace for RED cyber, CRA and connected-product clarification pathways.",
-      cta: { to: "/contact", label: "Share requirements" },
-    },
-  ];
+const ROADMAP_TOOLS = [
+  {
+    id: "doc-builder",
+    title: "Declaration draft builder",
+    badge: "soon",
+    badgeLabel: "Template-ready",
+    icon: <FileText size={15} />,
+    text: "Converts identified legislation and standards into a draft EU Declaration of Conformity starter to accelerate documentation work.",
+    cta: { to: "/contact", label: "Request priority" },
+  },
+  {
+    id: "gap-engine",
+    title: "Evidence & gap engine",
+    badge: "roadmap",
+    badgeLabel: "Roadmap",
+    icon: <GitBranch size={15} />,
+    text: "Identifies typical technical documents, expected test reports and missing inputs that could block conformity assessment.",
+    cta: { to: "/about", label: "See workflow" },
+  },
+  {
+    id: "handoff-pack",
+    title: "Consultant handoff pack",
+    badge: "concept",
+    badgeLabel: "Concept",
+    icon: <Package size={15} />,
+    text: "Structured export block for sharing product context, key assumptions and identified routes with external experts.",
+    cta: { to: "/contact", label: "Discuss use case" },
+  },
+  {
+    id: "standards-map",
+    title: "Standards map",
+    badge: "roadmap",
+    badgeLabel: "Expanding",
+    icon: <Layers size={15} />,
+    text: "Directory-style route explorer for major directive families — primary standards and linked parallel obligations.",
+    cta: { to: "/analyze", label: "Use live route" },
+  },
+  {
+    id: "cyber-route",
+    title: "Cyber route preview",
+    badge: "roadmap",
+    badgeLabel: "Evolving",
+    icon: <Wifi size={15} />,
+    text: "Focused workspace for RED cyber, Cyber Resilience Act and connected-product clarification pathways.",
+    cta: { to: "/contact", label: "Share requirements" },
+  },
+];
 
+function ToolsPage() {
   return (
     <ShellPage
       cta={
@@ -282,33 +311,61 @@ function ToolsPage() {
         </Link>
       }
     >
-      <section className="simple-hero">
-        <span className="marketing-eyebrow">Tool stack</span>
-        <h1 className="simple-hero__title">Beyond the main analysis page</h1>
-        <p className="simple-hero__text">
-          These are the product surfaces around the core scoping engine. Some are live now,
-          others are structured placeholders you can refine next.
-        </p>
-      </section>
+      <InnerHero
+        eyebrow="Tool suite"
+        title="The compliance workspace, and what's next"
+        text="The live analyzer is the core product today. The modules below describe what is
+              being built around it — some template-ready, others structured roadmap items."
+      />
 
-      <div className="tools-grid">
-        {tools.map((tool) => (
-          /* FIX: panel__heading + panel__eyebrow + panel__action + panel__body for bottom padding */
-          <div key={tool.title} className="panel tool-card">
-            <div className="panel__header">
-              <div className="panel__heading">
-                <div className="panel__eyebrow">{tool.status}</div>
-                <h2 className="panel__title">{tool.title}</h2>
-                <p className="panel__subtitle">{tool.text}</p>
-              </div>
-              <div className="panel__action">
-                <Link to={tool.cta.to} className="button button--secondary">
-                  {tool.cta.label}
-                </Link>
-              </div>
+      {/* Featured live tool */}
+      <div className="v2-featured-tool">
+        <div className="v2-featured-tool__header">
+          <div className="v2-featured-tool__header-copy">
+            <span className="v2-badge v2-badge--live">Live now</span>
+            <h2 className="v2-featured-tool__title">Live analyzer</h2>
+            <p className="v2-featured-tool__text">
+              The production workspace for first-pass compliance scoping. Describe any
+              connected or consumer product in plain language — the engine returns a structured
+              starting point covering directives, standards, parallel obligations and the scope
+              questions that most change the route.
+            </p>
+          </div>
+          <div className="v2-featured-tool__cta">
+            <Link to="/analyze" className="button button--primary">
+              <Sparkles size={14} />
+              Open analyzer
+            </Link>
+          </div>
+        </div>
+        <div className="v2-featured-tool__tags">
+          {[
+            "Applicable directive families",
+            "Primary standards route",
+            "Parallel obligations",
+            "Clarification prompts",
+          ].map((tag) => (
+            <span key={tag} className="v2-return-tag">
+              <Check size={9} />
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Roadmap grid */}
+      <div className="v2-tools-grid">
+        {ROADMAP_TOOLS.map((tool) => (
+          <div key={tool.id} className="v2-tool-card">
+            <div className="v2-tool-card__head">
+              <div className="v2-tool-card__icon">{tool.icon}</div>
+              <span className={`v2-badge v2-badge--${tool.badge}`}>{tool.badgeLabel}</span>
             </div>
-            {/* Empty body ensures correct bottom padding on every card */}
-            <div className="panel__body panel__body--flush" />
+            <div className="v2-tool-card__title">{tool.title}</div>
+            <p className="v2-tool-card__text">{tool.text}</p>
+            <Link to={tool.cta.to} className="v2-tool-card__link">
+              {tool.cta.label} <ArrowRight size={11} />
+            </Link>
           </div>
         ))}
       </div>
@@ -317,8 +374,31 @@ function ToolsPage() {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   About page
+   About page  (/about)
    ────────────────────────────────────────────────────────────── */
+const ABOUT_STEPS = [
+  {
+    n: "1",
+    title: "Start with real product detail",
+    text: "Power source, radios, software stack, materials, use-case and target market all change the route significantly.",
+  },
+  {
+    n: "2",
+    title: "Inspect and challenge the output",
+    text: "Review returned directives, standards and obligations against your own product knowledge. Look for gaps.",
+  },
+  {
+    n: "3",
+    title: "Apply clarifications, re-run",
+    text: "Use the prompted clarifications to fill scope-changing gaps. Re-run until the route stabilises.",
+  },
+  {
+    n: "4",
+    title: "Use as a briefing start",
+    text: "Hand the structured output to your lab, notified body or regulatory consultant as a first draft context document.",
+  },
+];
+
 function AboutPage() {
   return (
     <ShellPage
@@ -328,78 +408,73 @@ function AboutPage() {
         </Link>
       }
     >
-      <section className="simple-hero">
-        <span className="marketing-eyebrow">About RuleGrid</span>
-        <h1 className="simple-hero__title">A first-pass compliance scoping system</h1>
-        <p className="simple-hero__text">
-          RuleGrid is designed to help teams move from rough product descriptions to a more
-          structured compliance review path. It is best used at intake, concept, sourcing and
-          consultant-briefing stages.
-        </p>
-      </section>
+      <InnerHero
+        eyebrow="About RuleGrid"
+        title="A first-pass EU compliance scoping system"
+        text="RuleGrid is designed to help teams move from rough product descriptions to a more
+              structured compliance review path. It is best used at intake, concept, sourcing
+              and consultant-briefing stages — not as a replacement for expert review."
+      />
 
-      <div className="marketing-section-grid">
-        {/* FIX: panel__heading + panel__eyebrow + panel__body on every panel */}
+      {/* Fit / Not-fit two-col */}
+      <div className="v2-about-grid">
         <div className="panel">
           <div className="panel__header">
             <div className="panel__heading">
-              <div className="panel__eyebrow">How it should be used</div>
-              <h2 className="panel__title">Best fit for the current product form</h2>
+              <div className="panel__eyebrow">Designed for</div>
+              <h2 className="panel__title">Where it fits</h2>
             </div>
           </div>
           <div className="panel__body">
-            <ul className="marketing-list">
-              <li>Early screening of consumer and connected products</li>
-              <li>Identifying likely directive families and standards routes</li>
-              <li>Surfacing missing details that materially change scope</li>
-              <li>Preparing a cleaner internal or external compliance discussion</li>
-            </ul>
+            <div className="v2-icon-list">
+              <IconItem>Early screening of consumer and connected products</IconItem>
+              <IconItem>Identifying likely directive families and standards routes</IconItem>
+              <IconItem>Surfacing missing details that materially change scope</IconItem>
+              <IconItem>Aligning RA, engineering and sourcing around a shared starting picture</IconItem>
+              <IconItem>Preparing a cleaner brief for labs, notified bodies or consultants</IconItem>
+            </div>
           </div>
         </div>
 
         <div className="panel">
           <div className="panel__header">
             <div className="panel__heading">
-              <div className="panel__eyebrow">What it is not</div>
-              <h2 className="panel__title">Important expectation-setting</h2>
+              <div className="panel__eyebrow">Not a substitute for</div>
+              <h2 className="panel__title">Important limits</h2>
             </div>
           </div>
           <div className="panel__body">
-            <ul className="marketing-list">
-              <li>Not a substitute for legal advice or accredited testing</li>
-              <li>Not the final statement of conformity</li>
-              <li>Not a guarantee that every national or sector rule has been captured</li>
-              <li>Not a replacement for product-specific technical review</li>
-            </ul>
+            <div className="v2-icon-list">
+              <IconItem variant="muted">Legal or regulatory legal advice</IconItem>
+              <IconItem variant="muted">Accredited testing or certification</IconItem>
+              <IconItem variant="muted">The final declaration of conformity</IconItem>
+              <IconItem variant="muted">Product-specific technical expert review</IconItem>
+              <IconItem variant="muted">A guarantee every national or sector rule is captured</IconItem>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="panel">
-          <div className="panel__header">
-            <div className="panel__heading">
-              <div className="panel__eyebrow">Suggested workflow</div>
-              <h2 className="panel__title">A practical usage pattern</h2>
-            </div>
+      {/* Workflow panel */}
+      <div className="panel">
+        <div className="panel__header">
+          <div className="panel__heading">
+            <div className="panel__eyebrow">Suggested workflow</div>
+            <h2 className="panel__title">Getting the most from each analysis</h2>
+            <p className="panel__subtitle">
+              RuleGrid works best as a structured intake and briefing layer — not the final word.
+            </p>
           </div>
-          <div className="panel__body">
-            <div className="workflow-list">
-              <div className="workflow-item">
-                <span>1</span>
-                <p>Describe the product with real power, radio, software, materials and use-case details.</p>
+        </div>
+        <div className="panel__body">
+          <div className="v2-steps">
+            {ABOUT_STEPS.map(({ n, title, text }) => (
+              <div key={n} className="v2-step">
+                <div className="v2-step__num">{n}</div>
+                <div className="v2-step__title">{title}</div>
+                <p className="v2-step__text">{text}</p>
               </div>
-              <div className="workflow-item">
-                <span>2</span>
-                <p>Review the returned standards route and parallel obligations.</p>
-              </div>
-              <div className="workflow-item">
-                <span>3</span>
-                <p>Add missing clarifications and re-run until the route stabilizes.</p>
-              </div>
-              <div className="workflow-item">
-                <span>4</span>
-                <p>Use the result as a briefing draft for expert review, testing or documentation work.</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
@@ -408,8 +483,23 @@ function AboutPage() {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   Contact page
+   Contact page  (/contact)
    ────────────────────────────────────────────────────────────── */
+const CONTACT_TOPICS = [
+  "Consultation request",
+  "Demo request",
+  "Tool feedback",
+  "Partnership inquiry",
+  "Custom workflow discussion",
+];
+
+const WHAT_TO_INCLUDE = [
+  "Product category and target market",
+  "Power architecture, radios and cloud dependencies",
+  "Expected launch timing and certification path",
+  "Main blocker, uncertainty or consultant need",
+];
+
 function ContactPage() {
   const [form, setForm] = useState({
     name: "",
@@ -443,26 +533,19 @@ function ContactPage() {
         </Link>
       }
     >
-      <section className="simple-hero">
-        <span className="marketing-eyebrow">Contact &amp; consulting</span>
-        <h1 className="simple-hero__title">Start a discussion around your workflow</h1>
-        <p className="simple-hero__text">
-          Use this form template to prepare a demo request, consulting discussion or product
-          feedback message.
-        </p>
-      </section>
+      <InnerHero
+        eyebrow="Contact &amp; consulting"
+        title="Start a discussion around your workflow"
+        text="Use the form below to prepare a demo request, consulting enquiry or product feedback. Clicking &ldquo;Open email draft&rdquo; composes the message in your email client."
+      />
 
-      <div className="contact-layout">
-        {/* FIX: panel__heading + panel__eyebrow + panel__body wrapping the form */}
+      <div className="v2-contact-grid">
+        {/* ── Left: form ──────────────────────────────────── */}
         <div className="panel">
           <div className="panel__header">
             <div className="panel__heading">
-              <div className="panel__eyebrow">Contact</div>
-              <h2 className="panel__title">Prepare an inquiry</h2>
-              <p className="panel__subtitle">
-                Fill in the template below — clicking "Open email draft" composes the message in
-                your email client.
-              </p>
+              <div className="panel__eyebrow">Inquiry form</div>
+              <h2 className="panel__title">Prepare your message</h2>
             </div>
           </div>
           <div className="panel__body">
@@ -501,11 +584,9 @@ function ContactPage() {
                 <label className="field">
                   <span>Topic</span>
                   <select name="topic" value={form.topic} onChange={onChange}>
-                    <option>Consultation request</option>
-                    <option>Demo request</option>
-                    <option>Tool feedback</option>
-                    <option>Partnership inquiry</option>
-                    <option>Custom workflow discussion</option>
+                    {CONTACT_TOPICS.map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
                   </select>
                 </label>
               </div>
@@ -516,7 +597,7 @@ function ContactPage() {
                   name="message"
                   value={form.message}
                   onChange={onChange}
-                  rows={7}
+                  rows={6}
                   placeholder="Tell us what product type, team problem or workflow you want help with."
                   required
                 />
@@ -524,7 +605,7 @@ function ContactPage() {
 
               <div className="contact-form__actions">
                 <button type="submit" className="button button--primary">
-                  <Sparkles size={14} />
+                  <Mail size={14} />
                   Open email draft
                 </button>
                 <a className="button button--secondary" href="mailto:hello@rulegrid.net">
@@ -532,31 +613,57 @@ function ContactPage() {
                 </a>
               </div>
 
-              {submitted ? (
+              {submitted && (
                 <div className="contact-form__success">
-                  Your email app should open with the drafted inquiry. Replace the address with
-                  your final business email if needed.
+                  Your email app should open with the drafted inquiry. Send it when you're
+                  ready — or replace the address with your business email if needed.
                 </div>
-              ) : null}
+              )}
             </form>
           </div>
         </div>
 
-        {/* FIX: panel__heading + panel__eyebrow + panel__body */}
-        <div className="panel">
-          <div className="panel__header">
-            <div className="panel__heading">
-              <div className="panel__eyebrow">What to include</div>
-              <h2 className="panel__title">Helpful details for a strong first review</h2>
+        {/* ── Right: info ─────────────────────────────────── */}
+        <div className="v2-contact-aside">
+          <div className="panel">
+            <div className="panel__header">
+              <div className="panel__heading">
+                <div className="panel__eyebrow">Direct contact</div>
+                <h2 className="panel__title">Email us</h2>
+              </div>
+            </div>
+            <div className="panel__body">
+              <div className="v2-email-card">
+                <div className="v2-email-card__icon">
+                  <Mail size={16} />
+                </div>
+                <div>
+                  <div className="v2-email-card__label">Email</div>
+                  <a
+                    href="mailto:hello@rulegrid.net"
+                    className="v2-email-card__value"
+                  >
+                    hello@rulegrid.net
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="panel__body">
-            <ul className="marketing-list">
-              <li>Product category and target market</li>
-              <li>Power architecture, radios and cloud/app dependencies</li>
-              <li>Expected launch timing and certification path</li>
-              <li>Main blocker, uncertainty or consultant need</li>
-            </ul>
+
+          <div className="panel">
+            <div className="panel__header">
+              <div className="panel__heading">
+                <div className="panel__eyebrow">What to include</div>
+                <h2 className="panel__title">For a strong first reply</h2>
+              </div>
+            </div>
+            <div className="panel__body">
+              <div className="v2-icon-list">
+                {WHAT_TO_INCLUDE.map((item) => (
+                  <IconItem key={item}>{item}</IconItem>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -570,11 +677,11 @@ function ContactPage() {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/"        element={<HomePage />}       />
+      <Route path="/"        element={<HomePage />}         />
       <Route path="/analyze" element={<AnalyzeWorkspace />} />
-      <Route path="/tools"   element={<ToolsPage />}      />
-      <Route path="/about"   element={<AboutPage />}      />
-      <Route path="/contact" element={<ContactPage />}    />
+      <Route path="/tools"   element={<ToolsPage />}        />
+      <Route path="/about"   element={<AboutPage />}        />
+      <Route path="/contact" element={<ContactPage />}      />
     </Routes>
   );
 }
