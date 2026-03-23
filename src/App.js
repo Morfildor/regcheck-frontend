@@ -1,2321 +1,492 @@
-import { Component, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowLeft,
-  ArrowUp,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  ListChecks,
-  LoaderCircle,
-  RefreshCcw,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  TriangleAlert,
-  X,
-  Zap,
-  FlaskConical,
-  Wifi,
-  Cloud,
-  Cpu,
-  Droplets,
-  Leaf,
-  ShoppingCart,
-} from "lucide-react";
+import { useState } from "react";
+import { BrowserRouter, Link, NavLink, Route, Routes } from "react-router-dom";
+import { ListChecks, Sparkles } from "lucide-react";
+import AnalyzeWorkspace from "./AnalyzeWorkspace";
 import "./App.css";
-import {
-  ANALYZE_URL,
-  IMPORTANCE,
-  METADATA_URL,
-  SECTION_TONES,
-  STATUS,
-  buildClipboardSummary,
-  buildCompactLegislationItems,
-  buildDirectiveBreakdown,
-  buildDynamicTemplates,
-  buildGuidanceItems,
-  buildLegislationGroups,
-  buildRouteSections,
-  directiveRank,
-  directiveShort,
-  directiveTone,
-  formatUiLabel,
-  joinText,
-  normalizeStandardDirective,
-  prettyValue,
-  routeTitle,
-  titleCaseList,
-  titleCaseMinor,
-  formatStageLabel,
-} from "./appHelpers";
 
-/* ================================================================
-   ErrorBoundary
-   ================================================================ */
-class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="error-boundary-fallback" role="alert">
-          <TriangleAlert size={15} />
-          <div>
-            <div className="error-boundary-fallback__title">
-              {this.props.label || "This section could not be rendered"}
-            </div>
-            <div className="error-boundary-fallback__text">
-              Try starting a new analysis if the problem persists.
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
+function PrimaryNav() {
+  const items = [
+    { to: "/", label: "Home", end: true },
+    { to: "/analyze", label: "Analyze" },
+    { to: "/tools", label: "Tools" },
+    { to: "/about", label: "About" },
+    { to: "/contact", label: "Contact" },
+  ];
 
-
-/* ================================================================
-   SMART SUGGESTION ENGINE v2
-   ================================================================ */
-
-const TEXT_SIGNALS = [
-  { re: /\b(mains|230v|240v|plug.?in|corded|wall.?socket|ac.?power)\b/i,  trait: "mains_powered" },
-  { re: /\b(battery|rechargeable|cordless|lithium)\b/i,                    trait: "battery_powered" },
-  { re: /\b(usb.?c?|usb.powered)\b/i,                                      trait: "usb_powered" },
-  { re: /\b(external.*(psu|adapter|adaptor)|power.?supply|charger.?brick)\b/i, trait: "external_psu" },
-  { re: /\b(wi.?fi|wireless.*connect|802\.11)\b/i,                         trait: "wifi" },
-  { re: /\b(bluetooth|ble\b)\b/i,                                           trait: "bluetooth" },
-  { re: /\b(app.?control|mobile.?app|smartphone.?app|ios.*android|android.*ios)\b/i, trait: "app_control" },
-  { re: /\b(cloud|remote.?server|vendor.?backend)\b/i,                     trait: "cloud" },
-  { re: /\b(ota|over.?the.?air|firmware.?update|software.?update)\b/i,     trait: "ota" },
-  { re: /\b(internet|online.?service)\b/i,                                  trait: "internet" },
-  { re: /\b(account|user.?login|sign.?in)\b/i,                             trait: "account" },
-  { re: /\b(password|pin\b|authentication)\b/i,                            trait: "authentication" },
-  { re: /\b(cellular|4g|5g|lte|sim.?card)\b/i,                             trait: "cellular" },
-  { re: /\b(zigbee)\b/i,                                                    trait: "zigbee" },
-  { re: /\b(thread.?protocol|thread.?mesh)\b/i,                            trait: "thread" },
-  { re: /\b(matter.?protocol|matter.?smart)\b/i,                           trait: "matter" },
-  { re: /\b(nfc)\b/i,                                                       trait: "nfc" },
-  { re: /\b(food.?contact|wetted.?path|brew.?path|in.?contact.?with.?food)\b/i, trait: "food_contact" },
-  { re: /\b(no.*(food|beverage).?contact|does.?not.?contact.?food)\b/i,   trait: "no_food_contact" },
-  { re: /\b(pressure|bar\b|pump|pressuri[sz]ed)\b/i,                      trait: "pressure" },
-  { re: /\b(steam|steamer)\b/i,                                             trait: "steam" },
-  { re: /\b(outdoor|outside|weather|ip[456][0-9]|ipx)\b/i,                trait: "outdoor_use" },
-  { re: /\b(indoor.?only|indoor.?use)\b/i,                                 trait: "indoor_use" },
-  { re: /\b(camera|webcam|video.?capture)\b/i,                             trait: "camera" },
-  { re: /\b(microphone|voice.?(control|command)|alexa|google.?assistant)\b/i, trait: "microphone" },
-  { re: /\b(ai\b|machine.?learning|ml.?model|neural)\b/i,                  trait: "ai_related" },
-  { re: /\b(payment|subscription|transaction|wallet|order.?within)\b/i,   trait: "monetary_transaction" },
-  { re: /\b(motor|motorized|compressor|turbine)\b/i,                       trait: "motorized" },
-  { re: /\b(no.?wire|no.?radio|local.?only|no.?connect)\b/i,              trait: "local_only" },
-];
-
-const PRODUCT_CONTEXTS = [
-  { re: /\b(kettle|water.?boiler)\b/i,
-    implied: ["liquid_heating","water_heating","food_contact","mains_power_likely","heating"] },
-  { re: /\b(espresso|coffee.?machine|coffee.?maker|bean.?to.?cup)\b/i,
-    implied: ["coffee_brewing","beverage_preparation","food_contact","mains_power_likely"] },
-  { re: /\b(coffee.?grinder|bean.?grinder)\b/i,
-    implied: ["coffee_grinding","food_contact","motorized","mains_power_likely"] },
-  { re: /\b(fridge|refrigerator|fridge.?freezer)\b/i,
-    implied: ["refrigeration","cooling","food_contact","mains_power_likely","motorized"] },
-  { re: /\b(freezer)\b/i,
-    implied: ["refrigeration","cooling","food_contact","mains_power_likely","motorized"] },
-  { re: /\b(air.?fry|airfry)\b/i,
-    implied: ["cooking","heating","food_preparation","mains_power_likely"] },
-  { re: /\b(robot.?vacuum|robovac|robotic.?clean)\b/i,
-    implied: ["surface_cleaning","motorized","battery_powered"] },
-  { re: /\b(vacuum.?cleaner|hoover)\b/i,
-    implied: ["surface_cleaning","motorized"] },
-  { re: /\b(dishwasher)\b/i,
-    implied: ["washing","water_contact","motorized","mains_power_likely","food_contact"] },
-  { re: /\b(washing.?machine|washer)\b/i,
-    implied: ["washing","textile_care","motorized","mains_power_likely"] },
-  { re: /\b(tumble.?dryer|clothes.?dryer)\b/i,
-    implied: ["drying","textile_care","motorized","mains_power_likely"] },
-  { re: /\b(microwave)\b/i,
-    implied: ["cooking","heating","mains_power_likely"] },
-  { re: /\b(toaster)\b/i,
-    implied: ["cooking","heating","food_contact","mains_power_likely"] },
-  { re: /\b(oven|bake.?oven)\b/i,
-    implied: ["cooking","heating","mains_power_likely"] },
-  { re: /\b(blender|smoothie.?maker|juicer)\b/i,
-    implied: ["food_preparation","motorized","food_contact","mains_power_likely"] },
-  { re: /\b(food.?processor|stand.?mixer|mixer)\b/i,
-    implied: ["food_preparation","motorized","food_contact","mains_power_likely"] },
-  { re: /\b(air.?purifier|air.?cleaner)\b/i,
-    implied: ["air_cleaning","air_treatment","motorized","mains_power_likely"] },
-  { re: /\b(fan\b|desk.?fan|tower.?fan|ceiling.?fan)\b/i,
-    implied: ["ventilation","motorized","mains_power_likely"] },
-  { re: /\b(heater|space.?heater|electric.?heater|radiator)\b/i,
-    implied: ["heating","heating_personal_environment","mains_power_likely"] },
-  { re: /\b(air.?con|aircon|air.?conditioner)\b/i,
-    implied: ["air_treatment","cooling","heating","mains_power_likely","motorized"] },
-  { re: /\b(lawn.?mower|robot.?mow|robotic.?mow)\b/i,
-    implied: ["garden_use","outdoor_use","motorized"] },
-  { re: /\b(smart.?plug|power.?strip|smart.?socket)\b/i,
-    implied: ["mains_powered","electrical"] },
-  { re: /\b(smart.?speaker|voice.?assistant)\b/i,
-    implied: ["speaker","microphone","wifi","cloud","mains_power_likely"] },
-  { re: /\b(doorbell|video.?door)\b/i,
-    implied: ["camera","outdoor_use","fixed_installation"] },
-  { re: /\b(security.?camera|ip.?camera|surveillance)\b/i,
-    implied: ["camera","outdoor_use","data_storage"] },
-  { re: /\b(pet.?feeder|automatic.?feeder)\b/i,
-    implied: ["animal_use","food_contact"] },
-  { re: /\b(electric.?toothbrush|oral irrigator)\b/i,
-    implied: ["oral_care","personal_care","skin_contact","wet_environment","battery_powered"] },
-  { re: /\b(hair.?dryer|hair.?straighten|hair.?curler|curling.?iron)\b/i,
-    implied: ["hair_care","personal_care","mains_power_likely","heating"] },
-];
-
-const SUGGESTION_TIERS = [
-  {
-    id: "power",
-    label: "Power source",
-    icon: "zap",
-    show_if: (det) => det.hasProduct && !det.hasPower,
-    suggestions: [
-      { label: "Mains powered",    text: "mains powered (230 V AC)" },
-      { label: "Battery",          text: "battery powered with rechargeable pack" },
-      { label: "External adapter", text: "powered via external AC/DC power supply adapter" },
-      { label: "USB-C powered",    text: "USB-C powered (low-voltage supply)" },
-    ],
-  },
-  {
-    id: "connectivity",
-    label: "Connectivity",
-    icon: "wifi",
-    show_if: (det) => !det.hasRadio && !det.hasLocalOnly && (det.hasProduct || det.hasPower),
-    suggestions: [
-      { label: "Wi-Fi",        text: "Wi-Fi connected (2.4 GHz)" },
-      { label: "Bluetooth",    text: "Bluetooth connected (BLE)" },
-      { label: "App control",  text: "controllable via mobile app (iOS and Android)" },
-      { label: "No wireless",  text: "no wireless connectivity — fully local operation" },
-    ],
-  },
-  {
-    id: "cloud_software",
-    label: "Cloud & software",
-    icon: "cloud",
-    show_if: (det) => det.hasRadio && !det.hasCloud && !det.hasOTA && !det.hasAccount,
-    suggestions: [
-      { label: "Cloud account",  text: "with cloud account and user login (email + password)" },
-      { label: "OTA updates",    text: "with over-the-air firmware updates" },
-      { label: "Local only",     text: "local network only — no cloud or OTA dependency" },
-    ],
-  },
-  {
-    id: "food_contact",
-    label: "Food & materials",
-    icon: "flask",
-    show_if: (det) => det.hasFoodContext && !det.hasFoodContact && !det.hasNoFoodContact,
-    suggestions: [
-      { label: "Food-contact path",  text: "food-contact wetted path (plastic and metal parts contact food or beverages)" },
-      { label: "Plastic food parts", text: "plastic food-contact parts in brew or food path" },
-      { label: "No food contact",    text: "no direct food or beverage contact" },
-    ],
-  },
-  {
-    id: "pressure_steam",
-    label: "Pressure & steam",
-    icon: "droplets",
-    show_if: (det) => det.hasCoffeeContext && !det.hasPressure && !det.hasSteam,
-    suggestions: [
-      { label: "Pressure system", text: "pressurised brew system (15-bar pump)" },
-      { label: "Steam wand",      text: "steam wand for milk frothing" },
-      { label: "No pressure",     text: "drip or filter brew — no pressure" },
-    ],
-  },
-  {
-    id: "outdoor_context",
-    label: "Use environment",
-    icon: "leaf",
-    show_if: (det) => det.hasOutdoorContext && !det.hasOutdoor && !det.hasIndoor,
-    suggestions: [
-      { label: "Outdoor rated",  text: "for outdoor use — weather and dust exposure (IP-rated enclosure)" },
-      { label: "Indoor only",    text: "indoor use only — not weather exposed" },
-    ],
-  },
-  {
-    id: "cybersecurity",
-    label: "Account & auth",
-    icon: "cpu",
-    show_if: (det) => (det.hasCloud || det.hasInternet) && !det.hasAccount && !det.hasAuthentication,
-    suggestions: [
-      { label: "User account",     text: "requires user account creation (email, password, profile)" },
-      { label: "Authentication",   text: "password and multi-factor authentication for device access" },
-      { label: "No account",       text: "no user account required — device works standalone" },
-    ],
-  },
-  {
-    id: "payments",
-    label: "Transactions",
-    icon: "cart",
-    show_if: (det) => det.hasAppControl && !det.hasMonetary,
-    suggestions: [
-      { label: "In-app purchase",  text: "supports in-app purchases or subscription billing" },
-      { label: "No payments",      text: "no monetary transactions or subscription functions" },
-    ],
-  },
-];
-
-function detectTraits(text) {
-  const t = text.toLowerCase();
-  const signals = new Set();
-
-  for (const { re, trait } of TEXT_SIGNALS) {
-    if (re.test(t)) signals.add(trait);
-  }
-
-  let impliedTraits = new Set();
-  let hasProduct = false;
-  for (const { re, implied } of PRODUCT_CONTEXTS) {
-    if (re.test(t)) {
-      hasProduct = true;
-      implied.forEach(i => impliedTraits.add(i));
-    }
-  }
-
-  const has = (trait) => signals.has(trait) || impliedTraits.has(trait);
-
-  return {
-    hasProduct,
-    hasPower:          has("mains_powered") || has("battery_powered") || has("usb_powered") || has("external_psu") || has("mains_power_likely"),
-    hasRadio:          has("wifi") || has("bluetooth") || has("cellular") || has("zigbee") || has("thread") || has("nfc"),
-    hasAppControl:     has("app_control"),
-    hasCloud:          has("cloud"),
-    hasOTA:            has("ota"),
-    hasInternet:       has("internet"),
-    hasAccount:        has("account"),
-    hasAuthentication: has("authentication"),
-    hasLocalOnly:      has("local_only"),
-    hasFoodContext:    has("food_contact") || has("food_preparation") || has("beverage_preparation") || has("liquid_heating") || has("coffee_brewing"),
-    hasFoodContact:    has("food_contact"),
-    hasNoFoodContact:  has("no_food_contact"),
-    hasCoffeeContext:  has("coffee_brewing") || t.includes("espresso") || t.includes("coffee"),
-    hasPressure:       has("pressure"),
-    hasSteam:          has("steam"),
-    hasOutdoorContext: has("outdoor_use") || has("garden_use"),
-    hasOutdoor:        signals.has("outdoor_use"),
-    hasIndoor:         has("indoor_use"),
-    hasMonetary:       has("monetary_transaction"),
-    raw: signals,
-  };
-}
-
-function useSmartSuggestions(description, backendChips, guidanceItems) {
-  return useMemo(() => {
-    const text = (description || "").trim();
-
-    // Post-analysis: build chips from guidance items (scope-changing clarifications)
-    if (guidanceItems && guidanceItems.length) {
-      const groups = guidanceItems
-        .filter((item) => item.choices && item.choices.length)
-        .slice(0, 4)
-        .map((item) => ({
-          id: item.key,
-          label: item.title,
-          icon: (() => {
-            const k = item.key || "";
-            if (k.includes("radio") || k.includes("connect")) return "wifi";
-            if (k.includes("cloud") || k.includes("ota") || k.includes("account")) return "cloud";
-            if (k.includes("food") || k.includes("material")) return "flask";
-            if (k.includes("battery") || k.includes("power")) return "zap";
-            if (k.includes("data") || k.includes("privacy") || k.includes("cyber")) return "cpu";
-            return "zap";
-          })(),
-          suggestions: item.choices.slice(0, 4).map((choice) => ({
-            label: choice.length > 28 ? choice.slice(0, 26) + "…" : choice,
-            text: choice,
-          })),
-        }));
-      if (groups.length) return groups;
-    }
-
-    // Post-analysis: use backend quick-add chips
-    if (backendChips && backendChips.length) {
-      return [{ id: "backend", label: "Suggested additions", suggestions: backendChips.slice(0, 6) }];
-    }
-
-    // Pre-analysis: use smart trait detection
-    if (text.length < 5) return [];
-
-    const det = detectTraits(text);
-    const groups = [];
-
-    for (const tier of SUGGESTION_TIERS) {
-      if (tier.show_if(det)) {
-        groups.push({ id: tier.id, label: tier.label, icon: tier.icon, suggestions: tier.suggestions });
-        if (groups.length >= 3) break;
-      }
-    }
-
-    return groups;
-  }, [description, backendChips, guidanceItems]);
-}
-
-
-function Panel({ eyebrow, title, subtitle, action, className = "", children }) {
   return (
-    <section className={`panel ${className}`.trim()}>
-      {(eyebrow || title || subtitle || action) && (
-        <header className="panel__header">
-          <div className="panel__heading">
-            {eyebrow ? <div className="panel__eyebrow">{eyebrow}</div> : null}
-            {title ? <h2 className="panel__title">{title}</h2> : null}
-            {subtitle ? <p className="panel__subtitle">{subtitle}</p> : null}
-          </div>
-          {action ? <div className="panel__action">{action}</div> : null}
-        </header>
-      )}
-      <div className="panel__body">{children}</div>
-    </section>
+    <nav className="primary-nav" aria-label="Primary">
+      {items.map((item) => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.end}
+          className={({ isActive }) =>
+            `primary-nav__link ${isActive ? "primary-nav__link--active" : ""}`.trim()
+          }
+        >
+          {item.label}
+        </NavLink>
+      ))}
+    </nav>
   );
 }
 
-function DirectivePill({ dirKey }) {
-  const tone = directiveTone(dirKey);
-  return (
-    <span
-      className="directive-pill"
-      style={{
-        "--pill-bg": tone.bg,
-        "--pill-border": tone.bd,
-        "--pill-text": tone.text,
-        "--pill-dot": tone.dot,
-      }}
-    >
-      <span className="directive-pill__dot" />
-      {directiveShort(dirKey)}
-    </span>
-  );
-}
-
-function RiskPill({ value }) {
-  const tone = STATUS[value] || STATUS.MEDIUM;
-  return (
-    <span
-      className="status-pill"
-      style={{
-        "--pill-bg": tone.bg,
-        "--pill-border": tone.bd,
-        "--pill-text": tone.text,
-      }}
-    >
-      {formatUiLabel(value || "MEDIUM")} risk
-    </span>
-  );
-}
-
-function ImportancePill({ value }) {
-  const tone = IMPORTANCE[value] || IMPORTANCE.medium;
-  return (
-    <span
-      className="importance-pill"
-      style={{
-        "--pill-bg": tone.bg,
-        "--pill-border": tone.bd,
-        "--pill-text": tone.text,
-        "--pill-dot": tone.dot,
-      }}
-    >
-      <span className="importance-pill__dot" />
-      {formatUiLabel(value)}
-    </span>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   AnalysisProgressBanner
-   ────────────────────────────────────────────────────────── */
-function AnalysisProgressBanner({ busy }) {
-  if (!busy) return null;
-
-  return (
-    <div className="analysis-progress analysis-progress--honest" role="status" aria-live="polite">
-      <div className="analysis-progress__honest-row">
-        <div className="analysis-progress__spinner-wrap">
-          <LoaderCircle size={15} className="spin" />
-        </div>
-        <div className="analysis-progress__copy">
-          <div className="analysis-progress__title">Analyzing product</div>
-          <div className="analysis-progress__text">
-            Checking the product description against the compliance engine and building the route.
-          </div>
-        </div>
-      </div>
-      <div className="analysis-progress__bar analysis-progress__bar--indeterminate">
-        <div className="analysis-progress__fill analysis-progress__fill--indeterminate" />
-      </div>
-    </div>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   DirtyBanner
-   ────────────────────────────────────────────────────────── */
-function DirtyBanner({ dirty, busy, onReanalyze, onDismiss }) {
-  return (
-    <div className={`dirty-banner ${dirty ? "dirty-banner--visible" : ""}`} aria-hidden={!dirty}>
-      <div className="page-shell dirty-banner__inner">
-        <div className="dirty-banner__left">
-          <span className="dirty-banner__dot" />
-          <span>Description updated — re-run to apply changes</span>
-        </div>
-        <div className="dirty-banner__actions">
-          <button
-            type="button"
-            className="button button--primary dirty-banner__btn"
-            onClick={onReanalyze}
-            disabled={busy}
-            tabIndex={dirty ? 0 : -1}
-          >
-            {busy ? <LoaderCircle size={13} className="spin" /> : <RefreshCcw size={13} />}
-            {busy ? "Re-running…" : "Re-run analysis"}
-          </button>
-          <button
-            type="button"
-            className="dirty-banner__dismiss"
-            onClick={onDismiss}
-            tabIndex={dirty ? 0 : -1}
-            aria-label="Dismiss"
-            title="Dismiss — keep current analysis"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   TopBar
-   ────────────────────────────────────────────────────────── */
-function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, onCopy, copied }) {
+function SiteHeader({ children }) {
   return (
     <header className="topbar">
-      <div className="page-shell topbar__inner">
-        <div className="brand">
-          <div className="brand__mark">
-            <img src="/logo512.png" alt="RuleGrid" className="brand__logo" />
-          </div>
-          <div>
-            <div className="brand__title">RuleGrid</div>
-            <div className="brand__subtitle">EU regulatory scoping</div>
-          </div>
+      <div className="page-shell topbar__inner topbar__inner--site">
+        <div className="topbar__left">
+          <Link to="/" className="brand brand--link" aria-label="RuleGrid home">
+            <div className="brand__mark">
+              <img src="/logo512.png" alt="RuleGrid" className="brand__logo" />
+            </div>
+            <div>
+              <div className="brand__title">RuleGrid</div>
+              <div className="brand__subtitle">EU regulatory scoping</div>
+            </div>
+          </Link>
+          <PrimaryNav />
         </div>
-
-        <div className="topbar__meta">
-          {result ? (
-            <>
-              <RiskPill value={result?.overall_risk || "MEDIUM"} />
-              <span className="topbar__count topbar__count--hideable">{totalStandards} standards</span>
-
-              <button
-                type="button"
-                className="button button--secondary topbar__action-btn"
-                onClick={onCopy}
-                title="Copy analysis summary to clipboard"
-              >
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-                <span className="topbar__btn-label">{copied ? "Copied" : "Copy"}</span>
-              </button>
-
-              {prevResult ? (
-                <button
-                  type="button"
-                  className="button button--secondary topbar__action-btn"
-                  onClick={onRestorePrev}
-                  title="Restore previous analysis"
-                >
-                  <ArrowLeft size={13} />
-                  <span className="topbar__btn-label">Previous</span>
-                </button>
-              ) : null}
-
-              <button type="button" className="button button--secondary" onClick={onReset}>
-                <RefreshCcw size={13} />
-                New analysis
-              </button>
-            </>
-          ) : (
-            <span className="topbar__hint">Describe the product — get a standards route</span>
-          )}
-        </div>
+        <div className="topbar__meta">{children}</div>
       </div>
     </header>
   );
 }
 
-
-/* ──────────────────────────────────────────────────────────
-   HeroPanel
-   ────────────────────────────────────────────────────────── */
-function HeroPanel({ result, routeSections = [], legislationItems = [], guidanceItems = [], totalStandards = 0, triggeredDirectives = [] }) {
-  const hero = result?.hero_summary || {};
-  const confidence =
-    result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
-
-  if (!result) {
-    return (
-      <div className="landing-strip">
-        <div className="landing-strip__inner">
-          <div className="landing-strip__eyebrow">
-            <Sparkles size={11} />
-            Guided Workspace
-          </div>
-          <h1 className="landing-strip__title">
-            EU regulatory scoping,<br />
-            <span className="landing-strip__title--accent">instantly</span>
-          </h1>
-          <p className="landing-strip__sub">
-            Describe the product below and get the applicable standards route, legislation context, and scope-changing clarifications.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const title = hero.title || `${formatUiLabel(result?.product_type || "Product")} regulatory route`;
-  const subtitle = result?.summary || hero.subtitle || "";
-
-  return (
-    <div className="hero-grid">
-      <Panel className="panel--hero" eyebrow="Guided Workspace" title={title} subtitle={subtitle}>
-        <div className="hero-panel__content">
-          <div className="hero-panel__tags">
-            <span className="soft-tag">Confidence: {formatUiLabel(confidence)}</span>
-            {result?.product_type ? (
-              <span className="soft-tag">{formatUiLabel(result.product_type)}</span>
-            ) : null}
-          </div>
-        </div>
-      </Panel>
-
-      <Panel className="panel--support" eyebrow="Directives triggered" title="Scope">
-        <div className="directive-scope-list">
-          {triggeredDirectives.length ? (
-            <div className="directive-scope-pills">
-              {triggeredDirectives.map((key) => (
-                <DirectivePill key={key} dirKey={key} />
-              ))}
-            </div>
-          ) : (
-            <span className="soft-tag" style={{ color: "var(--text-soft)" }}>No directives detected</span>
-          )}
-          <p className="directive-scope-hint">
-            {totalStandards} standard{totalStandards === 1 ? "" : "s"} across{" "}
-            {routeSections.length} regime{routeSections.length === 1 ? "" : "s"} —
-            {" "}{legislationItems.length} legislation item{legislationItems.length === 1 ? "" : "s"} —
-            {" "}{guidanceItems.length} clarification{guidanceItems.length === 1 ? "" : "s"}.
-          </p>
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   Base Safety Route
-   ────────────────────────────────────────────────────────── */
-const BASE_SAFETY_ROUTE_COPY = {
-  EN_60335: {
-    key: "EN_60335",
-    label: "EN 60335 appliance route",
-    shortLabel: "EN 60335",
-    description:
-      "Primary function points to household and similar appliance safety under EN 60335-1 with the relevant Part 2 standard.",
-    note:
-      "Connected features do not move an appliance into EN 62368-1 when the primary function remains cooking, cleaning, heating, cooling, or a similar physical appliance function.",
-  },
-  EN_62368: {
-    key: "EN_62368",
-    label: "EN 62368 AV/ICT route",
-    shortLabel: "EN 62368",
-    description:
-      "Primary function points to audio/video, information, or communications equipment safety under EN 62368-1.",
-    note:
-      "This is the base safety path for products such as routers, smart displays, laptops, monitors, speakers, and other AV/ICT equipment.",
-  },
-};
-
-function baseSafetyRouteTone(route) {
-  return directiveTone(route?.key === "EN_62368" ? "RED_CYBER" : "LVD");
-}
-
-function inferBaseSafetyRoute(result, routeSections) {
-  if (!result) return null;
-
-  const rows = (routeSections || []).flatMap((section) => section.items || []);
-  const codeStrings = rows.map((item) => String(item?.code || "").toUpperCase());
-  const titleStrings = rows.map((item) => String(item?.title || "").toLowerCase());
-
-  const has60335 =
-    codeStrings.some((code) => /(?:^|\b)(?:EN|IEC)\s*60335(?:-\d+)?(?:\b|\s|$)/i.test(code)) ||
-    titleStrings.some((title) => title.includes("household and similar electrical appliances"));
-
-  const has62368 =
-    codeStrings.some((code) => /(?:^|\b)(?:EN|IEC)\s*62368(?:-\d+)?(?:\b|\s|$)/i.test(code)) ||
-    titleStrings.some(
-      (title) =>
-        title.includes("audio/video") ||
-        title.includes("information and communication technology") ||
-        title.includes("communications technology equipment")
-    );
-
-  const productText = [
-    result?.product_type || "",
-    result?.summary || "",
-    ...(result?.all_traits || []),
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  const applianceHints = [
-    /coffee/, /espresso/, /kettle/, /air.?fry/, /oven/, /vacuum/,
-    /robot.?vac/, /air.?purifier/, /fan\b/, /heater/, /dishwasher/,
-    /washing.?machine/, /dryer/, /blender/, /mixer/, /toaster/,
-    /fridge/, /freezer/, /appliance/,
-  ];
-
-  const avictHints = [
-    /router/, /modem/, /gateway/, /access.?point/, /switch\b/, /laptop/,
-    /desktop/, /server/, /nas\b/, /monitor/, /display/, /smart.?display/,
-    /smart.?speaker/, /speaker/, /television/, /smart.?tv/, /stream(ing)?/,
-    /set.?top/, /projector/, /voip/, /ict/, /communications?/, /audio/,
-    /video/, /network/,
-  ];
-
-  const hasApplianceHint = applianceHints.some((re) => re.test(productText));
-  const hasAvictHint = avictHints.some((re) => re.test(productText));
-
-  if (has60335 && !has62368) return BASE_SAFETY_ROUTE_COPY.EN_60335;
-  if (has62368 && !has60335) return BASE_SAFETY_ROUTE_COPY.EN_62368;
-
-  if (has60335 && has62368) {
-    if (hasApplianceHint && !hasAvictHint) return BASE_SAFETY_ROUTE_COPY.EN_60335;
-    if (hasAvictHint && !hasApplianceHint) return BASE_SAFETY_ROUTE_COPY.EN_62368;
-  }
-
-  if (hasAvictHint && !hasApplianceHint) return BASE_SAFETY_ROUTE_COPY.EN_62368;
-  if (hasApplianceHint && !hasAvictHint) return BASE_SAFETY_ROUTE_COPY.EN_60335;
-
-  return null;
-}
-
-function BaseSafetyRoutePill({ route, compact = false, labelOverride = "" }) {
-  if (!route) return null;
-  const tone = baseSafetyRouteTone(route);
-  const Icon = route.key === "EN_62368" ? Cpu : ShieldCheck;
-
-  return (
-    <span
-      className={`base-route-pill${compact ? " base-route-pill--compact" : ""}`}
-      style={{
-        "--base-route-bg": tone.bg,
-        "--base-route-border": tone.bd,
-        "--base-route-text": tone.text,
-        "--base-route-dot": tone.dot,
-      }}
-    >
-      <Icon size={12} />
-      <span>{labelOverride || route.label}</span>
-    </span>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   SmartSuggestionsPanel
-   ────────────────────────────────────────────────────────── */
-const SUGGESTION_ICONS = {
-  zap:      <Zap size={11} />,
-  wifi:     <Wifi size={11} />,
-  cloud:    <Cloud size={11} />,
-  cpu:      <Cpu size={11} />,
-  flask:    <FlaskConical size={11} />,
-  droplets: <Droplets size={11} />,
-  leaf:     <Leaf size={11} />,
-  cart:     <ShoppingCart size={11} />,
-};
-
-function SmartSuggestionsPanel({ description, onApply, backendChips, guidanceItems, appliedChipTexts = new Set() }) {
-  const groups = useSmartSuggestions(description, backendChips, guidanceItems);
-  if (!groups.length) return null;
-
-  return (
-    <div className="smart-suggestions">
-      {groups.map((group) => (
-        <div key={group.id} className="smart-suggestions__group">
-          <div className="smart-suggestions__label">
-            {group.icon ? SUGGESTION_ICONS[group.icon] : null}
-            {group.label}
-          </div>
-          <div className="smart-suggestions__chips">
-            {group.suggestions.map((s) => {
-              const isApplied = appliedChipTexts.has(s.text);
-              return (
-                <button
-                  key={s.label}
-                  type="button"
-                  className={`smart-chip${isApplied ? " smart-chip--applied" : ""}`}
-                  onClick={() => { if (!isApplied) onApply(s.text); }}
-                  disabled={isApplied}
-                  title={isApplied ? "Already applied" : `Add: ${s.text}`}
-                  aria-pressed={isApplied}
-                >
-                  {isApplied ? <Check size={10} /> : null}
-                  {s.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   ComposerPanel
-   ────────────────────────────────────────────────────────── */
-function ComposerPanel({ description, setDescription, templates, backendChips, guidanceItems, onAnalyze, busy, onDirty, isLanding }) {
-  const charMax = 1200;
-  const wordCount = description.trim() ? description.trim().split(/\s+/).length : 0;
-  const usageState =
-    description.length > charMax * 0.9
-      ? "counter--danger"
-      : description.length > charMax * 0.7
-        ? "counter--warn"
-        : "";
-
-  const textareaRef = useRef(null);
-  const [appliedChipTexts, setAppliedChipTexts] = useState(() => new Set());
-
-  useEffect(() => {
-    setAppliedChipTexts(new Set());
-  }, [isLanding]);
-
-  useEffect(() => {
-    if (isLanding && textareaRef.current) {
-      const t = setTimeout(() => textareaRef.current?.focus(), 120);
-      return () => clearTimeout(t);
-    }
-  }, [isLanding]);
-
-  const handleApply = useCallback((text) => {
-    setDescription((current) => joinText(current, text));
-    setAppliedChipTexts((prev) => new Set([...prev, text]));
-    onDirty(true);
-    textareaRef.current?.focus();
-  }, [setDescription, onDirty]);
-
-  const showWordHint = wordCount > 0 && wordCount < 30;
-
-  const sharedTextarea = (
-    <label className={isLanding ? "landing-composer__field" : "composer__field"}>
-      <span className="sr-only">Describe your product</span>
-      <textarea
-        ref={textareaRef}
-        value={description}
-        onChange={(event) => {
-          setDescription(event.target.value);
-          onDirty(true);
-        }}
-        onKeyDown={(event) => {
-          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-            event.preventDefault();
-            onAnalyze();
-          }
-        }}
-        placeholder="e.g. Connected espresso machine with Wi-Fi, OTA updates, cloud account, mains power, grinder, pressure system, food-contact brew path."
-        rows={isLanding ? 7 : 6}
-        maxLength={charMax}
-        spellCheck={false}
-        className={isLanding ? "landing-composer__textarea" : "composer__textarea"}
-      />
-      {!isLanding && (
-        <div className="composer__field-footer">
-          <div className="composer__helper">
-            Include: power · radios · cloud/OTA · core functions · food-contact paths
-          </div>
-          <div className={`counter ${usageState}`.trim()}>
-            {wordCount ? <span>{wordCount}w</span> : null}
-            <span>{description.length} / {charMax}</span>
-          </div>
-        </div>
-      )}
-    </label>
-  );
-
-  /* ── Landing variant ── */
-  if (isLanding) {
-    return (
-      <div className="landing-composer">
-        <div className="landing-composer__quickstart">
-          <span className="micro-label">Quick start</span>
-          <div className="template-row">
-            {templates.slice(0, 10).map((template) => (
-              <button
-                key={template.label}
-                type="button"
-                className="chip-button"
-                onClick={() => {
-                  setDescription(template.text);
-                  setAppliedChipTexts(new Set());
-                  onDirty(true);
-                  textareaRef.current?.focus();
-                }}
-              >
-                {template.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="landing-composer__input-block">
-          {sharedTextarea}
-          <div className="landing-composer__cta-row">
-            <div className="landing-composer__cta-left">
-              <div className={`counter ${usageState}`.trim()}>
-                {wordCount ? <span>{wordCount}w</span> : null}
-                <span>{description.length} / {charMax}</span>
-              </div>
-              {showWordHint ? (
-                <span className="word-hint">aim for 30–80 words</span>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              className="button button--primary button--landing-cta"
-              onClick={onAnalyze}
-              disabled={busy || !description.trim()}
-            >
-              {busy ? <LoaderCircle size={15} className="spin" /> : <Search size={15} />}
-              {busy ? "Analyzing…" : "Analyze product"}
-              {!busy && <span className="cta-hint">⌘↩</span>}
-            </button>
-          </div>
-        </div>
-
-        <div className="input-hints">
-          <div className="input-hint">
-            <span className="input-hint__icon"><Zap size={11} /></span>
-            <span><strong>Power & function</strong> — mains, battery, motors, heating</span>
-          </div>
-          <div className="input-hint">
-            <span className="input-hint__icon"><Wifi size={11} /></span>
-            <span><strong>Connectivity</strong> — Wi-Fi, Bluetooth, cloud, OTA</span>
-          </div>
-          <div className="input-hint">
-            <span className="input-hint__icon"><FlaskConical size={11} /></span>
-            <span><strong>Materials</strong> — wetted paths, food-contact</span>
-          </div>
-        </div>
-
-        <SmartSuggestionsPanel
-          description={description}
-          onApply={handleApply}
-          backendChips={null}
-          guidanceItems={null}
-          appliedChipTexts={appliedChipTexts}
-        />
-      </div>
-    );
-  }
-
-  /* ── Refinement variant (post-result) ── */
-  return (
-    <Panel
-      eyebrow="Input"
-      title="Refine description"
-      subtitle="Add missing detail and re-run to tighten the route."
-      action={<span className="keyboard-hint">⌘ + Enter</span>}
-    >
-      <div className="composer">
-        <div className="composer__block">
-          <div className="micro-label">Quick start</div>
-          <div className="template-row">
-            {templates.slice(0, 6).map((template) => (
-              <button
-                key={template.label}
-                type="button"
-                className="chip-button"
-                onClick={() => {
-                  setDescription(template.text);
-                  setAppliedChipTexts(new Set());
-                  onDirty(true);
-                  textareaRef.current?.focus();
-                }}
-              >
-                {template.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {sharedTextarea}
-
-        <SmartSuggestionsPanel
-          description={description}
-          onApply={handleApply}
-          backendChips={backendChips}
-          guidanceItems={guidanceItems}
-          appliedChipTexts={appliedChipTexts}
-        />
-
-        <div className="composer__actions">
-          <button
-            type="button"
-            className="button button--primary"
-            onClick={onAnalyze}
-            disabled={busy || !description.trim()}
-          >
-            {busy ? <LoaderCircle size={15} className="spin" /> : <Search size={15} />}
-            {busy ? "Analyzing…" : "Analyze product"}
-          </button>
-          <button
-            type="button"
-            className="button button--secondary"
-            onClick={() => {
-              setDescription("");
-              setAppliedChipTexts(new Set());
-              onDirty(false);
-            }}
-            disabled={!description}
-          >
-            Clear
-          </button>
-        </div>
-      </div>
-    </Panel>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   OverviewPanel
-   ────────────────────────────────────────────────────────── */
-function InlineTag({ children, tone = "default" }) {
-  const tones = {
-    default: {
-      bg: "rgba(167,183,203,0.11)",
-      bd: "rgba(167,183,203,0.22)",
-      text: "#c0cbda",
-    },
-    positive: {
-      bg: "rgba(128,214,168,0.13)",
-      bd: "rgba(128,214,168,0.26)",
-      text: "#9ce0bc",
-    },
-    caution: {
-      bg: "rgba(240,192,103,0.14)",
-      bd: "rgba(240,192,103,0.28)",
-      text: "#f5cc81",
-    },
-    strong: {
-      bg: "rgba(125,185,255,0.13)",
-      bd: "rgba(125,185,255,0.28)",
-      text: "#93c5ff",
-    },
-  };
-  const style = tones[tone] || tones.default;
-  return (
-    <span
-      className="soft-tag"
-      style={{
-        background: style.bg,
-        borderColor: style.bd,
-        color: style.text,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-function OverviewPanel({ result, routeSections, legislationItems }) {
-  if (!result) return null;
-
-  const confidence =
-    result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
-  const totalStandards = routeSections.reduce(
-    (count, section) => count + (section.items || []).length,
-    0
-  );
-
-  const metrics = [
-    { label: "Product", value: formatUiLabel(result?.product_type || "unclear") },
-    { label: "Stage", value: formatStageLabel(result?.product_match_stage) },
-    {
-      label: "Risk",
-      value: formatUiLabel(result?.overall_risk || "MEDIUM"),
-      highlight: (result?.overall_risk || "MEDIUM").toUpperCase() === "HIGH",
-    },
-    { label: "Confidence", value: formatUiLabel(confidence) },
-    { label: "Standards", value: String(totalStandards) },
-    { label: "Legislation", value: String(legislationItems.length) },
-  ];
-
-  return (
-    <div className="overview-bar">
-      <p className="overview-bar__summary">
-        {result?.summary || "Analysis complete."}
-      </p>
-      <div className="overview-bar__metrics">
-        {metrics.map(({ label, value, highlight }) => (
-          <div key={label} className="overview-metric">
-            <span className="overview-metric__label">{label}</span>
-            <span className={`overview-metric__value${highlight ? " overview-metric__value--high" : ""}`}>
-              {value}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   SnapshotRail — sticky sidebar
-   Removed: EngineDetailsSection, legislation groups section
-   Added: active directives pills
-   ────────────────────────────────────────────────────────── */
-function SnapshotRail({ result, routeSections, description, onCopy, copied, legislationGroups, totalStandards = 0, triggeredDirectives = [] }) {
-  if (!result) return null;
-
-  const futureWatch = (result?.future_watchlist || []).slice(0, 3);
-  const sideMetrics = [
-    ["Product", formatUiLabel(result?.product_type || "unclear")],
-    ["Family", formatUiLabel(result?.product_family || "unclear")],
-    ["Subtype", result?.product_subtype ? formatUiLabel(result.product_subtype) : "Not locked"],
-    ["Stage", formatStageLabel(result?.product_match_stage)],
-    ["Risk", formatUiLabel(result?.overall_risk || "MEDIUM")],
-    ["Standards", totalStandards],
-  ];
-
-  return (
-    <aside className="side-column">
-      <div className="side-column__sticky">
-        <Panel
-          className="panel--sidebar panel--sidebar-compact"
-          eyebrow="Snapshot"
-          title="Context"
-          subtitle="Primary route context pinned while you review the standards."
-        >
-          <div className="snapshot-list">
-            {sideMetrics.map(([label, value]) => (
-              <div key={label} className="snapshot-row">
-                <span className="snapshot-row__label">{label}</span>
-                <strong>{value}</strong>
-              </div>
-            ))}
-          </div>
-
-          <CopyResultsButton onCopy={onCopy} copied={copied} />
-
-          {triggeredDirectives.length ? (
-            <div className="sidebar-section">
-              <div className="sidebar-section__heading">Active directives</div>
-              <div className="sidebar-section__subheading">Covered in the standards route</div>
-              <div className="tag-row sidebar-tag-row">
-                {triggeredDirectives.map((key) => (
-                  <DirectivePill key={key} dirKey={key} />
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {futureWatch.length ? (
-            <div className="sidebar-section">
-              <div className="sidebar-section__heading">Future watchlist</div>
-              <div className="sidebar-section__subheading">Short horizon items worth tracking</div>
-              <div className="tag-row sidebar-tag-row">
-                {futureWatch.map((item) => (
-                  <InlineTag key={`sidebar-watch-${item}`}>{titleCaseMinor(item)}</InlineTag>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </Panel>
-      </div>
-    </aside>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   MinimalClarificationPrompt — replaces ClarificationsPanel
-   ────────────────────────────────────────────────────────── */
-function MinimalClarificationPrompt({ items, onApply }) {
-  const [appliedKeys, setAppliedKeys] = useState(new Set());
-  const [dismissed, setDismissed] = useState(false);
-  const [showAll, setShowAll] = useState(false);
-
-  const handleApply = useCallback((itemKey, choiceText) => {
-    setAppliedKeys((prev) => new Set([...prev, itemKey]));
-    onApply(choiceText);
-  }, [onApply]);
-
-  const visibleItems = (items || []).filter(
-    (item) => item.importance === "high" || item.importance === "medium"
-  );
-
-  if (!visibleItems.length) return null;
-
-  const primaryItems = showAll ? visibleItems : visibleItems.slice(0, 3);
-
-  if (dismissed) {
-    return (
-      <div className="clarify-prompt clarify-prompt--collapsed">
-        <button
-          type="button"
-          className="clarify-prompt__collapsed-btn"
-          onClick={() => setDismissed(false)}
-        >
-          <Sparkles size={12} />
-          <span>{visibleItems.length} clarification{visibleItems.length === 1 ? "" : "s"} hidden</span>
-          <span className="clarify-prompt__collapsed-link">Show clarifications</span>
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="clarify-prompt">
-      <div className="clarify-prompt__header">
-        <div className="clarify-prompt__left">
-          <Sparkles size={12} />
-          <span>Scope-changing details detected</span>
-        </div>
-        <div className="clarify-prompt__header-actions">
-          {visibleItems.length > 3 ? (
-            <button
-              type="button"
-              className="clarify-prompt__toggle"
-              onClick={() => setShowAll((current) => !current)}
-            >
-              {showAll ? "Show fewer" : `Show all (${visibleItems.length})`}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="clarify-prompt__dismiss"
-            onClick={() => setDismissed(true)}
-            aria-label="Dismiss"
-          >
-            <X size={13} />
-          </button>
-        </div>
-      </div>
-
-      <div className="clarify-prompt__items">
-        {primaryItems.map((item) => {
-          const isApplied = appliedKeys.has(item.key);
-          return (
-            <div
-              key={item.key}
-              className={`clarify-prompt__item${isApplied ? " clarify-prompt__item--applied" : ""}`}
-            >
-              <div className="clarify-prompt__item-title">
-                <ImportancePill value={item.importance} />
-                <span>{item.title}</span>
-                {isApplied ? <Check size={11} style={{ color: "var(--accent-teal)", marginLeft: 6 }} /> : null}
-              </div>
-              {item.description ? (
-                <div className="clarify-prompt__item-text">{item.description}</div>
-              ) : null}
-              {!isApplied && item.choices?.length ? (
-                <div className="clarify-prompt__choices">
-                  {item.choices.slice(0, showAll ? 5 : 3).map((choice) => (
-                    <button
-                      key={`${item.key}-${choice}`}
-                      type="button"
-                      className="chip-button chip-button--soft"
-                      onClick={() => handleApply(item.key, choice)}
-                    >
-                      + {choice}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function StandardItem({ item, sectionKey }) {
-  const dirKey = normalizeStandardDirective(item);
-  const dirTone = directiveTone(dirKey);
-  const sectionTone = SECTION_TONES[sectionKey] || SECTION_TONES.unknown;
-  const evidenceList = titleCaseList(item.evidence_hint || []);
-  const matchedTraits = titleCaseList(item.matched_traits_all || item.matched_traits_any || []);
-  const summary = item.standard_summary || item.reason || item.notes || "";
-  const metaFields = [
-    { label: "Legislation",   value: prettyValue(item.harmonized_reference) },
-    { label: "EU Harmonized", value: prettyValue(item.dated_version) },
-    { label: "EU Latest",     value: prettyValue(item.version) },
-  ].filter((field) => field.value && field.value !== "—");
-
-  return (
-    <article
-      className="standard-item"
-      style={{
-        "--item-accent": dirTone.dot,
-        "--item-accent-bg": dirTone.bg,
-        "--item-accent-border": dirTone.bd,
-      }}
-    >
-      <div className="standard-item__header">
-        <div className="standard-item__chips">
-          <span className="code-chip">{item.code || "No code"}</span>
-          <DirectivePill dirKey={dirKey} />
-          <span
-            className="status-pill status-pill--soft"
-            style={{
-              "--pill-bg": sectionTone.bg,
-              "--pill-border": sectionTone.bd,
-              "--pill-text": sectionTone.text,
-            }}
-          >
-            {formatUiLabel(item.harmonization_status || sectionKey || "unknown")}
-          </span>
-          {item.match_basis ? <InlineTag tone="strong">{formatUiLabel(item.match_basis)}</InlineTag> : null}
-          {item.fact_basis ? <InlineTag tone={item.fact_basis === "confirmed" ? "positive" : "caution"}>{formatUiLabel(item.fact_basis)}</InlineTag> : null}
-          {item.selection_group ? <InlineTag>{titleCaseMinor(item.selection_group)}</InlineTag> : null}
-        </div>
-        <h4 className="standard-item__title">{titleCaseMinor(item.title || "Untitled standard")}</h4>
-      </div>
-
-      {summary && summary !== item.title ? (
-        <p className="standard-item__summary">{summary}</p>
-      ) : null}
-
-      {metaFields.length ? (
-        <div className="standard-item__meta-grid">
-          {metaFields.map((field) => (
-            <div key={field.label} className="standard-item__meta-card">
-              <div className="micro-label">{field.label}</div>
-              <div className="standard-item__meta-value">{field.value}</div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {evidenceList.length ? (
-        <div className="standard-item__evidence">
-          <div className="micro-label">Evidence expected</div>
-          <div className="tag-row">
-            {evidenceList.map((entry) => (
-              <span key={entry} className="soft-tag">
-                {entry}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {matchedTraits.length ? (
-        <div className="standard-item__evidence">
-          <div className="micro-label">Matched traits</div>
-          <div className="tag-row">
-            {matchedTraits.slice(0, 8).map((entry) => (
-              <span key={entry} className="soft-tag">
-                {entry}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </article>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   RouteSection — id added for RegimeNav anchor scrolling
-   ────────────────────────────────────────────────────────── */
-function RouteSection({ section, baseSafetyRoute, open, onToggle }) {
-  const tone = directiveTone(section.key);
-  const title = routeTitle(section);
-  const subtitle =
-    section.title && titleCaseMinor(section.title) !== title ? titleCaseMinor(section.title) : "";
-  const lvdBaseSafetyLabel =
-    section.key === "LVD" && baseSafetyRoute
-      ? `Base safety: ${baseSafetyRoute.key === "EN_62368" ? "EN 62368-1" : "EN 60335-1"}`
-      : "";
-
-  const bodyId = `route-section-body-${section.key}`;
-
-  return (
-    <section
-      id={`route-section-${section.key}`}
-      className="route-section"
-      style={{
-        "--route-tone-bg": tone.bg,
-        "--route-tone-border": tone.bd,
-        "--route-tone-dot": tone.dot,
-      }}
-    >
-      <button
-        type="button"
-        className="route-section__toggle"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls={bodyId}
-      >
-        <div className="route-section__title-wrap">
-          <div className="route-section__indicator" />
-          <div>
-            <div className="route-section__title-row">
-              <h3>{title}</h3>
-              <DirectivePill dirKey={section.key} />
-              {lvdBaseSafetyLabel ? (
-                <BaseSafetyRoutePill route={baseSafetyRoute} compact labelOverride={lvdBaseSafetyLabel} />
-              ) : null}
-            </div>
-            {subtitle ? <p>{subtitle}</p> : null}
-          </div>
-        </div>
-
-        <div className="route-section__meta">
-          <span className="route-section__count">
-            {section.count || 0} standard{section.count === 1 ? "" : "s"}
-          </span>
-          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </div>
-      </button>
-
-      {open ? (
-        <div id={bodyId} className="route-section__body">
-          {(section.items || []).map((item) => (
-            <StandardItem
-              key={`${section.key}-${item.code || item.title}-${item.version || ""}`}
-              item={item}
-              sectionKey={item.harmonization_status || "unknown"}
-            />
-          ))}
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-/* ──────────────────────────────────────────────────────────
-   RegimeNav — chips now scroll to their section on click
-   ────────────────────────────────────────────────────────── */
-function RegimeNav({ directiveBreakdown }) {
-  const scrollToSection = useCallback((key) => {
-    const el = document.getElementById(`route-section-${key}`);
-    if (el) {
-      const offset = 80; // topbar + dirty banner approx
-      const top = el.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({ top, behavior: "smooth" });
-    }
-  }, []);
-
-  if (!directiveBreakdown.length) return null;
-
-  return (
-    <div className="regime-nav">
-      <div className="regime-nav__inner">
-        {directiveBreakdown.map(({ key, count }) => {
-          const tone = directiveTone(key);
-          return (
-            <button
-              key={key}
-              type="button"
-              className="regime-chip regime-chip--clickable"
-              onClick={() => scrollToSection(key)}
-              title={`Jump to ${directiveShort(key)} section`}
-              style={{
-                "--chip-dot": tone.dot,
-                "--chip-bg": tone.bg,
-                "--chip-border": tone.bd,
-                "--chip-text": tone.text,
-              }}
-            >
-              <span className="regime-chip__dot" />
-              <span className="regime-chip__label">{directiveShort(key)}</span>
-              <span className="regime-chip__count">{count}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   StandardsRoutePanel
-   ────────────────────────────────────────────────────────── */
-function StandardsRoutePanel({ sections, directiveBreakdown, baseSafetyRoute }) {
-  const [openSet, setOpenSet] = useState(
-    () => new Set(sections.slice(0, 1).map((s) => s.key))
-  );
-
-  const allOpen = sections.length > 0 && openSet.size === sections.length;
-
-  const toggleSection = useCallback((key) => {
-    setOpenSet((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
-
-  const toggleAll = useCallback(() => {
-    if (allOpen) {
-      setOpenSet(new Set());
-    } else {
-      setOpenSet(new Set(sections.map((s) => s.key)));
-    }
-  }, [allOpen, sections]);
-
-  if (!sections.length) return null;
-
-  return (
-    <Panel
-      className="panel--standards"
-      eyebrow="Primary Output"
-      title="Standards route"
-      subtitle="Grouped by regime — scan the path without losing item-level detail."
-      action={
-        <button
-          type="button"
-          className="button button--secondary expand-all-btn"
-          onClick={toggleAll}
-          title={allOpen ? "Collapse all sections" : "Expand all sections"}
-        >
-          {allOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          <span className="expand-all-btn__label">{allOpen ? "Collapse all" : "Expand all"}</span>
-        </button>
-      }
-    >
-      <RegimeNav directiveBreakdown={directiveBreakdown} />
-
-      <div className="route-stack">
-        {sections.map((section) => (
-          <RouteSection
-            key={section.key || section.title}
-            section={section}
-            baseSafetyRoute={baseSafetyRoute}
-            open={openSet.has(section.key)}
-            onToggle={() => toggleSection(section.key)}
-          />
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   LegislationSection — mirrors RouteSection exactly.
-   Each non-CE legislation item gets its own expandable card.
-   ────────────────────────────────────────────────────────── */
-const LEGISLATION_CATEGORY_LABELS = {
-  non_ce:    "Parallel obligation",
-  future:    "Upcoming",
-  framework: "Framework",
-  other:     "Other",
-};
-
-/* ──────────────────────────────────────────────────────────
-   LEGISLATION_ENRICHMENT
-   Provides rich default content for known directive keys when
-   the API response carries only thin / fallback data.
-   ────────────────────────────────────────────────────────── */
-const LEGISLATION_ENRICHMENT = {
-  REACH: {
-    obligation_summary:
-      "Check all articles placed on the EU market against the ECHA SVHC candidate list. Article 33 communication duties apply where SVHCs exceed 0.1 % w/w in a product or article.",
-    rationale:
-      "REACH Article 33 applies regardless of product category. The ECHA candidate list is updated biannually; substance surveillance must be ongoing throughout the product lifecycle.",
-    actions: [
-      "Screen the full BOM against the current ECHA SVHC candidate list",
-      "Issue Article 33 notifications to downstream recipients where the 0.1 % threshold is exceeded",
-      "Provide substance information to consumers within 45 days of request",
-      "Maintain substance compliance records in the technical file",
-    ],
-    scope:
-      "Applies to all articles placed on the EU market. Distinct from and additional to RoHS restricted-substance obligations.",
-  },
-  BATTERY: {
-    obligation_summary:
-      "Battery category classification is the first step — portable consumer batteries trigger labelling, EPR registration, and end-of-life duties; LMT batteries add performance reporting requirements.",
-    rationale:
-      "Regulation 2023/1542/EU replaces the Battery Directive. Obligations are tiered by category (portable, LMT, SLI, industrial, EV). Removability requirements, QR-code labelling, and EPR registration are among the most impactful for consumer product manufacturers.",
-    actions: [
-      "Classify the battery as portable, LMT, SLI, industrial, or EV",
-      "Review labelling requirements: capacity, recycled content, chemistry symbol, QR code",
-      "Assess removability and replaceability obligations for embedded batteries",
-      "Register with the national EPR scheme in each EU Member State of sale",
-      "Confirm end-of-life take-back information is provided in product documentation",
-    ],
-    notes:
-      "Treat battery-as-component separately from battery-as-product. Portable consumer products will usually trigger portable-battery review; e-bikes and e-scooters may trigger LMT review; larger packs may move to industrial or EV categories.",
-  },
-  GPSR: {
-    obligation_summary:
-      "Horizontal consumer safety obligations apply from 13 December 2024 for products not fully governed by sector-specific harmonised legislation — covering traceability, post-market surveillance, and online marketplace requirements.",
-    rationale:
-      "GPSR replaced the GPSD and directly strengthens economic operator obligations. Products with CE marking may still face residual GPSR obligations for hazards not addressed by the sector legislation.",
-    actions: [
-      "Verify the product meets the GPSR 'safe product' definition",
-      "Ensure traceability information is present on the product and packaging (batch, serial, manufacturer details)",
-      "Review incident reporting and post-market surveillance processes",
-      "Confirm online listing compliance: safety information must be visible at point of sale",
-      "Check notified safety risks are reported to the Safety Gate portal where required",
-    ],
-    scope:
-      "Applies to all consumer products placed on the EU market. A product may face residual GPSR obligations even where harmonised sector legislation applies.",
-  },
-  WEEE: {
-    obligation_summary:
-      "Crossed-out wheelie-bin marking, EPR producer registration, and end-of-life obligations apply for all finished EEE placed on the EU market unless a specific exclusion applies.",
-    rationale:
-      "WEEE follows an open-scope model since August 2018: all EEE is in scope unless explicitly excluded. Producer registration is required per Member State and must precede first placement on that market.",
-    actions: [
-      "Classify the product under the correct Annex III WEEE category",
-      "Apply the crossed-out wheeled-bin symbol to the product and packaging",
-      "Register as a producer (or appoint a representative) in each EU Member State of sale",
-      "Provide end-of-life disposal information to end users in product documentation",
-    ],
-    notes:
-      "Treat WEEE as a parallel end-of-life and producer-responsibility layer, not as a CE marking route. Exclude obvious fixed-installation and industrial-infrastructure cases from automatic consumer-style WEEE matching.",
-  },
-  GDPR: {
-    obligation_summary:
-      "Data-protection obligations apply where the product processes personal data — including via cloud accounts, cameras, microphones, location, or usage analytics. Lawful basis, data minimisation, and retention limits must all be assessed.",
-    rationale:
-      "Connected consumer products typically act as data controllers. GDPR requires a lawful basis for each processing activity, appropriate privacy notices, and data-subject rights support. The controller–processor relationship with cloud backend operators must be documented.",
-    actions: [
-      "Identify all personal data categories collected by the product and companion app",
-      "Establish a lawful basis for each processing activity (consent, contract, legitimate interest, etc.)",
-      "Draft or update the privacy notice and user consent flows in the product app",
-      "Assess the controller vs processor role for cloud backend and third-party integrations",
-      "Review data retention schedules and implement deletion mechanisms",
-      "Conduct a DPIA where processing is likely to result in high risk to individuals",
-    ],
-    scope:
-      "Applies to all products processing personal data of EU residents, regardless of where the manufacturer or processor is established.",
-  },
-  CRA: {
-    obligation_summary:
-      "Products with digital elements must meet horizontal cybersecurity lifecycle requirements from 11 December 2027 — covering secure-by-design, vulnerability handling, SBOM, security update obligations, and conformity assessment.",
-    rationale:
-      "The CRA introduces lifecycle security obligations distinct from the RED DA cybersecurity route. It classifies products as default, important (Class I), or critical (Class II), with higher classes requiring third-party conformity assessment.",
-    actions: [
-      "Classify the product as default or important/critical under CRA Annex III and IV",
-      "Establish a software bill of materials (SBOM) and keep it updated",
-      "Define a vulnerability disclosure and coordinated handling procedure",
-      "Plan a security update channel and minimum active support period",
-      "Assess the conformity route: self-assessment or third-party audit",
-      "Prepare EU Declaration of Conformity and technical documentation for CRA",
-    ],
-    scope:
-      "Applies from 11 December 2027. Coexists with RED DA cybersecurity obligations, which remain applicable for radio equipment under the CE marking route.",
-  },
-  AI_Act: {
-    obligation_summary:
-      "AI system classification review is required where the product includes AI or machine-learning functionality. Provider and deployer obligations depend on risk tier — prohibited, high-risk, limited-risk, or minimal-risk.",
-    rationale:
-      "The AI Act applies from 2 August 2026 for most obligations. AI-integrated consumer products must be classified. High-risk AI systems require a conformity assessment, technical documentation, and registration in the EU AI database.",
-    actions: [
-      "Classify AI functionality by risk tier: prohibited, high-risk, limited-risk, or minimal-risk",
-      "Determine provider vs deployer role in the AI system value chain",
-      "Review technical documentation and logging requirements for high-risk AI systems",
-      "Assess EU AI database registration obligation if the system is classified high-risk",
-      "Confirm transparency obligations for AI systems interacting with natural persons",
-    ],
-    scope:
-      "Applies from 2 August 2026. Prohibited AI practice provisions applied from 2 February 2025. GPAI model obligations apply from 2 August 2025.",
-  },
-  FCM: {
-    obligation_summary:
-      "Compliance declarations and supporting evidence are required for all materials and articles in the food-contact wetted path — including plastics, metals, rubbers, and coatings intended for direct or indirect contact with food or beverages.",
-    rationale:
-      "Regulation 1935/2004 sets the framework for all food-contact materials. Specific measures such as Regulation 10/2011 for plastics add migration limits and positive lists. Supplier declarations alone are insufficient without supporting evidence.",
-    actions: [
-      "Identify all materials in the food-contact wetted path (brew path, jug, lid, seals, coatings)",
-      "Obtain food-contact compliance declarations from all component suppliers",
-      "Review against applicable specific measures: plastics (10/2011), metals, ceramics as relevant",
-      "Maintain food-contact compliance records in the technical file",
-    ],
-    scope:
-      "Applies to all materials and articles intended for contact with food or beverages, including coatings, seals, and indirect-contact components.",
-  },
-  FCM_PLASTIC: {
-    obligation_summary:
-      "Plastic food-contact parts must comply with the positive list of authorised monomers and additives under Regulation 10/2011 and must not exceed specific migration limits (SMLs) or the overall migration limit (OML = 10 mg/dm²).",
-    rationale:
-      "Regulation 10/2011 requires a Declaration of Compliance for plastic food-contact materials, supported by migration test evidence. Non-listed substances must not be intentionally used in the plastic food path.",
-    actions: [
-      "Identify all plastic food-contact materials and articles in the product",
-      "Obtain supplier Declarations of Compliance explicitly referencing Regulation 10/2011",
-      "Review migration testing evidence for specific and overall migration limits",
-      "Verify no non-listed substances are used in the plastic food-contact path",
-    ],
-    scope:
-      "Applies specifically to plastic materials and articles in food contact. Separate specific measures apply to metals, ceramics, and rubbers.",
-  },
-  WEEE_GPSR_DEFAULT: null, // placeholder — prevents enrichment map from being treated as sparse
-};
-
-function LegislationDetailField({ label, value }) {
-  const display = value && String(value).trim() ? String(value) : "—";
-  return (
-    <div className="standard-item__meta-card">
-      <div className="micro-label">{label}</div>
-      <div className={`standard-item__meta-value${display === "—" ? " standard-item__meta-value--empty" : ""}`}>
-        {display}
-      </div>
-    </div>
-  );
-}
-
-const GENERIC_SUMMARY = "Additional product obligations may apply beyond the CE route.";
-
-function LegislationSection({ item, groupKey, open, onToggle }) {
-  const dirKey = item.directive_key || "OTHER";
-  const tone = directiveTone(dirKey);
-  const categoryLabel = LEGISLATION_CATEGORY_LABELS[groupKey] || "Legislation";
-  const isUpcoming = groupKey === "future";
-  const slug = (str) => String(str || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const bodyId = `leg-section-body-${slug(dirKey)}-${slug(item.code || item.title)}`;
-
-  // Merge API data with enrichment — API data always wins, enrichment fills gaps
-  const enrich = LEGISLATION_ENRICHMENT[dirKey] || {};
-
-  const apiSummary = item.obligation_summary && item.obligation_summary !== GENERIC_SUMMARY
-    ? item.obligation_summary
-    : null;
-
-  const summary = apiSummary || item.rationale || item.scope || item.notes || enrich.obligation_summary || GENERIC_SUMMARY;
-  const rationaleText = item.rationale || enrich.rationale || "";
-  const scopeText = item.scope || enrich.scope || "";
-  const notesText = item.notes || enrich.notes || "";
-  const effectiveDate = item.effective_date || item.applicable_from || item.date;
-
-  const apiActions = (item.actions || item.key_obligations || item.evidence_hint || []).filter(Boolean);
-  const actionItems = apiActions.length ? apiActions : (enrich.actions || []);
-
-  // Suppress redundant "What this means" block when it would repeat the summary line verbatim
-  const showObligationBlock = apiSummary && apiSummary !== summary;
-
-  const allMetaFields = [
-    { label: "Reference / Code", value: item.code },
-    { label: "Category", value: categoryLabel },
-    { label: "Effective from", value: effectiveDate },
-    { label: "Review / repeal", value: item.review_date || item.repeal_date },
-    { label: "Official Journal ref", value: item.oj_reference || item.oj_ref },
-    { label: "Transposition", value: item.transposition },
-  ].filter((field) => field.value);
-
-  const obligationTags = [
-    item.compliance_path,
-    item.conformity_route,
-    item.enforcement_body,
-  ].filter(Boolean);
-
-  return (
-    <section
-      className={`route-section legislation-route-section${isUpcoming ? " legislation-route-section--upcoming" : ""}`.trim()}
-      style={{
-        "--route-tone-bg": tone.bg,
-        "--route-tone-border": tone.bd,
-        "--route-tone-dot": tone.dot,
-      }}
-    >
-      <button
-        type="button"
-        className="route-section__toggle"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls={bodyId}
-      >
-        <div className="route-section__title-wrap">
-          <div className="route-section__indicator" />
-          <div className="leg-section__header-content">
-            <div className="route-section__title-row">
-              <h3>{titleCaseMinor(item.title || "Untitled legislation")}</h3>
-              <DirectivePill dirKey={dirKey} />
-              {item.code ? <span className="code-chip">{item.code}</span> : null}
-              {isUpcoming && effectiveDate ? (
-                <span className="leg-effective-chip">
-                  Effective {effectiveDate}
-                </span>
-              ) : null}
-            </div>
-            <p className="legislation-section__summary-line">{summary}</p>
-          </div>
-        </div>
-
-        <div className="route-section__meta">
-          <span className="route-section__count">{open ? "collapse" : "expand"}</span>
-          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </div>
-      </button>
-
-      {open ? (
-        <div id={bodyId} className="route-section__body leg-section__body">
-
-          {showObligationBlock ? (
-            <div className="leg-detail-block">
-              <div className="micro-label">What this means</div>
-              <p className="leg-detail-block__text">{item.obligation_summary}</p>
-            </div>
-          ) : null}
-
-          {rationaleText ? (
-            <div className="leg-detail-block">
-              <div className="micro-label">Why it applies</div>
-              <p className="leg-detail-block__text">{rationaleText}</p>
-            </div>
-          ) : null}
-
-          {actionItems.length ? (
-            <div className="leg-detail-block">
-              <div className="micro-label">Key actions &amp; evidence</div>
-              <ul className="leg-detail-block__list leg-detail-block__list--actions">
-                {actionItems.map((entry, index) => (
-                  <li key={`${entry}-${index}`} className="leg-action-item">
-                    <Check size={12} className="leg-action-item__icon" />
-                    <span>{entry}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {scopeText ? (
-            <div className="leg-detail-block leg-detail-block--scope">
-              <div className="micro-label">Scope</div>
-              <p className="leg-detail-block__text">{scopeText}</p>
-            </div>
-          ) : null}
-
-          {notesText ? (
-            <div className="leg-detail-block">
-              <div className="micro-label">Notes</div>
-              <p className="leg-detail-block__text">{notesText}</p>
-            </div>
-          ) : null}
-
-          {allMetaFields.length ? (
-            <div className="standard-item__meta-grid">
-              {allMetaFields.map((f) => (
-                <LegislationDetailField key={f.label} label={f.label} value={f.value} />
-              ))}
-            </div>
-          ) : null}
-
-          {obligationTags.length ? (
-            <div className="standard-item__evidence">
-              <div className="micro-label">Compliance path</div>
-              <div className="tag-row">
-                {obligationTags.map((tag) => (
-                  <span key={tag} className="soft-tag">{titleCaseMinor(tag)}</span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   ParallelObligationsPanel
-   CE group is excluded — it is covered by the standards route.
-   All remaining items are flattened and rendered as
-   LegislationSection cards (same style as RouteSection).
-   ────────────────────────────────────────────────────────── */
-function ParallelObligationsPanel({ legislationGroups }) {
-  // Flatten all non-CE items, tagging each with their group key
-  const flatItems = useMemo(() => {
-    const result = [];
-    (legislationGroups || []).forEach((group) => {
-      if (group.key === "ce") return; // CE marking excluded — covered above
-      (group.items || []).forEach((item) => {
-        result.push({ ...item, _groupKey: group.key });
-      });
-    });
-    return result;
-  }, [legislationGroups]);
-
-  const [openSet, setOpenSet] = useState(() => {
-    const first = flatItems[0];
-    return first
-      ? new Set([`${first._groupKey}-${first.code || first.title}`])
-      : new Set();
-  });
-
-  const getItemId = useCallback(
-    (item) => `${item._groupKey}-${item.code || item.title}`,
-    []
-  );
-
-  const toggleItem = useCallback((id) => {
-    setOpenSet((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const allOpen = flatItems.length > 0 && openSet.size === flatItems.length;
-
-  const toggleAll = useCallback(() => {
-    setOpenSet((prev) =>
-      prev.size === flatItems.length
-        ? new Set()
-        : new Set(flatItems.map((item) => `${item._groupKey}-${item.code || item.title}`))
-    );
-  }, [flatItems]);
-
-  if (!flatItems.length) return null;
-
-  return (
-    <Panel
-      className="panel--parallel"
-      eyebrow="Applicable Legislation"
-      title="Parallel obligations"
-      subtitle="Frameworks that apply alongside the CE standards route — excluding CE marking."
-      action={
-        <button
-          type="button"
-          className="button button--secondary expand-all-btn"
-          onClick={toggleAll}
-          title={allOpen ? "Collapse all" : "Expand all"}
-        >
-          {allOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          <span className="expand-all-btn__label">{allOpen ? "Collapse all" : "Expand all"}</span>
-        </button>
-      }
-    >
-      <div className="route-stack">
-        {flatItems.map((item) => {
-          const id = getItemId(item);
-          return (
-            <LegislationSection
-              key={id}
-              item={item}
-              groupKey={item._groupKey}
-              open={openSet.has(id)}
-              onToggle={() => toggleItem(id)}
-            />
-          );
-        })}
-      </div>
-    </Panel>
-  );
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   CopyResultsButton
-   ────────────────────────────────────────────────────────── */
-function CopyResultsButton({ onCopy, copied }) {
-  return (
-    <button type="button" className="button button--copy-rail button--full" onClick={onCopy}>
-      {copied ? <Check size={15} /> : <Copy size={15} />}
-      {copied ? "Copied to clipboard" : "Copy analysis summary"}
-    </button>
-  );
-}
-
-function ErrorBanner({ message }) {
-  return (
-    <div className="error-banner" role="alert">
-      <TriangleAlert size={16} />
-      <div>
-        <div className="error-banner__title">Analysis error</div>
-        <div className="error-banner__text">{message}</div>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState() {
-  const items = [
-    {
-      icon: <Search size={16} />,
-      title: "1. Describe the real product",
-      text: "Include power, radios, control model, updates, materials, and any sensitive functions.",
-    },
-    {
-      icon: <ListChecks size={16} />,
-      title: "2. Review the route first",
-      text: "The overview and route grouping are designed to make the first pass fast.",
-    },
-    {
-      icon: <ShieldCheck size={16} />,
-      title: "3. Refine with clarifications",
-      text: "Use guided prompts to add scope-changing details, then re-run.",
-    },
-  ];
-
-  return (
-    <div className="empty-state-compact">
-      {items.map((item) => (
-        <div key={item.title} className="empty-state-step">
-          <div className="empty-state-step__icon">{item.icon}</div>
-          <div>
-            <div className="empty-state-step__title">{item.title}</div>
-            <div className="empty-state-step__text">{item.text}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ScrollTopButton({ visible }) {
-  return (
-    <button
-      type="button"
-      className={`scroll-top ${visible ? "scroll-top--visible" : ""}`.trim()}
-      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="Back to top"
-    >
-      <ArrowUp size={15} />
-    </button>
-  );
-}
-
-
-/* ================================================================
-   App — root component
-   ================================================================ */
-export default function App() {
-  const [description, setDescription] = useState("");
-  const [result, setResult] = useState(null);
-  const [resultRevision, setResultRevision] = useState(0);
-  const [metadata, setMetadata] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [clarifyDirty, setClarifyDirty] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const resultsRef = useRef(null);
-  const analysisAbortRef = useRef(null);
-  // Stable per-session random order for templates
-  const [templateOrder] = useState(() => Array.from({ length: 50 }, () => Math.random()));
-
-  const [prevResult, setPrevResult] = useState(null);
-  const [prevDescription, setPrevDescription] = useState("");
-  const [analysisCopied, setAnalysisCopied] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 360);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(METADATA_URL, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error(`Metadata failed (${response.status})`);
-        return response.json();
-      })
-      .then((data) => setMetadata(data))
-      .catch((fetchError) => {
-        if (fetchError.name !== "AbortError") {
-          setMetadata({ traits: [], products: [], legislations: [] });
-        }
-      });
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      analysisAbortRef.current?.abort();
-      analysisAbortRef.current = null;
-    };
-  }, []);
-
-  const templates = useMemo(() => {
-    const pool = buildDynamicTemplates(metadata?.products || []);
-    // Shuffle using stable per-session order
-    return [...pool]
-      .map((item, i) => ({ item, sort: templateOrder[i % templateOrder.length] }))
-      .sort((a, b) => a.sort - b.sort)
-      .map(({ item }) => item);
-  }, [metadata, templateOrder]);
-
-  const routeSections      = useMemo(() => buildRouteSections(result),          [result]);
-  const guidanceItems      = useMemo(() => buildGuidanceItems(result),           [result]);
-  const legislationItems   = useMemo(() => buildCompactLegislationItems(result), [result]);
-  const legislationGroups  = useMemo(() => buildLegislationGroups(result),       [result]);
-  const directiveBreakdown = useMemo(() => buildDirectiveBreakdown(routeSections), [routeSections]);
-  const baseSafetyRoute    = useMemo(() => inferBaseSafetyRoute(result, routeSections), [result, routeSections]);
-
-  const totalStandards = useMemo(
-    () => routeSections.reduce((count, section) => count + (section.items || []).length, 0),
-    [routeSections]
-  );
-
-  const triggeredDirectives = useMemo(
-    () =>
-      [...new Set(routeSections.map((s) => s.key))].sort(
-        (a, b) => directiveRank(a) - directiveRank(b)
-      ),
-    [routeSections]
-  );
-
-  const backendChips = useMemo(() => {
-    if (!result) return null;
-    return (result?.suggested_quick_adds || []).map((item) => ({
-      label: item.label,
-      text: item.text,
-    }));
-  }, [result]);
-
-  useEffect(() => {
-    if (!result || !resultsRef.current) return;
-    const timer = window.setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
-    return () => window.clearTimeout(timer);
-  }, [result]);
-
-  const cancelActiveAnalysis = useCallback(() => {
-    const controller = analysisAbortRef.current;
-    if (controller) {
-      analysisAbortRef.current = null;
-      controller.abort();
-    }
-    setBusy(false);
-  }, []);
-
-  const runAnalysis = useCallback(async () => {
-    const payloadDescription = String(description || "").trim();
-    if (!payloadDescription || busy || analysisAbortRef.current) return;
-
-    if (result) {
-      setPrevResult(result);
-      setPrevDescription(description);
-    }
-
-    const controller = new AbortController();
-    analysisAbortRef.current = controller;
-    setBusy(true);
-    setError("");
-
-    try {
-      const response = await fetch(ANALYZE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: payloadDescription, depth: "deep" }),
-        signal: controller.signal,
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (analysisAbortRef.current !== controller) return;
-      if (!response.ok) {
-        throw new Error(data?.detail || `Analysis failed (${response.status})`);
-      }
-
-      setResult(data);
-      setResultRevision((current) => current + 1);
-      setClarifyDirty(false);
-    } catch (requestError) {
-      if (requestError?.name !== "AbortError" && analysisAbortRef.current === controller) {
-        setError(requestError?.message || "Analysis failed.");
-      }
-    } finally {
-      if (analysisAbortRef.current === controller) {
-        analysisAbortRef.current = null;
-        setBusy(false);
-      }
-    }
-  }, [busy, description, result]);
-
-  const restorePrev = useCallback(() => {
-    if (!prevResult) return;
-    cancelActiveAnalysis();
-    setResult(prevResult);
-    setResultRevision((current) => current + 1);
-    setDescription(prevDescription);
-    setError("");
-    setClarifyDirty(false);
-    setPrevResult(null);
-    setPrevDescription("");
-  }, [cancelActiveAnalysis, prevResult, prevDescription]);
-
-  const resetAnalysis = useCallback(() => {
-    cancelActiveAnalysis();
-    setResult(null);
-    setDescription("");
-    setError("");
-    setClarifyDirty(false);
-    setPrevResult(null);
-    setPrevDescription("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [cancelActiveAnalysis]);
-
-  const handleCopyAnalysis = useCallback(async () => {
-    if (!result) return;
-    const text = buildClipboardSummary({ result, description, routeSections, legislationGroups });
-    try {
-      await navigator.clipboard.writeText(text);
-      setAnalysisCopied(true);
-      window.setTimeout(() => setAnalysisCopied(false), 2400);
-    } catch (_) {}
-  }, [result, description, routeSections, legislationGroups]);
-
+function ShellPage({ children, cta }) {
   return (
     <div className="app-shell">
-      <TopBar
-        result={result}
-        totalStandards={totalStandards}
-        onReset={resetAnalysis}
-        prevResult={prevResult}
-        onRestorePrev={restorePrev}
-        onCopy={handleCopyAnalysis}
-        copied={analysisCopied}
-      />
+      <SiteHeader>{cta}</SiteHeader>
+      <main className="page-shell page-main page-main--marketing">{children}</main>
+    </div>
+  );
+}
 
-      {result ? (
-        <DirtyBanner
-          dirty={clarifyDirty}
-          busy={busy}
-          onReanalyze={runAnalysis}
-          onDismiss={() => setClarifyDirty(false)}
-        />
-      ) : null}
+function MarketingHero() {
+  return (
+    <section className="marketing-hero">
+      <div className="marketing-hero__grid">
+        <div className="marketing-hero__copy">
+          <span className="marketing-eyebrow">Compliance scoping workspace</span>
+          <h1 className="marketing-hero__title">
+            Turn product descriptions into a structured EU compliance starting point.
+          </h1>
+          <p className="marketing-hero__text">
+            RuleGrid helps teams identify likely directives, route families, harmonized standards
+            and adjacent obligations early, before a full expert review starts.
+          </p>
 
-      <main className={`page-shell page-main ${!result ? "page-main--landing" : ""}`.trim()}>
-        <HeroPanel
-          result={result}
-          routeSections={routeSections}
-          legislationItems={legislationItems}
-          guidanceItems={guidanceItems}
-          totalStandards={totalStandards}
-          triggeredDirectives={triggeredDirectives}
-        />
+          <div className="marketing-hero__actions">
+            <Link to="/analyze" className="button button--primary marketing-hero__btn">
+              <Sparkles size={14} />
+              Open analyzer
+            </Link>
+            <Link to="/tools" className="button button--secondary marketing-hero__btn">
+              <ListChecks size={14} />
+              Explore tools
+            </Link>
+          </div>
 
-        <ComposerPanel
-          description={description}
-          setDescription={setDescription}
-          templates={templates}
-          backendChips={backendChips}
-          guidanceItems={result ? guidanceItems : null}
-          onAnalyze={runAnalysis}
-          busy={busy}
-          onDirty={setClarifyDirty}
-          isLanding={!result}
-        />
+          <div className="marketing-stats">
+            <div className="marketing-stat">
+              <div className="marketing-stat__value">Faster triage</div>
+              <div className="marketing-stat__label">Product, directive and standards route in one pass</div>
+            </div>
+            <div className="marketing-stat">
+              <div className="marketing-stat__value">Scope-first</div>
+              <div className="marketing-stat__label">Clarifies power, radios, cloud, materials and use-case signals</div>
+            </div>
+            <div className="marketing-stat">
+              <div className="marketing-stat__value">Team-ready</div>
+              <div className="marketing-stat__label">Useful for RA, engineering, sourcing and consultant handovers</div>
+            </div>
+          </div>
+        </div>
 
-        <AnalysisProgressBanner busy={busy} />
+        <div className="marketing-hero__panel">
+          <div className="marketing-card">
+            <div className="marketing-card__eyebrow">What the analyzer produces</div>
+            <ul className="marketing-list">
+              <li>Primary standards route by directive family</li>
+              <li>Parallel obligations such as RoHS, REACH, Battery, WEEE or FCM</li>
+              <li>Clarification prompts for missing scope-changing inputs</li>
+              <li>Compact output for internal review and consultant briefing</li>
+            </ul>
+          </div>
+          <div className="marketing-card">
+            <div className="marketing-card__eyebrow">Good example input</div>
+            <p className="marketing-card__text">
+              “Wi-Fi connected robot vacuum with charging dock, Li-ion battery, mobile app,
+              OTA firmware updates, cloud account and voice assistant support.”
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-        {!result && !busy && <EmptyState />}
+function HomePage() {
+  return (
+    <ShellPage
+      cta={
+        <Link to="/analyze" className="button button--secondary topbar__action-btn">
+          Start analysis
+        </Link>
+      }
+    >
+      <MarketingHero />
 
-        {error ? <ErrorBanner message={error} /> : null}
+      <section className="marketing-section-grid">
+        <div className="panel">
+          <div className="panel__header">
+            <div>
+              <div className="eyebrow">What RuleGrid is for</div>
+              <h2 className="panel__title">A practical first-pass scoping layer</h2>
+              <p className="panel__subtitle">
+                Use it as a structured intake tool, not as the final legal conclusion.
+              </p>
+            </div>
+          </div>
+          <div className="marketing-columns">
+            <div className="marketing-card marketing-card--soft">
+              <div className="marketing-card__title">Early product intake</div>
+              <p className="marketing-card__text">
+                Turn messy descriptions into a cleaner route before engineering and compliance teams go deep.
+              </p>
+            </div>
+            <div className="marketing-card marketing-card--soft">
+              <div className="marketing-card__title">Internal alignment</div>
+              <p className="marketing-card__text">
+                Give sourcing, product and RA teams the same starting picture of applicable frameworks.
+              </p>
+            </div>
+            <div className="marketing-card marketing-card--soft">
+              <div className="marketing-card__title">Consultant handoff</div>
+              <p className="marketing-card__text">
+                Use the structured output as a briefing draft for labs, notified bodies or external experts.
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <div ref={resultsRef} />
+        <div className="panel">
+          <div className="panel__header">
+            <div>
+              <div className="eyebrow">Navigation</div>
+              <h2 className="panel__title">Direct routes for the main product pages</h2>
+              <p className="panel__subtitle">The site now has real top-level URLs that can be shared.</p>
+            </div>
+          </div>
+          <div className="quick-link-grid">
+            <Link to="/analyze" className="route-link-card">
+              <div className="route-link-card__title">Analyzer</div>
+              <div className="route-link-card__text">Run a product description and inspect the route.</div>
+            </Link>
+            <Link to="/tools" className="route-link-card">
+              <div className="route-link-card__title">Tools</div>
+              <div className="route-link-card__text">See the modules and roadmap blocks around the core engine.</div>
+            </Link>
+            <Link to="/about" className="route-link-card">
+              <div className="route-link-card__title">About</div>
+              <div className="route-link-card__text">Read the intended use, workflow and positioning.</div>
+            </Link>
+            <Link to="/contact" className="route-link-card">
+              <div className="route-link-card__title">Contact</div>
+              <div className="route-link-card__text">Use the built-in form template to draft an inquiry.</div>
+            </Link>
+          </div>
+        </div>
+      </section>
+    </ShellPage>
+  );
+}
 
-        {result ? (
-          <div className="workspace-grid">
-            <div className="workspace-main">
-              <OverviewPanel
-                result={result}
-                routeSections={routeSections}
-                legislationItems={legislationItems}
-              />
+function ToolsPage() {
+  const tools = [
+    {
+      title: "Live analyzer",
+      status: "Available now",
+      text: "Current production workspace for first-pass scoping from natural-language product descriptions.",
+      cta: { to: "/analyze", label: "Open analyzer" },
+    },
+    {
+      title: "Declaration draft builder",
+      status: "Template-ready",
+      text: "Planned module to convert identified legislation and standards into a draft EU DoC starter.",
+      cta: { to: "/contact", label: "Request priority" },
+    },
+    {
+      title: "Evidence & gap engine",
+      status: "Roadmap focus",
+      text: "Planned layer for typical documents, expected reports, missing inputs and blocker-level evidence gaps.",
+      cta: { to: "/about", label: "Read workflow" },
+    },
+    {
+      title: "Consultant handoff pack",
+      status: "Concept ready",
+      text: "Structured export block for sharing product context, assumptions and identified routes with external experts.",
+      cta: { to: "/contact", label: "Discuss use case" },
+    },
+    {
+      title: "Standards map",
+      status: "Expanding",
+      text: "Directory-style route explorer for major directive families, showing primary standards and linked obligations.",
+      cta: { to: "/analyze", label: "Use current route" },
+    },
+    {
+      title: "Cyber route preview",
+      status: "Evolving",
+      text: "Focused workspace for RED cyber, CRA and connected-product clarification pathways.",
+      cta: { to: "/contact", label: "Share requirements" },
+    },
+  ];
 
-              <ErrorBoundary
-                key={`clarifications-${resultRevision}`}
-                label="Clarifications could not be rendered"
-              >
-                <MinimalClarificationPrompt
-                  items={guidanceItems}
-                  onApply={(text) => {
-                    setDescription((current) => {
-                      const next = joinText(current, text);
-                      if (next !== current) setClarifyDirty(true);
-                      return next;
-                    });
-                  }}
-                />
-              </ErrorBoundary>
+  return (
+    <ShellPage
+      cta={
+        <Link to="/analyze" className="button button--secondary topbar__action-btn">
+          Open analyzer
+        </Link>
+      }
+    >
+      <section className="simple-hero">
+        <span className="marketing-eyebrow">Tool stack</span>
+        <h1 className="simple-hero__title">Beyond the main analysis page</h1>
+        <p className="simple-hero__text">
+          These are the product surfaces around the core scoping engine. Some are live now, others are structured placeholders you can refine next.
+        </p>
+      </section>
 
-              <ErrorBoundary
-                key={`standards-${resultRevision}`}
-                label="Standards route could not be rendered"
-              >
-                <StandardsRoutePanel
-                  sections={routeSections}
-                  directiveBreakdown={directiveBreakdown}
-                  baseSafetyRoute={baseSafetyRoute}
-                />
-              </ErrorBoundary>
-
-              <ErrorBoundary
-                key={`legislation-${resultRevision}`}
-                label="Legislation panel could not be rendered"
-              >
-                <ParallelObligationsPanel legislationGroups={legislationGroups} />
-              </ErrorBoundary>
-
-              <div className="footer-note">
-                <span>
-                  {new Date().toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </span>
-                <span>RuleGrid</span>
+      <div className="tools-grid">
+        {tools.map((tool) => (
+          <div key={tool.title} className="panel tool-card">
+            <div className="panel__header">
+              <div>
+                <div className="eyebrow">{tool.status}</div>
+                <h2 className="panel__title">{tool.title}</h2>
+                <p className="panel__subtitle">{tool.text}</p>
               </div>
+              <Link to={tool.cta.to} className="button button--secondary">
+                {tool.cta.label}
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    </ShellPage>
+  );
+}
+
+function AboutPage() {
+  return (
+    <ShellPage
+      cta={
+        <Link to="/analyze" className="button button--secondary topbar__action-btn">
+          Try analyzer
+        </Link>
+      }
+    >
+      <section className="simple-hero">
+        <span className="marketing-eyebrow">About RuleGrid</span>
+        <h1 className="simple-hero__title">A first-pass compliance scoping system</h1>
+        <p className="simple-hero__text">
+          RuleGrid is designed to help teams move from rough product descriptions to a more structured compliance review path. It is best used at intake, concept, sourcing and consultant-briefing stages.
+        </p>
+      </section>
+
+      <div className="marketing-section-grid">
+        <div className="panel">
+          <div className="panel__header">
+            <div>
+              <div className="eyebrow">How it should be used</div>
+              <h2 className="panel__title">Best fit for the current product form</h2>
+            </div>
+          </div>
+          <ul className="marketing-list">
+            <li>Early screening of consumer and connected products</li>
+            <li>Identifying likely directive families and standards routes</li>
+            <li>Surfacing missing details that materially change scope</li>
+            <li>Preparing a cleaner internal or external compliance discussion</li>
+          </ul>
+        </div>
+
+        <div className="panel">
+          <div className="panel__header">
+            <div>
+              <div className="eyebrow">What it is not</div>
+              <h2 className="panel__title">Important expectation-setting</h2>
+            </div>
+          </div>
+          <ul className="marketing-list">
+            <li>Not a substitute for legal advice or accredited testing</li>
+            <li>Not the final statement of conformity</li>
+            <li>Not a guarantee that every national or sector rule has been captured</li>
+            <li>Not a replacement for product-specific technical review</li>
+          </ul>
+        </div>
+
+        <div className="panel">
+          <div className="panel__header">
+            <div>
+              <div className="eyebrow">Suggested workflow</div>
+              <h2 className="panel__title">A practical usage pattern</h2>
+            </div>
+          </div>
+          <div className="workflow-list">
+            <div className="workflow-item"><span>1</span><p>Describe the product with real power, radio, software, materials and use-case details.</p></div>
+            <div className="workflow-item"><span>2</span><p>Review the returned standards route and parallel obligations.</p></div>
+            <div className="workflow-item"><span>3</span><p>Add missing clarifications and re-run until the route stabilizes.</p></div>
+            <div className="workflow-item"><span>4</span><p>Use the result as a briefing draft for expert review, testing or documentation work.</p></div>
+          </div>
+        </div>
+      </div>
+    </ShellPage>
+  );
+}
+
+function ContactPage() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    company: "",
+    topic: "Consultation request",
+    message: "",
+  });
+  const [submitted, setSubmitted] = useState(false);
+
+  const onChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const subject = encodeURIComponent(`[RuleGrid] ${form.topic}`);
+    const body = encodeURIComponent(
+      `Name: ${form.name}\nEmail: ${form.email}\nCompany: ${form.company}\n\nMessage:\n${form.message}`
+    );
+    window.location.href = `mailto:hello@rulegrid.net?subject=${subject}&body=${body}`;
+    setSubmitted(true);
+  };
+
+  return (
+    <ShellPage
+      cta={
+        <Link to="/analyze" className="button button--secondary topbar__action-btn">
+          Open analyzer
+        </Link>
+      }
+    >
+      <section className="simple-hero">
+        <span className="marketing-eyebrow">Contact & consulting</span>
+        <h1 className="simple-hero__title">Start a discussion around your workflow</h1>
+        <p className="simple-hero__text">
+          This page is a real route with a working input form template. You can later connect it to a backend form service or CRM.
+        </p>
+      </section>
+
+      <div className="contact-layout">
+        <div className="panel">
+          <div className="panel__header">
+            <div>
+              <div className="eyebrow">Contact</div>
+              <h2 className="panel__title">Prepare an inquiry</h2>
+              <p className="panel__subtitle">Use this template form to prepare a demo request, consulting discussion or product feedback message.</p>
+            </div>
+          </div>
+
+          <form className="contact-form" onSubmit={handleSubmit}>
+            <div className="contact-form__grid">
+              <label className="field">
+                <span>Name</span>
+                <input name="name" value={form.name} onChange={onChange} placeholder="Your name" required />
+              </label>
+              <label className="field">
+                <span>Email</span>
+                <input name="email" type="email" value={form.email} onChange={onChange} placeholder="you@company.com" required />
+              </label>
+              <label className="field">
+                <span>Company</span>
+                <input name="company" value={form.company} onChange={onChange} placeholder="Company or team" />
+              </label>
+              <label className="field">
+                <span>Topic</span>
+                <select name="topic" value={form.topic} onChange={onChange}>
+                  <option>Consultation request</option>
+                  <option>Demo request</option>
+                  <option>Tool feedback</option>
+                  <option>Partnership inquiry</option>
+                  <option>Custom workflow discussion</option>
+                </select>
+              </label>
             </div>
 
-            <ErrorBoundary
-              key={`sidebar-${resultRevision}`}
-              label="Sidebar could not be rendered"
-            >
-              <SnapshotRail
-                result={result}
-                routeSections={routeSections}
-                description={description}
-                onCopy={handleCopyAnalysis}
-                copied={analysisCopied}
-                legislationGroups={legislationGroups}
-                totalStandards={totalStandards}
-                triggeredDirectives={triggeredDirectives}
+            <label className="field">
+              <span>Message</span>
+              <textarea
+                name="message"
+                value={form.message}
+                onChange={onChange}
+                rows={7}
+                placeholder="Tell us what product type, team problem or workflow you want help with."
+                required
               />
-            </ErrorBoundary>
-          </div>
-        ) : null}
-      </main>
+            </label>
 
-      <ScrollTopButton visible={scrolled} />
-    </div>
+            <div className="contact-form__actions">
+              <button type="submit" className="button button--primary">
+                <Sparkles size={14} />
+                Open email draft
+              </button>
+              <a className="button button--secondary" href="mailto:hello@rulegrid.net">
+                Direct email
+              </a>
+            </div>
+
+            {submitted ? (
+              <div className="contact-form__success">
+                Your email app should open with the drafted inquiry. Replace the address with your final business email if needed.
+              </div>
+            ) : null}
+          </form>
+        </div>
+
+        <div className="panel">
+          <div className="panel__header">
+            <div>
+              <div className="eyebrow">What to include</div>
+              <h2 className="panel__title">Helpful details for a strong first review</h2>
+            </div>
+          </div>
+          <ul className="marketing-list">
+            <li>Product category and target market</li>
+            <li>Power architecture, radios and cloud/app dependencies</li>
+            <li>Expected launch timing and certification path</li>
+            <li>Main blocker, uncertainty or consultant need</li>
+          </ul>
+        </div>
+      </div>
+    </ShellPage>
+  );
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/analyze" element={<AnalyzeWorkspace />} />
+      <Route path="/tools" element={<ToolsPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
