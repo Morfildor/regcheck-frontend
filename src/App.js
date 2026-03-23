@@ -4,18 +4,19 @@ import { ListChecks, Sparkles } from "lucide-react";
 import AnalyzeWorkspace from "./AnalyzeWorkspace";
 import "./App.css";
 
-function PrimaryNav() {
-  const items = [
-    { to: "/", label: "Home", end: true },
-    { to: "/analyze", label: "Analyze" },
-    { to: "/tools", label: "Tools" },
-    { to: "/about", label: "About" },
-    { to: "/contact", label: "Contact" },
-  ];
+/* ── Shared nav list ────────────────────────────────────────── */
+const NAV_ITEMS = [
+  { to: "/",        label: "Home",    end: true },
+  { to: "/analyze", label: "Analyze" },
+  { to: "/tools",   label: "Tools"   },
+  { to: "/about",   label: "About"   },
+  { to: "/contact", label: "Contact" },
+];
 
+function PrimaryNav() {
   return (
     <nav className="primary-nav" aria-label="Primary">
-      {items.map((item) => (
+      {NAV_ITEMS.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
@@ -53,6 +54,7 @@ function SiteHeader({ children }) {
   );
 }
 
+/* ── Shell wrapper shared by all marketing pages ────────────── */
 function ShellPage({ children, cta }) {
   return (
     <div className="app-shell">
@@ -62,6 +64,9 @@ function ShellPage({ children, cta }) {
   );
 }
 
+/* ──────────────────────────────────────────────────────────────
+   Home page
+   ────────────────────────────────────────────────────────────── */
 function MarketingHero() {
   return (
     <section className="marketing-hero">
@@ -90,15 +95,21 @@ function MarketingHero() {
           <div className="marketing-stats">
             <div className="marketing-stat">
               <div className="marketing-stat__value">Faster triage</div>
-              <div className="marketing-stat__label">Product, directive and standards route in one pass</div>
+              <div className="marketing-stat__label">
+                Product, directive and standards route in one pass
+              </div>
             </div>
             <div className="marketing-stat">
               <div className="marketing-stat__value">Scope-first</div>
-              <div className="marketing-stat__label">Clarifies power, radios, cloud, materials and use-case signals</div>
+              <div className="marketing-stat__label">
+                Clarifies power, radios, cloud, materials and use-case signals
+              </div>
             </div>
             <div className="marketing-stat">
               <div className="marketing-stat__value">Team-ready</div>
-              <div className="marketing-stat__label">Useful for RA, engineering, sourcing and consultant handovers</div>
+              <div className="marketing-stat__label">
+                Useful for RA, engineering, sourcing and consultant handovers
+              </div>
             </div>
           </div>
         </div>
@@ -116,8 +127,8 @@ function MarketingHero() {
           <div className="marketing-card">
             <div className="marketing-card__eyebrow">Good example input</div>
             <p className="marketing-card__text">
-              “Wi-Fi connected robot vacuum with charging dock, Li-ion battery, mobile app,
-              OTA firmware updates, cloud account and voice assistant support.”
+              "Wi-Fi connected robot vacuum with charging dock, Li-ion battery, mobile app,
+              OTA firmware updates, cloud account and voice assistant support."
             </p>
           </div>
         </div>
@@ -138,63 +149,81 @@ function HomePage() {
       <MarketingHero />
 
       <section className="marketing-section-grid">
+        {/* FIX: added panel__heading wrapper + panel__eyebrow class + panel__body */}
         <div className="panel">
           <div className="panel__header">
-            <div>
-              <div className="eyebrow">What RuleGrid is for</div>
+            <div className="panel__heading">
+              <div className="panel__eyebrow">What RuleGrid is for</div>
               <h2 className="panel__title">A practical first-pass scoping layer</h2>
               <p className="panel__subtitle">
                 Use it as a structured intake tool, not as the final legal conclusion.
               </p>
             </div>
           </div>
-          <div className="marketing-columns">
-            <div className="marketing-card marketing-card--soft">
-              <div className="marketing-card__title">Early product intake</div>
-              <p className="marketing-card__text">
-                Turn messy descriptions into a cleaner route before engineering and compliance teams go deep.
-              </p>
-            </div>
-            <div className="marketing-card marketing-card--soft">
-              <div className="marketing-card__title">Internal alignment</div>
-              <p className="marketing-card__text">
-                Give sourcing, product and RA teams the same starting picture of applicable frameworks.
-              </p>
-            </div>
-            <div className="marketing-card marketing-card--soft">
-              <div className="marketing-card__title">Consultant handoff</div>
-              <p className="marketing-card__text">
-                Use the structured output as a briefing draft for labs, notified bodies or external experts.
-              </p>
+          <div className="panel__body">
+            <div className="marketing-columns">
+              <div className="marketing-card marketing-card--soft">
+                <div className="marketing-card__title">Early product intake</div>
+                <p className="marketing-card__text">
+                  Turn messy descriptions into a cleaner route before engineering and
+                  compliance teams go deep.
+                </p>
+              </div>
+              <div className="marketing-card marketing-card--soft">
+                <div className="marketing-card__title">Internal alignment</div>
+                <p className="marketing-card__text">
+                  Give sourcing, product and RA teams the same starting picture of
+                  applicable frameworks.
+                </p>
+              </div>
+              <div className="marketing-card marketing-card--soft">
+                <div className="marketing-card__title">Consultant handoff</div>
+                <p className="marketing-card__text">
+                  Use the structured output as a briefing draft for labs, notified
+                  bodies or external experts.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="panel">
           <div className="panel__header">
-            <div>
-              <div className="eyebrow">Navigation</div>
+            <div className="panel__heading">
+              <div className="panel__eyebrow">Navigation</div>
               <h2 className="panel__title">Direct routes for the main product pages</h2>
-              <p className="panel__subtitle">The site now has real top-level URLs that can be shared.</p>
+              <p className="panel__subtitle">
+                The site now has real top-level URLs that can be shared.
+              </p>
             </div>
           </div>
-          <div className="quick-link-grid">
-            <Link to="/analyze" className="route-link-card">
-              <div className="route-link-card__title">Analyzer</div>
-              <div className="route-link-card__text">Run a product description and inspect the route.</div>
-            </Link>
-            <Link to="/tools" className="route-link-card">
-              <div className="route-link-card__title">Tools</div>
-              <div className="route-link-card__text">See the modules and roadmap blocks around the core engine.</div>
-            </Link>
-            <Link to="/about" className="route-link-card">
-              <div className="route-link-card__title">About</div>
-              <div className="route-link-card__text">Read the intended use, workflow and positioning.</div>
-            </Link>
-            <Link to="/contact" className="route-link-card">
-              <div className="route-link-card__title">Contact</div>
-              <div className="route-link-card__text">Use the built-in form template to draft an inquiry.</div>
-            </Link>
+          <div className="panel__body">
+            <div className="quick-link-grid">
+              <Link to="/analyze" className="route-link-card">
+                <div className="route-link-card__title">Analyzer</div>
+                <div className="route-link-card__text">
+                  Run a product description and inspect the route.
+                </div>
+              </Link>
+              <Link to="/tools" className="route-link-card">
+                <div className="route-link-card__title">Tools</div>
+                <div className="route-link-card__text">
+                  See the modules and roadmap blocks around the core engine.
+                </div>
+              </Link>
+              <Link to="/about" className="route-link-card">
+                <div className="route-link-card__title">About</div>
+                <div className="route-link-card__text">
+                  Read the intended use, workflow and positioning.
+                </div>
+              </Link>
+              <Link to="/contact" className="route-link-card">
+                <div className="route-link-card__title">Contact</div>
+                <div className="route-link-card__text">
+                  Use the built-in form template to draft an inquiry.
+                </div>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -202,6 +231,9 @@ function HomePage() {
   );
 }
 
+/* ──────────────────────────────────────────────────────────────
+   Tools page
+   ────────────────────────────────────────────────────────────── */
 function ToolsPage() {
   const tools = [
     {
@@ -254,23 +286,29 @@ function ToolsPage() {
         <span className="marketing-eyebrow">Tool stack</span>
         <h1 className="simple-hero__title">Beyond the main analysis page</h1>
         <p className="simple-hero__text">
-          These are the product surfaces around the core scoping engine. Some are live now, others are structured placeholders you can refine next.
+          These are the product surfaces around the core scoping engine. Some are live now,
+          others are structured placeholders you can refine next.
         </p>
       </section>
 
       <div className="tools-grid">
         {tools.map((tool) => (
+          /* FIX: panel__heading + panel__eyebrow + panel__action + panel__body for bottom padding */
           <div key={tool.title} className="panel tool-card">
             <div className="panel__header">
-              <div>
-                <div className="eyebrow">{tool.status}</div>
+              <div className="panel__heading">
+                <div className="panel__eyebrow">{tool.status}</div>
                 <h2 className="panel__title">{tool.title}</h2>
                 <p className="panel__subtitle">{tool.text}</p>
               </div>
-              <Link to={tool.cta.to} className="button button--secondary">
-                {tool.cta.label}
-              </Link>
+              <div className="panel__action">
+                <Link to={tool.cta.to} className="button button--secondary">
+                  {tool.cta.label}
+                </Link>
+              </div>
             </div>
+            {/* Empty body ensures correct bottom padding on every card */}
+            <div className="panel__body panel__body--flush" />
           </div>
         ))}
       </div>
@@ -278,6 +316,9 @@ function ToolsPage() {
   );
 }
 
+/* ──────────────────────────────────────────────────────────────
+   About page
+   ────────────────────────────────────────────────────────────── */
 function AboutPage() {
   return (
     <ShellPage
@@ -291,53 +332,74 @@ function AboutPage() {
         <span className="marketing-eyebrow">About RuleGrid</span>
         <h1 className="simple-hero__title">A first-pass compliance scoping system</h1>
         <p className="simple-hero__text">
-          RuleGrid is designed to help teams move from rough product descriptions to a more structured compliance review path. It is best used at intake, concept, sourcing and consultant-briefing stages.
+          RuleGrid is designed to help teams move from rough product descriptions to a more
+          structured compliance review path. It is best used at intake, concept, sourcing and
+          consultant-briefing stages.
         </p>
       </section>
 
       <div className="marketing-section-grid">
+        {/* FIX: panel__heading + panel__eyebrow + panel__body on every panel */}
         <div className="panel">
           <div className="panel__header">
-            <div>
-              <div className="eyebrow">How it should be used</div>
+            <div className="panel__heading">
+              <div className="panel__eyebrow">How it should be used</div>
               <h2 className="panel__title">Best fit for the current product form</h2>
             </div>
           </div>
-          <ul className="marketing-list">
-            <li>Early screening of consumer and connected products</li>
-            <li>Identifying likely directive families and standards routes</li>
-            <li>Surfacing missing details that materially change scope</li>
-            <li>Preparing a cleaner internal or external compliance discussion</li>
-          </ul>
+          <div className="panel__body">
+            <ul className="marketing-list">
+              <li>Early screening of consumer and connected products</li>
+              <li>Identifying likely directive families and standards routes</li>
+              <li>Surfacing missing details that materially change scope</li>
+              <li>Preparing a cleaner internal or external compliance discussion</li>
+            </ul>
+          </div>
         </div>
 
         <div className="panel">
           <div className="panel__header">
-            <div>
-              <div className="eyebrow">What it is not</div>
+            <div className="panel__heading">
+              <div className="panel__eyebrow">What it is not</div>
               <h2 className="panel__title">Important expectation-setting</h2>
             </div>
           </div>
-          <ul className="marketing-list">
-            <li>Not a substitute for legal advice or accredited testing</li>
-            <li>Not the final statement of conformity</li>
-            <li>Not a guarantee that every national or sector rule has been captured</li>
-            <li>Not a replacement for product-specific technical review</li>
-          </ul>
+          <div className="panel__body">
+            <ul className="marketing-list">
+              <li>Not a substitute for legal advice or accredited testing</li>
+              <li>Not the final statement of conformity</li>
+              <li>Not a guarantee that every national or sector rule has been captured</li>
+              <li>Not a replacement for product-specific technical review</li>
+            </ul>
+          </div>
         </div>
 
         <div className="panel">
           <div className="panel__header">
-            <div>
-              <div className="eyebrow">Suggested workflow</div>
+            <div className="panel__heading">
+              <div className="panel__eyebrow">Suggested workflow</div>
               <h2 className="panel__title">A practical usage pattern</h2>
             </div>
           </div>
-          <div className="workflow-list">
-            <div className="workflow-item"><span>1</span><p>Describe the product with real power, radio, software, materials and use-case details.</p></div>
-            <div className="workflow-item"><span>2</span><p>Review the returned standards route and parallel obligations.</p></div>
-            <div className="workflow-item"><span>3</span><p>Add missing clarifications and re-run until the route stabilizes.</p></div>
-            <div className="workflow-item"><span>4</span><p>Use the result as a briefing draft for expert review, testing or documentation work.</p></div>
+          <div className="panel__body">
+            <div className="workflow-list">
+              <div className="workflow-item">
+                <span>1</span>
+                <p>Describe the product with real power, radio, software, materials and use-case details.</p>
+              </div>
+              <div className="workflow-item">
+                <span>2</span>
+                <p>Review the returned standards route and parallel obligations.</p>
+              </div>
+              <div className="workflow-item">
+                <span>3</span>
+                <p>Add missing clarifications and re-run until the route stabilizes.</p>
+              </div>
+              <div className="workflow-item">
+                <span>4</span>
+                <p>Use the result as a briefing draft for expert review, testing or documentation work.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -345,6 +407,9 @@ function AboutPage() {
   );
 }
 
+/* ──────────────────────────────────────────────────────────────
+   Contact page
+   ────────────────────────────────────────────────────────────── */
 function ContactPage() {
   const [form, setForm] = useState({
     name: "",
@@ -379,106 +444,137 @@ function ContactPage() {
       }
     >
       <section className="simple-hero">
-        <span className="marketing-eyebrow">Contact & consulting</span>
+        <span className="marketing-eyebrow">Contact &amp; consulting</span>
         <h1 className="simple-hero__title">Start a discussion around your workflow</h1>
         <p className="simple-hero__text">
-          This page is a real route with a working input form template. You can later connect it to a backend form service or CRM.
+          Use this form template to prepare a demo request, consulting discussion or product
+          feedback message.
         </p>
       </section>
 
       <div className="contact-layout">
+        {/* FIX: panel__heading + panel__eyebrow + panel__body wrapping the form */}
         <div className="panel">
           <div className="panel__header">
-            <div>
-              <div className="eyebrow">Contact</div>
+            <div className="panel__heading">
+              <div className="panel__eyebrow">Contact</div>
               <h2 className="panel__title">Prepare an inquiry</h2>
-              <p className="panel__subtitle">Use this template form to prepare a demo request, consulting discussion or product feedback message.</p>
+              <p className="panel__subtitle">
+                Fill in the template below — clicking "Open email draft" composes the message in
+                your email client.
+              </p>
             </div>
           </div>
-
-          <form className="contact-form" onSubmit={handleSubmit}>
-            <div className="contact-form__grid">
-              <label className="field">
-                <span>Name</span>
-                <input name="name" value={form.name} onChange={onChange} placeholder="Your name" required />
-              </label>
-              <label className="field">
-                <span>Email</span>
-                <input name="email" type="email" value={form.email} onChange={onChange} placeholder="you@company.com" required />
-              </label>
-              <label className="field">
-                <span>Company</span>
-                <input name="company" value={form.company} onChange={onChange} placeholder="Company or team" />
-              </label>
-              <label className="field">
-                <span>Topic</span>
-                <select name="topic" value={form.topic} onChange={onChange}>
-                  <option>Consultation request</option>
-                  <option>Demo request</option>
-                  <option>Tool feedback</option>
-                  <option>Partnership inquiry</option>
-                  <option>Custom workflow discussion</option>
-                </select>
-              </label>
-            </div>
-
-            <label className="field">
-              <span>Message</span>
-              <textarea
-                name="message"
-                value={form.message}
-                onChange={onChange}
-                rows={7}
-                placeholder="Tell us what product type, team problem or workflow you want help with."
-                required
-              />
-            </label>
-
-            <div className="contact-form__actions">
-              <button type="submit" className="button button--primary">
-                <Sparkles size={14} />
-                Open email draft
-              </button>
-              <a className="button button--secondary" href="mailto:hello@rulegrid.net">
-                Direct email
-              </a>
-            </div>
-
-            {submitted ? (
-              <div className="contact-form__success">
-                Your email app should open with the drafted inquiry. Replace the address with your final business email if needed.
+          <div className="panel__body">
+            <form className="contact-form" onSubmit={handleSubmit}>
+              <div className="contact-form__grid">
+                <label className="field">
+                  <span>Name</span>
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={onChange}
+                    placeholder="Your name"
+                    required
+                  />
+                </label>
+                <label className="field">
+                  <span>Email</span>
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={onChange}
+                    placeholder="you@company.com"
+                    required
+                  />
+                </label>
+                <label className="field">
+                  <span>Company</span>
+                  <input
+                    name="company"
+                    value={form.company}
+                    onChange={onChange}
+                    placeholder="Company or team"
+                  />
+                </label>
+                <label className="field">
+                  <span>Topic</span>
+                  <select name="topic" value={form.topic} onChange={onChange}>
+                    <option>Consultation request</option>
+                    <option>Demo request</option>
+                    <option>Tool feedback</option>
+                    <option>Partnership inquiry</option>
+                    <option>Custom workflow discussion</option>
+                  </select>
+                </label>
               </div>
-            ) : null}
-          </form>
+
+              <label className="field">
+                <span>Message</span>
+                <textarea
+                  name="message"
+                  value={form.message}
+                  onChange={onChange}
+                  rows={7}
+                  placeholder="Tell us what product type, team problem or workflow you want help with."
+                  required
+                />
+              </label>
+
+              <div className="contact-form__actions">
+                <button type="submit" className="button button--primary">
+                  <Sparkles size={14} />
+                  Open email draft
+                </button>
+                <a className="button button--secondary" href="mailto:hello@rulegrid.net">
+                  Direct email
+                </a>
+              </div>
+
+              {submitted ? (
+                <div className="contact-form__success">
+                  Your email app should open with the drafted inquiry. Replace the address with
+                  your final business email if needed.
+                </div>
+              ) : null}
+            </form>
+          </div>
         </div>
 
+        {/* FIX: panel__heading + panel__eyebrow + panel__body */}
         <div className="panel">
           <div className="panel__header">
-            <div>
-              <div className="eyebrow">What to include</div>
+            <div className="panel__heading">
+              <div className="panel__eyebrow">What to include</div>
               <h2 className="panel__title">Helpful details for a strong first review</h2>
             </div>
           </div>
-          <ul className="marketing-list">
-            <li>Product category and target market</li>
-            <li>Power architecture, radios and cloud/app dependencies</li>
-            <li>Expected launch timing and certification path</li>
-            <li>Main blocker, uncertainty or consultant need</li>
-          </ul>
+          <div className="panel__body">
+            <ul className="marketing-list">
+              <li>Product category and target market</li>
+              <li>Power architecture, radios and cloud/app dependencies</li>
+              <li>Expected launch timing and certification path</li>
+              <li>Main blocker, uncertainty or consultant need</li>
+            </ul>
+          </div>
         </div>
       </div>
     </ShellPage>
   );
 }
 
+/* ──────────────────────────────────────────────────────────────
+   Router
+   ────────────────────────────────────────────────────────────── */
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/"        element={<HomePage />}       />
       <Route path="/analyze" element={<AnalyzeWorkspace />} />
-      <Route path="/tools" element={<ToolsPage />} />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/tools"   element={<ToolsPage />}      />
+      <Route path="/about"   element={<AboutPage />}      />
+      <Route path="/contact" element={<ContactPage />}    />
     </Routes>
   );
 }

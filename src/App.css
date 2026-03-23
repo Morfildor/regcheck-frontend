@@ -3190,3 +3190,132 @@ code {
     padding: 20px;
   }
 }
+
+/* ================================================================
+   MARKETING PAGES — PATCH v1
+   Fixes for all bugs found in the non-analyze pages.
+   Nothing in this block touches any class used by AnalyzeWorkspace.
+   ================================================================ */
+
+/* ── FIX 1: marketing-section-grid missing column template ──── */
+/* Was falling back to 1 column on all viewport widths.          */
+.marketing-section-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* ── FIX 2: tools-grid — 3-column at wide, 2 at mid ─────────── */
+/* Was 2-column at all widths; 6 cards look better at 3+2 split. */
+@media (min-width: 1200px) {
+  .tools-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ── FIX 3: simple-hero title max-width ──────────────────────── */
+/* The shared .marketing-hero__title / .simple-hero__title rule   */
+/* clamps to max-width: 12ch which is designed for the big hero.  */
+/* Inner pages need more room.                                     */
+.simple-hero .simple-hero__title {
+  max-width: 26ch;
+}
+
+/* ── FIX 4: tool-card body flush spacer ──────────────────────── */
+/* Tool cards use an empty panel__body to get bottom padding.     */
+.panel__body--flush {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* ── FIX 5: field inputs — dark-theme focus glow ─────────────── */
+/* Raw <input>/<select>/<textarea> in the contact form had no     */
+/* visible focus feedback in the dark theme.                      */
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent-38);
+  background: rgba(10, 18, 30, 0.72);
+  box-shadow: 0 0 0 3px var(--accent-08);
+}
+
+/* ── FIX 6: custom select arrow ──────────────────────────────── */
+/* Native OS select arrow looks wrong on a dark surface.         */
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238aa2bb' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.field select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237db9ff' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* ── FIX 7: workflow-item vertical alignment ─────────────────── */
+/* Number badge is 34 px tall; paragraph text was flush with top  */
+/* of badge instead of sitting centred against the first line.    */
+.workflow-item p {
+  padding-top: 7px;
+}
+
+/* ── FIX 8: marketing-card padding & hover state ─────────────── */
+/* Cards used bare .marketing-card without a focus/hover ring;    */
+/* route-link-cards already had one. Align soft cards slightly.   */
+.marketing-card--soft {
+  padding: 18px;
+}
+
+/* ── FIX 9: marketing-list spacing tightened ─────────────────── */
+/* list-item gap was inherited at 14px from the grid gap which    */
+/* made short li-rows look blown out.                             */
+.marketing-list {
+  line-height: 1.7;
+  font-size: 0.92rem;
+}
+
+.marketing-list li::marker {
+  color: var(--accent);
+  font-size: 0.9em;
+}
+
+/* ── FIX 10: responsive collapse for marketing-section-grid ─── */
+/* Already had 1080px breakpoint for other grids; section-grid   */
+/* was missing from it.                                           */
+@media (max-width: 1080px) {
+  .marketing-section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── POLISH A: panel hover lift on tool cards ────────────────── */
+/* tool-card panels felt dead compared to route-link-cards.      */
+.tool-card {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tool-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-22);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── POLISH B: route-link-card color on title hover ─────────── */
+.route-link-card:hover .route-link-card__title {
+  color: var(--accent);
+}
+
+/* ── POLISH C: contact success message icon-row style ───────── */
+.contact-form__success {
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+/* ── POLISH D: simple-hero gap refinement ────────────────────── */
+/* The 14px gap between eyebrow / title / text is fine for the   */
+/* big hero but slightly tight on inner page hero strips.         */
+.simple-hero {
+  gap: 16px;
+}
