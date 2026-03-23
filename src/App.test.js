@@ -99,7 +99,7 @@ afterEach(() => {
   jest.resetAllMocks();
 });
 
-test("renders the current landing workspace", async () => {
+test("renders the current home page and navigates to the analyzer", async () => {
   global.fetch = jest.fn(() =>
     Promise.resolve(jsonResponse({ traits: [], products: [], legislations: [] }))
   );
@@ -112,13 +112,16 @@ test("renders the current landing workspace", async () => {
 
   expect(
     screen.getByRole("heading", {
-      name: /eu regulatory scoping, instantly/i,
+      name: /from product description to eu compliance starting point/i,
     })
   ).toBeInTheDocument();
 
+  fireEvent.click(screen.getByRole("link", { name: /open analyzer/i }));
+
   expect(
-    screen.getByRole("button", { name: /analyze product/i })
+    await screen.findByRole("heading", { name: /eu regulatory scoping, instantly/i })
   ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /analyze product/i })).toBeInTheDocument();
 });
 
 test("does not restore an aborted rerun after starting over", async () => {
@@ -187,7 +190,10 @@ test("resets result-scoped panel state on a new analysis", async () => {
   });
 
   fireEvent.click(screen.getAllByRole("button", { name: /\+ food-contact plastics/i })[0]);
-  expect(screen.getByText(/^Applied$/)).toBeInTheDocument();
+
+  expect(
+    screen.getByRole("textbox", { name: /describe your product/i }).value
+  ).toMatch(/food-contact plastics/i);
 
   fireEvent.click(screen.getByRole("button", { name: /analyze product/i }));
 

@@ -520,7 +520,7 @@ function TopBar({ result, totalStandards, onReset, prevResult, onRestorePrev, on
         <div className="topbar__left">
           <Link to="/" className="brand brand--link" aria-label="RuleGrid home">
             <div className="brand__mark">
-              <img src="/logo512.png" alt="RuleGrid" className="brand__logo" />
+              <img src={`${process.env.PUBLIC_URL}/logo512.png`} alt="RuleGrid" className="brand__logo" />
             </div>
             <div>
               <div className="brand__title">RuleGrid</div>
@@ -2053,6 +2053,7 @@ export default function AnalyzeWorkspace() {
   const [scrolled, setScrolled] = useState(false);
   const resultsRef = useRef(null);
   const analysisAbortRef = useRef(null);
+  const copyResetTimerRef = useRef(null);
   // Stable per-session random order for templates
   const [templateOrder] = useState(() => Array.from({ length: 50 }, () => Math.random()));
 
@@ -2086,6 +2087,10 @@ export default function AnalyzeWorkspace() {
     return () => {
       analysisAbortRef.current?.abort();
       analysisAbortRef.current = null;
+      if (copyResetTimerRef.current) {
+        window.clearTimeout(copyResetTimerRef.current);
+        copyResetTimerRef.current = null;
+      }
     };
   }, []);
 
@@ -2235,10 +2240,36 @@ export default function AnalyzeWorkspace() {
   const handleCopyAnalysis = useCallback(async () => {
     if (!result) return;
     const text = buildClipboardSummary({ result, description, routeSections, legislationGroups });
+
+    const fallbackCopy = (value) => {
+      const textarea = document.createElement("textarea");
+      textarea.value = value;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      textarea.style.pointerEvents = "none";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const copied = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if (!copied) throw new Error("Copy failed");
+    };
+
     try {
-      await navigator.clipboard.writeText(text);
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        fallbackCopy(text);
+      }
       setAnalysisCopied(true);
-      window.setTimeout(() => setAnalysisCopied(false), 2400);
+      if (copyResetTimerRef.current) {
+        window.clearTimeout(copyResetTimerRef.current);
+      }
+      copyResetTimerRef.current = window.setTimeout(() => {
+        setAnalysisCopied(false);
+        copyResetTimerRef.current = null;
+      }, 2400);
     } catch (_) {}
   }, [result, description, routeSections, legislationGroups]);
 

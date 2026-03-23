@@ -53,7 +53,7 @@ function SiteHeader({ children }) {
         <div className="topbar__left">
           <Link to="/" className="brand brand--link" aria-label="RuleGrid home">
             <div className="brand__mark">
-              <img src="/logo512.png" alt="RuleGrid" className="brand__logo" />
+              <img src={`${process.env.PUBLIC_URL}/logo512.png`} alt="RuleGrid" className="brand__logo" />
             </div>
             <div>
               <div className="brand__title">RuleGrid</div>
@@ -671,6 +671,28 @@ function ContactPage() {
   );
 }
 
+function NotFoundPage() {
+  return (
+    <ShellPage
+      cta={
+        <Link to="/analyze" className="button button--secondary topbar__action-btn">
+          Open analyzer
+        </Link>
+      }
+    >
+      <section className="v2-inner-hero">
+        <span className="marketing-eyebrow">Page not found</span>
+        <h1 className="v2-inner-hero__title">This page does not exist.</h1>
+        <p className="v2-inner-hero__text">Use the main navigation or go straight back to the analyzer.</p>
+      </section>
+      <div className="v2-home-hero__actions">
+        <Link to="/" className="button button--ghost">Back home</Link>
+        <Link to="/analyze" className="button button--primary">Open analyzer</Link>
+      </div>
+    </ShellPage>
+  );
+}
+
 /* ──────────────────────────────────────────────────────────────
    Router
    ────────────────────────────────────────────────────────────── */
@@ -682,6 +704,7 @@ function AppRoutes() {
       <Route path="/tools"   element={<ToolsPage />}        />
       <Route path="/about"   element={<AboutPage />}        />
       <Route path="/contact" element={<ContactPage />}      />
+      <Route path="*"        element={<NotFoundPage />}     />
     </Routes>
   );
 }
