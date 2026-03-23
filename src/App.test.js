@@ -1,9 +1,13 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import App from "./App";
 
-function jsonResponse(data, ok = true) {
+jest.setTimeout(15000);
+
+function jsonResponse(data, ok = true, status = 200) {
   return {
     ok,
+    status,
     json: async () => data,
   };
 }
@@ -20,11 +24,26 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
-function buildResult(summary) {
+function buildMetadata() {
+  return {
+    traits: [],
+    products: [
+      { id: "coffee_machine", label: "Coffee machine" },
+      { id: "router", label: "Router" },
+      { id: "smart_display", label: "Smart display" },
+    ],
+    legislations: [],
+  };
+}
+
+function buildResult(summary, overrides = {}) {
   return {
     summary,
     product_type: "coffee_machine",
+    product_family: "household_appliance",
+    product_subtype: "espresso_machine",
     product_match_confidence: "medium",
+    product_match_stage: "family",
     overall_risk: "MEDIUM",
     standard_sections: [
       {
@@ -34,10 +53,13 @@ function buildResult(summary) {
           {
             code: "EN 60335-1",
             title: "Household and similar electrical appliances",
-            harmonization_status: "harmonized",
             harmonized_reference: "2014/C 389/03",
             dated_version: "EN 60335-1:2012",
             version: "EN IEC 60335-1:2023",
+          },
+          {
+            code: "EN 62233",
+            title: "Measurement methods for electromagnetic fields",
           },
         ],
       },
@@ -48,7 +70,6 @@ function buildResult(summary) {
           {
             code: "EN 55014-1",
             title: "Electromagnetic compatibility requirements",
-            harmonization_status: "harmonized",
           },
         ],
       },
@@ -70,18 +91,58 @@ function buildResult(summary) {
           },
         ],
       },
+      {
+        key: "non_ce",
+        title: "Parallel",
+        items: [
+          {
+            code: "1907/2006",
+            title: "REACH",
+            directive_key: "REACH",
+            rationale: "Material composition and SVHC status can still change the release decision.",
+            scope: "Applies to all articles placed on the EU market.",
+          },
+        ],
+      },
     ],
     missing_information_items: [
       {
-        key: "food_contact_materials",
-        message: "Confirm wetted materials",
+        key: "wireless_connectivity",
+        message: "Confirm wireless connectivity",
+        importance: "high",
+        examples: ["Wi-Fi connectivity"],
+      },
+      {
+        key: "charger_included",
+        message: "Confirm charger included",
         importance: "medium",
-        examples: ["food-contact plastics"],
+        examples: ["battery supplied with the product"],
       },
     ],
     all_traits: ["food_contact"],
-    suggested_quick_adds: [],
+    suggested_quick_adds: [
+      {
+        label: "Cloud account",
+        text: "cloud account and user login",
+      },
+    ],
+    future_watchlist: ["cyber resilience act"],
+    ...overrides,
   };
+}
+
+function renderAt(route = "/analyze") {
+  window.history.pushState({}, "", route);
+  return render(<App />);
+}
+
+async function submitAnalysis(description) {
+  await userEvent.clear(screen.getByRole("textbox", { name: /describe your product/i }));
+  await userEvent.type(
+    screen.getByRole("textbox", { name: /describe your product/i }),
+    description
+  );
+  await userEvent.click(screen.getByRole("button", { name: /analyze product|analyze again|re-run analysis/i }));
 }
 
 beforeEach(() => {
@@ -93,116 +154,301 @@ beforeEach(() => {
     configurable: true,
     value: jest.fn(),
   });
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: {
+      writeText: jest.fn().mockResolvedValue(undefined),
+    },
+  });
 });
 
 afterEach(() => {
   jest.resetAllMocks();
 });
 
-test("renders the current home page and navigates to the analyzer", async () => {
-  global.fetch = jest.fn(() =>
-    Promise.resolve(jsonResponse({ traits: [], products: [], legislations: [] }))
+test("renders the home page and navigates into the analyzer", async () => {
+  global.fetch = jest.fn().mockResolvedValueOnce(jsonResponse(buildMetadata()));
+
+  renderAt("/");
+
+  expect(
+    screen.getByRole("heading", {
+      name: /move from rough product detail to a defensible eu starting route/i,
+    })
+  ).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("link", { name: /open analyzer/i }));
+
+  expect(
+    await screen.findByRole("heading", {
+      name: /trustworthy compliance scoping, before formal review/i,
+    })
+  ).toBeInTheDocument();
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+});
+
+test("renders trust-first analyzer hierarchy and copies the analysis summary", async () => {
+  global.fetch = jest
+    .fn()
+    .mockResolvedValueOnce(jsonResponse(buildMetadata()))
+    .mockResolvedValueOnce(jsonResponse(buildResult("Initial scope for a connected coffee machine.")));
+
+  renderAt("/analyze");
+
+  await submitAnalysis(
+    "Connected coffee machine with mains power, grinder, pressure, and food-contact brew path"
   );
 
-  render(<App />);
-
-  await waitFor(() => {
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-  });
-
-  expect(
-    screen.getByRole("heading", {
-      name: /from product description to eu compliance starting point/i,
-    })
-  ).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole("link", { name: /open analyzer/i }));
-
-  expect(
-    await screen.findByRole("heading", { name: /eu regulatory scoping, instantly/i })
-  ).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /analyze product/i })).toBeInTheDocument();
-});
-
-test("does not restore an aborted rerun after starting over", async () => {
-  const rerun = deferred();
-
-  global.fetch = jest
-    .fn()
-    .mockResolvedValueOnce(jsonResponse({ traits: [], products: [], legislations: [] }))
-    .mockResolvedValueOnce(jsonResponse(buildResult("Alpha summary")))
-    .mockImplementationOnce(() => rerun.promise);
-
-  render(<App />);
-
-  fireEvent.change(screen.getByRole("textbox", { name: /describe your product/i }), {
-    target: { value: "Connected coffee machine with mains power and food-contact brew path" },
-  });
-  fireEvent.click(screen.getByRole("button", { name: /analyze product/i }));
-
-  expect(await screen.findAllByText("Alpha summary")).not.toHaveLength(0);
-
-  fireEvent.click(screen.getByRole("button", { name: /analyze product/i }));
-  fireEvent.click(screen.getByRole("button", { name: /new analysis/i }));
-
-  expect(
-    screen.getByRole("heading", {
-      name: /eu regulatory scoping, instantly/i,
-    })
-  ).toBeInTheDocument();
+  expect(await screen.findByText(/initial scope for a connected coffee machine/i)).toBeInTheDocument();
+  expect(screen.getByText(/current scoping confidence/i)).toBeInTheDocument();
+  expect(screen.getByText(/^Initial scope$/i)).toBeInTheDocument();
+  expect(screen.getByText(/^Preliminary only$/i)).toBeInTheDocument();
+  expect(screen.getByText(/what could change this result/i)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /^Standards route$/i })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /^Parallel obligations$/i })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /evidence and common gaps/i })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /^Supporting context$/i })).toBeInTheDocument();
 
   await act(async () => {
-    rerun.resolve(jsonResponse(buildResult("Beta summary")));
-    await Promise.resolve();
-    await Promise.resolve();
+    await userEvent.click(screen.getByRole("button", { name: /^copy$/i }));
   });
 
-  await waitFor(() => {
-    expect(screen.queryByText("Beta summary")).not.toBeInTheDocument();
-  });
+  expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1);
 });
 
-test("resets result-scoped panel state on a new analysis", async () => {
+test("clarification apply marks the result stale, rerun replaces it cleanly, and panel state resets", async () => {
   global.fetch = jest
     .fn()
-    .mockResolvedValueOnce(jsonResponse({ traits: [], products: [], legislations: [] }))
-    .mockResolvedValueOnce(jsonResponse(buildResult("First summary")))
-    .mockResolvedValueOnce(jsonResponse(buildResult("Second summary")));
+    .mockResolvedValueOnce(jsonResponse(buildMetadata()))
+    .mockResolvedValueOnce(jsonResponse(buildResult("First result summary.")))
+    .mockResolvedValueOnce(
+      jsonResponse(
+        buildResult("Second result summary.", {
+          product_match_confidence: "high",
+          standard_sections: [
+            {
+              key: "LVD",
+              title: "LVD safety route",
+              items: [
+                {
+                  code: "EN 60335-1",
+                  title: "Household and similar electrical appliances",
+                },
+              ],
+            },
+            {
+              key: "RED",
+              title: "RED wireless route",
+              items: [
+                {
+                  code: "EN 300 328",
+                  title: "Wideband transmission systems",
+                },
+              ],
+            },
+          ],
+        })
+      )
+    );
 
-  render(<App />);
+  renderAt("/analyze");
+
+  await submitAnalysis(
+    "Connected coffee machine with mains power, grinder, pressure, and food-contact brew path"
+  );
+
+  expect(await screen.findByText(/first result summary/i)).toBeInTheDocument();
+  expect(screen.getByText(/household and similar electrical appliances/i)).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: /lvd safety route/i }));
+  await waitFor(() => {
+    expect(screen.queryByText(/household and similar electrical appliances/i)).not.toBeInTheDocument();
+  });
+
+  await userEvent.click(screen.getByRole("button", { name: /\+ wi-fi/i }));
+
+  expect(screen.getByRole("textbox", { name: /describe your product/i }).value).toMatch(
+    /wi-fi connectivity/i
+  );
+  expect(screen.getByText(/description updated\. re-run to apply the latest clarifications/i)).toBeInTheDocument();
+  expect(screen.getByText(/first result summary/i)).toBeInTheDocument();
+
+  await userEvent.click(screen.getAllByRole("button", { name: /re-run analysis/i })[0]);
+
+  expect(await screen.findByText(/second result summary/i)).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getByRole("button", { name: /lvd safety route/i })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+  });
+  expect(screen.getByText(/compared with previous analysis/i)).toBeInTheDocument();
+});
+
+test("starting a new analyze aborts the prior in-flight request", async () => {
+  const firstRun = deferred();
+  let firstSignal;
+
+  global.fetch = jest
+    .fn()
+    .mockResolvedValueOnce(jsonResponse(buildMetadata()))
+    .mockImplementationOnce((_, options) => {
+      firstSignal = options.signal;
+      return firstRun.promise;
+    })
+    .mockResolvedValueOnce(jsonResponse(buildResult("Second request result.")));
+
+  renderAt("/analyze");
+
+  await userEvent.type(
+    screen.getByRole("textbox", { name: /describe your product/i }),
+    "First product with mains power"
+  );
+  await userEvent.click(screen.getByRole("button", { name: /analyze product/i }));
+
+  await userEvent.clear(screen.getByRole("textbox", { name: /describe your product/i }));
+  await userEvent.type(
+    screen.getByRole("textbox", { name: /describe your product/i }),
+    "Second product with mains power and Wi-Fi"
+  );
+  await userEvent.click(screen.getByRole("button", { name: /analyze product|analyze again|re-run analysis/i }));
+
+  expect(await screen.findByText(/second request result/i)).toBeInTheDocument();
+  expect(firstSignal.aborted).toBe(true);
+
+  await act(async () => {
+    firstRun.resolve(jsonResponse(buildResult("Ignored first result.")));
+    await Promise.resolve();
+  });
+
+  expect(screen.queryByText(/ignored first result/i)).not.toBeInTheDocument();
+});
+
+test("restore previous result and reset clear transient analyzer state", async () => {
+  global.fetch = jest
+    .fn()
+    .mockResolvedValueOnce(jsonResponse(buildMetadata()))
+    .mockResolvedValueOnce(jsonResponse(buildResult("Alpha summary.")))
+    .mockResolvedValueOnce(jsonResponse(buildResult("Beta summary.", { product_type: "router" })));
+
+  renderAt("/analyze");
+
+  await submitAnalysis("Alpha product with mains power");
+  expect(await screen.findByText(/alpha summary/i)).toBeInTheDocument();
 
   fireEvent.change(screen.getByRole("textbox", { name: /describe your product/i }), {
-    target: { value: "Connected coffee machine with mains power and food-contact brew path" },
+    target: { value: "Beta product with mains power and Wi-Fi" },
   });
-  fireEvent.click(screen.getByRole("button", { name: /analyze product/i }));
+  fireEvent.click(screen.getAllByRole("button", { name: /re-run analysis/i })[0]);
 
-  expect(await screen.findAllByText("First summary")).not.toHaveLength(0);
-  expect(
-    screen.getByText(/household and similar electrical appliances/i)
-  ).toBeInTheDocument();
+  expect(await screen.findByText(/beta summary/i)).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole("button", { name: /lvd safety route/i }));
+  fireEvent.click(screen.getByRole("button", { name: /restore previous result/i }));
+
+  expect(await screen.findByText(/alpha summary/i)).toBeInTheDocument();
+  expect(screen.queryByText(/compared with previous analysis/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/description updated\. re-run/i)).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /^reset$/i }));
+
+  expect(screen.getByRole("textbox", { name: /describe your product/i })).toHaveValue("");
+  expect(screen.queryByText(/alpha summary/i)).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /restore previous result/i })).not.toBeInTheDocument();
+});
+
+test("shows an analysis error without breaking the workspace shell", async () => {
+  global.fetch = jest
+    .fn()
+    .mockResolvedValueOnce(jsonResponse(buildMetadata()))
+    .mockResolvedValueOnce(jsonResponse({ detail: "Engine unavailable" }, false, 503));
+
+  renderAt("/analyze");
+
+  await submitAnalysis("Coffee machine with mains power");
+
+  expect(await screen.findByText(/analysis error/i)).toBeInTheDocument();
+  expect(screen.getByText(/engine unavailable/i)).toBeInTheDocument();
+  expect(screen.getByText(/give the analyzer the details that most change the route/i)).toBeInTheDocument();
+});
+
+test("keeps stable section order and mobile drawer behavior with partial backend data", async () => {
+  window.innerWidth = 390;
+  fireEvent(window, new Event("resize"));
+
+  global.fetch = jest
+    .fn()
+    .mockResolvedValueOnce(jsonResponse(buildMetadata()))
+    .mockResolvedValueOnce(
+      jsonResponse(
+        buildResult("Partial result summary.", {
+          standard_sections: [],
+          standards: [
+            {
+              code: "EN 60335-1",
+              title: "Household and similar electrical appliances",
+              directive_key: "LVD",
+            },
+          ],
+          legislation_sections: [],
+        })
+      )
+    );
+
+  const { container } = renderAt("/analyze");
+
+  await submitAnalysis("Coffee machine with mains power");
+
+  expect(await screen.findByText(/partial result summary/i)).toBeInTheDocument();
+
+  const stickyActionBar = container.querySelector('[data-mobile-sticky="true"]');
+  expect(stickyActionBar).not.toBeNull();
+
+  const contextDetails = container.querySelector("details");
+  expect(contextDetails).not.toBeNull();
+  expect(contextDetails.open).toBe(false);
+
+  const order = [
+    screen.getByText("1. Product identification / overview"),
+    screen.getByText(/current scoping confidence/i),
+    screen.getByText(/what could change this result/i),
+    screen.getByText(/^Standards route$/i),
+    screen.getByText(/^Parallel obligations$/i),
+    screen.getByText(/evidence and common gaps/i),
+    screen.getByText(/^Supporting context$/i),
+  ];
+
+  for (let index = 0; index < order.length - 1; index += 1) {
+    const current = order[index];
+    const next = order[index + 1];
+    expect(current.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  }
+});
+
+test("keyboard interaction works for accordions and clarification actions", async () => {
+  global.fetch = jest
+    .fn()
+    .mockResolvedValueOnce(jsonResponse(buildMetadata()))
+    .mockResolvedValueOnce(jsonResponse(buildResult("Keyboard interaction result.")));
+
+  renderAt("/analyze");
+
+  await submitAnalysis("Coffee machine with mains power");
+
+  expect(await screen.findByText(/keyboard interaction result/i)).toBeInTheDocument();
+
+  const routeToggle = screen.getByRole("button", { name: /lvd safety route/i });
+  routeToggle.focus();
+  await userEvent.keyboard("{Enter}");
 
   await waitFor(() => {
-    expect(
-      screen.queryByText(/household and similar electrical appliances/i)
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/household and similar electrical appliances/i)).not.toBeInTheDocument();
   });
 
-  fireEvent.click(screen.getAllByRole("button", { name: /\+ food-contact plastics/i })[0]);
+  const clarificationButton = screen.getByRole("button", { name: /\+ wi-fi/i });
+  clarificationButton.focus();
+  await userEvent.keyboard("{Enter}");
 
-  expect(
-    screen.getByRole("textbox", { name: /describe your product/i }).value
-  ).toMatch(/food-contact plastics/i);
-
-  fireEvent.click(screen.getByRole("button", { name: /analyze product/i }));
-
-  expect(await screen.findAllByText("Second summary")).not.toHaveLength(0);
-  expect(screen.queryByText(/^Applied$/)).not.toBeInTheDocument();
-  expect(
-    screen.getByText(/household and similar electrical appliances/i)
-  ).toBeInTheDocument();
-  expect(
-    screen.getAllByRole("button", { name: /\+ food-contact plastics/i })[0]
-  ).toBeEnabled();
+  expect(screen.getByRole("textbox", { name: /describe your product/i }).value).toMatch(
+    /wi-fi connectivity/i
+  );
 });

@@ -1,0 +1,520 @@
+.headerHint {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.headerMetric {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.pillPositive {
+  background: rgba(128, 214, 168, 0.13);
+  border-color: rgba(128, 214, 168, 0.24);
+  color: #9ce0bc;
+}
+
+.pillWarning {
+  background: rgba(240, 192, 103, 0.14);
+  border-color: rgba(240, 192, 103, 0.28);
+  color: #f5cc81;
+}
+
+.pillMuted {
+  background: rgba(167, 183, 203, 0.11);
+  border-color: rgba(167, 183, 203, 0.22);
+  color: #c0cbda;
+}
+
+.pillStrong {
+  background: rgba(125, 185, 255, 0.13);
+  border-color: rgba(125, 185, 255, 0.28);
+  color: #93c5ff;
+}
+
+.directivePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--directive-border);
+  background: var(--directive-bg);
+  color: var(--directive-text);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-strong);
+  background: transparent;
+}
+
+.actionButtonPrimary {
+  background: linear-gradient(180deg, rgba(125, 185, 255, 0.22), rgba(125, 185, 255, 0.14));
+  border-color: rgba(125, 185, 255, 0.32);
+}
+
+.actionButtonSecondary {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.composerBody,
+.emptyStateBody,
+.sectionStack,
+.compareBody,
+.stackList {
+  display: grid;
+  gap: 16px;
+}
+
+.textareaLabel,
+.sectionLabel,
+.metaLabel,
+.suggestionLabel,
+.contextEyebrow {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(125, 185, 255, 0.16);
+  background: rgba(9, 16, 26, 0.76);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.actionBar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  position: sticky;
+  bottom: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(10, 17, 27, 0.84);
+  backdrop-filter: blur(18px);
+}
+
+.dirtyBanner,
+.progressBanner,
+.errorBanner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dirtyBanner {
+  background: rgba(125, 185, 255, 0.08);
+}
+
+.progressBanner {
+  background: rgba(120, 213, 193, 0.07);
+}
+
+.errorBanner {
+  background: rgba(244, 142, 120, 0.1);
+}
+
+.dirtyCopy,
+.dirtyActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dirtyDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.dismissButton {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.progressTitle,
+.errorTitle,
+.guidanceCardTitle,
+.groupTitle,
+.contextTitle {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.progressText,
+.errorText,
+.groupText,
+.contextText,
+.microRationale,
+.missingReason,
+.accordionText,
+.exampleText {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.suggestionStack,
+.guidanceGrid,
+.metricGrid,
+.trustGrid,
+.missingGrid,
+.evidenceGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.suggestionGroup,
+.guidanceCard,
+.metricCard,
+.trustCard,
+.infoCard,
+.accordionCard,
+.standardCard,
+.evidenceCard {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(8, 14, 23, 0.44);
+}
+
+.suggestionGroup,
+.guidanceCard,
+.metricCard,
+.trustCard,
+.infoCard,
+.evidenceCard {
+  padding: 16px;
+}
+
+.suggestionRow,
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.suggestionChip,
+.listChip,
+.compareChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 185, 255, 0.18);
+  background: rgba(125, 185, 255, 0.08);
+  color: var(--text-strong);
+  padding: 8px 12px;
+}
+
+.suggestionChip,
+.exampleCard {
+  cursor: pointer;
+}
+
+.listChip {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.compareChip {
+  font-size: 0.88rem;
+}
+
+.guidanceGrid,
+.metricGrid,
+.trustGrid,
+.missingGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.trustAssumptions,
+.missingGrid > :nth-child(3),
+.missingGrid > :nth-child(4) {
+  min-height: 100%;
+}
+
+.guidanceCardTitle,
+.evidenceHeader,
+.standardHeader,
+.accordionTitleRow,
+.missingTitleRow,
+.groupHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.exampleList {
+  display: grid;
+  gap: 10px;
+}
+
+.exampleCard {
+  width: 100%;
+  text-align: left;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+}
+
+.exampleLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.metricCard {
+  display: grid;
+  gap: 8px;
+}
+
+.metricLabel {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.metricValue,
+.standardTitle,
+.missingTitle,
+.accordionTitle {
+  color: var(--text-strong);
+}
+
+.metaGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.metaCard {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.accordionToggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  text-align: left;
+  padding: 18px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.accordionBody {
+  display: grid;
+  gap: 14px;
+  padding: 0 18px 18px;
+}
+
+.groupBlock {
+  display: grid;
+  gap: 12px;
+}
+
+.standardCard {
+  padding: 16px;
+}
+
+.standardHeader,
+.standardPills,
+.evidenceSection,
+.contextBody {
+  display: grid;
+  gap: 12px;
+}
+
+.standardCode {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.evidenceGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.contextPanel {
+  position: sticky;
+  top: 88px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(125, 185, 255, 0.08), transparent 28%),
+    linear-gradient(160deg, rgba(19, 31, 48, 0.94), rgba(14, 23, 38, 0.98));
+  overflow: hidden;
+}
+
+.contextSummary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 20px;
+  cursor: pointer;
+}
+
+.contextSummary::-webkit-details-marker {
+  display: none;
+}
+
+.contextBody {
+  padding: 0 20px 20px;
+}
+
+.fullWidthButton {
+  width: 100%;
+}
+
+.emptyCopy {
+  color: var(--text-muted);
+}
+
+.scrollTop {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 50;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 185, 255, 0.22);
+  background: rgba(10, 17, 27, 0.88);
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1080px) {
+  .guidanceGrid,
+  .metricGrid,
+  .trustGrid,
+  .missingGrid,
+  .evidenceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .contextPanel {
+    position: static;
+  }
+}
+
+@media (max-width: 960px) {
+  .desktopOnlyAction {
+    display: none;
+  }
+
+  .actionBar {
+    bottom: 10px;
+  }
+}
+
+@media (max-width: 720px) {
+  .headerActions,
+  .actionBar,
+  .dirtyBanner,
+  .progressBanner,
+  .errorBanner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dirtyActions {
+    justify-content: space-between;
+  }
+
+  .accordionToggle,
+  .contextSummary {
+    padding: 16px;
+  }
+
+  .accordionBody,
+  .contextBody {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: 16px;
+  }
+}

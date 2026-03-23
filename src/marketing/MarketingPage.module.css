@@ -1,0 +1,402 @@
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
+  gap: 22px;
+}
+
+.heroCopy {
+  display: grid;
+  gap: 18px;
+}
+
+.heroEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-22);
+  background: var(--accent-08);
+  color: var(--accent);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(2.4rem, 5vw, 4.7rem);
+  line-height: 0.95;
+  color: var(--text-strong);
+  max-width: 11ch;
+}
+
+.heroText {
+  margin: 0;
+  max-width: 64ch;
+  font-size: 1.06rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.heroActions,
+.buttonRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.buttonPrimary,
+.buttonSecondary,
+.buttonGhost,
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.buttonPrimary,
+.buttonSecondary,
+.buttonGhost {
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.buttonPrimary {
+  background: var(--accent-16);
+  border-color: var(--accent-28);
+  color: var(--text-strong);
+}
+
+.buttonPrimary:hover {
+  transform: translateY(-1px);
+  background: var(--accent-22);
+  border-color: var(--accent-38);
+}
+
+.buttonSecondary {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.buttonSecondary:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent-22);
+}
+
+.buttonGhost {
+  color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.06);
+  background: transparent;
+}
+
+.buttonGhost:hover {
+  color: var(--text);
+  border-color: var(--accent-22);
+}
+
+.textLink {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  color: var(--accent);
+}
+
+.textLink:hover {
+  color: var(--text-strong);
+}
+
+.heroAside {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.miniStat {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.miniStatValue {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--text-strong);
+  font-size: 1.55rem;
+  font-weight: 600;
+}
+
+.miniStatLabel {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.trustGrid,
+.featureGrid,
+.stepGrid,
+.twoCol,
+.toolsGrid,
+.contactGrid,
+.formGrid {
+  display: grid;
+  gap: 18px;
+}
+
+.trustGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.featureGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.twoCol,
+.contactGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.stepGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.toolsGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metricLabel,
+.smallLabel {
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+}
+
+.metricValue,
+.cardTitle,
+.stepTitle {
+  color: var(--text-strong);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.metricCard,
+.featureCard,
+.stepCard,
+.toolCard {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.024);
+}
+
+.metricCard,
+.featureCard,
+.toolCard {
+  display: grid;
+  gap: 12px;
+}
+
+.cardText,
+.stepText,
+.contactNote {
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.stepCard {
+  display: grid;
+  gap: 14px;
+}
+
+.stepNumber {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid var(--accent-22);
+  background: var(--accent-08);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.iconRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-soft);
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-16);
+  background: var(--accent-08);
+  color: var(--text);
+}
+
+.accentList {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.accentListItem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  color: var(--text-muted);
+}
+
+.accentDot {
+  width: 10px;
+  height: 10px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: var(--accent-teal);
+  box-shadow: 0 0 0 4px rgba(120, 213, 193, 0.14);
+}
+
+.mutedDot {
+  background: var(--text-soft);
+  box-shadow: 0 0 0 4px rgba(138, 162, 187, 0.12);
+}
+
+.roadmapTag {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.toolCardMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.formGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+.fieldLabel {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.fieldInput,
+.fieldSelect,
+.fieldTextarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(7, 12, 20, 0.68);
+  color: var(--text);
+  padding: 12px 14px;
+}
+
+.fieldTextarea {
+  resize: vertical;
+  min-height: 144px;
+}
+
+.fieldInput:focus,
+.fieldSelect:focus,
+.fieldTextarea:focus {
+  border-color: var(--accent-38);
+  box-shadow: 0 0 0 3px var(--accent-08);
+}
+
+.successBox {
+  border-radius: 14px;
+  border: 1px solid var(--teal-24);
+  background: var(--teal-08);
+  color: var(--accent-teal);
+  padding: 12px 14px;
+}
+
+.stack,
+.centerActions {
+  display: grid;
+  gap: 18px;
+}
+
+.centerActions {
+  justify-content: start;
+}
+
+@media (max-width: 1080px) {
+  .hero,
+  .trustGrid,
+  .featureGrid,
+  .twoCol,
+  .contactGrid,
+  .toolsGrid,
+  .stepGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .heroTitle {
+    max-width: none;
+  }
+
+  .heroActions,
+  .buttonRow,
+  .centerActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .buttonPrimary,
+  .buttonSecondary,
+  .buttonGhost {
+    justify-content: center;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}

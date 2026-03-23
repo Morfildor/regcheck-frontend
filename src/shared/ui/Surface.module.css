@@ -1,0 +1,79 @@
+.surface {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(125, 185, 255, 0.08), transparent 28%),
+    linear-gradient(160deg, rgba(19, 31, 48, 0.94), rgba(14, 23, 38, 0.98));
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 0;
+}
+
+.copy {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 185, 255, 0.18);
+  background: rgba(125, 185, 255, 0.08);
+  color: var(--accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  line-height: 1.12;
+  color: var(--text-strong);
+}
+
+.text {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-muted);
+}
+
+.actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.body {
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+@media (max-width: 720px) {
+  .header,
+  .body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+
+  .actions {
+    width: 100%;
+  }
+}

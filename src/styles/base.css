@@ -1,0 +1,86 @@
+:root {
+  --bg: #0c1521;
+  --bg-alt: #0f1b2c;
+  --surface-0: rgba(14, 23, 38, 0.98);
+  --surface-1: rgba(19, 31, 48, 0.9);
+  --surface-2: rgba(24, 38, 58, 0.94);
+  --surface-glass: rgba(255, 255, 255, 0.032);
+  --border: rgba(255, 255, 255, 0.07);
+  --border-sm: rgba(255, 255, 255, 0.044);
+  --accent: #7db9ff;
+  --accent-dim: rgba(125, 185, 255, 0.14);
+  --accent-teal: #78d5c1;
+  --accent-08: rgba(125, 185, 255, 0.08);
+  --accent-16: rgba(125, 185, 255, 0.16);
+  --accent-22: rgba(125, 185, 255, 0.22);
+  --accent-28: rgba(125, 185, 255, 0.28);
+  --accent-38: rgba(125, 185, 255, 0.38);
+  --teal-08: rgba(120, 213, 193, 0.08);
+  --teal-20: rgba(120, 213, 193, 0.2);
+  --teal-24: rgba(120, 213, 193, 0.24);
+  --text: #d4e5f2;
+  --text-strong: #ecf5ff;
+  --text-muted: #8aa2bb;
+  --text-soft: #4e6475;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: "Outfit", system-ui, sans-serif;
+  color: var(--text);
+  background: linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 22%, #09101a 100%);
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(125, 185, 255, 0.28);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
