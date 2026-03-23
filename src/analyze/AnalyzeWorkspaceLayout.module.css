@@ -1,60 +1,33 @@
 .main {
-  gap: 22px;
+  gap: 18px;
 }
 
 .zone {
   display: grid;
-  gap: 16px;
-}
-
-.zoneHeader {
-  display: grid;
-  gap: 6px;
-}
-
-.zoneEyebrow {
-  display: inline-flex;
-  width: fit-content;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(120, 213, 193, 0.18);
-  background: rgba(120, 213, 193, 0.08);
-  color: var(--accent-teal);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.zoneTitle {
-  margin: 0;
-  color: var(--text-strong);
-  font-family: "Fraunces", Georgia, serif;
-  font-size: clamp(1.35rem, 2.5vw, 2rem);
-}
-
-.zoneText {
-  margin: 0;
-  max-width: 72ch;
-  color: var(--text-muted);
+  gap: 14px;
 }
 
 .landingStack {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .resultsGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
-  gap: 22px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(256px, 0.72fr);
+  gap: 18px;
+  align-items: start;
 }
 
 .resultsMain,
 .resultsAside,
 .statusStack {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
+
+/* Removed zone header styles — the zone title section was removed from JSX
+   as it was a redundant heading above the Composer Surface's own header */
 
 @media (max-width: 1080px) {
   .resultsGrid {

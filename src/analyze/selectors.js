@@ -228,18 +228,47 @@ function rationaleForStandard(item, sectionKey, baseSafetyRoute) {
   return "";
 }
 
+function rationaleForRouteSection(section, baseSafetyRoute) {
+  const key = section?.key || "OTHER";
+
+  if (key === "LVD") {
+    return baseSafetyRoute?.key === "EN_62368"
+      ? "Electronic equipment safety route under voltage scope."
+      : "Mains-powered electrical equipment within voltage scope.";
+  }
+  if (key === "EMC") return "Active electronics capable of electromagnetic disturbance.";
+  if (key === "RED") return "Includes intentional radio transmission.";
+  if (key === "RED_CYBER") return "Connected radio equipment with network, update, or authentication exposure.";
+  if (key === "BATTERY") return "Battery chemistry, category, and end-of-life duties can apply.";
+  if (key === "REACH") return "Material composition and SVHC screening still matter for release readiness.";
+  if (key === "FCM" || key === "FCM_PLASTIC") return "Food-contact materials in the wetted path need separate evidence.";
+
+  const firstItemRationale = section?.items?.find((item) => item?.shortRationale)?.shortRationale;
+  return firstItemRationale || "";
+}
+
 function decorateRouteSections(sections, baseSafetyRoute) {
-  return (sections || []).map((section, index) => ({
-    ...section,
-    sectionKind:
-      index === 0 ? "core" : section.key === "RED" || section.key === "RED_CYBER" ? "conditional" : "secondary",
-    items: (section.items || []).map((item) => ({
+  return (sections || []).map((section, index) => {
+    const sectionKind =
+      index === 0 ? "core" : section.key === "RED" || section.key === "RED_CYBER" ? "conditional" : "secondary";
+    const items = (section.items || []).map((item) => ({
       ...item,
       shortRationale: rationaleForStandard(item, section.key, baseSafetyRoute),
       applicabilityBucket:
-        index === 0 ? "Core likely applicable" : section.key === "RED" || section.key === "RED_CYBER" ? "Conditional / check applicability" : "Usually not applicable unless specific features are present",
-    })),
-  }));
+        index === 0
+          ? "Core likely applicable"
+          : section.key === "RED" || section.key === "RED_CYBER"
+            ? "Conditional / check applicability"
+            : "Usually not applicable unless specific features are present",
+    }));
+
+    return {
+      ...section,
+      sectionKind,
+      items,
+      shortRationale: rationaleForRouteSection({ ...section, items }, baseSafetyRoute),
+    };
+  });
 }
 
 function decorateLegislationGroups(groups) {
@@ -257,7 +286,7 @@ function decorateLegislationGroups(groups) {
             : groupKey === "non_ce"
               ? "Conditional / check applicability"
               : "Usually not applicable unless specific features are present",
-      })),
+        })),
     };
   });
 }
@@ -352,6 +381,14 @@ export function buildAnalysisViewModel(result, descriptionText = "") {
     status: warnings.length ? "needs-input" : "stable",
     count: guidanceItems.length,
   };
+  const decisionSignals = {
+    primaryRouteLabel:
+      primaryRoute?.label || primaryRoute?.title || primaryRouteSections[0]?.title || primaryRouteSections[0]?.key || "",
+    blockerCount: missingInputs.filter((item) => item.severity === "blocker").length,
+    routeAffectingCount: missingInputs.filter((item) => item.severity === "route-affecting").length,
+    clarificationCount: guidanceItems.length,
+    directiveCount: triggeredDirectives.length,
+  };
 
   return {
     productIdentity,
@@ -380,5 +417,6 @@ export function buildAnalysisViewModel(result, descriptionText = "") {
     standardGroups,
     warnings,
     clarificationState,
+    decisionSignals,
   };
 }

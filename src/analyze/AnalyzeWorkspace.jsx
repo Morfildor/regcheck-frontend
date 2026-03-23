@@ -505,6 +505,16 @@ function OverviewPanel({ result, viewModel }) {
           <strong className={styles.metricValue}>{metric.value}</strong>
         </div>
       ))}
+
+      <div className={styles.signalCard}>
+        <span className={styles.sectionLabel}>Current primary route</span>
+        <div className={styles.signalRow}>
+          <TonePill tone="strong">{titleCaseMinor(viewModel.decisionSignals.primaryRouteLabel || "Route not locked")}</TonePill>
+          {viewModel.triggeredDirectives.slice(0, 4).map((directiveKey) => (
+            <DirectivePill key={directiveKey} directiveKey={directiveKey} />
+          ))}
+        </div>
+      </div>
     </Surface>
   );
 }
@@ -531,6 +541,16 @@ function TrustLayerPanel({ viewModel }) {
         </TonePill>
       </div>
 
+      <div className={styles.trustCard}>
+        <span className={styles.sectionLabel}>Decision pressure</span>
+        <div className={styles.signalList}>
+          <span className={styles.listChip}>{viewModel.decisionSignals.blockerCount} blocker{viewModel.decisionSignals.blockerCount === 1 ? "" : "s"}</span>
+          <span className={styles.listChip}>{viewModel.decisionSignals.routeAffectingCount} route-affecting</span>
+          <span className={styles.listChip}>{viewModel.decisionSignals.clarificationCount} clarification prompt{viewModel.decisionSignals.clarificationCount === 1 ? "" : "s"}</span>
+          <span className={styles.listChip}>{viewModel.decisionSignals.directiveCount} directive {viewModel.decisionSignals.directiveCount === 1 ? "family" : "families"}</span>
+        </div>
+      </div>
+
       <div className={cx(styles.trustCard, styles.trustAssumptions)}>
         <span className={styles.sectionLabel}>Assumptions</span>
         <div className={styles.chipList}>
@@ -549,7 +569,26 @@ function TrustLayerPanel({ viewModel }) {
   );
 }
 
-function MissingInputsPanel({ description, result, viewModel }) {
+function MissingInputExamples({ item, onApplyMissingInput }) {
+  if (!item.examples?.length) return null;
+
+  return (
+    <div className={styles.inlineActionRow}>
+      {item.examples.slice(0, 3).map((example) => (
+        <button
+          key={`${item.key}-${example}`}
+          type="button"
+          className={styles.suggestionChip}
+          onClick={() => onApplyMissingInput(example)}
+        >
+          + {example}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MissingInputsPanel({ description, result, viewModel, onApplyMissingInput }) {
   const knownFacts = extractKnownFacts(description, result);
   const blocking = viewModel.missingInputs.filter((item) => item.severity === "blocker");
   const important = viewModel.missingInputs.filter((item) => item.severity !== "blocker");
@@ -602,6 +641,7 @@ function MissingInputsPanel({ description, result, viewModel }) {
                   <TonePill tone="warning">Blocker</TonePill>
                 </div>
                 <p className={styles.missingReason}>{item.reason}</p>
+                <MissingInputExamples item={item} onApplyMissingInput={onApplyMissingInput} />
               </div>
             ))
           ) : (
@@ -623,6 +663,7 @@ function MissingInputsPanel({ description, result, viewModel }) {
                   </TonePill>
                 </div>
                 <p className={styles.missingReason}>{item.reason}</p>
+                <MissingInputExamples item={item} onApplyMissingInput={onApplyMissingInput} />
               </div>
             ))
           ) : (
@@ -692,8 +733,39 @@ function StandardCard({ item, sectionKey }) {
   );
 }
 
+function RouteQuickNav({ sections }) {
+  const orderedSections = (sections || []).filter(Boolean);
+
+  if (!orderedSections.length) return null;
+
+  const scrollToSection = (keyOrTitle) => {
+    const target = document.getElementById(`route-section-${slugify(keyOrTitle)}`);
+    if (!target) return;
+    const top = target.getBoundingClientRect().top + window.scrollY - 108;
+    window.scrollTo({ top, behavior: "smooth" });
+  };
+
+  return (
+    <div className={styles.routeNav}>
+      {orderedSections.map((section) => (
+        <button
+          key={`jump-${section.key || section.title}`}
+          type="button"
+          className={styles.routeNavChip}
+          onClick={() => scrollToSection(section.key || section.title)}
+        >
+          <span>{directiveShort(section.key || "OTHER")}</span>
+          <span className={styles.routeNavCount}>{(section.items || []).length}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function RouteSectionCard({ section, open, onToggle }) {
   const sectionId = `route-section-${slugify(section.key || section.title)}`;
+  const applicabilityTone =
+    section.sectionKind === "core" ? "strong" : section.sectionKind === "conditional" ? "warning" : "muted";
 
   return (
     <section className={styles.accordionCard} id={sectionId}>
@@ -707,8 +779,12 @@ function RouteSectionCard({ section, open, onToggle }) {
         <div>
           <div className={styles.accordionTitleRow}>
             <h3 className={styles.accordionTitle}>{routeTitle(section)}</h3>
-            <DirectivePill directiveKey={section.key || "OTHER"} />
+            <div className={styles.standardPills}>
+              <DirectivePill directiveKey={section.key || "OTHER"} />
+              <TonePill tone={applicabilityTone}>{section.items?.[0]?.applicabilityBucket || "Route review"}</TonePill>
+            </div>
           </div>
+          {section.shortRationale ? <p className={styles.microRationale}>{section.shortRationale}</p> : null}
           <p className={styles.accordionText}>
             {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"} in this route.
           </p>
@@ -778,6 +854,8 @@ function StandardsRoutePanel({ viewModel }) {
       text="Secondary context stays below the core route. The first section is opened by default."
       bodyClassName={styles.sectionStack}
     >
+      <RouteQuickNav sections={viewModel.routeSections} />
+
       {viewModel.routeSections.length ? (
         groups.map((group) =>
           group.sections.length ? (
@@ -823,7 +901,10 @@ function LegislationCard({ item, open, onToggle }) {
         <div>
           <div className={styles.accordionTitleRow}>
             <h3 className={styles.accordionTitle}>{titleCaseMinor(item.title || "Untitled legislation")}</h3>
-            <DirectivePill directiveKey={item.directive_key || "OTHER"} />
+            <div className={styles.standardPills}>
+              <DirectivePill directiveKey={item.directive_key || "OTHER"} />
+              {item.applicabilityBucket ? <TonePill tone="muted">{item.applicabilityBucket}</TonePill> : null}
+            </div>
           </div>
           {item.shortRationale ? <p className={styles.microRationale}>{item.shortRationale}</p> : null}
         </div>
@@ -1340,16 +1421,6 @@ export default function AnalyzeWorkspace() {
         }
         mainClassName={layoutStyles.main}
       >
-        <div className={layoutStyles.zone}>
-          <div className={layoutStyles.zoneHeader}>
-            <span className={layoutStyles.zoneEyebrow}>Analyzer-first workflow</span>
-            <h1 className={layoutStyles.zoneTitle}>Trustworthy compliance scoping, before formal review.</h1>
-            <p className={layoutStyles.zoneText}>
-              RuleGrid is tuned for decision clarity: tighten the description, review the trust layer, and see what missing inputs could still move the route.
-            </p>
-          </div>
-        </div>
-
         <div className={cx(layoutStyles.zone, !result ? layoutStyles.landingStack : "")}>
           <ComposerSurface
             description={description}
@@ -1384,7 +1455,15 @@ export default function AnalyzeWorkspace() {
             <div className={layoutStyles.resultsMain}>
               <OverviewPanel result={result} viewModel={viewModel} />
               <TrustLayerPanel viewModel={viewModel} />
-              <MissingInputsPanel description={analyzedDescription || description} result={result} viewModel={viewModel} />
+              <MissingInputsPanel
+                description={analyzedDescription || description}
+                result={result}
+                viewModel={viewModel}
+                onApplyMissingInput={(text) => {
+                  setDescription((current) => joinText(current, text));
+                  setDismissDirty(false);
+                }}
+              />
               <ComparisonPanel changes={comparisonChanges} />
               <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
               <ParallelObligationsPanel key={`parallel-${resultRevision}`} viewModel={viewModel} />

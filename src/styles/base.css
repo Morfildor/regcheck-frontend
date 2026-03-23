@@ -1,16 +1,18 @@
 :root {
-  --bg: #0c1521;
-  --bg-alt: #0f1b2c;
-  --surface-0: rgba(14, 23, 38, 0.98);
-  --surface-1: rgba(19, 31, 48, 0.9);
-  --surface-2: rgba(24, 38, 58, 0.94);
-  --surface-glass: rgba(255, 255, 255, 0.032);
-  --border: rgba(255, 255, 255, 0.07);
-  --border-sm: rgba(255, 255, 255, 0.044);
+  --bg: #090f1a;
+  --bg-alt: #0c1422;
+  --surface-0: rgba(10, 17, 28, 0.98);
+  --surface-1: rgba(14, 23, 38, 0.92);
+  --surface-2: rgba(18, 28, 46, 0.95);
+  --surface-glass: rgba(255, 255, 255, 0.025);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-sm: rgba(255, 255, 255, 0.036);
+  --border-hover: rgba(255, 255, 255, 0.1);
   --accent: #7db9ff;
-  --accent-dim: rgba(125, 185, 255, 0.14);
+  --accent-dim: rgba(125, 185, 255, 0.12);
   --accent-teal: #78d5c1;
   --accent-08: rgba(125, 185, 255, 0.08);
+  --accent-12: rgba(125, 185, 255, 0.12);
   --accent-16: rgba(125, 185, 255, 0.16);
   --accent-22: rgba(125, 185, 255, 0.22);
   --accent-28: rgba(125, 185, 255, 0.28);
@@ -18,10 +20,17 @@
   --teal-08: rgba(120, 213, 193, 0.08);
   --teal-20: rgba(120, 213, 193, 0.2);
   --teal-24: rgba(120, 213, 193, 0.24);
-  --text: #d4e5f2;
-  --text-strong: #ecf5ff;
-  --text-muted: #8aa2bb;
-  --text-soft: #4e6475;
+  --text: #c8dcee;
+  --text-strong: #e6f2fb;
+  --text-muted: #7d9ab4;
+  --text-soft: #415868;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --transition: 0.16s ease;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.24);
 }
 
 *,
@@ -44,7 +53,12 @@ body {
   margin: 0;
   font-family: "Outfit", system-ui, sans-serif;
   color: var(--text);
-  background: linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 22%, #09101a 100%);
+  background: var(--bg-alt);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(125, 185, 255, 0.07), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 5%, rgba(120, 213, 193, 0.055), transparent),
+    linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 40%, #06090f 100%);
+  background-attachment: fixed;
 }
 
 a {
@@ -64,12 +78,12 @@ textarea {
 }
 
 ::selection {
-  background: rgba(125, 185, 255, 0.28);
+  background: rgba(125, 185, 255, 0.22);
   color: #fff;
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid rgba(125, 185, 255, 0.6);
   outline-offset: 2px;
 }
 

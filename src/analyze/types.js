@@ -76,6 +76,7 @@
  * @property {{ core: Array<Object>, conditional: Array<Object>, peripheral: Array<Object> }} standardGroups
  * @property {Array<Object>} warnings
  * @property {{ status: string, count: number }} clarificationState
+ * @property {{ primaryRouteLabel: string, blockerCount: number, routeAffectingCount: number, clarificationCount: number, directiveCount: number }} decisionSignals
  */
 
 export {};

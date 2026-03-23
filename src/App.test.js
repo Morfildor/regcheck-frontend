@@ -181,7 +181,7 @@ test("renders the home page and navigates into the analyzer", async () => {
 
   expect(
     await screen.findByRole("heading", {
-      name: /trustworthy compliance scoping, before formal review/i,
+      name: /describe the product/i,
     })
   ).toBeInTheDocument();
   expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -203,6 +203,7 @@ test("renders trust-first analyzer hierarchy and copies the analysis summary", a
   expect(screen.getByText(/current scoping confidence/i)).toBeInTheDocument();
   expect(screen.getByText(/^Initial scope$/i)).toBeInTheDocument();
   expect(screen.getByText(/^Preliminary only$/i)).toBeInTheDocument();
+  expect(screen.getByText(/mains-powered electrical equipment within voltage scope/i)).toBeInTheDocument();
   expect(screen.getByText(/what could change this result/i)).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^Standards route$/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^Parallel obligations$/i })).toBeInTheDocument();
@@ -265,7 +266,7 @@ test("clarification apply marks the result stale, rerun replaces it cleanly, and
     expect(screen.queryByText(/household and similar electrical appliances/i)).not.toBeInTheDocument();
   });
 
-  await userEvent.click(screen.getByRole("button", { name: /\+ wi-fi/i }));
+  await userEvent.click(screen.getByRole("button", { name: /\+ wi-fi connectivity/i }));
 
   expect(screen.getByRole("textbox", { name: /describe your product/i }).value).toMatch(
     /wi-fi connectivity/i
@@ -444,7 +445,7 @@ test("keyboard interaction works for accordions and clarification actions", asyn
     expect(screen.queryByText(/household and similar electrical appliances/i)).not.toBeInTheDocument();
   });
 
-  const clarificationButton = screen.getByRole("button", { name: /\+ wi-fi/i });
+  const clarificationButton = screen.getByRole("button", { name: /\+ wi-fi connectivity/i });
   clarificationButton.focus();
   await userEvent.keyboard("{Enter}");
 
