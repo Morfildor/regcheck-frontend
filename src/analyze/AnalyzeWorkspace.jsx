@@ -349,27 +349,40 @@ function ComposerSurface({
 
   return (
     <Surface
-      eyebrow={hasResult ? "Analyzer controls" : "Analyzer entry"}
+      eyebrow={hasResult ? "Refine" : "Analyze"}
       title={hasResult ? "Refine the current scope" : "Describe the product"}
       text={
         hasResult
-          ? "Keep the current result visible while you tighten the description, then re-run from the same workspace."
-          : "The strongest first pass includes product function, power, radios, battery, accessories, and intended environment."
+          ? "Keep the current result visible while you tighten the description, then re-run."
+          : "Include product function, power source, radios, battery, accessories, and intended environment."
       }
       bodyClassName={styles.composerBody}
     >
-      <label className={styles.textareaLabel} htmlFor="analyze-description">
-        Product description
-      </label>
       <textarea
         id="analyze-description"
         className={styles.textarea}
-        rows={hasResult ? 7 : 9}
+        rows={hasResult ? 6 : 8}
         value={description}
         onChange={(event) => onDescriptionChange(event.target.value)}
         aria-label="Describe your product"
         placeholder="Example: Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path."
       />
+
+      {/* Example product templates — only shown before first run, directly below textarea */}
+      {!hasResult && !description.trim() ? (
+        <div className={styles.templateRow}>
+          {templates.slice(0, 8).map((template) => (
+            <button
+              key={template.label}
+              type="button"
+              className={styles.templateChip}
+              onClick={() => onDescriptionChange(template.text)}
+            >
+              {template.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className={styles.actionBar} data-mobile-sticky="true">
         <button type="button" className={cx(styles.actionButton, styles.actionButtonPrimary)} onClick={onAnalyze}>
@@ -383,102 +396,72 @@ function ComposerSurface({
         {previousSnapshot ? (
           <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onRestorePrevious}>
             <RotateCcw size={14} />
-            Restore previous result
+            Previous
           </button>
         ) : null}
         <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary, styles.desktopOnlyAction)} onClick={onCopy}>
           {copied ? <Check size={14} /> : <Copy size={14} />}
-          {copied ? "Copied" : "Copy / export"}
+          {copied ? "Copied" : "Copy"}
         </button>
       </div>
 
       <DirtyNotice dirty={dirty} busy={busy} onReanalyze={onAnalyze} onDismiss={onDismissDirty} />
 
-      <div className={styles.suggestionStack}>
-        {suggestionGroups.map((group) => (
-          <div key={group.id} className={styles.suggestionGroup}>
-            <div className={styles.suggestionLabel}>{group.label}</div>
-            <div className={styles.suggestionRow}>
-              {group.suggestions.map((suggestion) => (
-                <button
-                  key={`${group.id}-${suggestion.text}`}
-                  type="button"
-                  className={styles.suggestionChip}
-                  onClick={() => onDescriptionChange(joinText(description, suggestion.text))}
-                >
-                  + {suggestion.label}
-                </button>
-              ))}
+      {/* Contextual suggestion chips — shown when there's a description to refine */}
+      {suggestionGroups.length > 0 ? (
+        <div className={styles.suggestionStack}>
+          {suggestionGroups.map((group) => (
+            <div key={group.id} className={styles.suggestionGroup}>
+              <div className={styles.suggestionLabel}>{group.label}</div>
+              <div className={styles.suggestionRow}>
+                {group.suggestions.map((suggestion) => (
+                  <button
+                    key={`${group.id}-${suggestion.text}`}
+                    type="button"
+                    className={styles.suggestionChip}
+                    onClick={() => onDescriptionChange(joinText(description, suggestion.text))}
+                  >
+                    + {suggestion.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-
-        {!hasResult ? (
-          <div className={styles.suggestionGroup}>
-            <div className={styles.suggestionLabel}>Strong example descriptions</div>
-            <div className={styles.suggestionRow}>
-              {templates.slice(0, 6).map((template) => (
-                <button
-                  key={template.label}
-                  type="button"
-                  className={styles.suggestionChip}
-                  onClick={() => onDescriptionChange(template.text)}
-                >
-                  {template.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
+          ))}
+        </div>
+      ) : null}
     </Surface>
   );
 }
 
-function EmptyStateGuidance({ templates, onPickExample }) {
+function EmptyStateGuidance() {
   return (
-    <Surface
-      eyebrow="Before the first run"
-      title="Give the analyzer the details that most change the route"
-      text="The goal is a stronger first-pass backend result, not a perfect spec sheet."
-      bodyClassName={styles.emptyStateBody}
-    >
-      <div className={styles.guidanceGrid}>
-        <div className={styles.guidanceCard}>
-          <div className={styles.guidanceCardTitle}>
-            <Search size={16} />
-            What helps most
-          </div>
-          <div className={styles.chipList}>
-            {EXAMPLE_DETAILS.map((item) => (
-              <span key={item} className={styles.listChip}>
-                {titleCaseMinor(item)}
-              </span>
-            ))}
-          </div>
+    <div className={styles.guidanceGrid}>
+      <div className={styles.guidanceCard}>
+        <div className={styles.guidanceCardTitle}>
+          <Search size={14} />
+          <span className={styles.sectionLabel}>What helps most</span>
         </div>
-
-        <div className={styles.guidanceCard}>
-          <div className={styles.guidanceCardTitle}>
-            <Waypoints size={16} />
-            Example descriptions
-          </div>
-          <div className={styles.exampleList}>
-            {templates.slice(0, 3).map((template) => (
-              <button
-                key={template.label}
-                type="button"
-                className={styles.exampleCard}
-                onClick={() => onPickExample(template.text)}
-              >
-                <span className={styles.exampleLabel}>{template.label}</span>
-                <span className={styles.exampleText}>{template.text}</span>
-              </button>
-            ))}
-          </div>
+        <div className={styles.chipList}>
+          {EXAMPLE_DETAILS.map((item) => (
+            <span key={item} className={styles.listChip}>
+              {titleCaseMinor(item)}
+            </span>
+          ))}
         </div>
       </div>
-    </Surface>
+
+      <div className={styles.guidanceCard}>
+        <div className={styles.guidanceCardTitle}>
+          <Waypoints size={14} />
+          <span className={styles.sectionLabel}>The analyzer returns</span>
+        </div>
+        <div className={styles.chipList}>
+          {["Directive families", "Standards route", "Parallel obligations", "Clarification prompts"].map((item) => (
+            <span key={item} className={styles.listChip}>{item}</span>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -521,51 +504,29 @@ function OverviewPanel({ result, viewModel }) {
 
 function TrustLayerPanel({ viewModel }) {
   return (
-    <Surface
-      eyebrow="2. Trust layer"
-      title="Current scoping confidence"
-      text="These labels and assumptions tell you how stable the route is before evidence review begins."
-      bodyClassName={styles.trustGrid}
-    >
-      <div className={styles.trustCard}>
-        <span className={styles.sectionLabel}>Result maturity</span>
-        <TonePill tone={viewModel.resultMaturity.tone} strong>
-          {viewModel.resultMaturity.label}
-        </TonePill>
-      </div>
-
-      <div className={styles.trustCard}>
-        <span className={styles.sectionLabel}>Classification confidence</span>
-        <TonePill tone={viewModel.classificationConfidence.tone} strong>
-          {viewModel.classificationConfidence.label}
-        </TonePill>
-      </div>
-
-      <div className={styles.trustCard}>
-        <span className={styles.sectionLabel}>Decision pressure</span>
-        <div className={styles.signalList}>
-          <span className={styles.listChip}>{viewModel.decisionSignals.blockerCount} blocker{viewModel.decisionSignals.blockerCount === 1 ? "" : "s"}</span>
-          <span className={styles.listChip}>{viewModel.decisionSignals.routeAffectingCount} route-affecting</span>
-          <span className={styles.listChip}>{viewModel.decisionSignals.clarificationCount} clarification prompt{viewModel.decisionSignals.clarificationCount === 1 ? "" : "s"}</span>
-          <span className={styles.listChip}>{viewModel.decisionSignals.directiveCount} directive {viewModel.decisionSignals.directiveCount === 1 ? "family" : "families"}</span>
+    <details className={styles.trustBar}>
+      <summary className={styles.trustBarSummary}>
+        <span className={styles.trustBarLabel}>Confidence</span>
+        <div className={styles.trustBarPills}>
+          <TonePill tone={viewModel.resultMaturity.tone} strong>{viewModel.resultMaturity.label}</TonePill>
+          <TonePill tone={viewModel.classificationConfidence.tone}>{viewModel.classificationConfidence.label}</TonePill>
+          <span className={styles.trustBarMeta}>
+            {viewModel.decisionSignals.blockerCount} blocker{viewModel.decisionSignals.blockerCount === 1 ? "" : "s"} · {viewModel.decisionSignals.directiveCount} {viewModel.decisionSignals.directiveCount === 1 ? "family" : "families"} · {viewModel.decisionSignals.clarificationCount} clarification{viewModel.decisionSignals.clarificationCount === 1 ? "" : "s"}
+          </span>
         </div>
+        <ChevronDown size={13} className={styles.trustBarChevron} />
+      </summary>
+      <div className={styles.trustBarBody}>
+        <span className={styles.sectionLabel} style={{ width: "100%", marginBottom: 2 }}>Assumptions</span>
+        {viewModel.assumptions.length ? (
+          viewModel.assumptions.map((assumption) => (
+            <span key={assumption} className={styles.listChip}>{titleCaseMinor(assumption)}</span>
+          ))
+        ) : (
+          <span className={styles.emptyCopy}>No explicit assumptions surfaced.</span>
+        )}
       </div>
-
-      <div className={cx(styles.trustCard, styles.trustAssumptions)}>
-        <span className={styles.sectionLabel}>Assumptions</span>
-        <div className={styles.chipList}>
-          {viewModel.assumptions.length ? (
-            viewModel.assumptions.map((assumption) => (
-              <span key={assumption} className={styles.listChip}>
-                {titleCaseMinor(assumption)}
-              </span>
-            ))
-          ) : (
-            <span className={styles.emptyCopy}>No explicit assumptions surfaced from the current result.</span>
-          )}
-        </div>
-      </div>
-    </Surface>
+    </details>
   );
 }
 
@@ -592,85 +553,54 @@ function MissingInputsPanel({ description, result, viewModel, onApplyMissingInpu
   const knownFacts = extractKnownFacts(description, result);
   const blocking = viewModel.missingInputs.filter((item) => item.severity === "blocker");
   const important = viewModel.missingInputs.filter((item) => item.severity !== "blocker");
+  const allMissing = [...blocking, ...important];
 
   return (
     <Surface
-      eyebrow="3. Critical missing inputs / blockers"
+      eyebrow="Missing inputs"
       title="What could change this result"
-      text="Known facts stay separate from assumptions and missing inputs so the team can decide what to confirm next."
-      bodyClassName={styles.missingGrid}
+      bodyClassName={styles.composerBody}
     >
-      <div className={styles.infoCard}>
-        <span className={styles.sectionLabel}>Known from description</span>
-        <div className={styles.chipList}>
-          {knownFacts.length ? (
-            knownFacts.map((fact) => (
-              <span key={fact} className={styles.listChip}>
-                {fact}
-              </span>
-            ))
-          ) : (
-            <span className={styles.emptyCopy}>The current description is still thin on route-defining facts.</span>
-          )}
+      {/* Known facts + assumptions as a single chip strip */}
+      {(knownFacts.length > 0 || viewModel.assumptions.length > 0) ? (
+        <div className={styles.missingHeader}>
+          <span className={styles.sectionLabel} style={{ flexShrink: 0 }}>Known</span>
+          {knownFacts.map((fact) => (
+            <span key={fact} className={styles.listChip}>{fact}</span>
+          ))}
+          {viewModel.assumptions.length > 0 && knownFacts.length > 0 ? (
+            <span style={{ color: "var(--text-soft)", fontSize: "0.8rem", padding: "0 4px" }}>·</span>
+          ) : null}
+          {viewModel.assumptions.length > 0 ? (
+            <>
+              <span className={styles.sectionLabel} style={{ flexShrink: 0 }}>Assumed</span>
+              {viewModel.assumptions.map((a) => (
+                <span key={a} className={styles.listChip}>{titleCaseMinor(a)}</span>
+              ))}
+            </>
+          ) : null}
         </div>
-      </div>
+      ) : null}
 
-      <div className={styles.infoCard}>
-        <span className={styles.sectionLabel}>Assumed</span>
-        <div className={styles.chipList}>
-          {viewModel.assumptions.length ? (
-            viewModel.assumptions.map((assumption) => (
-              <span key={assumption} className={styles.listChip}>
-                {titleCaseMinor(assumption)}
-              </span>
-            ))
-          ) : (
-            <span className={styles.emptyCopy}>No major assumptions are currently highlighted.</span>
-          )}
-        </div>
-      </div>
-
-      <div className={styles.infoCard}>
-        <span className={styles.sectionLabel}>Missing and blocking</span>
-        <div className={styles.stackList}>
-          {blocking.length ? (
-            blocking.map((item) => (
-              <div key={item.key} className={styles.missingItem}>
-                <div className={styles.missingTitleRow}>
-                  <span className={styles.missingTitle}>{item.title}</span>
-                  <TonePill tone="warning">Blocker</TonePill>
-                </div>
-                <p className={styles.missingReason}>{item.reason}</p>
-                <MissingInputExamples item={item} onApplyMissingInput={onApplyMissingInput} />
+      {/* Flat list of all missing items */}
+      {allMissing.length > 0 ? (
+        <div className={styles.missingList}>
+          {allMissing.map((item) => (
+            <div key={item.key} className={styles.missingItem}>
+              <div className={styles.missingTitleRow}>
+                <span className={styles.missingTitle}>{item.title}</span>
+                <TonePill tone={item.severity === "blocker" ? "warning" : item.severity === "route-affecting" ? "warning" : "muted"}>
+                  {item.severity === "blocker" ? "Blocker" : item.severity === "route-affecting" ? "Route-affecting" : "Helpful"}
+                </TonePill>
               </div>
-            ))
-          ) : (
-            <span className={styles.emptyCopy}>No explicit blockers surfaced in the current result.</span>
-          )}
+              <p className={styles.missingReason}>{item.reason}</p>
+              <MissingInputExamples item={item} onApplyMissingInput={onApplyMissingInput} />
+            </div>
+          ))}
         </div>
-      </div>
-
-      <div className={styles.infoCard}>
-        <span className={styles.sectionLabel}>Missing but important</span>
-        <div className={styles.stackList}>
-          {important.length ? (
-            important.map((item) => (
-              <div key={item.key} className={styles.missingItem}>
-                <div className={styles.missingTitleRow}>
-                  <span className={styles.missingTitle}>{item.title}</span>
-                  <TonePill tone={item.severity === "route-affecting" ? "warning" : "muted"}>
-                    {item.severity === "route-affecting" ? "Route-affecting" : "Helpful"}
-                  </TonePill>
-                </div>
-                <p className={styles.missingReason}>{item.reason}</p>
-                <MissingInputExamples item={item} onApplyMissingInput={onApplyMissingInput} />
-              </div>
-            ))
-          ) : (
-            <span className={styles.emptyCopy}>No additional route-affecting inputs are currently highlighted.</span>
-          )}
-        </div>
-      </div>
+      ) : (
+        <span className={styles.emptyCopy}>No missing inputs surfaced in the current result.</span>
+      )}
     </Surface>
   );
 }
@@ -697,38 +627,42 @@ function ComparisonPanel({ changes }) {
 function StandardCard({ item, sectionKey }) {
   return (
     <article className={styles.standardCard}>
-      <div className={styles.standardHeader}>
+      <div className={styles.standardMeta}>
         <div className={styles.standardTitleWrap}>
           <div className={styles.standardCode}>{item.code || "Standard"}</div>
           <h4 className={styles.standardTitle}>{titleCaseMinor(item.title || "Untitled standard")}</h4>
           {item.shortRationale ? <p className={styles.microRationale}>{item.shortRationale}</p> : null}
         </div>
-        <div className={styles.standardPills}>
-          <DirectivePill directiveKey={sectionKey} />
-          <TonePill tone="muted">{item.applicabilityBucket}</TonePill>
-        </div>
       </div>
 
-      <div className={styles.metaGrid}>
-        {item.version ? (
-          <div className={styles.metaCard}>
-            <span className={styles.metaLabel}>Latest</span>
-            <span>{item.version}</span>
-          </div>
-        ) : null}
-        {item.dated_version ? (
-          <div className={styles.metaCard}>
-            <span className={styles.metaLabel}>EU dated</span>
-            <span>{item.dated_version}</span>
-          </div>
-        ) : null}
-        {item.harmonized_reference ? (
-          <div className={styles.metaCard}>
-            <span className={styles.metaLabel}>Reference</span>
-            <span>{item.harmonized_reference}</span>
-          </div>
-        ) : null}
+      {/* Pills always on their own row — never jammed beside the title */}
+      <div className={styles.standardPillRow}>
+        <DirectivePill directiveKey={sectionKey} />
+        {item.applicabilityBucket ? <TonePill tone="muted">{item.applicabilityBucket}</TonePill> : null}
       </div>
+
+      {(item.version || item.dated_version || item.harmonized_reference) ? (
+        <div className={styles.metaGrid}>
+          {item.version ? (
+            <div className={styles.metaCard}>
+              <span className={styles.metaLabel}>Latest</span>
+              <span>{item.version}</span>
+            </div>
+          ) : null}
+          {item.dated_version ? (
+            <div className={styles.metaCard}>
+              <span className={styles.metaLabel}>EU dated</span>
+              <span>{item.dated_version}</span>
+            </div>
+          ) : null}
+          {item.harmonized_reference ? (
+            <div className={styles.metaCard}>
+              <span className={styles.metaLabel}>Reference</span>
+              <span>{item.harmonized_reference}</span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -776,20 +710,21 @@ function RouteSectionCard({ section, open, onToggle }) {
         aria-expanded={open}
         aria-controls={`${sectionId}-body`}
       >
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className={styles.accordionTitleRow}>
             <h3 className={styles.accordionTitle}>{routeTitle(section)}</h3>
-            <div className={styles.standardPills}>
-              <DirectivePill directiveKey={section.key || "OTHER"} />
-              <TonePill tone={applicabilityTone}>{section.items?.[0]?.applicabilityBucket || "Route review"}</TonePill>
-            </div>
+            {section.shortRationale ? <p className={styles.microRationale}>{section.shortRationale}</p> : null}
+            <p className={styles.accordionText}>
+              {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"}
+            </p>
           </div>
-          {section.shortRationale ? <p className={styles.microRationale}>{section.shortRationale}</p> : null}
-          <p className={styles.accordionText}>
-            {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"} in this route.
-          </p>
+          {/* Pills always below the text — never beside it */}
+          <div className={styles.accordionTitleMeta}>
+            <DirectivePill directiveKey={section.key || "OTHER"} />
+            <TonePill tone={applicabilityTone}>{section.items?.[0]?.applicabilityBucket || "Route review"}</TonePill>
+          </div>
         </div>
-        {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
       </button>
 
       {open ? (
@@ -849,9 +784,8 @@ function StandardsRoutePanel({ viewModel }) {
 
   return (
     <Surface
-      eyebrow="4. Primary standards route"
+      eyebrow="Standards route"
       title="Standards route"
-      text="Secondary context stays below the core route. The first section is opened by default."
       bodyClassName={styles.sectionStack}
     >
       <RouteQuickNav sections={viewModel.routeSections} />
@@ -860,10 +794,7 @@ function StandardsRoutePanel({ viewModel }) {
         groups.map((group) =>
           group.sections.length ? (
             <div key={group.key} className={styles.groupBlock}>
-              <div className={styles.groupHeading}>
-                <h3 className={styles.groupTitle}>{group.title}</h3>
-                <p className={styles.groupText}>{group.text}</p>
-              </div>
+              <div className={styles.groupHeadingLabel}>{group.title}</div>
               <div className={styles.sectionStack}>
                 {group.sections.map((section) => (
                   <RouteSectionCard
@@ -981,19 +912,15 @@ function ParallelObligationsPanel({ viewModel }) {
 
   return (
     <Surface
-      eyebrow="5. Parallel obligations / adjacent frameworks"
+      eyebrow="Parallel obligations"
       title="Parallel obligations"
-      text="The CE route stays above; this section is for adjacent frameworks and obligations around it."
       bodyClassName={styles.sectionStack}
     >
       {groups.some((group) => group.items.length) ? (
         groups.map((group) =>
           group.items.length ? (
             <div key={group.key} className={styles.groupBlock}>
-              <div className={styles.groupHeading}>
-                <h3 className={styles.groupTitle}>{group.title}</h3>
-                <p className={styles.groupText}>{group.text}</p>
-              </div>
+              <div className={styles.groupHeadingLabel}>{group.title}</div>
               <div className={styles.sectionStack}>
                 {group.items.map((item) => {
                   const key = item.directive_key || item.code || item.title;
@@ -1020,9 +947,9 @@ function ParallelObligationsPanel({ viewModel }) {
 function EvidencePanel({ viewModel }) {
   return (
     <Surface
-      eyebrow="6. Evidence expectations / common blockers"
+      eyebrow="Evidence gaps"
       title="Evidence and common gaps"
-      text="This is a practical pre-lab checklist for the major routes and frameworks currently in view."
+      text="A practical pre-lab checklist for the major routes currently in view."
       bodyClassName={styles.evidenceGrid}
     >
       {viewModel.evidenceNeeds.length ? (
@@ -1445,7 +1372,7 @@ export default function AnalyzeWorkspace() {
           <AnalyzeStatus busy={busy} />
           <ErrorBanner message={error} />
 
-          {!result && !busy ? <EmptyStateGuidance templates={templates} onPickExample={setDescription} /> : null}
+          {!result && !busy ? <EmptyStateGuidance /> : null}
         </div>
 
         <div ref={resultsRef} />

@@ -78,15 +78,18 @@
 }
 
 .buttonPrimary {
-  background: var(--accent-12);
-  border-color: var(--accent-22);
-  color: var(--text-strong);
+  background: rgba(125, 185, 255, 0.18);
+  border-color: rgba(125, 185, 255, 0.45);
+  color: #e8f4ff;
+  font-weight: 500;
+  box-shadow: 0 0 0 1px rgba(125, 185, 255, 0.08) inset;
 }
 
 .buttonPrimary:hover {
   transform: translateY(-1px);
-  background: var(--accent-16);
-  border-color: var(--accent-28);
+  background: rgba(125, 185, 255, 0.25);
+  border-color: rgba(125, 185, 255, 0.6);
+  box-shadow: 0 0 16px rgba(125, 185, 255, 0.15), 0 0 0 1px rgba(125, 185, 255, 0.1) inset;
 }
 
 .buttonSecondary {
