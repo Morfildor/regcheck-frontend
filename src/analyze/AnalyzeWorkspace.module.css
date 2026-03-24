@@ -863,6 +863,13 @@
   word-break: break-word;
 }
 
+.detailBoxValue {
+  color: var(--text-muted);
+  font-size: 0.81rem;
+  line-height: 1.52;
+  word-break: break-word;
+}
+
 /* Standard code badge */
 .standardCode {
   display: inline-flex;

@@ -1046,62 +1046,76 @@ function StandardsRoutePanel({ viewModel }) {
   );
 }
 
-function LegislationCard({ item, open, onToggle }) {
-  const itemId = `legislation-${slugify(item.directive_key || item.code || item.title)}`;
-  const hasBody = item.code || item.scope || item.shortRationale || item.summary || item.rationale;
+function ParallelObligationCard({ item }) {
+  const previewText = item.shortRationale || item.summary || item.scope || item.rationale || "";
+  const normalizedPreview = String(previewText || "").trim();
+
+  const detailItems = [
+    item.code
+      ? {
+          key: "reference",
+          label: "Reference",
+          value: item.code,
+          valueClassName: styles.versionValue,
+        }
+      : null,
+    item.rationale && String(item.rationale).trim() !== normalizedPreview
+      ? {
+          key: "why-applies",
+          label: "Why it applies",
+          value: item.rationale,
+          valueClassName: styles.detailBoxValue,
+        }
+      : null,
+    (item.scope || item.summary) && String(item.scope || item.summary).trim() !== normalizedPreview
+      ? {
+          key: "scope",
+          label: "Scope",
+          value: item.scope || item.summary,
+          valueClassName: styles.detailBoxValue,
+        }
+      : null,
+    item.applicabilityBucket
+      ? {
+          key: "review-status",
+          label: "Review status",
+          value: item.applicabilityBucket,
+          valueClassName: styles.detailBoxValue,
+        }
+      : null,
+  ].filter(Boolean);
 
   return (
-    <section className={styles.legislationCard}>
-      <div
-        className={styles.legislationCardHeader}
-        role={hasBody ? "button" : undefined}
-        onClick={hasBody ? onToggle : undefined}
-        style={hasBody ? { cursor: "pointer" } : undefined}
-        aria-expanded={hasBody ? open : undefined}
-      >
-        {/* Pills row */}
-        <div className={styles.legislationPillRow}>
-          <DirectivePill directiveKey={item.directive_key || "OTHER"} />
-          {item.applicabilityBucket
-            ? <TonePill tone={item.applicabilityBucket?.startsWith("Core") ? "strong" : "muted"}>
-                {abbrevBucket(item.applicabilityBucket)}
-              </TonePill>
-            : null}
-        </div>
-        {/* Title */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-          <h3 className={styles.legislationTitle}>{titleCaseMinor(item.title || "Untitled legislation")}</h3>
-          {hasBody ? (open ? <ChevronUp size={14} style={{ color: "var(--text-soft)", flexShrink: 0, marginTop: 3 }} /> : <ChevronDown size={14} style={{ color: "var(--text-soft)", flexShrink: 0, marginTop: 3 }} />) : null}
-        </div>
-        {/* Rationale preview (always visible) */}
-        {item.shortRationale && !open ? (
-          <p className={styles.microRationale}>{item.shortRationale}</p>
+    <article className={styles.standardCard}>
+      <div className={styles.standardCardTop}>
+        <span className={styles.standardCode}>{item.code || "Framework"}</span>
+        <DirectivePill directiveKey={item.directive_key || "OTHER"} />
+        {item.applicabilityBucket ? (
+          <TonePill tone={item.applicabilityBucket?.startsWith("Core") ? "strong" : "muted"}>
+            {abbrevBucket(item.applicabilityBucket)}
+          </TonePill>
         ) : null}
       </div>
 
-      {open && hasBody ? (
-        <div id={`${itemId}-body`} className={styles.legislationBody}>
-          {item.code ? (
-            <div className={styles.legislationField}>
-              <span className={styles.legislationFieldLabel}>Reference</span>
-              <span className={styles.legislationCodeValue}>{item.code}</span>
+      <div className={styles.standardCardBody}>
+        <h4 className={styles.standardTitle}>{titleCaseMinor(item.title || "Untitled legislation")}</h4>
+        {previewText ? <p className={styles.microRationale}>{previewText}</p> : null}
+      </div>
+
+      {detailItems.length ? (
+        <div className={styles.standardVersionRow}>
+          {detailItems.map((detail) => (
+            <div
+              key={`${item.directive_key || item.code || item.title}-${detail.key}`}
+              className={styles.standardVersionItem}
+            >
+              <span className={styles.versionLabel}>{detail.label}</span>
+              <span className={detail.valueClassName}>{detail.value}</span>
             </div>
-          ) : null}
-          {(item.shortRationale || item.rationale) ? (
-            <div className={styles.legislationField}>
-              <span className={styles.legislationFieldLabel}>Why it applies</span>
-              <span className={styles.legislationFieldValue}>{item.shortRationale || item.rationale}</span>
-            </div>
-          ) : null}
-          {(item.scope || item.summary) ? (
-            <div className={styles.legislationField}>
-              <span className={styles.legislationFieldLabel}>Scope</span>
-              <span className={styles.legislationFieldValue}>{item.scope || item.summary}</span>
-            </div>
-          ) : null}
+          ))}
         </div>
       ) : null}
-    </section>
+    </article>
   );
 }
 
@@ -1132,27 +1146,6 @@ function ParallelObligationsPanel({ viewModel }) {
     },
   ];
 
-  const initialOpenKey =
-    conditionalItems[0]?.directive_key ||
-    conditionalItems[0]?.code ||
-    conditionalItems[0]?.title ||
-    peripheralItems[0]?.directive_key ||
-    peripheralItems[0]?.code ||
-    peripheralItems[0]?.title ||
-    "";
-  const [openKeys, setOpenKeys] = useState(() =>
-    initialOpenKey ? new Set([initialOpenKey]) : new Set()
-  );
-
-  const toggleItem = useCallback((key) => {
-    setOpenKeys((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
-
   return (
     <Surface
       eyebrow="Parallel obligations"
@@ -1169,17 +1162,12 @@ function ParallelObligationsPanel({ viewModel }) {
                 <p className={styles.groupHeadingText}>{group.text}</p>
               </div>
               <div className={styles.sectionStack}>
-                {group.items.map((item) => {
-                  const key = item.directive_key || item.code || item.title;
-                  return (
-                    <LegislationCard
-                      key={`${group.key}-${key}`}
-                      item={item}
-                      open={openKeys.has(key)}
-                      onToggle={() => toggleItem(key)}
-                    />
-                  );
-                })}
+                {group.items.map((item) => (
+                  <ParallelObligationCard
+                    key={`${group.key}-${item.directive_key || item.code || item.title}`}
+                    item={item}
+                  />
+                ))}
               </div>
             </div>
           ) : null
