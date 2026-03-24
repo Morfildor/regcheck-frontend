@@ -200,18 +200,17 @@ test("renders trust-first analyzer hierarchy and copies the analysis summary", a
   );
 
   expect(await screen.findByText(/initial scope for a connected coffee machine/i)).toBeInTheDocument();
-  expect(screen.getByText(/current scoping confidence/i)).toBeInTheDocument();
-  expect(screen.getByText(/^Initial scope$/i)).toBeInTheDocument();
-  expect(screen.getByText(/^Preliminary only$/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/^Initial scope$/i).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/^Preliminary only$/i).length).toBeGreaterThan(0);
   expect(screen.getByText(/mains-powered electrical equipment within voltage scope/i)).toBeInTheDocument();
-  expect(screen.getByText(/what could change this result/i)).toBeInTheDocument();
+  expect(screen.getByText(/^Clarifications$/i)).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^Standards route$/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^Parallel obligations$/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /evidence and common gaps/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^Supporting context$/i })).toBeInTheDocument();
 
   await act(async () => {
-    await userEvent.click(screen.getByRole("button", { name: /^copy$/i }));
+    await userEvent.click(screen.getAllByRole("button", { name: /^copy$/i })[0]);
   });
 
   expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1);
@@ -261,11 +260,12 @@ test("clarification apply marks the result stale, rerun replaces it cleanly, and
   expect(await screen.findByText(/first result summary/i)).toBeInTheDocument();
   expect(screen.getByText(/household and similar electrical appliances/i)).toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole("button", { name: /lvd safety route/i }));
+  await userEvent.click(screen.getByRole("button", { name: /lvd safety route/i, expanded: true }));
   await waitFor(() => {
     expect(screen.queryByText(/household and similar electrical appliances/i)).not.toBeInTheDocument();
   });
 
+  await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
   await userEvent.click(screen.getByRole("button", { name: /\+ wi-fi connectivity/i }));
 
   expect(screen.getByRole("textbox", { name: /describe your product/i }).value).toMatch(
@@ -278,12 +278,13 @@ test("clarification apply marks the result stale, rerun replaces it cleanly, and
 
   expect(await screen.findByText(/second result summary/i)).toBeInTheDocument();
   await waitFor(() => {
-    expect(screen.getByRole("button", { name: /lvd safety route/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /lvd safety route/i, expanded: true })).toHaveAttribute(
       "aria-expanded",
       "true"
     );
   });
   expect(screen.getByText(/compared with previous analysis/i)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /clarifications/i })).toHaveAttribute("aria-expanded", "false");
 });
 
 test("starting a new analyze aborts the prior in-flight request", async () => {
@@ -344,7 +345,7 @@ test("restore previous result and reset clear transient analyzer state", async (
 
   expect(await screen.findByText(/beta summary/i)).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole("button", { name: /restore previous result/i }));
+  fireEvent.click(screen.getAllByRole("button", { name: /^previous$/i })[0]);
 
   expect(await screen.findByText(/alpha summary/i)).toBeInTheDocument();
   expect(screen.queryByText(/compared with previous analysis/i)).not.toBeInTheDocument();
@@ -369,7 +370,7 @@ test("shows an analysis error without breaking the workspace shell", async () =>
 
   expect(await screen.findByText(/analysis error/i)).toBeInTheDocument();
   expect(screen.getByText(/engine unavailable/i)).toBeInTheDocument();
-  expect(screen.getByText(/give the analyzer the details that most change the route/i)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /describe the product/i })).toBeInTheDocument();
 });
 
 test("keeps stable section order and mobile drawer behavior with partial backend data", async () => {
@@ -404,18 +405,18 @@ test("keeps stable section order and mobile drawer behavior with partial backend
   const stickyActionBar = container.querySelector('[data-mobile-sticky="true"]');
   expect(stickyActionBar).not.toBeNull();
 
-  const contextDetails = container.querySelector("details");
+  const contextDetails = container.querySelector("details.contextPanel");
   expect(contextDetails).not.toBeNull();
   expect(contextDetails.open).toBe(false);
 
   const order = [
-    screen.getByText("1. Product identification / overview"),
-    screen.getByText(/current scoping confidence/i),
-    screen.getByText(/what could change this result/i),
-    screen.getByText(/^Standards route$/i),
-    screen.getByText(/^Parallel obligations$/i),
-    screen.getByText(/evidence and common gaps/i),
-    screen.getByText(/^Supporting context$/i),
+    screen.getByRole("heading", { name: /coffee machine/i }),
+    container.querySelector("details.trustBar"),
+    container.querySelector("section.clarificationStrip"),
+    screen.getByRole("heading", { name: /^Standards route$/i }),
+    screen.getByRole("heading", { name: /^Parallel obligations$/i }),
+    screen.getByRole("heading", { name: /evidence and common gaps/i }),
+    screen.getByRole("heading", { name: /^Supporting context$/i }),
   ];
 
   for (let index = 0; index < order.length - 1; index += 1) {
@@ -437,7 +438,7 @@ test("keyboard interaction works for accordions and clarification actions", asyn
 
   expect(await screen.findByText(/keyboard interaction result/i)).toBeInTheDocument();
 
-  const routeToggle = screen.getByRole("button", { name: /lvd safety route/i });
+  const routeToggle = screen.getByRole("button", { name: /lvd safety route/i, expanded: true });
   routeToggle.focus();
   await userEvent.keyboard("{Enter}");
 
@@ -445,6 +446,7 @@ test("keyboard interaction works for accordions and clarification actions", asyn
     expect(screen.queryByText(/household and similar electrical appliances/i)).not.toBeInTheDocument();
   });
 
+  await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
   const clarificationButton = screen.getByRole("button", { name: /\+ wi-fi connectivity/i });
   clarificationButton.focus();
   await userEvent.keyboard("{Enter}");

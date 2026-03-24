@@ -652,63 +652,160 @@ function MissingInputExamples({ item, onApplyMissingInput }) {
   );
 }
 
-function MissingInputsPanel({ description, result, viewModel, onApplyMissingInput }) {
+function missingSeverityTone(severity) {
+  if (severity === "blocker") return "warning";
+  if (severity === "route-affecting") return "strong";
+  return "muted";
+}
+
+function missingSeverityLabel(severity) {
+  if (severity === "blocker") return "Blocker";
+  if (severity === "route-affecting") return "Route-affecting";
+  return "Helpful";
+}
+
+function ClarificationStrip({
+  description,
+  result,
+  viewModel,
+  dirty,
+  busy,
+  onReanalyze,
+  onApplyMissingInput,
+}) {
+  const [open, setOpen] = useState(false);
   const knownFacts = extractKnownFacts(description, result);
   const blocking = viewModel.missingInputs.filter((item) => item.severity === "blocker");
   const routeAffecting = viewModel.missingInputs.filter((item) => item.severity === "route-affecting");
-  const important = viewModel.missingInputs.filter((item) => item.severity !== "blocker");
-  const allMissing = [...blocking, ...important];
-  const subtitle = blocking.length || routeAffecting.length
-    ? `${blocking.length} blocker${blocking.length === 1 ? "" : "s"} and ${routeAffecting.length} route-affecting item${routeAffecting.length === 1 ? "" : "s"} are still open.`
-    : "The current route looks stable. Extra clarification here is optional.";
+  const helpful = viewModel.missingInputs.filter((item) => item.severity === "helpful");
+  const allMissing = [...blocking, ...routeAffecting, ...helpful];
+  const previewItems = allMissing.slice(0, 3);
+
+  if (!allMissing.length && !dirty) return null;
+
+  let headline = "Clarifications are available";
+  if (blocking.length || routeAffecting.length) {
+    headline = `${blocking.length} blocker${blocking.length === 1 ? "" : "s"} and ${routeAffecting.length} route-affecting item${
+      routeAffecting.length === 1 ? "" : "s"
+    } are open`;
+  } else if (allMissing.length) {
+    headline = `${allMissing.length} optional clarification${allMissing.length === 1 ? "" : "s"} can tighten this route`;
+  }
+
+  const summaryText = dirty
+    ? "Description changed. Re-run when you want the route refreshed."
+    : blocking.length
+      ? "These inputs can move the route materially."
+      : routeAffecting.length
+        ? "These inputs can still shift scope or evidence needs."
+        : "Everything left is optional detail.";
 
   return (
-    <Surface
-      eyebrow="Missing inputs"
-      title="What could change this result"
-      text={subtitle}
-      bodyClassName={styles.sectionStack}
-    >
-      {(knownFacts.length > 0 || viewModel.assumptions.length > 0) ? (
-        <div className={styles.summaryGrid}>
-          <div className={styles.infoCard}>
-            <span className={styles.sectionLabel}>Known</span>
-            {knownFacts.length ? (
-              <CompactList items={knownFacts} />
+    <section className={cx(styles.clarificationStrip, open ? styles.clarificationStripOpen : "")}>
+      <div className={styles.clarificationSummary}>
+        <button
+          type="button"
+          className={styles.clarificationToggle}
+          onClick={() => setOpen((current) => !current)}
+          aria-expanded={open}
+          aria-controls="analysis-clarification-body"
+        >
+          <div className={styles.clarificationHeading}>
+            <span className={styles.clarificationEyebrow}>Clarifications</span>
+            <strong className={styles.clarificationTitle}>{headline}</strong>
+            <span className={styles.clarificationText}>{summaryText}</span>
+          </div>
+
+          <div className={styles.clarificationSummaryRight}>
+            <div className={styles.clarificationPreview}>
+              {blocking.length ? (
+                <TonePill tone="warning">{blocking.length} blocker{blocking.length === 1 ? "" : "s"}</TonePill>
+              ) : null}
+              {routeAffecting.length ? (
+                <TonePill tone="strong">
+                  {routeAffecting.length} route-affecting
+                </TonePill>
+              ) : null}
+              {!blocking.length && !routeAffecting.length && allMissing.length ? (
+                <TonePill tone="muted">Optional only</TonePill>
+              ) : null}
+              {previewItems.map((item) => (
+                <span key={item.key} className={styles.clarificationPreviewChip}>
+                  {item.title}
+                </span>
+              ))}
+              {allMissing.length > previewItems.length ? (
+                <span className={styles.clarificationOverflow}>+{allMissing.length - previewItems.length}</span>
+              ) : null}
+            </div>
+
+            {open ? (
+              <ChevronUp size={15} className={styles.clarificationChevron} />
             ) : (
-              <span className={styles.emptyCopy}>No explicit facts extracted from the description.</span>
+              <ChevronDown size={15} className={styles.clarificationChevron} />
             )}
           </div>
-          <div className={styles.infoCard}>
-            <span className={styles.sectionLabel}>Assumed</span>
-            {viewModel.assumptions.length ? (
-              <CompactList items={viewModel.assumptions} renderItem={(item) => titleCaseMinor(item)} />
-            ) : (
-              <span className={styles.emptyCopy}>No assumptions are currently driving the route.</span>
-            )}
-          </div>
+        </button>
+
+        {dirty ? (
+          <button
+            type="button"
+            className={cx(styles.actionButton, styles.actionButtonPrimary, styles.clarificationRunButton)}
+            onClick={onReanalyze}
+          >
+            {busy ? <LoaderCircle size={14} className={styles.spin} /> : <RefreshCcw size={14} />}
+            {busy ? "Starting new run" : "Re-run"}
+          </button>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div id="analysis-clarification-body" className={styles.clarificationBody}>
+          {knownFacts.length ? (
+            <div className={styles.clarificationMetaRow}>
+              <span className={styles.sectionLabel}>Known</span>
+              <div className={styles.chipList}>
+                {knownFacts.map((fact) => (
+                  <span key={fact} className={styles.listChip}>
+                    {fact}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {viewModel.assumptions.length ? (
+            <div className={styles.clarificationMetaRow}>
+              <span className={styles.sectionLabel}>Assumed</span>
+              <div className={styles.chipList}>
+                {viewModel.assumptions.map((assumption) => (
+                  <span key={assumption} className={styles.listChip}>
+                    {titleCaseMinor(assumption)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {allMissing.length ? (
+            <div className={styles.clarificationList}>
+              {allMissing.map((item) => (
+                <div key={item.key} className={styles.clarificationItem}>
+                  <div className={styles.clarificationItemHeader}>
+                    <span className={styles.clarificationItemTitle}>{item.title}</span>
+                    <TonePill tone={missingSeverityTone(item.severity)}>
+                      {missingSeverityLabel(item.severity)}
+                    </TonePill>
+                  </div>
+                  <p className={styles.clarificationItemText}>{item.reason}</p>
+                  <MissingInputExamples item={item} onApplyMissingInput={onApplyMissingInput} />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
-
-      {allMissing.length > 0 ? (
-        <div className={styles.missingList}>
-          {allMissing.map((item) => (
-            <div key={item.key} className={styles.missingItem}>
-              <div className={styles.missingTitleRow}>
-                <span className={styles.missingTitle}>{item.title}</span>
-                <TonePill tone={item.severity === "blocker" ? "warning" : item.severity === "route-affecting" ? "warning" : "muted"}>
-                  {item.severity === "blocker" ? "Blocker" : item.severity === "route-affecting" ? "Route-affecting" : "Helpful"}
-                </TonePill>
-              </div>
-              <p className={styles.missingReason}>{item.reason}</p>
-              <MissingInputExamples item={item} onApplyMissingInput={onApplyMissingInput} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <span className={styles.emptyCopy}>No missing inputs surfaced in the current result.</span>
-      )}
-    </Surface>
+    </section>
   );
 }
 
@@ -1509,10 +1606,14 @@ export default function AnalyzeWorkspace() {
             <div className={layoutStyles.resultsMain}>
               <OverviewPanel result={result} viewModel={viewModel} />
               <TrustLayerPanel viewModel={viewModel} />
-              <MissingInputsPanel
+              <ClarificationStrip
+                key={`clarifications-${resultRevision}`}
                 description={analyzedDescription || description}
                 result={result}
                 viewModel={viewModel}
+                dirty={dirty}
+                busy={busy}
+                onReanalyze={runAnalysis}
                 onApplyMissingInput={(text) => {
                   setDescription((current) => joinText(current, text));
                   setDismissDirty(false);

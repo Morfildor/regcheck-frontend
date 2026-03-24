@@ -476,54 +476,155 @@
   border-top: 1px solid var(--border-sm);
 }
 
-/* ─── Missing inputs ──────────────────────────────── */
+/* ─── Clarifications ──────────────────────────────── */
 
-.missingKnownRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 12px;
-  border-radius: 9px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.018);
-}
-
-.missingList {
-  border-radius: 10px;
-  border: 1px solid var(--border);
+.clarificationStrip {
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(8,14,24,0.5);
   overflow: hidden;
 }
 
-.missingItem {
+.clarificationStripOpen {
+  border-color: rgba(125,185,255,0.16);
+}
+
+.clarificationSummary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+}
+
+.clarificationToggle {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.clarificationHeading {
   display: grid;
   gap: 4px;
-  padding: 11px 14px;
-  border-bottom: 1px solid var(--border-sm);
-  background: rgba(7,12,22,0.45);
-  transition: background 0.12s;
+  min-width: 0;
 }
-.missingItem:last-child { border-bottom: none; }
-.missingItem:hover { background: rgba(7,12,22,0.65); }
 
-.missingTitleRow {
+.clarificationEyebrow {
+  color: var(--accent);
+  font-size: 0.67rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-weight: 600;
+  opacity: 0.72;
+}
+
+.clarificationTitle {
+  color: var(--text-strong);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.clarificationText {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.clarificationPreview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.clarificationSummaryRight {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  justify-content: space-between;
+  gap: 10px;
 }
 
-.missingTitle {
+.clarificationPreviewChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  font-size: 0.76rem;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.clarificationOverflow {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.clarificationChevron {
+  color: var(--text-soft);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.clarificationRunButton {
+  flex-shrink: 0;
+}
+
+.clarificationBody {
+  display: grid;
+  gap: 12px;
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border-sm);
+}
+
+.clarificationMetaRow {
+  display: grid;
+  gap: 8px;
+}
+
+.clarificationList {
+  display: grid;
+  gap: 8px;
+}
+
+.clarificationItem {
+  display: grid;
+  gap: 6px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(7,12,22,0.42);
+}
+
+.clarificationItemHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.clarificationItemTitle {
   color: var(--text-strong);
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 500;
   line-height: 1.4;
 }
 
-.missingReason {
+.clarificationItemText {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.83rem;
+  font-size: 0.82rem;
   line-height: 1.5;
 }
 
@@ -1132,6 +1233,19 @@
 @media (max-width: 720px) {
   .headerActions, .actionBar, .dirtyBanner, .progressBanner, .errorBanner {
     flex-direction: column; align-items: stretch;
+  }
+  .clarificationSummary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .clarificationToggle {
+    grid-template-columns: 1fr;
+  }
+  .clarificationSummaryRight {
+    justify-content: space-between;
+  }
+  .clarificationPreview {
+    justify-content: flex-start;
   }
   .dirtyActions { justify-content: space-between; }
   .accordionToggle, .contextSummary { padding: 12px 13px; }
