@@ -14,7 +14,7 @@
 }
 
 .headerInner {
-  width: min(1200px, calc(100% - 32px));
+  width: min(1360px, calc(100% - 40px));
   margin: 0 auto;
   min-height: 60px;
   display: flex;
@@ -122,11 +122,11 @@
 }
 
 .main {
-  width: min(1200px, calc(100% - 32px));
+  width: min(1360px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 28px 0 72px;
+  padding: 24px 0 80px;
   display: grid;
-  gap: 22px;
+  gap: 24px;
   position: relative;
   z-index: 1;
 }

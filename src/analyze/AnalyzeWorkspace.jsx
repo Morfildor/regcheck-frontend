@@ -56,6 +56,12 @@ const PILL_TONE_CLASS = {
   strong: styles.pillStrong,
 };
 
+const ROUTE_SECTION_CLASS = {
+  core: styles.routeCardCore,
+  conditional: styles.routeCardConditional,
+  secondary: styles.routeCardSecondary,
+};
+
 function cx(...values) {
   return values.filter(Boolean).join(" ");
 }
@@ -256,6 +262,82 @@ function DirectivePill({ directiveKey }) {
   );
 }
 
+function CompactList({
+  items,
+  className = styles.compactList,
+  itemClassName = styles.compactListItem,
+  markerClassName = styles.compactMarker,
+  renderItem = (item) => item,
+}) {
+  if (!items?.length) return null;
+
+  return (
+    <ul className={className}>
+      {items.map((item, index) => (
+        <li key={`${String(item)}-${index}`} className={itemClassName}>
+          <span className={markerClassName} />
+          <span>{renderItem(item)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function DetailList({ items }) {
+  return (
+    <CompactList
+      items={items}
+      className={styles.detailList}
+      itemClassName={styles.detailListItem}
+      markerClassName={styles.detailBullet}
+    />
+  );
+}
+
+function ComposerSnapshot({ active, viewModel }) {
+  if (!active) return null;
+
+  const openItems = viewModel.decisionSignals.blockerCount + viewModel.decisionSignals.routeAffectingCount;
+  const snapshotItems = [
+    {
+      label: "Current scope",
+      value: formatUiLabel(viewModel.productIdentity.type || "Product route"),
+      meta: formatStageLabel(viewModel.productIdentity.stage || "unknown"),
+    },
+    {
+      label: "Confidence",
+      value: viewModel.classificationConfidence.label,
+      meta: viewModel.resultMaturity.label,
+    },
+    {
+      label: "Directive families",
+      value: String(viewModel.decisionSignals.directiveCount),
+      meta: `${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"}`,
+    },
+    {
+      label: "Open items",
+      value: String(openItems),
+      meta: openItems
+        ? viewModel.decisionSignals.blockerCount
+          ? `${viewModel.decisionSignals.blockerCount} blocker${viewModel.decisionSignals.blockerCount === 1 ? "" : "s"}`
+          : `${viewModel.decisionSignals.routeAffectingCount} route-affecting`
+        : "Current route is stable",
+    },
+  ];
+
+  return (
+    <div className={styles.composerSnapshotGrid}>
+      {snapshotItems.map((item) => (
+        <div key={item.label} className={styles.composerSnapshotCard}>
+          <span className={styles.composerSnapshotLabel}>{item.label}</span>
+          <strong className={styles.composerSnapshotValue}>{item.value}</strong>
+          <span className={styles.composerSnapshotMeta}>{item.meta}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function HeaderActions({
   result,
   totalStandards,
@@ -343,6 +425,7 @@ function ComposerSurface({
   onDismissDirty,
   suggestionGroups,
   templates,
+  viewModel,
   hasResult,
 }) {
   const analyzeLabel = hasResult ? (dirty ? "Re-run analysis" : "Analyze again") : "Analyze product";
@@ -367,6 +450,8 @@ function ComposerSurface({
         aria-label="Describe your product"
         placeholder="Example: Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path."
       />
+
+      <ComposerSnapshot active={hasResult} viewModel={viewModel} />
 
       {/* Template chips: visible when textarea is short, each chip hides when its product type is mentioned */}
       {!hasResult && description.trim().length < 32 ? (
@@ -440,45 +525,53 @@ function ComposerSurface({
 }
 
 function EmptyStateGuidance() {
+  const sections = [
+    {
+      key: "helps",
+      icon: Search,
+      label: "What helps most",
+      items: EXAMPLE_DETAILS.map((item) => titleCaseMinor(item)),
+    },
+    {
+      key: "returns",
+      icon: Waypoints,
+      label: "The analyzer returns",
+      items: ["Directive families", "Standards route", "Parallel obligations", "Clarification prompts"],
+    },
+  ];
+
   return (
     <div className={styles.guidanceGrid}>
-      <div className={styles.guidanceCard}>
-        <div className={styles.guidanceCardTitle}>
-          <Search size={14} />
-          <span className={styles.sectionLabel}>What helps most</span>
-        </div>
-        <div className={styles.chipList}>
-          {EXAMPLE_DETAILS.map((item) => (
-            <span key={item} className={styles.listChip}>
-              {titleCaseMinor(item)}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className={styles.guidanceCard}>
-        <div className={styles.guidanceCardTitle}>
-          <Waypoints size={14} />
-          <span className={styles.sectionLabel}>The analyzer returns</span>
-        </div>
-        <div className={styles.chipList}>
-          {["Directive families", "Standards route", "Parallel obligations", "Clarification prompts"].map((item) => (
-            <span key={item} className={styles.listChip}>{item}</span>
-          ))}
-        </div>
-      </div>
+      {sections.map((section) => {
+        const Icon = section.icon;
+        return (
+          <div key={section.key} className={styles.guidanceCard}>
+            <div className={styles.guidanceCardTitle}>
+              <Icon size={14} />
+              <span className={styles.sectionLabel}>{section.label}</span>
+            </div>
+            <CompactList
+              items={section.items}
+              className={styles.guidanceList}
+              itemClassName={styles.guidanceItem}
+              markerClassName={styles.guidanceMarker}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 function OverviewPanel({ result, viewModel }) {
+  const openIssueCount = viewModel.decisionSignals.blockerCount + viewModel.decisionSignals.routeAffectingCount;
   const metrics = [
-    { label: "Product", value: formatUiLabel(viewModel.productIdentity.type || "unclear") },
-    { label: "Family", value: formatUiLabel(viewModel.productIdentity.family || "unclear") },
-    { label: "Subtype", value: formatUiLabel(viewModel.productIdentity.subtype || "not locked") },
-    { label: "Stage", value: formatStageLabel(viewModel.productIdentity.stage || "unknown") },
+    { label: "Match stage", value: formatStageLabel(viewModel.productIdentity.stage || "unknown") },
+    { label: "Scope", value: viewModel.resultMaturity.label },
+    { label: "Confidence", value: viewModel.classificationConfidence.label },
     { label: "Risk", value: formatUiLabel(result?.overall_risk || "medium") },
     { label: "Standards", value: String(viewModel.totalStandards) },
+    { label: "Open issues", value: String(openIssueCount) },
   ];
 
   return (
@@ -509,6 +602,12 @@ function OverviewPanel({ result, viewModel }) {
 }
 
 function TrustLayerPanel({ viewModel }) {
+  const trustSummary = [
+    `${viewModel.decisionSignals.blockerCount} blocker${viewModel.decisionSignals.blockerCount === 1 ? "" : "s"}`,
+    `${viewModel.decisionSignals.directiveCount} ${viewModel.decisionSignals.directiveCount === 1 ? "family" : "families"}`,
+    `${viewModel.decisionSignals.clarificationCount} clarification${viewModel.decisionSignals.clarificationCount === 1 ? "" : "s"}`,
+  ].join(" / ");
+
   return (
     <details className={styles.trustBar}>
       <summary className={styles.trustBarSummary}>
@@ -516,9 +615,7 @@ function TrustLayerPanel({ viewModel }) {
         <div className={styles.trustBarPills}>
           <TonePill tone={viewModel.resultMaturity.tone} strong>{viewModel.resultMaturity.label}</TonePill>
           <TonePill tone={viewModel.classificationConfidence.tone}>{viewModel.classificationConfidence.label}</TonePill>
-          <span className={styles.trustBarMeta}>
-            {viewModel.decisionSignals.blockerCount} blocker{viewModel.decisionSignals.blockerCount === 1 ? "" : "s"} · {viewModel.decisionSignals.directiveCount} {viewModel.decisionSignals.directiveCount === 1 ? "family" : "families"} · {viewModel.decisionSignals.clarificationCount} clarification{viewModel.decisionSignals.clarificationCount === 1 ? "" : "s"}
-          </span>
+          <span className={styles.trustBarMeta}>{trustSummary}</span>
         </div>
         <ChevronDown size={13} className={styles.trustBarChevron} />
       </summary>
@@ -558,37 +655,41 @@ function MissingInputExamples({ item, onApplyMissingInput }) {
 function MissingInputsPanel({ description, result, viewModel, onApplyMissingInput }) {
   const knownFacts = extractKnownFacts(description, result);
   const blocking = viewModel.missingInputs.filter((item) => item.severity === "blocker");
+  const routeAffecting = viewModel.missingInputs.filter((item) => item.severity === "route-affecting");
   const important = viewModel.missingInputs.filter((item) => item.severity !== "blocker");
   const allMissing = [...blocking, ...important];
+  const subtitle = blocking.length || routeAffecting.length
+    ? `${blocking.length} blocker${blocking.length === 1 ? "" : "s"} and ${routeAffecting.length} route-affecting item${routeAffecting.length === 1 ? "" : "s"} are still open.`
+    : "The current route looks stable. Extra clarification here is optional.";
 
   return (
     <Surface
       eyebrow="Missing inputs"
       title="What could change this result"
-      bodyClassName={styles.composerBody}
+      text={subtitle}
+      bodyClassName={styles.sectionStack}
     >
-      {/* Known facts + assumptions as a single chip strip */}
       {(knownFacts.length > 0 || viewModel.assumptions.length > 0) ? (
-        <div className={styles.missingHeader}>
-          <span className={styles.sectionLabel} style={{ flexShrink: 0 }}>Known</span>
-          {knownFacts.map((fact) => (
-            <span key={fact} className={styles.listChip}>{fact}</span>
-          ))}
-          {viewModel.assumptions.length > 0 && knownFacts.length > 0 ? (
-            <span style={{ color: "var(--text-soft)", fontSize: "0.8rem", padding: "0 4px" }}>·</span>
-          ) : null}
-          {viewModel.assumptions.length > 0 ? (
-            <>
-              <span className={styles.sectionLabel} style={{ flexShrink: 0 }}>Assumed</span>
-              {viewModel.assumptions.map((a) => (
-                <span key={a} className={styles.listChip}>{titleCaseMinor(a)}</span>
-              ))}
-            </>
-          ) : null}
+        <div className={styles.summaryGrid}>
+          <div className={styles.infoCard}>
+            <span className={styles.sectionLabel}>Known</span>
+            {knownFacts.length ? (
+              <CompactList items={knownFacts} />
+            ) : (
+              <span className={styles.emptyCopy}>No explicit facts extracted from the description.</span>
+            )}
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.sectionLabel}>Assumed</span>
+            {viewModel.assumptions.length ? (
+              <CompactList items={viewModel.assumptions} renderItem={(item) => titleCaseMinor(item)} />
+            ) : (
+              <span className={styles.emptyCopy}>No assumptions are currently driving the route.</span>
+            )}
+          </div>
         </div>
       ) : null}
 
-      {/* Flat list of all missing items */}
       {allMissing.length > 0 ? (
         <div className={styles.missingList}>
           {allMissing.map((item) => (
@@ -619,12 +720,13 @@ function ComparisonPanel({ changes }) {
       eyebrow="Session compare"
       title="Compared with previous analysis"
       text="Session-local changes only. No results are persisted."
-      bodyClassName={styles.compareBody}
+      bodyClassName={styles.compareList}
     >
       {changes.map((change) => (
-        <span key={change} className={styles.compareChip}>
-          {change}
-        </span>
+        <div key={change} className={styles.compareItem}>
+          <span className={styles.compareMarker} />
+          <span>{change}</span>
+        </div>
       ))}
     </Surface>
   );
@@ -685,7 +787,7 @@ function StandardCard({ item, sectionKey }) {
   );
 }
 
-function RouteQuickNav({ sections }) {
+function RouteQuickNav({ sections, openKeys }) {
   const orderedSections = (sections || []).filter(Boolean);
 
   if (!orderedSections.length) return null;
@@ -703,11 +805,19 @@ function RouteQuickNav({ sections }) {
         <button
           key={`jump-${section.key || section.title}`}
           type="button"
-          className={styles.routeNavChip}
+          className={cx(
+            styles.routeNavChip,
+            ROUTE_SECTION_CLASS[section.sectionKind],
+            openKeys?.has(section.key || section.title) ? styles.routeNavChipActive : ""
+          )}
           onClick={() => scrollToSection(section.key || section.title)}
+          aria-label={`Jump to ${routeTitle(section)}`}
+          aria-pressed={openKeys?.has(section.key || section.title) || false}
         >
-          <span>{directiveShort(section.key || "OTHER")}</span>
-          <span className={styles.routeNavCount}>{(section.items || []).length}</span>
+          <span className={styles.routeNavLabel}>{directiveShort(section.key || "OTHER")}</span>
+          <span className={styles.routeNavMeta}>
+            {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"}
+          </span>
         </button>
       ))}
     </div>
@@ -720,7 +830,7 @@ function RouteSectionCard({ section, open, onToggle }) {
     section.sectionKind === "core" ? "strong" : section.sectionKind === "conditional" ? "warning" : "muted";
 
   return (
-    <section className={styles.accordionCard} id={sectionId}>
+    <section className={cx(styles.accordionCard, ROUTE_SECTION_CLASS[section.sectionKind])} id={sectionId}>
       <button
         type="button"
         className={styles.accordionToggle}
@@ -728,12 +838,12 @@ function RouteSectionCard({ section, open, onToggle }) {
         aria-expanded={open}
         aria-controls={`${sectionId}-body`}
       >
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className={styles.accordionCopy}>
           <div className={styles.accordionTitleRow}>
             <h3 className={styles.accordionTitle}>{routeTitle(section)}</h3>
             {section.shortRationale ? <p className={styles.microRationale}>{section.shortRationale}</p> : null}
             <p className={styles.accordionText}>
-              {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"}
+              {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"} in this route
             </p>
           </div>
           {/* Pills always below the text — never beside it */}
@@ -804,15 +914,19 @@ function StandardsRoutePanel({ viewModel }) {
     <Surface
       eyebrow="Standards route"
       title="Standards route"
+      text="Primary standards first, then conditional and adjacent routes that may switch on as scope changes."
       bodyClassName={styles.sectionStack}
     >
-      <RouteQuickNav sections={viewModel.routeSections} />
+      <RouteQuickNav sections={viewModel.routeSections} openKeys={openKeys} />
 
       {viewModel.routeSections.length ? (
         groups.map((group) =>
           group.sections.length ? (
             <div key={group.key} className={styles.groupBlock}>
-              <div className={styles.groupHeadingLabel}>{group.title}</div>
+              <div className={styles.groupHeadingBlock}>
+                <div className={styles.groupHeadingLabel}>{group.title}</div>
+                <p className={styles.groupHeadingText}>{group.text}</p>
+              </div>
               <div className={styles.sectionStack}>
                 {group.sections.map((section) => (
                   <RouteSectionCard
@@ -946,13 +1060,17 @@ function ParallelObligationsPanel({ viewModel }) {
     <Surface
       eyebrow="Parallel obligations"
       title="Parallel obligations"
+      text="Frameworks outside the primary standards route that may still matter depending on product features or market claims."
       bodyClassName={styles.sectionStack}
     >
       {groups.some((group) => group.items.length) ? (
         groups.map((group) =>
           group.items.length ? (
             <div key={group.key} className={styles.groupBlock}>
-              <div className={styles.groupHeadingLabel}>{group.title}</div>
+              <div className={styles.groupHeadingBlock}>
+                <div className={styles.groupHeadingLabel}>{group.title}</div>
+                <p className={styles.groupHeadingText}>{group.text}</p>
+              </div>
               <div className={styles.sectionStack}>
                 {group.items.map((item) => {
                   const key = item.directive_key || item.code || item.title;
@@ -993,33 +1111,15 @@ function EvidencePanel({ viewModel }) {
             </div>
             <div className={styles.evidenceSection}>
               <span className={styles.metaLabel}>Typical evidence expected</span>
-              <div className={styles.chipList}>
-                {need.typicalEvidence.map((item) => (
-                  <span key={item} className={styles.listChip}>
-                    {item}
-                  </span>
-                ))}
-              </div>
+              <DetailList items={need.typicalEvidence} />
             </div>
             <div className={styles.evidenceSection}>
               <span className={styles.metaLabel}>Common missing information</span>
-              <div className={styles.chipList}>
-                {need.commonMissing.map((item) => (
-                  <span key={item} className={styles.listChip}>
-                    {item}
-                  </span>
-                ))}
-              </div>
+              <DetailList items={need.commonMissing} />
             </div>
             <div className={styles.evidenceSection}>
               <span className={styles.metaLabel}>Common blockers</span>
-              <div className={styles.chipList}>
-                {need.blockers.map((item) => (
-                  <span key={item} className={styles.listChip}>
-                    {item}
-                  </span>
-                ))}
-              </div>
+              <DetailList items={need.blockers} />
             </div>
           </div>
         ))
@@ -1079,13 +1179,7 @@ function SupportingContextPanel({ result, viewModel, description, copied, onCopy
         {result?.future_watchlist?.length ? (
           <div className={styles.infoCard}>
             <span className={styles.sectionLabel}>Future watchlist</span>
-            <div className={styles.chipList}>
-              {result.future_watchlist.slice(0, 5).map((item) => (
-                <span key={item} className={styles.listChip}>
-                  {titleCaseMinor(item)}
-                </span>
-              ))}
-            </div>
+            <CompactList items={result.future_watchlist.slice(0, 5)} renderItem={(item) => titleCaseMinor(item)} />
           </div>
         ) : null}
       </div>
@@ -1398,6 +1492,7 @@ export default function AnalyzeWorkspace() {
             onDismissDirty={() => setDismissDirty(true)}
             suggestionGroups={suggestionGroups}
             templates={templates}
+            viewModel={viewModel}
             hasResult={Boolean(result)}
           />
 

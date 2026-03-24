@@ -14,8 +14,8 @@
 
 .resultsGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(256px, 0.72fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  gap: 20px;
   align-items: start;
 }
 
@@ -29,7 +29,7 @@
 /* Removed zone header styles — the zone title section was removed from JSX
    as it was a redundant heading above the Composer Surface's own header */
 
-@media (max-width: 1080px) {
+@media (max-width: 1220px) {
   .resultsGrid {
     grid-template-columns: 1fr;
   }
