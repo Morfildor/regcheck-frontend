@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { buildDynamicTemplates } from "../analyze/helpers";
 import MarketingLayout from "./MarketingLayout";
 import styles from "./HomePage.module.css";
 
@@ -44,7 +45,7 @@ const REVIEW_ITEMS = [
   "Market-entry sign-off when evidence is still incomplete",
 ];
 
-const STARTER_EXAMPLES = [
+const EXTRA_STARTER_EXAMPLES = [
   {
     label: "Connected appliance",
     text: "Connected espresso machine with mains power, Wi-Fi app control, OTA updates, grinder, and food-contact brew path.",
@@ -57,6 +58,18 @@ const STARTER_EXAMPLES = [
     label: "Industrial tool",
     text: "DIN-rail power supply for industrial cabinets with 24 V DC output, mains input, and no wireless connectivity.",
   },
+  {
+    label: "Security camera",
+    text: "Outdoor security camera with mains power, Wi-Fi radio, cloud account, OTA updates, microphone, speaker, motion detection, and app control.",
+  },
+  {
+    label: "Robot vacuum",
+    text: "Robot vacuum cleaner with rechargeable lithium battery, Wi-Fi and Bluetooth, cloud account, OTA updates, LiDAR navigation, and camera.",
+  },
+  {
+    label: "Baby monitor",
+    text: "Connected baby monitor with camera, microphone, speaker, Wi-Fi radio, app control, cloud account, and remote viewing.",
+  },
 ];
 
 function buildAnalyzePath(description) {
@@ -68,9 +81,32 @@ function buildAnalyzePath(description) {
   return `/analyze?${params.toString()}`;
 }
 
+function shuffle(items, seed) {
+  const pool = [...items];
+  let value = seed || 0.5;
+
+  for (let index = pool.length - 1; index > 0; index -= 1) {
+    value = (value * 9301 + 49297) % 233280;
+    const swapIndex = Math.floor((value / 233280) * (index + 1));
+    [pool[index], pool[swapIndex]] = [pool[swapIndex], pool[index]];
+  }
+
+  return pool;
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
   const [draft, setDraft] = useState("");
+  const [starterSeed] = useState(() => Math.random());
+
+  const starterExamples = useMemo(() => {
+    const merged = [...buildDynamicTemplates([]), ...EXTRA_STARTER_EXAMPLES];
+    const deduped = merged.filter(
+      (item, index, array) =>
+        array.findIndex((candidate) => candidate.label.toLowerCase() === item.label.toLowerCase()) === index
+    );
+    return shuffle(deduped, starterSeed).slice(0, 12);
+  }, [starterSeed]);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -127,9 +163,9 @@ export default function HomePage() {
           </label>
 
           <div className={styles.exampleBlock}>
-            <span className={styles.fieldLabel}>Examples</span>
+            <span className={styles.fieldLabel}>Example prompts</span>
             <div className={styles.exampleRow}>
-              {STARTER_EXAMPLES.map((example) => (
+              {starterExamples.map((example) => (
                 <button
                   key={example.label}
                   type="button"
@@ -151,7 +187,9 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <p className={styles.panelNote}>The text above is passed into the analyzer as your starting draft.</p>
+          <p className={styles.panelNote}>
+            The text above is passed into the analyzer as your starting draft.
+          </p>
         </form>
       </section>
 
