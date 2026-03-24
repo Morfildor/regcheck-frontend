@@ -1,218 +1,225 @@
-import { ArrowRight, Check, ShieldCheck, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
-import { SECONDARY_ROUTE_LINKS } from "../app/navigation";
-import Surface from "../shared/ui/Surface";
+import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import MarketingLayout from "./MarketingLayout";
-import styles from "./MarketingPage.module.css";
+import styles from "./HomePage.module.css";
 
-const TRUST_METRICS = [
+const OUTPUT_ITEMS = [
   {
-    label: "Primary output",
-    value: "Standards route",
-    text: "Grouped by directive family with supporting legislation context.",
+    label: "Directive families",
+    text: "See the likely EU frameworks triggered by the description.",
   },
   {
-    label: "Input style",
-    value: "Plain language",
-    text: "Built for intake-stage product descriptions, not perfect spec sheets.",
+    label: "Standards route",
+    text: "Get a first view of the standards path to review next.",
   },
   {
-    label: "Team fit",
-    value: "RA + engineering",
-    text: "Useful for compliance, sourcing, and consultant handoff conversations.",
+    label: "Parallel obligations",
+    text: "Catch related obligations that may sit outside the core route.",
+  },
+  {
+    label: "Missing details",
+    text: "Find the facts most likely to change the result before review.",
   },
 ];
 
-const FEATURE_CARDS = [
+const INPUT_HINTS = [
+  "Main function and intended use",
+  "Power source and included power hardware",
+  "Wi-Fi, Bluetooth, NFC, or no wireless",
+  "Battery, app, cloud, or OTA update details",
+];
+
+const GOOD_FOR_ITEMS = [
+  "Early product intake when the description is still rough",
+  "Internal routing between compliance, engineering, and sourcing",
+  "Spotting scope changes caused by radios, software, or power details",
+  "Preparing a stronger brief before lab or consultant review",
+];
+
+const REVIEW_ITEMS = [
+  "Formal conformity assessment and accredited testing",
+  "Final legal or certification decisions",
+  "Sector-specific edge cases that need specialist judgment",
+  "Market-entry sign-off when evidence is still incomplete",
+];
+
+const STARTER_EXAMPLES = [
   {
-    title: "Start with uncertain product detail",
-    text: "The analyzer is designed for the moment when product data is incomplete but decisions already need a route, a risk level, and the next questions.",
+    label: "Connected appliance",
+    text: "Connected espresso machine with mains power, Wi-Fi app control, OTA updates, grinder, and food-contact brew path.",
   },
   {
-    title: "Challenge scope before cost accumulates",
-    text: "Power architecture, radio functions, software dependencies, and material contact all move the route. RuleGrid surfaces those pressure points early.",
+    label: "Consumer device",
+    text: "Battery-powered smart thermostat with Bluetooth setup, Wi-Fi connectivity, cloud account, and wall-mount installation.",
   },
   {
-    title: "Brief experts from a cleaner baseline",
-    text: "The goal is not to replace labs or consultants. It is to give them a sharper starting brief and reduce circular scoping work.",
+    label: "Industrial tool",
+    text: "DIN-rail power supply for industrial cabinets with 24 V DC output, mains input, and no wireless connectivity.",
   },
 ];
 
-const WORKFLOW_STEPS = [
-  {
-    n: "1",
-    title: "Describe the product",
-    text: "Include function, power source, radios, companion software, and any food or user-contact materials.",
-  },
-  {
-    n: "2",
-    title: "Review the first route",
-    text: "Check the returned directive families, standards path, and parallel obligations against your product knowledge.",
-  },
-  {
-    n: "3",
-    title: "Apply clarifications",
-    text: "Use the missing-information prompts to close gaps that could change the route or risk level.",
-  },
-  {
-    n: "4",
-    title: "Re-run and hand off",
-    text: "Use the tighter output as a handoff baseline for internal reviewers, labs, or external advisors.",
-  },
-];
+function buildAnalyzePath(description) {
+  const trimmed = String(description || "").trim();
+  if (!trimmed) return "/analyze";
 
-const LIMITS = [
-  "Not a legal opinion or certification decision",
-  "Not a replacement for accredited testing",
-  "Not a guarantee that every national or sector rule has been captured",
-];
+  const params = new URLSearchParams();
+  params.set("q", trimmed);
+  return `/analyze?${params.toString()}`;
+}
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const [draft, setDraft] = useState("");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    navigate(buildAnalyzePath(draft));
+  }
+
   return (
     <MarketingLayout
       meta={{
         title: "RuleGrid",
         description:
-          "Analyzer-first EU regulatory scoping for compliance teams working through early product uncertainty.",
+          "Describe a product and get a first-pass EU regulatory route before formal review begins.",
         canonicalPath: "/",
       }}
       actions={
-        <Link to="/analyze" className={styles.buttonSecondary}>
+        <Link to="/analyze" className={styles.headerAction}>
           Open analyzer
         </Link>
       }
     >
-      <Surface bodyClassName={styles.hero}>
+      <section className={styles.hero}>
         <div className={styles.heroCopy}>
-          <span className={styles.heroEyebrow}>Analyzer-first workflow</span>
-          <h1 className={styles.heroTitle}>
-            Move from rough product detail to a defensible EU starting route.
-          </h1>
+          <span className={styles.eyebrow}>EU product scoping</span>
+          <h1 className={styles.heroTitle}>Start with what you know about the product.</h1>
           <p className={styles.heroText}>
-            RuleGrid is built for compliance, engineering, and sourcing teams that need a strong
-            first-pass view of directives, standards, and parallel obligations before formal review
-            begins.
+            Paste a rough description. RuleGrid carries it into the analyzer so the team can review
+            likely directives, standards, and missing details from a real starting point.
           </p>
-          <div className={styles.heroActions}>
-            <Link to="/analyze" className={styles.buttonPrimary}>
-              <Sparkles size={15} />
-              Analyze a product
-            </Link>
-            <Link to="/about" className={styles.buttonGhost}>
-              Where it fits
-              <ArrowRight size={15} />
-            </Link>
+
+          <div className={styles.heroSignals}>
+            <span className={styles.signal}>Built for early routing</span>
+            <span className={styles.signal}>Works with incomplete detail</span>
+            <span className={styles.signal}>Not a certification decision</span>
           </div>
         </div>
 
-        <div className={styles.heroAside}>
-          <div className={styles.miniStat}>
-            <span className={styles.miniStatValue}>Directives, standards, obligations</span>
-            <p className={styles.miniStatLabel}>
-              One workspace that prioritizes the route itself and the clarification prompts that
-              most change it.
-            </p>
+        <form className={styles.intakePanel} onSubmit={handleSubmit}>
+          <div className={styles.panelHeader}>
+            <span className={styles.panelEyebrow}>Quick start</span>
+            <h2 className={styles.panelTitle}>Describe the product</h2>
+            <p className={styles.panelText}>You can refine the draft after you land on `/analyze`.</p>
           </div>
-          <div className={styles.miniStat}>
-            <span className={styles.miniStatValue}>Built for repeat use</span>
-            <p className={styles.miniStatLabel}>
-              Refine the same description, re-run, and carry the latest route forward without
-              hunting through separate tools.
-            </p>
-          </div>
-        </div>
-      </Surface>
 
-      <div className={styles.trustGrid}>
-        {TRUST_METRICS.map((metric) => (
-          <div key={metric.label} className={styles.metricCard}>
-            <span className={styles.metricLabel}>{metric.label}</span>
-            <span className={styles.metricValue}>{metric.value}</span>
-            <p className={styles.cardText}>{metric.text}</p>
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>Product description</span>
+            <textarea
+              className={styles.textarea}
+              rows={7}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              aria-label="Product description quick start"
+              placeholder="Example: Connected espresso machine with mains power, Wi-Fi app control, OTA updates, grinder, and food-contact brew path."
+            />
+          </label>
+
+          <div className={styles.exampleBlock}>
+            <span className={styles.fieldLabel}>Examples</span>
+            <div className={styles.exampleRow}>
+              {STARTER_EXAMPLES.map((example) => (
+                <button
+                  key={example.label}
+                  type="button"
+                  className={styles.exampleChip}
+                  onClick={() => setDraft(example.text)}
+                >
+                  {example.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.panelActions}>
+            <button type="submit" className={styles.primaryButton}>
+              Analyze product
+            </button>
+            <Link to="/analyze" className={styles.secondaryButton}>
+              Open empty analyzer
+            </Link>
+          </div>
+
+          <p className={styles.panelNote}>The text above is passed into the analyzer as your starting draft.</p>
+        </form>
+      </section>
+
+      <section className={styles.outputStrip} aria-label="Analyzer output">
+        {OUTPUT_ITEMS.map((item) => (
+          <div key={item.label} className={styles.outputItem}>
+            <span className={styles.outputLabel}>{item.label}</span>
+            <p className={styles.outputText}>{item.text}</p>
           </div>
         ))}
-      </div>
+      </section>
 
-      <Surface
-        eyebrow="What the analyzer does well"
-        title="A practical first-pass scoping layer"
-        text="The product is optimized for early-stage route clarity and team alignment, not for replacing formal conformity work."
-      >
-        <div className={styles.featureGrid}>
-          {FEATURE_CARDS.map((card) => (
-            <div key={card.title} className={styles.featureCard}>
-              <div className={styles.iconRow}>
-                <ShieldCheck size={15} />
-                <span className={styles.smallLabel}>Compliance-first</span>
-              </div>
-              <div className={styles.cardTitle}>{card.title}</div>
-              <p className={styles.cardText}>{card.text}</p>
-            </div>
-          ))}
-        </div>
-      </Surface>
-
-      <Surface
-        eyebrow="How to use it"
-        title="A cleaner flow from intake to expert review"
-        text="The analyzer is strongest when it sharpens internal discussion before the external conformity path becomes expensive."
-      >
-        <div className={styles.stepGrid}>
-          {WORKFLOW_STEPS.map((step) => (
-            <div key={step.n} className={styles.stepCard}>
-              <div className={styles.stepNumber}>{step.n}</div>
-              <div className={styles.stepTitle}>{step.title}</div>
-              <p className={styles.stepText}>{step.text}</p>
-            </div>
-          ))}
-        </div>
-      </Surface>
-
-      <div className={styles.twoCol}>
-        <Surface eyebrow="Expected returns" title="What you get back">
-          <div className={styles.chipRow}>
-            {[
-              "Applicable directive families",
-              "Primary harmonized standards route",
-              "Parallel obligations",
-              "Scope-changing clarification prompts",
-            ].map((item) => (
-              <span key={item} className={styles.chip}>
-                <Check size={12} />
-                {item}
-              </span>
-            ))}
-          </div>
-        </Surface>
-
-        <Surface eyebrow="Important boundary" title="What RuleGrid does not replace">
-          <ul className={styles.accentList}>
-            {LIMITS.map((item) => (
-              <li key={item} className={styles.accentListItem}>
-                <span className={`${styles.accentDot} ${styles.mutedDot}`} />
+      <section className={styles.lowerGrid}>
+        <section className={styles.sectionBlock}>
+          <span className={styles.sectionEyebrow}>What to include</span>
+          <h2 className={styles.sectionTitle}>A better first pass comes from a few concrete facts.</h2>
+          <ul className={styles.list}>
+            {INPUT_HINTS.map((item) => (
+              <li key={item} className={styles.listItem}>
+                <span className={styles.listMarker} />
                 <span>{item}</span>
               </li>
             ))}
           </ul>
-        </Surface>
-      </div>
+        </section>
 
-      <Surface
-        eyebrow="Secondary route"
-        title="Roadmap modules stay available, but the analyzer is the product core"
-        text="The supporting tool surface remains live for compatibility, while the analyzer stays the primary product path."
-      >
-        <div className={styles.buttonRow}>
-          <Link to={SECONDARY_ROUTE_LINKS[0].to} className={styles.textLink}>
-            {SECONDARY_ROUTE_LINKS[0].label}
-            <ArrowRight size={14} />
-          </Link>
-          <Link to="/contact" className={styles.textLink}>
-            Talk to the team
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-      </Surface>
+        <section className={styles.sectionBlock}>
+          <span className={styles.sectionEyebrow}>Where it fits</span>
+          <h2 className={styles.sectionTitle}>Useful for first-pass routing, not final sign-off.</h2>
+
+          <div className={styles.listGrid}>
+            <div className={styles.listGroup}>
+              <h3 className={styles.groupTitle}>Good for</h3>
+              <ul className={styles.list}>
+                {GOOD_FOR_ITEMS.map((item) => (
+                  <li key={item} className={styles.listItem}>
+                    <span className={styles.listMarker} />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className={styles.listGroup}>
+              <h3 className={styles.groupTitle}>Still needs expert review</h3>
+              <ul className={styles.list}>
+                {REVIEW_ITEMS.map((item) => (
+                  <li key={item} className={styles.listItem}>
+                    <span className={`${styles.listMarker} ${styles.listMarkerMuted}`} />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <div className={styles.footerLinks}>
+        <Link to="/about" className={styles.footerLink}>
+          About RuleGrid
+          <ArrowRight size={14} />
+        </Link>
+        <Link to="/contact" className={styles.footerLink}>
+          Contact
+          <ArrowRight size={14} />
+        </Link>
+      </div>
     </MarketingLayout>
   );
 }

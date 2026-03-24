@@ -166,24 +166,29 @@ afterEach(() => {
   jest.resetAllMocks();
 });
 
-test("renders the home page and navigates into the analyzer", async () => {
+test("home page quick start carries the draft into the analyzer", async () => {
   global.fetch = jest.fn().mockResolvedValueOnce(jsonResponse(buildMetadata()));
 
   renderAt("/");
 
   expect(
     screen.getByRole("heading", {
-      name: /move from rough product detail to a defensible eu starting route/i,
+      name: /start with what you know about the product/i,
     })
   ).toBeInTheDocument();
+  expect(screen.getByText(/directive families/i)).toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole("link", { name: /open analyzer/i }));
+  await userEvent.type(
+    screen.getByRole("textbox", { name: /product description quick start/i }),
+    "Battery-powered smart thermostat with Wi-Fi connectivity"
+  );
 
-  expect(
-    await screen.findByRole("heading", {
-      name: /describe the product/i,
-    })
-  ).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: /analyze product/i }));
+
+  expect(await screen.findByRole("heading", { name: /describe the product/i })).toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: /describe your product/i })).toHaveValue(
+    "Battery-powered smart thermostat with Wi-Fi connectivity"
+  );
   expect(global.fetch).toHaveBeenCalledTimes(1);
 });
 
