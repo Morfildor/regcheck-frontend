@@ -368,10 +368,16 @@ function ComposerSurface({
         placeholder="Example: Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path."
       />
 
-      {/* Example product templates — only shown before first run, directly below textarea */}
-      {!hasResult && !description.trim() ? (
+      {/* Template chips: visible when textarea is short, each chip hides when its product type is mentioned */}
+      {!hasResult && description.trim().length < 32 ? (
         <div className={styles.templateRow}>
-          {templates.slice(0, 8).map((template) => (
+          {templates.slice(0, 10).filter((template) => {
+            // Hide a chip if its core keyword is already in the description
+            const d = description.toLowerCase();
+            const keyword = template.label.toLowerCase().replace(/smart\s+/, "");
+            const firstWord = keyword.split(/\s+/)[0];
+            return !d.includes(firstWord) || firstWord.length < 4;
+          }).map((template) => (
             <button
               key={template.label}
               type="button"
@@ -477,7 +483,7 @@ function OverviewPanel({ result, viewModel }) {
 
   return (
     <Surface
-      eyebrow="1. Product identification / overview"
+      eyebrow="Product identification"
       title={formatUiLabel(viewModel.productIdentity.type || "Product route")}
       text={result?.summary || "Analysis complete."}
       bodyClassName={styles.metricGrid}
@@ -490,10 +496,10 @@ function OverviewPanel({ result, viewModel }) {
       ))}
 
       <div className={styles.signalCard}>
-        <span className={styles.sectionLabel}>Current primary route</span>
+        <span className={styles.signalLabel}>Primary route</span>
         <div className={styles.signalRow}>
           <TonePill tone="strong">{titleCaseMinor(viewModel.decisionSignals.primaryRouteLabel || "Route not locked")}</TonePill>
-          {viewModel.triggeredDirectives.slice(0, 4).map((directiveKey) => (
+          {viewModel.triggeredDirectives.slice(0, 5).map((directiveKey) => (
             <DirectivePill key={directiveKey} directiveKey={directiveKey} />
           ))}
         </div>
@@ -624,41 +630,53 @@ function ComparisonPanel({ changes }) {
   );
 }
 
+function abbrevBucket(bucket) {
+  if (!bucket) return null;
+  if (bucket.startsWith("Core")) return "Core";
+  if (bucket.startsWith("Conditional")) return "Conditional";
+  return "Peripheral";
+}
+
 function StandardCard({ item, sectionKey }) {
+  const hasVersionInfo = item.version || item.dated_version || item.harmonized_reference;
   return (
     <article className={styles.standardCard}>
-      <div className={styles.standardMeta}>
-        <div className={styles.standardTitleWrap}>
-          <div className={styles.standardCode}>{item.code || "Standard"}</div>
-          <h4 className={styles.standardTitle}>{titleCaseMinor(item.title || "Untitled standard")}</h4>
-          {item.shortRationale ? <p className={styles.microRationale}>{item.shortRationale}</p> : null}
-        </div>
-      </div>
-
-      {/* Pills always on their own row — never jammed beside the title */}
-      <div className={styles.standardPillRow}>
+      {/* Row 1: code badge + directive pill + applicability */}
+      <div className={styles.standardCardTop}>
+        <span className={styles.standardCode}>{item.code || "Standard"}</span>
         <DirectivePill directiveKey={sectionKey} />
-        {item.applicabilityBucket ? <TonePill tone="muted">{item.applicabilityBucket}</TonePill> : null}
+        {item.applicabilityBucket
+          ? <TonePill tone="muted">{abbrevBucket(item.applicabilityBucket)}</TonePill>
+          : null}
       </div>
 
-      {(item.version || item.dated_version || item.harmonized_reference) ? (
-        <div className={styles.metaGrid}>
+      {/* Row 2: title + rationale */}
+      <div className={styles.standardCardBody}>
+        <h4 className={styles.standardTitle}>{titleCaseMinor(item.title || "Untitled standard")}</h4>
+        {item.shortRationale
+          ? <p className={styles.microRationale}>{item.shortRationale}</p>
+          : null}
+      </div>
+
+      {/* Row 3: version data with renamed labels */}
+      {hasVersionInfo ? (
+        <div className={styles.standardVersionRow}>
           {item.version ? (
-            <div className={styles.metaCard}>
-              <span className={styles.metaLabel}>Latest</span>
-              <span>{item.version}</span>
+            <div className={styles.standardVersionItem}>
+              <span className={styles.versionLabel}>EU latest standard</span>
+              <span className={styles.versionValue}>{item.version}</span>
             </div>
           ) : null}
           {item.dated_version ? (
-            <div className={styles.metaCard}>
-              <span className={styles.metaLabel}>EU dated</span>
-              <span>{item.dated_version}</span>
+            <div className={styles.standardVersionItem}>
+              <span className={styles.versionLabel}>Harmonized standard</span>
+              <span className={styles.versionValue}>{item.dated_version}</span>
             </div>
           ) : null}
           {item.harmonized_reference ? (
-            <div className={styles.metaCard}>
-              <span className={styles.metaLabel}>Reference</span>
-              <span>{item.harmonized_reference}</span>
+            <div className={styles.standardVersionItem}>
+              <span className={styles.versionLabel}>OJ reference</span>
+              <span className={styles.versionValue}>{item.harmonized_reference}</span>
             </div>
           ) : null}
         </div>
@@ -819,41 +837,55 @@ function StandardsRoutePanel({ viewModel }) {
 
 function LegislationCard({ item, open, onToggle }) {
   const itemId = `legislation-${slugify(item.directive_key || item.code || item.title)}`;
+  const hasBody = item.code || item.scope || item.shortRationale || item.summary || item.rationale;
 
   return (
-    <section className={styles.accordionCard}>
-      <button
-        type="button"
-        className={styles.accordionToggle}
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls={`${itemId}-body`}
+    <section className={styles.legislationCard}>
+      <div
+        className={styles.legislationCardHeader}
+        role={hasBody ? "button" : undefined}
+        onClick={hasBody ? onToggle : undefined}
+        style={hasBody ? { cursor: "pointer" } : undefined}
+        aria-expanded={hasBody ? open : undefined}
       >
-        <div>
-          <div className={styles.accordionTitleRow}>
-            <h3 className={styles.accordionTitle}>{titleCaseMinor(item.title || "Untitled legislation")}</h3>
-            <div className={styles.standardPills}>
-              <DirectivePill directiveKey={item.directive_key || "OTHER"} />
-              {item.applicabilityBucket ? <TonePill tone="muted">{item.applicabilityBucket}</TonePill> : null}
-            </div>
-          </div>
-          {item.shortRationale ? <p className={styles.microRationale}>{item.shortRationale}</p> : null}
+        {/* Pills row */}
+        <div className={styles.legislationPillRow}>
+          <DirectivePill directiveKey={item.directive_key || "OTHER"} />
+          {item.applicabilityBucket
+            ? <TonePill tone={item.applicabilityBucket?.startsWith("Core") ? "strong" : "muted"}>
+                {abbrevBucket(item.applicabilityBucket)}
+              </TonePill>
+            : null}
         </div>
-        {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-      </button>
+        {/* Title */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+          <h3 className={styles.legislationTitle}>{titleCaseMinor(item.title || "Untitled legislation")}</h3>
+          {hasBody ? (open ? <ChevronUp size={14} style={{ color: "var(--text-soft)", flexShrink: 0, marginTop: 3 }} /> : <ChevronDown size={14} style={{ color: "var(--text-soft)", flexShrink: 0, marginTop: 3 }} />) : null}
+        </div>
+        {/* Rationale preview (always visible) */}
+        {item.shortRationale && !open ? (
+          <p className={styles.microRationale}>{item.shortRationale}</p>
+        ) : null}
+      </div>
 
-      {open ? (
-        <div id={`${itemId}-body`} className={styles.accordionBody}>
+      {open && hasBody ? (
+        <div id={`${itemId}-body`} className={styles.legislationBody}>
           {item.code ? (
-            <div className={styles.metaCard}>
-              <span className={styles.metaLabel}>Reference</span>
-              <span>{item.code}</span>
+            <div className={styles.legislationField}>
+              <span className={styles.legislationFieldLabel}>Reference</span>
+              <span className={styles.legislationCodeValue}>{item.code}</span>
             </div>
           ) : null}
-          {item.scope ? (
-            <div className={styles.metaCard}>
-              <span className={styles.metaLabel}>Scope</span>
-              <span>{item.scope}</span>
+          {(item.shortRationale || item.rationale) ? (
+            <div className={styles.legislationField}>
+              <span className={styles.legislationFieldLabel}>Why it applies</span>
+              <span className={styles.legislationFieldValue}>{item.shortRationale || item.rationale}</span>
+            </div>
+          ) : null}
+          {(item.scope || item.summary) ? (
+            <div className={styles.legislationField}>
+              <span className={styles.legislationFieldLabel}>Scope</span>
+              <span className={styles.legislationFieldValue}>{item.scope || item.summary}</span>
             </div>
           ) : null}
         </div>
@@ -1011,10 +1043,10 @@ function SupportingContextPanel({ result, viewModel, description, copied, onCopy
     <details className={styles.contextPanel} open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
       <summary className={styles.contextSummary}>
         <div>
-          <span className={styles.contextEyebrow}>7. Supporting context rail</span>
+          <span className={styles.contextEyebrow}>Analysis context</span>
           <h2 className={styles.contextTitle}>Supporting context</h2>
         </div>
-        {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
       </summary>
 
       <div className={styles.contextBody}>
