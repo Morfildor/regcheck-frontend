@@ -34,3 +34,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 768px) {
+  .main {
+    gap: 12px;
+  }
+
+  .zone {
+    gap: 10px;
+  }
+
+  .resultsGrid,
+  .resultsMain,
+  .resultsAside {
+    gap: 10px;
+  }
+}

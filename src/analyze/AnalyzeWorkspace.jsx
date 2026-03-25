@@ -1189,6 +1189,7 @@ export default function AnalyzeWorkspace() {
   const copyResetTimerRef = useRef(null);
   const requestSequenceRef = useRef(0);
   const resultsRef = useRef(null);
+  const shouldAutorun = useRef(searchParams.get("autorun") === "1");
   const [templateOrder] = useState(() => Array.from({ length: 48 }, () => Math.random()));
 
   const viewModel = useMemo(
@@ -1260,7 +1261,12 @@ export default function AnalyzeWorkspace() {
   useEffect(() => {
     if (!result || !resultsRef.current) return;
     const timer = window.setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const el = resultsRef.current;
+      if (!el) return;
+      const header = document.querySelector("header");
+      const headerHeight = header ? header.getBoundingClientRect().height : 0;
+      const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     }, 80);
     return () => window.clearTimeout(timer);
   }, [resultRevision, result]);
@@ -1402,6 +1408,17 @@ export default function AnalyzeWorkspace() {
     setSearchParams({}, { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [cancelActiveAnalysis, resetCopied, setSearchParams]);
+
+  // Auto-run analysis when arriving from home page with ?autorun=1
+  useEffect(() => {
+    if (!shouldAutorun.current) return;
+    shouldAutorun.current = false;
+    const next = new URLSearchParams(searchParams);
+    next.delete("autorun");
+    setSearchParams(next, { replace: true });
+    if (description.trim()) runAnalysis();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

@@ -1,13 +1,13 @@
 :root {
-  --bg: #0d1825;
-  --bg-alt: #111e2d;
-  --surface-0: rgba(14,22,36,0.98);
-  --surface-1: rgba(16,26,42,0.94);
-  --surface-2: rgba(20,32,50,0.96);
-  --surface-glass: rgba(255,255,255,0.038);
-  --border: rgba(255,255,255,0.11);
-  --border-sm: rgba(255,255,255,0.07);
-  --border-hover: rgba(255,255,255,0.20);
+  --bg: #111e2e;
+  --bg-alt: #152232;
+  --surface-0: rgba(18,28,46,0.98);
+  --surface-1: rgba(20,32,52,0.94);
+  --surface-2: rgba(24,38,58,0.96);
+  --surface-glass: rgba(255,255,255,0.045);
+  --border: rgba(255,255,255,0.13);
+  --border-sm: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.22);
   --accent: #7db9ff;
   --accent-dim: rgba(125,185,255,0.14);
   --accent-teal: #78d5c1;
@@ -20,10 +20,10 @@
   --teal-08: rgba(120,213,193,0.08);
   --teal-20: rgba(120,213,193,0.20);
   --teal-24: rgba(120,213,193,0.24);
-  --text: #cfe4f5;
-  --text-strong: #ecf6ff;
-  --text-muted: #9eb8d0;
-  --text-soft: #7d95ab;
+  --text: #d4e8f8;
+  --text-strong: #edf7ff;
+  --text-muted: #a8c2d8;
+  --text-soft: #8aa5bb;
   --radius-sm: 7px;
   --radius-md: 11px;
   --radius-lg: 15px;
@@ -42,9 +42,9 @@ body {
   background: var(--bg-alt);
   /* Two subtle ambient glows fixed to viewport so they don't scroll */
   background-image:
-    radial-gradient(ellipse 70% 45% at 8% -5%, rgba(125,185,255,0.13), transparent),
-    radial-gradient(ellipse 55% 38% at 92% 4%, rgba(120,213,193,0.09), transparent),
-    linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 45%, #0a1520 100%);
+    radial-gradient(ellipse 70% 45% at 8% -5%, rgba(125,185,255,0.16), transparent),
+    radial-gradient(ellipse 55% 38% at 92% 4%, rgba(120,213,193,0.11), transparent),
+    linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 45%, #0e1c2c 100%);
   background-attachment: fixed;
 }
 

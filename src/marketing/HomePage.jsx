@@ -78,6 +78,7 @@ function buildAnalyzePath(description) {
 
   const params = new URLSearchParams();
   params.set("q", trimmed);
+  params.set("autorun", "1");
   return `/analyze?${params.toString()}`;
 }
 
@@ -188,7 +189,7 @@ export default function HomePage() {
           </div>
 
           <p className={styles.panelNote}>
-            The text above is passed into the analyzer as your starting draft.
+            Analysis runs immediately when you land on the analyzer.
           </p>
         </form>
       </section>
