@@ -489,18 +489,30 @@ function OverviewPanel({ result, viewModel }) {
   ];
 
   return (
-    <Surface
-      eyebrow="Product identification"
-      title={formatUiLabel(viewModel.productIdentity.type || "Product route")}
-      text={result?.summary || "Analysis complete."}
-      bodyClassName={styles.metricGrid}
-    >
-      {metrics.map((metric) => (
-        <div key={metric.label} className={styles.metricCard}>
-          <span className={styles.metricLabel}>{metric.label}</span>
-          <strong className={styles.metricValue}>{metric.value}</strong>
+    <Surface eyebrow="Product identification" bodyClassName={styles.overviewBody}>
+      <div className={styles.identityCard}>
+        <div className={styles.identityCardTop}>
+          <span className={styles.identityLabel}>Matched product type</span>
+          <TonePill tone={viewModel.classificationConfidence.tone}>
+            {viewModel.classificationConfidence.label} confidence
+          </TonePill>
         </div>
-      ))}
+        <h2 className={styles.identityType}>
+          {formatUiLabel(viewModel.productIdentity.type || "Product route")}
+        </h2>
+        {result?.summary ? (
+          <p className={styles.identitySummary}>{result.summary}</p>
+        ) : null}
+      </div>
+
+      <div className={styles.metricGrid}>
+        {metrics.map((metric) => (
+          <div key={metric.label} className={styles.metricCard}>
+            <span className={styles.metricLabel}>{metric.label}</span>
+            <strong className={styles.metricValue}>{metric.value}</strong>
+          </div>
+        ))}
+      </div>
 
       <div className={styles.signalCard}>
         <span className={styles.signalLabel}>Primary route</span>
