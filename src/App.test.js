@@ -209,7 +209,7 @@ test("renders trust-first analyzer hierarchy and copies the analysis summary", a
   expect(screen.getAllByText(/^Preliminary only$/i).length).toBeGreaterThan(0);
   expect(screen.getByText(/mains-powered electrical equipment within voltage scope/i)).toBeInTheDocument();
   expect(screen.getByText(/^Clarifications$/i)).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: /^Standards route$/i })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /^Standards$/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^Parallel obligations$/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /evidence and common gaps/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^Supporting context$/i })).toBeInTheDocument();
@@ -219,6 +219,71 @@ test("renders trust-first analyzer hierarchy and copies the analysis summary", a
   });
 
   expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1);
+});
+
+test("moves CRA and GDPR into parallel obligations when they arrive as standards output", async () => {
+  global.fetch = jest
+    .fn()
+    .mockResolvedValueOnce(jsonResponse(buildMetadata()))
+    .mockResolvedValueOnce(
+      jsonResponse(
+        buildResult("Connected product with cybersecurity and privacy review.", {
+          standard_sections: [
+            {
+              key: "LVD",
+              title: "LVD safety route",
+              items: [
+                {
+                  code: "EN 60335-1",
+                  title: "Household and similar electrical appliances",
+                },
+              ],
+            },
+            {
+              key: "CRA",
+              title: "Cyber Resilience Act route",
+              items: [
+                {
+                  code: "CRA review",
+                  title: "Cybersecurity review",
+                },
+              ],
+            },
+            {
+              key: "GDPR",
+              title: "GDPR data route",
+              items: [
+                {
+                  code: "GDPR review",
+                  title: "Personal data processing review",
+                },
+              ],
+            },
+          ],
+        })
+      )
+    );
+
+  renderAt("/analyze");
+
+  await submitAnalysis(
+    "Connected smart lock with Wi-Fi, cloud account, user profiles, camera, and OTA updates"
+  );
+
+  expect(
+    await screen.findByText(/connected product with cybersecurity and privacy review/i)
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /cyber resilience act route/i })
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /gdpr data route/i })).not.toBeInTheDocument();
+  expect(screen.getAllByText(/^Cyber Resilience Act$/i).length).toBeGreaterThan(0);
+  expect(
+    screen.getByText(/connected or software-enabled products can require cyber resilience act review/i)
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/accounts, telemetry, cameras, microphones, or other personal data functions can add gdpr obligations/i)
+  ).toBeInTheDocument();
 });
 
 test("clarification apply marks the result stale, rerun replaces it cleanly, and panel state resets", async () => {
@@ -276,7 +341,9 @@ test("clarification apply marks the result stale, rerun replaces it cleanly, and
   expect(screen.getByRole("textbox", { name: /describe your product/i }).value).toMatch(
     /wi-fi connectivity/i
   );
-  expect(screen.getByText(/description updated\. re-run to apply the latest clarifications/i)).toBeInTheDocument();
+  expect(
+    screen.getByText(/description changed\. re-run when you want the route refreshed/i)
+  ).toBeInTheDocument();
   expect(screen.getByText(/first result summary/i)).toBeInTheDocument();
 
   await userEvent.click(screen.getAllByRole("button", { name: /re-run analysis/i })[0]);
@@ -418,7 +485,7 @@ test("keeps stable section order and mobile drawer behavior with partial backend
     screen.getByRole("heading", { name: /coffee machine/i }),
     container.querySelector("details.trustBar"),
     container.querySelector("section.clarificationStrip"),
-    screen.getByRole("heading", { name: /^Standards route$/i }),
+    screen.getByRole("heading", { name: /^Standards$/i }),
     screen.getByRole("heading", { name: /^Parallel obligations$/i }),
     screen.getByRole("heading", { name: /evidence and common gaps/i }),
     screen.getByRole("heading", { name: /^Supporting context$/i }),

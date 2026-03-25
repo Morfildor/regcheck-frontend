@@ -6,6 +6,7 @@ import {
   buildLegislationGroups,
   buildRouteSections,
   directiveRank,
+  isParallelObligationDirectiveKey,
   titleCaseMinor,
 } from "./helpers";
 
@@ -338,7 +339,9 @@ export function buildTemplateChoices(metadata, templateOrder) {
  * @returns {AnalysisViewModel}
  */
 export function buildAnalysisViewModel(result, descriptionText = "") {
-  const routeSections = buildRouteSections(result);
+  const routeSections = buildRouteSections(result).filter(
+    (section) => !isParallelObligationDirectiveKey(section.key)
+  );
   const guidanceItems = buildGuidanceItems(result);
   const legislationItems = buildCompactLegislationItems(result);
   const legislationGroups = buildLegislationGroups(result);
