@@ -152,74 +152,112 @@ function extractKnownFacts(description, result) {
   return [...new Set(facts)].slice(0, 6);
 }
 
-function buildSuggestionGroups(description, backendChips, guidanceItems) {
-  const lowered = String(description || "").toLowerCase();
-  const groups = [];
-
-  const addGroup = (id, label, suggestions) => {
-    const deduped = [];
-    const seen = new Set();
-    (suggestions || []).forEach((suggestion) => {
-      const key = suggestion.text || suggestion.label;
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      deduped.push(suggestion);
-    });
-    if (deduped.length) groups.push({ id, label, suggestions: deduped.slice(0, 5) });
-  };
-
-  if (!/mains|battery|usb|adapter|power/.test(lowered)) {
-    addGroup("power", "Power details", [
+const SCOPE_GAPS = [
+  {
+    id: "power",
+    detect: (d) => !/mains|230v|240v|ac\s*power|rechargeable|lithium|battery|usb.?c?\s*power|external.*adapter|powered via/.test(d),
+    chips: [
       { label: "Mains powered", text: "mains powered (230 V AC)" },
       { label: "Battery powered", text: "rechargeable lithium battery" },
-      { label: "External adapter", text: "powered via external AC/DC power supply adapter" },
-    ]);
-  }
-
-  if (!/wifi|wi-fi|bluetooth|radio|wireless|nfc/.test(lowered)) {
-    addGroup("connectivity", "Connectivity", [
-      { label: "Wi-Fi", text: "Wi-Fi connectivity" },
-      { label: "Bluetooth", text: "Bluetooth connectivity" },
+      { label: "External adapter", text: "powered via external AC/DC adapter" },
+    ],
+    priority: 1,
+  },
+  {
+    id: "connectivity",
+    detect: (d) => !/wifi|wi.?fi|bluetooth|ble\b|nfc\b|cellular|lte\b|5g\b|zigbee|z.?wave|no.?radio|no.?wireless|no wireless/.test(d),
+    chips: [
+      { label: "Wi-Fi", text: "Wi-Fi" },
+      { label: "Bluetooth LE", text: "Bluetooth LE" },
       { label: "No wireless", text: "no wireless connectivity" },
-    ]);
-  }
-
-  if (!/consumer|household|professional|industrial|commercial/.test(lowered)) {
-    addGroup("use-case", "Intended use", [
+    ],
+    priority: 2,
+  },
+  {
+    id: "user",
+    detect: (d) => !/consumer|household|professional|industrial|commercial/.test(d),
+    chips: [
       { label: "Consumer use", text: "consumer use" },
       { label: "Professional use", text: "professional use" },
+    ],
+    priority: 3,
+  },
+  {
+    id: "environment",
+    detect: (d) => !/indoor|outdoor|installation|ip\d|weather/.test(d),
+    chips: [
       { label: "Indoor only", text: "indoor use only" },
-    ]);
+      { label: "Outdoor rated", text: "outdoor rated" },
+    ],
+    priority: 4,
+  },
+  {
+    id: "cloud",
+    detect: (d) =>
+      /wifi|wi.?fi|bluetooth|wireless|connected/.test(d) &&
+      !/cloud|account.?required|local.?only|local.?lan|no.?cloud/.test(d),
+    chips: [
+      { label: "Cloud account required", text: "cloud account required" },
+      { label: "Local control only", text: "local control only, no cloud" },
+    ],
+    priority: 5,
+  },
+  {
+    id: "battery-type",
+    detect: (d) => /battery|rechargeable/.test(d) && !/lithium|li.?ion|alkaline|nimh/.test(d),
+    chips: [
+      { label: "Lithium-ion", text: "lithium-ion" },
+      { label: "Primary cells", text: "primary (non-rechargeable) cells" },
+    ],
+    priority: 6,
+  },
+];
+
+function buildSuggestions(description, backendChips, guidanceItems) {
+  const lowered = String(description || "").toLowerCase();
+  const seen = new Set();
+  const results = [];
+
+  function add(label, text, priority) {
+    const key = (text || "").toLowerCase().trim();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    results.push({ label, text, priority });
   }
 
-  if (backendChips?.length) {
-    addGroup(
-      "backend",
-      "Engine prompts",
-      backendChips.map((item) => ({ label: item.label, text: item.text }))
-    );
-  }
+  // Fixed scope gaps — client-side, highest priority
+  SCOPE_GAPS.forEach((gap) => {
+    if (gap.detect(lowered)) {
+      gap.chips.forEach((chip) => add(chip.label, chip.text, gap.priority));
+    }
+  });
 
-  if (guidanceItems?.length) {
-    addGroup(
-      "clarifications",
-      "Scope-changing clarifications",
-      guidanceItems.flatMap((item) =>
-        (item.choices || []).map((choice) => ({
-          label: choice,
-          text: choice,
-        }))
-      )
-    );
-  }
+  // Backend guidance choices — filter already-mentioned words
+  (guidanceItems || []).slice(0, 3).forEach((item, i) => {
+    (item.choices || []).slice(0, 3).forEach((choice) => {
+      const choiceLowered = choice.toLowerCase();
+      const keyWord = choiceLowered.split(/\s+/).find((w) => w.length > 4);
+      if (keyWord && lowered.includes(keyWord)) return;
+      add(choice, choice, 10 + i);
+    });
+  });
 
-  return groups.slice(0, 3);
+  // Backend suggested chips — deduplicated, skip vague meta-prompts and already-mentioned
+  (backendChips || []).forEach((chip, i) => {
+    const chipText = (chip.text || "").toLowerCase();
+    if (/architecture|boundary|function boundary|connectivity architecture/.test(chipText)) return;
+    const keyWord = chipText.split(/\s+/).find((w) => w.length > 4);
+    if (keyWord && lowered.includes(keyWord)) return;
+    add(chip.label, chip.text, 20 + i);
+  });
+
+  return results.sort((a, b) => a.priority - b.priority).slice(0, 7);
 }
 
-function useSuggestionGroups(description, backendChips, guidanceItems) {
+function useSuggestions(description, backendChips, guidanceItems) {
   const deferredDescription = useDeferredValue(description);
   return useMemo(
-    () => buildSuggestionGroups(deferredDescription, backendChips, guidanceItems),
+    () => buildSuggestions(deferredDescription, backendChips, guidanceItems),
     [backendChips, deferredDescription, guidanceItems]
   );
 }
@@ -319,17 +357,61 @@ function HeaderActions({ result, totalStandards, onReset, onCopy, copied }) {
   );
 }
 
+const ANALYSIS_STEPS = [
+  "Reading product description",
+  "Identifying directive families",
+  "Mapping standards route",
+  "Checking parallel obligations",
+  "Finalizing compliance scope",
+];
+
 function AnalyzeStatus({ busy }) {
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    if (!busy) {
+      setActiveStep(0);
+      return;
+    }
+    setActiveStep(0);
+    const delays = [700, 1500, 2400, 3400];
+    const timers = delays.map((delay, i) =>
+      setTimeout(() => setActiveStep(i + 1), delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [busy]);
+
   if (!busy) return null;
 
+  const progress = Math.round((activeStep / (ANALYSIS_STEPS.length - 1)) * 85);
+
   return (
-    <div className={styles.progressBanner} role="status" aria-live="polite">
-      <LoaderCircle size={16} className={styles.spin} />
-      <div>
-        <div className={styles.progressTitle}>Analyzing product</div>
-        <div className={styles.progressText}>
-          Checking the description against the compliance engine and rebuilding the route.
-        </div>
+    <div className={styles.analyzeCard} role="status" aria-live="polite">
+      <div className={styles.analyzeCardHeader}>
+        <LoaderCircle size={14} className={styles.spin} />
+        <span className={styles.analyzeCardTitle}>Analyzing product</span>
+        <span className={styles.analyzeCardProgress}>{progress}%</span>
+      </div>
+      <div className={styles.analyzeSteps}>
+        {ANALYSIS_STEPS.map((step, i) => (
+          <div
+            key={step}
+            className={cx(
+              styles.analyzeStep,
+              i < activeStep ? styles.analyzeStepDone : "",
+              i === activeStep ? styles.analyzeStepActive : "",
+              i > activeStep ? styles.analyzeStepPending : ""
+            )}
+          >
+            <span className={styles.analyzeStepDot}>
+              {i < activeStep ? <Check size={9} /> : i === activeStep ? <LoaderCircle size={9} className={styles.spin} /> : null}
+            </span>
+            <span className={styles.analyzeStepLabel}>{step}</span>
+          </div>
+        ))}
+      </div>
+      <div className={styles.analyzeProgressTrack}>
+        <div className={styles.analyzeProgressFill} style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
@@ -345,7 +427,7 @@ function ComposerSurface({
   previousSnapshot,
   busy,
   dirty,
-  suggestionGroups,
+  suggestions,
   templates,
   viewModel,
   hasResult,
@@ -413,26 +495,22 @@ function ComposerSurface({
         ) : null}
       </div>
 
-      {/* Contextual suggestion chips — shown when there's a description to refine */}
-      {suggestionGroups.length > 0 ? (
-        <div className={styles.suggestionStack}>
-          {suggestionGroups.map((group) => (
-            <div key={group.id} className={styles.suggestionGroup}>
-              <div className={styles.suggestionLabel}>{group.label}</div>
-              <div className={styles.suggestionRow}>
-                {group.suggestions.map((suggestion) => (
-                  <button
-                    key={`${group.id}-${suggestion.text}`}
-                    type="button"
-                    className={styles.suggestionChip}
-                    onClick={() => onDescriptionChange(joinText(description, suggestion.text))}
-                  >
-                    + {suggestion.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+      {/* Flat scope-defining chips */}
+      {suggestions.length > 0 ? (
+        <div className={styles.suggestionArea}>
+          <span className={styles.suggestionAreaLabel}>Also specify</span>
+          <div className={styles.suggestionRow}>
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.text}
+                type="button"
+                className={styles.suggestionChip}
+                onClick={() => onDescriptionChange(joinText(description, suggestion.text))}
+              >
+                + {suggestion.label}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
     </Surface>
@@ -1212,7 +1290,7 @@ export default function AnalyzeWorkspace() {
     () => buildTemplateChoices(metadata, templateOrder),
     [metadata, templateOrder]
   );
-  const suggestionGroups = useSuggestionGroups(description, viewModel.backendChips, viewModel.guidanceItems);
+  const suggestions = useSuggestions(description, viewModel.backendChips, viewModel.guidanceItems);
   const dirty = Boolean(result && analyzedDescription.trim() !== description.trim());
 
   useEffect(() => {
@@ -1462,7 +1540,7 @@ export default function AnalyzeWorkspace() {
             previousSnapshot={previousSnapshot}
             busy={busy}
             dirty={dirty}
-            suggestionGroups={suggestionGroups}
+            suggestions={suggestions}
             templates={templates}
             viewModel={viewModel}
             hasResult={Boolean(result)}

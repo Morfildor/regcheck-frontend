@@ -194,14 +194,12 @@
 
 /* ─── Suggestion chips (post-analysis) ────────────── */
 
-.suggestionStack { display: grid; gap: 10px; }
-
-.suggestionGroup {
+.suggestionArea {
   display: grid;
-  gap: 7px;
+  gap: 8px;
 }
 
-.suggestionLabel {
+.suggestionAreaLabel {
   color: var(--text-soft);
   font-size: 0.68rem;
   letter-spacing: 0.1em;
@@ -255,6 +253,107 @@
 
 .progressTitle, .errorTitle { color: var(--text-strong); font-weight: 600; font-size: 0.88rem; }
 .progressText, .errorText { color: var(--text-muted); font-size: 0.84rem; }
+
+/* ─── Analyze progress card ─────────────────────────── */
+
+.analyzeCard {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 213, 193, 0.2);
+  background: linear-gradient(135deg, rgba(120,213,193,0.06) 0%, rgba(100,160,220,0.05) 100%);
+}
+
+.analyzeCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(120, 213, 193, 0.85);
+}
+
+.analyzeCardTitle {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  flex: 1;
+}
+
+.analyzeCardProgress {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.analyzeSteps {
+  display: grid;
+  gap: 9px;
+}
+
+.analyzeStep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: opacity 0.25s;
+}
+
+.analyzeStepDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(120,213,193,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.analyzeStepLabel {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.analyzeStepDone .analyzeStepDot {
+  border-color: rgba(120,213,193,0.55);
+  background: rgba(120,213,193,0.12);
+  color: rgba(120,213,193,0.85);
+}
+
+.analyzeStepDone .analyzeStepLabel {
+  color: var(--text-soft);
+  opacity: 0.55;
+}
+
+.analyzeStepActive .analyzeStepDot {
+  border-color: rgba(120,213,193,0.75);
+  background: rgba(120,213,193,0.1);
+  color: rgba(120,213,193,1);
+}
+
+.analyzeStepActive .analyzeStepLabel {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.analyzeStepPending {
+  opacity: 0.3;
+}
+
+.analyzeProgressTrack {
+  height: 2px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.analyzeProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(120,213,193,0.6) 0%, rgba(100,160,220,0.7) 100%);
+  border-radius: 4px;
+  transition: width 0.7s ease;
+}
 
 /* ─── Empty state guidance ────────────────────────── */
 
