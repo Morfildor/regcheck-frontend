@@ -102,12 +102,12 @@
 }
 
 .actionButtonSecondary {
-  background: rgba(255,255,255,0.03);
-  border-color: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.055);
+  border-color: rgba(255,255,255,0.11);
 }
 .actionButtonSecondary:hover {
-  background: rgba(255,255,255,0.055);
-  border-color: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.18);
 }
 
 /* ─── Composer ────────────────────────────────────── */
@@ -117,40 +117,24 @@
   gap: 10px;
 }
 
-.composerSnapshotGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
+.composerStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 0 0;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  border-top: 1px solid rgba(255,255,255,0.065);
 }
 
-.composerSnapshotCard {
-  display: grid;
-  gap: 4px;
-  padding: 11px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.022);
-}
-
-.composerSnapshotLabel {
-  color: var(--text-muted);
-  font-size: 0.67rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.composerSnapshotValue {
-  color: var(--text-strong);
-  font-size: 0.9rem;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.composerSnapshotMeta {
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  line-height: 1.4;
+.composerDirtyDot {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--accent);
 }
 
 .textarea {
@@ -159,8 +143,8 @@
   resize: vertical;
   padding: 14px 16px;
   border-radius: 14px;
-  border: 1px solid rgba(125,185,255,0.12);
-  background: rgba(6,10,18,0.75);
+  border: 1px solid rgba(125,185,255,0.18);
+  background: rgba(10,16,28,0.80);
   color: var(--text);
   line-height: 1.65;
   font-size: 0.95rem;
@@ -186,8 +170,8 @@
   gap: 5px;
   padding: 5px 11px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.09);
-  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.13);
+  background: rgba(255,255,255,0.06);
   color: var(--text-muted);
   font-size: 0.82rem;
   cursor: pointer;
@@ -251,7 +235,7 @@
 
 /* ─── Banners ─────────────────────────────────────── */
 
-.dirtyBanner, .progressBanner, .errorBanner {
+.progressBanner, .errorBanner {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -260,36 +244,17 @@
   border: 1px solid transparent;
   font-size: 0.86rem;
 }
-.dirtyBanner {
-  background: rgba(125,185,255,0.06);
-  border-color: rgba(125,185,255,0.12);
-  justify-content: space-between;
-}
 .progressBanner {
-  background: rgba(120,213,193,0.06);
-  border-color: rgba(120,213,193,0.12);
+  background: rgba(120,213,193,0.10);
+  border-color: rgba(120,213,193,0.22);
 }
 .errorBanner {
-  background: rgba(244,142,120,0.08);
-  border-color: rgba(244,142,120,0.18);
+  background: rgba(244,142,120,0.12);
+  border-color: rgba(244,142,120,0.28);
 }
 
-.dirtyCopy, .dirtyActions { display: flex; align-items: center; gap: 8px; }
-.dirtyDot {
-  width: 6px; height: 6px; border-radius: 999px;
-  background: var(--accent); flex-shrink: 0;
-}
 .progressTitle, .errorTitle { color: var(--text-strong); font-weight: 600; font-size: 0.88rem; }
 .progressText, .errorText { color: var(--text-muted); font-size: 0.84rem; }
-
-.dismissButton {
-  width: 26px; height: 26px;
-  display: inline-grid; place-items: center;
-  border-radius: 6px; border: 1px solid var(--border);
-  background: transparent; color: var(--text-muted); cursor: pointer;
-  transition: border-color 0.14s, color 0.14s; flex-shrink: 0;
-}
-.dismissButton:hover { border-color: rgba(255,255,255,0.12); color: var(--text-strong); }
 
 /* ─── Empty state guidance ────────────────────────── */
 
@@ -305,7 +270,7 @@
   padding: 13px 14px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.018);
+  background: rgba(255,255,255,0.042);
 }
 
 .guidanceCardTitle {
@@ -353,8 +318,8 @@
   align-items: center;
   padding: 5px 9px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
   color: var(--text);
   font-size: 0.8rem;
 }
@@ -373,7 +338,7 @@
   padding: 11px 13px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.05);
 }
 
 .metricLabel {
@@ -399,8 +364,8 @@
   gap: 7px;
   padding: 10px 13px;
   border-radius: 10px;
-  border: 1px solid rgba(125,185,255,0.12);
-  background: rgba(125,185,255,0.04);
+  border: 1px solid rgba(125,185,255,0.22);
+  background: rgba(125,185,255,0.08);
 }
 
 .signalLabel {
@@ -419,7 +384,7 @@
 .trustBar {
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(7,12,22,0.35);
+  background: rgba(12,20,34,0.65);
   overflow: hidden;
 }
 
@@ -480,8 +445,8 @@
 
 .clarificationStrip {
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.07);
-  background: rgba(8,14,24,0.5);
+  border: 1px solid rgba(255,255,255,0.11);
+  background: rgba(12,20,34,0.70);
   overflow: hidden;
 }
 
@@ -604,7 +569,7 @@
   padding: 11px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(7,12,22,0.42);
+  background: rgba(12,20,34,0.68);
 }
 
 .clarificationItemHeader {
@@ -649,8 +614,8 @@
   align-items: start;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(125,185,255,0.12);
-  background: rgba(125,185,255,0.04);
+  border: 1px solid rgba(125,185,255,0.22);
+  background: rgba(125,185,255,0.08);
   color: var(--text);
   font-size: 0.84rem;
   line-height: 1.5;
@@ -673,8 +638,8 @@
   --route-accent: rgba(125,185,255,0.82);
   --route-border-subtle: rgba(255,255,255,0.06);
   --route-border-strong: rgba(255,255,255,0.11);
-  --route-surface-subtle: rgba(8,14,24,0.52);
-  --route-surface-strong: rgba(8,14,24,0.66);
+  --route-surface-subtle: rgba(11,19,32,0.70);
+  --route-surface-strong: rgba(11,19,32,0.84);
   --route-chip-surface-subtle: rgba(125,185,255,0.05);
   --route-chip-surface-strong: rgba(125,185,255,0.11);
   position: relative;
@@ -740,10 +705,9 @@
 
 .accordionText {
   margin: 0;
-  color: var(--text);
+  color: var(--text-muted);
   font-size: 0.82rem;
   line-height: 1.45;
-  opacity: 0.78;
 }
 
 .accordionBody {
@@ -784,16 +748,16 @@
 
 /* Standard card inside accordion */
 .standardCard {
-  background: rgba(7,12,20,0.8);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(12,20,34,0.82);
+  border: 1px solid rgba(255,255,255,0.11);
   border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
   overflow: hidden;
   transition: border-color 0.14s, background 0.14s;
 }
 .standardCard:hover {
-  border-color: rgba(255,255,255,0.1);
-  background: rgba(8,13,21,0.86);
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(14,22,36,0.88);
 }
 
 /* Top row: code + directive pill */
@@ -833,7 +797,7 @@
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 8px;
   padding: 10px 14px 14px;
-  border-top: 1px solid rgba(255,255,255,0.04);
+  border-top: 1px solid rgba(255,255,255,0.09);
 }
 
 .standardVersionItem {
@@ -842,8 +806,8 @@
   min-width: 0;
   padding: 9px 10px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.045);
-  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.055);
 }
 
 .versionLabel {
@@ -876,8 +840,8 @@
   align-items: center;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.045);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.15);
   color: var(--text);
   font-size: 0.72rem;
   font-family: "IBM Plex Mono", monospace;
@@ -913,11 +877,15 @@
 
 /* ─── Route quick nav ─────────────────────────────── */
 
+.routeNavWrap {
+  display: grid;
+  gap: 8px;
+}
+
 .routeNav {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 10px;
-  padding-bottom: 2px;
 }
 
 .routeNavChip {
@@ -953,9 +921,8 @@
 }
 
 .routeNavMeta {
-  color: var(--text);
+  color: var(--text-muted);
   font-size: 0.74rem;
-  opacity: 0.72;
 }
 
 /* ─── Legislation card ────────────────────────────── */
@@ -963,7 +930,7 @@
 .legislationCard {
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(8,14,24,0.5);
+  background: rgba(12,20,34,0.72);
   overflow: hidden;
 }
 
@@ -1018,6 +985,136 @@
   color: var(--text);
   font-size: 0.8rem;
   font-family: "IBM Plex Mono", monospace;
+}
+
+/* ─── Parallel obligation cards ──────────────────── */
+
+.obligationGroup { display: grid; gap: 10px; }
+
+.obligationGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-sm);
+}
+
+.obligationGroupTitle {
+  flex: 1;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.obligationGroupCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: var(--text-soft);
+  font-size: 0.67rem;
+  font-weight: 600;
+}
+
+.obligationGroupDesc {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.obligationCard {
+  border-radius: 12px;
+  border: 1px solid rgba(120,213,193,0.15);
+  background: rgba(12,20,34,0.72);
+  overflow: hidden;
+  transition: border-color 0.14s;
+}
+.obligationCard:hover { border-color: rgba(120,213,193,0.28); }
+
+.obligationCardToggle {
+  width: 100%;
+  text-align: left;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.obligationCardToggle:hover { background: rgba(255,255,255,0.018); }
+
+.obligationCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 13px 8px;
+}
+
+.obligationCardPills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.obligationCardChevron {
+  color: var(--text-soft);
+  flex-shrink: 0;
+  transition: transform 0.18s;
+}
+.obligationCardChevronOpen { transform: rotate(180deg); }
+
+.obligationCardBody {
+  padding: 0 13px 13px;
+  display: grid;
+  gap: 4px;
+}
+
+.obligationTitle {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.38;
+}
+
+.obligationPreview {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  line-height: 1.52;
+}
+
+.obligationDetail {
+  display: grid;
+  gap: 10px;
+  padding: 12px 13px 14px;
+  border-top: 1px solid rgba(120,213,193,0.10);
+  background: rgba(120,213,193,0.03);
+}
+
+.obligationDetailItem { display: grid; gap: 3px; }
+
+.obligationDetailLabel {
+  color: var(--text-soft);
+  font-size: 0.65rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.obligationDetailValue {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  line-height: 1.52;
 }
 
 /* ─── Evidence ────────────────────────────────────── */
@@ -1224,7 +1321,6 @@
 /* ─── Responsive ──────────────────────────────────── */
 
 @media (max-width: 960px) {
-  .desktopOnlyAction { display: none; }
   .actionBar {
     position: sticky;
     bottom: 8px;
@@ -1238,7 +1334,7 @@
 }
 
 @media (max-width: 720px) {
-  .headerActions, .actionBar, .dirtyBanner, .progressBanner, .errorBanner {
+  .headerActions, .actionBar, .progressBanner, .errorBanner {
     flex-direction: column; align-items: stretch;
   }
   .clarificationSummary {
@@ -1254,7 +1350,6 @@
   .clarificationPreview {
     justify-content: flex-start;
   }
-  .dirtyActions { justify-content: space-between; }
   .accordionToggle, .contextSummary { padding: 12px 13px; }
   .accordionBody { padding: 0 11px 11px; }
   .contextBody { padding: 10px 13px 13px; }

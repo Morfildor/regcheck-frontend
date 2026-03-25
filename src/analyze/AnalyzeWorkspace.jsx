@@ -224,19 +224,6 @@ function useSuggestionGroups(description, backendChips, guidanceItems) {
   );
 }
 
-function useIsNarrowViewport() {
-  const [isNarrow, setIsNarrow] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth < 960 : false
-  );
-
-  useEffect(() => {
-    const onResize = () => setIsNarrow(window.innerWidth < 960);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  return isNarrow;
-}
 
 function TonePill({ children, tone = "muted", strong = false }) {
   return (
@@ -294,59 +281,24 @@ function DetailList({ items }) {
   );
 }
 
-function ComposerSnapshot({ active, viewModel }) {
+function ComposerStatus({ active, viewModel, dirty }) {
   if (!active) return null;
-
   const openItems = viewModel.decisionSignals.blockerCount + viewModel.decisionSignals.routeAffectingCount;
-  const snapshotItems = [
-    {
-      label: "Current scope",
-      value: formatUiLabel(viewModel.productIdentity.type || "Product route"),
-      meta: formatStageLabel(viewModel.productIdentity.stage || "unknown"),
-    },
-    {
-      label: "Confidence",
-      value: viewModel.classificationConfidence.label,
-      meta: viewModel.resultMaturity.label,
-    },
-    {
-      label: "Directive families",
-      value: String(viewModel.decisionSignals.directiveCount),
-      meta: `${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"}`,
-    },
-    {
-      label: "Open items",
-      value: String(openItems),
-      meta: openItems
-        ? viewModel.decisionSignals.blockerCount
-          ? `${viewModel.decisionSignals.blockerCount} blocker${viewModel.decisionSignals.blockerCount === 1 ? "" : "s"}`
-          : `${viewModel.decisionSignals.routeAffectingCount} route-affecting`
-        : "Current route is stable",
-    },
+  const parts = [
+    formatUiLabel(viewModel.productIdentity.type || "Product"),
+    viewModel.classificationConfidence.label,
+    `${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"}`,
+    openItems ? `${openItems} open item${openItems === 1 ? "" : "s"}` : "route stable",
   ];
-
   return (
-    <div className={styles.composerSnapshotGrid}>
-      {snapshotItems.map((item) => (
-        <div key={item.label} className={styles.composerSnapshotCard}>
-          <span className={styles.composerSnapshotLabel}>{item.label}</span>
-          <strong className={styles.composerSnapshotValue}>{item.value}</strong>
-          <span className={styles.composerSnapshotMeta}>{item.meta}</span>
-        </div>
-      ))}
-    </div>
+    <p className={styles.composerStatus}>
+      {dirty ? <span className={styles.composerDirtyDot} /> : null}
+      {parts.join(" · ")}
+    </p>
   );
 }
 
-function HeaderActions({
-  result,
-  totalStandards,
-  onReset,
-  onRestorePrevious,
-  previousSnapshot,
-  onCopy,
-  copied,
-}) {
+function HeaderActions({ result, totalStandards, onReset, onCopy, copied }) {
   if (!result) {
     return <span className={styles.headerHint}>Describe the product to get a scoped route.</span>;
   }
@@ -355,12 +307,6 @@ function HeaderActions({
     <div className={styles.headerActions}>
       <TonePill tone="strong">{formatUiLabel(result?.overall_risk || "medium")} risk</TonePill>
       <span className={styles.headerMetric}>{totalStandards} standards</span>
-      {previousSnapshot ? (
-        <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onRestorePrevious}>
-          <RotateCcw size={14} />
-          Previous
-        </button>
-      ) : null}
       <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onCopy}>
         {copied ? <Check size={14} /> : <Copy size={14} />}
         {copied ? "Copied" : "Copy"}
@@ -389,27 +335,6 @@ function AnalyzeStatus({ busy }) {
   );
 }
 
-function DirtyNotice({ dirty, busy, onReanalyze, onDismiss }) {
-  if (!dirty) return null;
-
-  return (
-    <div className={styles.dirtyBanner} role="status" aria-live="polite">
-      <div className={styles.dirtyCopy}>
-        <span className={styles.dirtyDot} />
-        <span>Description updated. Re-run to apply the latest clarifications.</span>
-      </div>
-      <div className={styles.dirtyActions}>
-        <button type="button" className={cx(styles.actionButton, styles.actionButtonPrimary)} onClick={onReanalyze}>
-          {busy ? <LoaderCircle size={14} className={styles.spin} /> : <RefreshCcw size={14} />}
-          {busy ? "Starting new run" : "Re-run analysis"}
-        </button>
-        <button type="button" className={styles.dismissButton} onClick={onDismiss} aria-label="Dismiss stale banner">
-          <ChevronUp size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function ComposerSurface({
   description,
@@ -417,18 +342,15 @@ function ComposerSurface({
   onAnalyze,
   onReset,
   onRestorePrevious,
-  onCopy,
-  copied,
   previousSnapshot,
   busy,
   dirty,
-  onDismissDirty,
   suggestionGroups,
   templates,
   viewModel,
   hasResult,
 }) {
-  const analyzeLabel = hasResult ? (dirty ? "Re-run analysis" : "Analyze again") : "Analyze product";
+  const analyzeLabel = hasResult ? "Re-run analysis" : "Analyze product";
 
   return (
     <Surface
@@ -451,13 +373,12 @@ function ComposerSurface({
         placeholder="Example: Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path."
       />
 
-      <ComposerSnapshot active={hasResult} viewModel={viewModel} />
+      <ComposerStatus active={hasResult} viewModel={viewModel} dirty={dirty} />
 
-      {/* Template chips: visible when textarea is short, each chip hides when its product type is mentioned */}
-      {!hasResult && description.trim().length < 32 ? (
+      {/* Template chips: visible before first analysis, hide when keyword already present */}
+      {!hasResult ? (
         <div className={styles.templateRow}>
           {templates.slice(0, 10).filter((template) => {
-            // Hide a chip if its core keyword is already in the description
             const d = description.toLowerCase();
             const keyword = template.label.toLowerCase().replace(/smart\s+/, "");
             const firstWord = keyword.split(/\s+/)[0];
@@ -490,13 +411,7 @@ function ComposerSurface({
             Previous
           </button>
         ) : null}
-        <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary, styles.desktopOnlyAction)} onClick={onCopy}>
-          {copied ? <Check size={14} /> : <Copy size={14} />}
-          {copied ? "Copied" : "Copy"}
-        </button>
       </div>
-
-      <DirtyNotice dirty={dirty} busy={busy} onReanalyze={onAnalyze} onDismiss={onDismissDirty} />
 
       {/* Contextual suggestion chips — shown when there's a description to refine */}
       {suggestionGroups.length > 0 ? (
@@ -568,7 +483,6 @@ function OverviewPanel({ result, viewModel }) {
   const metrics = [
     { label: "Match stage", value: formatStageLabel(viewModel.productIdentity.stage || "unknown") },
     { label: "Scope", value: viewModel.resultMaturity.label },
-    { label: "Confidence", value: viewModel.classificationConfidence.label },
     { label: "Risk", value: formatUiLabel(result?.overall_risk || "medium") },
     { label: "Standards", value: String(viewModel.totalStandards) },
     { label: "Open issues", value: String(openIssueCount) },
@@ -683,7 +597,7 @@ function ClarificationStrip({
 
   if (!allMissing.length && !dirty) return null;
 
-  let headline = "Clarifications are available";
+  let headline = allMissing.length ? "Clarifications are available" : "Description updated";
   if (blocking.length || routeAffecting.length) {
     headline = `${blocking.length} blocker${blocking.length === 1 ? "" : "s"} and ${routeAffecting.length} route-affecting item${
       routeAffecting.length === 1 ? "" : "s"
@@ -829,12 +743,6 @@ function ComparisonPanel({ changes }) {
   );
 }
 
-function abbrevBucket(bucket) {
-  if (!bucket) return null;
-  if (bucket.startsWith("Core")) return "Core";
-  if (bucket.startsWith("Conditional")) return "Conditional";
-  return "Peripheral";
-}
 
 function StandardCard({ item, sectionKey }) {
   const hasVersionInfo = item.version || item.dated_version || item.harmonized_reference;
@@ -844,9 +752,6 @@ function StandardCard({ item, sectionKey }) {
       <div className={styles.standardCardTop}>
         <span className={styles.standardCode}>{item.code || "Standard"}</span>
         <DirectivePill directiveKey={sectionKey} />
-        {item.applicabilityBucket
-          ? <TonePill tone="muted">{abbrevBucket(item.applicabilityBucket)}</TonePill>
-          : null}
       </div>
 
       {/* Row 2: title + rationale */}
@@ -860,16 +765,16 @@ function StandardCard({ item, sectionKey }) {
       {/* Row 3: version data with renamed labels */}
       {hasVersionInfo ? (
         <div className={styles.standardVersionRow}>
-          {item.version ? (
-            <div className={styles.standardVersionItem}>
-              <span className={styles.versionLabel}>EU latest standard</span>
-              <span className={styles.versionValue}>{item.version}</span>
-            </div>
-          ) : null}
           {item.dated_version ? (
             <div className={styles.standardVersionItem}>
               <span className={styles.versionLabel}>Harmonized standard</span>
               <span className={styles.versionValue}>{item.dated_version}</span>
+            </div>
+          ) : null}
+          {item.version ? (
+            <div className={styles.standardVersionItem}>
+              <span className={styles.versionLabel}>EU latest standard</span>
+              <span className={styles.versionValue}>{item.version}</span>
             </div>
           ) : null}
           {item.harmonized_reference ? (
@@ -897,7 +802,9 @@ function RouteQuickNav({ sections, openKeys }) {
   };
 
   return (
-    <div className={styles.routeNav}>
+    <div className={styles.routeNavWrap}>
+      <span className={styles.sectionLabel}>Jump to section</span>
+      <div className={styles.routeNav}>
       {orderedSections.map((section) => (
         <button
           key={`jump-${section.key || section.title}`}
@@ -917,6 +824,7 @@ function RouteQuickNav({ sections, openKeys }) {
           </span>
         </button>
       ))}
+      </div>
     </div>
   );
 }
@@ -946,7 +854,7 @@ function RouteSectionCard({ section, open, onToggle }) {
           {/* Pills always below the text — never beside it */}
           <div className={styles.accordionTitleMeta}>
             <DirectivePill directiveKey={section.key || "OTHER"} />
-            <TonePill tone={applicabilityTone}>{section.items?.[0]?.applicabilityBucket || "Route review"}</TonePill>
+            <TonePill tone={applicabilityTone}>{section.applicabilityBucket || "Route review"}</TonePill>
           </div>
         </div>
         {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
@@ -972,31 +880,14 @@ function RouteSectionCard({ section, open, onToggle }) {
 }
 
 function StandardsRoutePanel({ viewModel }) {
-  const groups = [
-    {
-      key: "core",
-      title: "Core likely applicable",
-      text: "This is the primary standards route for the current product description.",
-      sections: viewModel.primaryRouteSections,
-    },
-    {
-      key: "conditional",
-      title: "Conditional / check applicability",
-      text: "These routes often depend on radios, batteries, accessories, or specific product features.",
-      sections: viewModel.conditionalRouteSections,
-    },
-    {
-      key: "peripheral",
-      title: "Usually not applicable unless specific features are present",
-      text: "Keep these in view only if the product description expands.",
-      sections: viewModel.secondaryRouteSections,
-    },
-  ];
-
-  const initialOpenKey = viewModel.primaryRouteSections[0]?.key || "";
-  const [openKeys, setOpenKeys] = useState(() =>
-    initialOpenKey ? new Set([initialOpenKey]) : new Set()
-  );
+  const [openKeys, setOpenKeys] = useState(() => {
+    const coreKeys = viewModel.routeSections
+      .filter((s) => s.sectionKind === "core")
+      .map((s) => s.key);
+    if (coreKeys.length) return new Set(coreKeys);
+    const first = viewModel.routeSections[0]?.key;
+    return first ? new Set([first]) : new Set();
+  });
 
   const toggleSection = useCallback((key) => {
     setOpenKeys((current) => {
@@ -1009,34 +900,24 @@ function StandardsRoutePanel({ viewModel }) {
 
   return (
     <Surface
-      eyebrow="Standards route"
-      title="Standards route"
-      text="Primary standards first, then conditional and adjacent routes that may switch on as scope changes."
+      eyebrow="Compliance route"
+      title="Standards"
+      text="Ordered by directive family: LVD and EMC first, then RED and RED Cyber, followed by further applicable routes."
       bodyClassName={styles.sectionStack}
     >
       <RouteQuickNav sections={viewModel.routeSections} openKeys={openKeys} />
 
       {viewModel.routeSections.length ? (
-        groups.map((group) =>
-          group.sections.length ? (
-            <div key={group.key} className={styles.groupBlock}>
-              <div className={styles.groupHeadingBlock}>
-                <div className={styles.groupHeadingLabel}>{group.title}</div>
-                <p className={styles.groupHeadingText}>{group.text}</p>
-              </div>
-              <div className={styles.sectionStack}>
-                {group.sections.map((section) => (
-                  <RouteSectionCard
-                    key={section.key || section.title}
-                    section={section}
-                    open={openKeys.has(section.key)}
-                    onToggle={() => toggleSection(section.key)}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null
-        )
+        <div className={styles.sectionStack}>
+          {viewModel.routeSections.map((section) => (
+            <RouteSectionCard
+              key={section.key || section.title}
+              section={section}
+              open={openKeys.has(section.key)}
+              onToggle={() => toggleSection(section.key)}
+            />
+          ))}
+        </div>
       ) : (
         <p className={styles.emptyCopy}>
           No standards route was returned. The overview and trust layer still reflect the current scope assumptions.
@@ -1047,70 +928,60 @@ function StandardsRoutePanel({ viewModel }) {
 }
 
 function ParallelObligationCard({ item }) {
+  const [open, setOpen] = useState(false);
+  const cardId = `parallel-card-${slugify(item.directive_key || item.code || item.title || "item")}`;
+
   const previewText = item.shortRationale || item.summary || item.scope || item.rationale || "";
   const normalizedPreview = String(previewText || "").trim();
 
   const detailItems = [
-    item.code
-      ? {
-          key: "reference",
-          label: "Reference",
-          value: item.code,
-          valueClassName: styles.versionValue,
-        }
-      : null,
     item.rationale && String(item.rationale).trim() !== normalizedPreview
-      ? {
-          key: "why-applies",
-          label: "Why it applies",
-          value: item.rationale,
-          valueClassName: styles.detailBoxValue,
-        }
+      ? { key: "why-applies", label: "Why it applies", value: item.rationale }
       : null,
     (item.scope || item.summary) && String(item.scope || item.summary).trim() !== normalizedPreview
-      ? {
-          key: "scope",
-          label: "Scope",
-          value: item.scope || item.summary,
-          valueClassName: styles.detailBoxValue,
-        }
+      ? { key: "scope", label: "Scope", value: item.scope || item.summary }
       : null,
     item.applicabilityBucket
-      ? {
-          key: "review-status",
-          label: "Review status",
-          value: item.applicabilityBucket,
-          valueClassName: styles.detailBoxValue,
-        }
+      ? { key: "review-status", label: "Review status", value: item.applicabilityBucket }
       : null,
   ].filter(Boolean);
 
+  const hasDetails = detailItems.length > 0;
+
   return (
-    <article className={styles.standardCard}>
-      <div className={styles.standardCardTop}>
-        <span className={styles.standardCode}>{item.code || "Framework"}</span>
-        <DirectivePill directiveKey={item.directive_key || "OTHER"} />
-        {item.applicabilityBucket ? (
-          <TonePill tone={item.applicabilityBucket?.startsWith("Core") ? "strong" : "muted"}>
-            {abbrevBucket(item.applicabilityBucket)}
-          </TonePill>
-        ) : null}
-      </div>
+    <article className={styles.obligationCard} id={cardId}>
+      <button
+        type="button"
+        className={styles.obligationCardToggle}
+        onClick={hasDetails ? () => setOpen((p) => !p) : undefined}
+        aria-expanded={hasDetails ? open : undefined}
+        aria-controls={hasDetails ? `${cardId}-body` : undefined}
+        style={hasDetails ? undefined : { cursor: "default", pointerEvents: "none" }}
+      >
+        <div className={styles.obligationCardTop}>
+          <div className={styles.obligationCardPills}>
+            <DirectivePill directiveKey={item.directive_key || "OTHER"} />
+            {item.code ? <span className={styles.standardCode}>{item.code}</span> : null}
+          </div>
+          {hasDetails ? (
+            <ChevronDown
+              size={14}
+              className={cx(styles.obligationCardChevron, open ? styles.obligationCardChevronOpen : "")}
+            />
+          ) : null}
+        </div>
+        <div className={styles.obligationCardBody}>
+          <h4 className={styles.obligationTitle}>{titleCaseMinor(item.title || "Untitled obligation")}</h4>
+          {normalizedPreview ? <p className={styles.obligationPreview}>{normalizedPreview}</p> : null}
+        </div>
+      </button>
 
-      <div className={styles.standardCardBody}>
-        <h4 className={styles.standardTitle}>{titleCaseMinor(item.title || "Untitled legislation")}</h4>
-        {previewText ? <p className={styles.microRationale}>{previewText}</p> : null}
-      </div>
-
-      {detailItems.length ? (
-        <div className={styles.standardVersionRow}>
+      {open && hasDetails ? (
+        <div id={`${cardId}-body`} className={styles.obligationDetail}>
           {detailItems.map((detail) => (
-            <div
-              key={`${item.directive_key || item.code || item.title}-${detail.key}`}
-              className={styles.standardVersionItem}
-            >
-              <span className={styles.versionLabel}>{detail.label}</span>
-              <span className={detail.valueClassName}>{detail.value}</span>
+            <div key={detail.key} className={styles.obligationDetailItem}>
+              <span className={styles.obligationDetailLabel}>{detail.label}</span>
+              <p className={styles.obligationDetailValue}>{detail.value}</p>
             </div>
           ))}
         </div>
@@ -1129,18 +1000,21 @@ function flattenLegislationGroups(groups) {
 }
 
 function ParallelObligationsPanel({ viewModel }) {
-  const conditionalItems = flattenLegislationGroups(viewModel.conditionalLegislationGroups);
-  const peripheralItems = flattenLegislationGroups(viewModel.peripheralLegislationGroups);
+  const routeDirectiveKeys = new Set(viewModel.routeSections.map((s) => s.key));
+  const filterNonRoute = (items) => items.filter((item) => !routeDirectiveKeys.has(item.directive_key));
+
+  const conditionalItems = filterNonRoute(flattenLegislationGroups(viewModel.conditionalLegislationGroups));
+  const peripheralItems = filterNonRoute(flattenLegislationGroups(viewModel.peripheralLegislationGroups));
   const groups = [
     {
       key: "conditional",
-      title: "Conditional / check applicability",
+      title: "Check applicability",
       text: "These frameworks often turn on when the product includes specific features or market facts.",
       items: conditionalItems,
     },
     {
       key: "peripheral",
-      title: "Usually not applicable unless specific features are present",
+      title: "Additional frameworks",
       text: "Keep these in reserve for expanded product claims, environments, or technologies.",
       items: peripheralItems,
     },
@@ -1148,7 +1022,7 @@ function ParallelObligationsPanel({ viewModel }) {
 
   return (
     <Surface
-      eyebrow="Parallel obligations"
+      eyebrow="Adjacent frameworks"
       title="Parallel obligations"
       text="Frameworks outside the primary standards route that may still matter depending on product features or market claims."
       bodyClassName={styles.sectionStack}
@@ -1156,11 +1030,12 @@ function ParallelObligationsPanel({ viewModel }) {
       {groups.some((group) => group.items.length) ? (
         groups.map((group) =>
           group.items.length ? (
-            <div key={group.key} className={styles.groupBlock}>
-              <div className={styles.groupHeadingBlock}>
-                <div className={styles.groupHeadingLabel}>{group.title}</div>
-                <p className={styles.groupHeadingText}>{group.text}</p>
+            <div key={group.key} className={styles.obligationGroup}>
+              <div className={styles.obligationGroupHeader}>
+                <span className={styles.obligationGroupTitle}>{group.title}</span>
+                <span className={styles.obligationGroupCount}>{group.items.length}</span>
               </div>
+              <p className={styles.obligationGroupDesc}>{group.text}</p>
               <div className={styles.sectionStack}>
                 {group.items.map((item) => (
                   <ParallelObligationCard
@@ -1217,12 +1092,8 @@ function EvidencePanel({ viewModel }) {
   );
 }
 
-function SupportingContextPanel({ result, viewModel, description, copied, onCopy, isNarrow }) {
-  const [open, setOpen] = useState(!isNarrow);
-
-  useEffect(() => {
-    setOpen(!isNarrow);
-  }, [isNarrow]);
+function SupportingContextPanel({ result, viewModel, description, copied, onCopy }) {
+  const [open, setOpen] = useState(false);
 
   return (
     <details className={styles.contextPanel} open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
@@ -1303,7 +1174,6 @@ function ScrollTopButton({ visible }) {
 export default function AnalyzeWorkspace() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const isNarrow = useIsNarrowViewport();
   const [description, setDescription] = useState(() => searchParams.get("q") || "");
   const [analyzedDescription, setAnalyzedDescription] = useState("");
   const [metadata, setMetadata] = useState(EMPTY_METADATA);
@@ -1311,7 +1181,6 @@ export default function AnalyzeWorkspace() {
   const [resultRevision, setResultRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [dismissDirty, setDismissDirty] = useState(false);
   const [comparisonChanges, setComparisonChanges] = useState(null);
   const [analysisCopied, setAnalysisCopied] = useState(false);
   const [previousSnapshot, setPreviousSnapshot] = useState(null);
@@ -1331,7 +1200,7 @@ export default function AnalyzeWorkspace() {
     [metadata, templateOrder]
   );
   const suggestionGroups = useSuggestionGroups(description, viewModel.backendChips, viewModel.guidanceItems);
-  const dirty = Boolean(result && analyzedDescription.trim() !== description.trim() && !dismissDirty);
+  const dirty = Boolean(result && analyzedDescription.trim() !== description.trim());
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 420);
@@ -1469,7 +1338,6 @@ export default function AnalyzeWorkspace() {
     resetCopied();
     setBusy(true);
     setError("");
-    setDismissDirty(false);
 
     const controller = new AbortController();
     const requestId = requestSequenceRef.current + 1;
@@ -1512,7 +1380,6 @@ export default function AnalyzeWorkspace() {
     resetCopied();
     setBusy(false);
     setError("");
-    setDismissDirty(false);
     setComparisonChanges(null);
     setDescription(previousSnapshot.description || "");
     setAnalyzedDescription(previousSnapshot.description || "");
@@ -1529,7 +1396,6 @@ export default function AnalyzeWorkspace() {
     setAnalyzedDescription("");
     setDescription("");
     setError("");
-    setDismissDirty(false);
     setComparisonChanges(null);
     setPreviousSnapshot(null);
     setResultRevision((current) => current + 1);
@@ -1551,8 +1417,6 @@ export default function AnalyzeWorkspace() {
             result={result}
             totalStandards={viewModel.totalStandards}
             onReset={handleReset}
-            onRestorePrevious={handleRestorePrevious}
-            previousSnapshot={previousSnapshot}
             onCopy={handleCopy}
             copied={analysisCopied}
           />
@@ -1562,19 +1426,13 @@ export default function AnalyzeWorkspace() {
         <div className={cx(layoutStyles.zone, !result ? layoutStyles.landingStack : "")}>
           <ComposerSurface
             description={description}
-            onDescriptionChange={(nextValue) => {
-              setDescription(nextValue);
-              if (dismissDirty) setDismissDirty(false);
-            }}
+            onDescriptionChange={setDescription}
             onAnalyze={runAnalysis}
             onReset={handleReset}
             onRestorePrevious={handleRestorePrevious}
-            onCopy={handleCopy}
-            copied={analysisCopied}
             previousSnapshot={previousSnapshot}
             busy={busy}
             dirty={dirty}
-            onDismissDirty={() => setDismissDirty(true)}
             suggestionGroups={suggestionGroups}
             templates={templates}
             viewModel={viewModel}
@@ -1604,7 +1462,6 @@ export default function AnalyzeWorkspace() {
                 onReanalyze={runAnalysis}
                 onApplyMissingInput={(text) => {
                   setDescription((current) => joinText(current, text));
-                  setDismissDirty(false);
                 }}
               />
               <ComparisonPanel changes={comparisonChanges} />
@@ -1620,7 +1477,6 @@ export default function AnalyzeWorkspace() {
                 description={analyzedDescription || description}
                 copied={analysisCopied}
                 onCopy={handleCopy}
-                isNarrow={isNarrow}
               />
             </div>
           </div>

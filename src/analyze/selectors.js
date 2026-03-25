@@ -247,24 +247,38 @@ function rationaleForRouteSection(section, baseSafetyRoute) {
   return firstItemRationale || "";
 }
 
+const CORE_DIRECTIVE_KEYS = new Set(["LVD", "EMC"]);
+const CONDITIONAL_DIRECTIVE_KEYS = new Set(["RED", "RED_CYBER"]);
+
 function decorateRouteSections(sections, baseSafetyRoute) {
+  const hasCoreDirective = (sections || []).some((s) => CORE_DIRECTIVE_KEYS.has(s.key));
+
   return (sections || []).map((section, index) => {
-    const sectionKind =
-      index === 0 ? "core" : section.key === "RED" || section.key === "RED_CYBER" ? "conditional" : "secondary";
+    const sectionKind = CORE_DIRECTIVE_KEYS.has(section.key)
+      ? "core"
+      : CONDITIONAL_DIRECTIVE_KEYS.has(section.key)
+        ? "conditional"
+        : !hasCoreDirective && index === 0
+          ? "core"
+          : "secondary";
+
+    const applicabilityBucket =
+      sectionKind === "core"
+        ? "Core applicable"
+        : sectionKind === "conditional"
+          ? "Conditional"
+          : "Supplementary";
+
     const items = (section.items || []).map((item) => ({
       ...item,
       shortRationale: rationaleForStandard(item, section.key, baseSafetyRoute),
-      applicabilityBucket:
-        index === 0
-          ? "Core likely applicable"
-          : section.key === "RED" || section.key === "RED_CYBER"
-            ? "Conditional / check applicability"
-            : "Usually not applicable unless specific features are present",
+      applicabilityBucket,
     }));
 
     return {
       ...section,
       sectionKind,
+      applicabilityBucket,
       items,
       shortRationale: rationaleForRouteSection({ ...section, items }, baseSafetyRoute),
     };
@@ -282,10 +296,10 @@ function decorateLegislationGroups(groups) {
         shortRationale: item.rationale || item.scope || item.summary || "",
         applicabilityBucket:
           groupKey === "ce"
-            ? "Core likely applicable"
+            ? "Core applicable"
             : groupKey === "non_ce"
-              ? "Conditional / check applicability"
-              : "Usually not applicable unless specific features are present",
+              ? "Conditional"
+              : "Supplementary",
         })),
     };
   });
@@ -351,12 +365,14 @@ export function buildAnalysisViewModel(result, descriptionText = "") {
       }))
     : null;
   const primaryRoute = baseSafetyRoute || decoratedRouteSections[0] || null;
-  const primaryRouteSections = decoratedRouteSections.filter((section, index) => index === 0);
+  const primaryRouteSections = decoratedRouteSections.filter(
+    (section) => section.sectionKind === "core"
+  );
   const conditionalRouteSections = decoratedRouteSections.filter(
     (section) => section.sectionKind === "conditional"
   );
   const secondaryRouteSections = decoratedRouteSections.filter(
-    (section, index) => index !== 0 && section.sectionKind !== "conditional"
+    (section) => section.sectionKind === "secondary"
   );
   const primaryLegislationGroups = decoratedLegislationGroups.filter((group) => group.groupKey === "ce");
   const conditionalLegislationGroups = decoratedLegislationGroups.filter((group) => group.groupKey === "non_ce");

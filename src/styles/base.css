@@ -1,15 +1,15 @@
 :root {
-  --bg: #08101a;
-  --bg-alt: #0b1320;
-  --surface-0: rgba(10,17,28,0.98);
-  --surface-1: rgba(13,22,36,0.92);
-  --surface-2: rgba(17,27,44,0.95);
-  --surface-glass: rgba(255,255,255,0.022);
-  --border: rgba(255,255,255,0.07);
-  --border-sm: rgba(255,255,255,0.04);
-  --border-hover: rgba(255,255,255,0.12);
+  --bg: #0d1825;
+  --bg-alt: #111e2d;
+  --surface-0: rgba(14,22,36,0.98);
+  --surface-1: rgba(16,26,42,0.94);
+  --surface-2: rgba(20,32,50,0.96);
+  --surface-glass: rgba(255,255,255,0.038);
+  --border: rgba(255,255,255,0.11);
+  --border-sm: rgba(255,255,255,0.07);
+  --border-hover: rgba(255,255,255,0.20);
   --accent: #7db9ff;
-  --accent-dim: rgba(125,185,255,0.12);
+  --accent-dim: rgba(125,185,255,0.14);
   --accent-teal: #78d5c1;
   --accent-08: rgba(125,185,255,0.08);
   --accent-12: rgba(125,185,255,0.12);
@@ -20,10 +20,10 @@
   --teal-08: rgba(120,213,193,0.08);
   --teal-20: rgba(120,213,193,0.20);
   --teal-24: rgba(120,213,193,0.24);
-  --text: #c4d9ec;
-  --text-strong: #e4f1fb;
-  --text-muted: #92acc4;
-  --text-soft: #70879b;
+  --text: #cfe4f5;
+  --text-strong: #ecf6ff;
+  --text-muted: #9eb8d0;
+  --text-soft: #7d95ab;
   --radius-sm: 7px;
   --radius-md: 11px;
   --radius-lg: 15px;
@@ -42,9 +42,9 @@ body {
   background: var(--bg-alt);
   /* Two subtle ambient glows fixed to viewport so they don't scroll */
   background-image:
-    radial-gradient(ellipse 70% 45% at 8% -5%, rgba(125,185,255,0.08), transparent),
-    radial-gradient(ellipse 55% 38% at 92% 4%, rgba(120,213,193,0.055), transparent),
-    linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 45%, #050c14 100%);
+    radial-gradient(ellipse 70% 45% at 8% -5%, rgba(125,185,255,0.13), transparent),
+    radial-gradient(ellipse 55% 38% at 92% 4%, rgba(120,213,193,0.09), transparent),
+    linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 45%, #0a1520 100%);
   background-attachment: fixed;
 }
 
