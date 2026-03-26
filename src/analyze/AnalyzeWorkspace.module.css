@@ -193,43 +193,61 @@
   padding-top: 2px;
 }
 
-/* ─── Suggestion chips (post-analysis) ────────────── */
+/* ─── Scope gap groups (required info) ────────────── */
 
-.suggestionArea {
+.scopeGapsSection {
   display: grid;
-  gap: 8px;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.065);
 }
 
-.suggestionAreaLabel {
+.scopeGapsLabel {
   color: var(--text-soft);
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
+  font-size: 0.66rem;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   font-weight: 500;
+  margin-bottom: 2px;
 }
 
-.suggestionRow {
+.scopeGapRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scopeGapQuestion {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 92px;
+}
+
+.scopeGapChips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
-.suggestionChip {
+.scopeGapChip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(125,185,255,0.14);
-  background: rgba(125,185,255,0.05);
+  padding: 3px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(250,190,70,0.22);
+  background: rgba(250,190,70,0.05);
   color: var(--text);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   cursor: pointer;
-  transition: border-color 0.14s, background 0.14s;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
 }
-.suggestionChip:hover {
-  border-color: rgba(125,185,255,0.28);
-  background: rgba(125,185,255,0.1);
+.scopeGapChip:hover {
+  border-color: rgba(250,190,70,0.42);
+  background: rgba(250,190,70,0.11);
+  color: var(--text-strong);
 }
 
 /* ─── Banners ─────────────────────────────────────── */

@@ -160,111 +160,74 @@ function extractKnownFacts(description, result) {
 const SCOPE_GAPS = [
   {
     id: "power",
+    question: "Power source?",
     detect: (d) => !/mains|230v|240v|ac\s*power|rechargeable|lithium|battery|usb.?c?\s*power|external.*adapter|powered via/.test(d),
     chips: [
-      { label: "Mains powered", text: "mains powered (230 V AC)" },
-      { label: "Battery powered", text: "rechargeable lithium battery" },
-      { label: "External adapter", text: "powered via external AC/DC adapter" },
+      { label: "Mains (230V)", text: "mains powered (230 V AC)" },
+      { label: "Battery", text: "rechargeable lithium battery" },
+      { label: "AC adapter", text: "powered via external AC/DC adapter" },
     ],
-    priority: 1,
   },
   {
     id: "connectivity",
+    question: "Wireless?",
     detect: (d) => !/wifi|wi.?fi|bluetooth|ble\b|nfc\b|cellular|lte\b|5g\b|zigbee|z.?wave|no.?radio|no.?wireless|no wireless/.test(d),
     chips: [
       { label: "Wi-Fi", text: "Wi-Fi" },
-      { label: "Bluetooth LE", text: "Bluetooth LE" },
-      { label: "No wireless", text: "no wireless connectivity" },
+      { label: "Bluetooth", text: "Bluetooth LE" },
+      { label: "None", text: "no wireless connectivity" },
     ],
-    priority: 2,
   },
   {
     id: "user",
+    question: "Who uses it?",
     detect: (d) => !/consumer|household|professional|industrial|commercial/.test(d),
     chips: [
-      { label: "Consumer use", text: "consumer use" },
-      { label: "Professional use", text: "professional use" },
+      { label: "Consumers", text: "consumer use" },
+      { label: "Professionals", text: "professional use" },
     ],
-    priority: 3,
   },
   {
     id: "environment",
+    question: "Where used?",
     detect: (d) => !/indoor|outdoor|installation|ip\d|weather/.test(d),
     chips: [
-      { label: "Indoor only", text: "indoor use only" },
-      { label: "Outdoor rated", text: "outdoor rated" },
+      { label: "Indoors", text: "indoor use only" },
+      { label: "Outdoors", text: "outdoor rated" },
     ],
-    priority: 4,
   },
   {
     id: "cloud",
+    question: "Needs internet?",
     detect: (d) =>
       /wifi|wi.?fi|bluetooth|wireless|connected/.test(d) &&
       !/cloud|account.?required|local.?only|local.?lan|no.?cloud/.test(d),
     chips: [
-      { label: "Cloud account required", text: "cloud account required" },
-      { label: "Local control only", text: "local control only, no cloud" },
+      { label: "Cloud / app", text: "cloud account required" },
+      { label: "Local only", text: "local control only, no cloud" },
     ],
-    priority: 5,
   },
   {
     id: "battery-type",
+    question: "Battery type?",
     detect: (d) => /battery|rechargeable/.test(d) && !/lithium|li.?ion|alkaline|nimh/.test(d),
     chips: [
-      { label: "Lithium-ion", text: "lithium-ion" },
-      { label: "Primary cells", text: "primary (non-rechargeable) cells" },
+      { label: "Li-ion", text: "lithium-ion" },
+      { label: "Non-rechargeable", text: "primary (non-rechargeable) cells" },
     ],
-    priority: 6,
   },
 ];
 
-function buildSuggestions(description, backendChips, guidanceItems) {
+function buildScopeGapGroups(description) {
   const lowered = String(description || "").toLowerCase();
-  const seen = new Set();
-  const results = [];
-
-  function add(label, text, priority) {
-    const key = (text || "").toLowerCase().trim();
-    if (!key || seen.has(key)) return;
-    seen.add(key);
-    results.push({ label, text, priority });
-  }
-
-  // Fixed scope gaps — client-side, highest priority
-  SCOPE_GAPS.forEach((gap) => {
-    if (gap.detect(lowered)) {
-      gap.chips.forEach((chip) => add(chip.label, chip.text, gap.priority));
-    }
-  });
-
-  // Backend guidance choices — filter already-mentioned words
-  (guidanceItems || []).slice(0, 3).forEach((item, i) => {
-    (item.choices || []).slice(0, 3).forEach((choice) => {
-      const choiceLowered = choice.toLowerCase();
-      const keyWord = choiceLowered.split(/\s+/).find((w) => w.length > 4);
-      if (keyWord && lowered.includes(keyWord)) return;
-      add(choice, choice, 10 + i);
-    });
-  });
-
-  // Backend suggested chips — deduplicated, skip vague meta-prompts and already-mentioned
-  (backendChips || []).forEach((chip, i) => {
-    const chipText = (chip.text || "").toLowerCase();
-    if (/architecture|boundary|function boundary|connectivity architecture/.test(chipText)) return;
-    const keyWord = chipText.split(/\s+/).find((w) => w.length > 4);
-    if (keyWord && lowered.includes(keyWord)) return;
-    add(chip.label, chip.text, 20 + i);
-  });
-
-  return results.sort((a, b) => a.priority - b.priority).slice(0, 7);
+  return SCOPE_GAPS
+    .filter((gap) => gap.detect(lowered))
+    .map(({ id, question, chips }) => ({ id, question, chips }));
 }
 
-function useSuggestions(description, backendChips, guidanceItems) {
+function useScopeGapGroups(description) {
   const deferredDescription = useDeferredValue(description);
-  return useMemo(
-    () => buildSuggestions(deferredDescription, backendChips, guidanceItems),
-    [backendChips, deferredDescription, guidanceItems]
-  );
+  return useMemo(() => buildScopeGapGroups(deferredDescription), [deferredDescription]);
 }
 
 
@@ -432,7 +395,7 @@ function ComposerSurface({
   previousSnapshot,
   busy,
   dirty,
-  suggestions,
+  scopeGapGroups,
   templates,
   viewModel,
   hasResult,
@@ -499,22 +462,27 @@ function ComposerSurface({
         ) : null}
       </div>
 
-      {/* Flat scope-defining chips */}
-      {suggestions.length > 0 ? (
-        <div className={styles.suggestionArea}>
-          <span className={styles.suggestionAreaLabel}>Also specify</span>
-          <div className={styles.suggestionRow}>
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion.text}
-                type="button"
-                className={styles.suggestionChip}
-                onClick={() => onDescriptionChange(joinText(description, suggestion.text))}
-              >
-                + {suggestion.label}
-              </button>
-            ))}
-          </div>
+      {/* Grouped scope gap chips */}
+      {scopeGapGroups.length > 0 ? (
+        <div className={styles.scopeGapsSection}>
+          <span className={styles.scopeGapsLabel}>Fill in to complete the scope</span>
+          {scopeGapGroups.map((group) => (
+            <div key={group.id} className={styles.scopeGapRow}>
+              <span className={styles.scopeGapQuestion}>{group.question}</span>
+              <div className={styles.scopeGapChips}>
+                {group.chips.map((chip) => (
+                  <button
+                    key={chip.text}
+                    type="button"
+                    className={styles.scopeGapChip}
+                    onClick={() => onDescriptionChange(joinText(description, chip.text))}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       ) : null}
     </Surface>
@@ -1308,7 +1276,7 @@ export default function AnalyzeWorkspace() {
     () => buildTemplateChoices(metadata, templateOrder),
     [metadata, templateOrder]
   );
-  const suggestions = useSuggestions(description, viewModel.backendChips, viewModel.guidanceItems);
+  const scopeGapGroups = useScopeGapGroups(description);
   const dirty = Boolean(result && analyzedDescription.trim() !== description.trim());
 
   useEffect(() => {
@@ -1559,7 +1527,7 @@ export default function AnalyzeWorkspace() {
               previousSnapshot={previousSnapshot}
               busy={busy}
               dirty={dirty}
-              suggestions={suggestions}
+              scopeGapGroups={scopeGapGroups}
               templates={templates}
               viewModel={viewModel}
               hasResult={false}
@@ -1608,7 +1576,7 @@ export default function AnalyzeWorkspace() {
                 previousSnapshot={previousSnapshot}
                 busy={busy}
                 dirty={dirty}
-                suggestions={suggestions}
+                scopeGapGroups={scopeGapGroups}
                 templates={templates}
                 viewModel={viewModel}
                 hasResult={true}
