@@ -56,6 +56,11 @@ const PILL_TONE_CLASS = {
   strong: styles.pillStrong,
 };
 
+const METRIC_TONE_CLASS = {
+  positive: styles.metricCardPositive,
+  warning: styles.metricCardWarning,
+};
+
 const ROUTE_SECTION_CLASS = {
   core: styles.routeCardCore,
   conditional: styles.routeCardConditional,
@@ -557,12 +562,14 @@ function EmptyStateGuidance() {
 
 function OverviewPanel({ result, viewModel }) {
   const openIssueCount = viewModel.decisionSignals.blockerCount + viewModel.decisionSignals.routeAffectingCount;
+  const riskTone = result?.overall_risk === "high" ? "warning" : result?.overall_risk === "low" ? "positive" : null;
+  const issuesTone = openIssueCount === 0 ? "positive" : openIssueCount > 2 ? "warning" : null;
   const metrics = [
     { label: "Match stage", value: formatStageLabel(viewModel.productIdentity.stage || "unknown") },
     { label: "Scope", value: viewModel.resultMaturity.label },
-    { label: "Risk", value: formatUiLabel(result?.overall_risk || "medium") },
+    { label: "Risk", value: formatUiLabel(result?.overall_risk || "medium"), tone: riskTone },
     { label: "Standards", value: String(viewModel.totalStandards) },
-    { label: "Open issues", value: String(openIssueCount) },
+    { label: "Open issues", value: String(openIssueCount), tone: issuesTone },
   ];
 
   return (
@@ -584,7 +591,7 @@ function OverviewPanel({ result, viewModel }) {
 
       <div className={styles.metricGrid}>
         {metrics.map((metric) => (
-          <div key={metric.label} className={styles.metricCard}>
+          <div key={metric.label} className={cx(styles.metricCard, metric.tone && METRIC_TONE_CLASS[metric.tone])}>
             <span className={styles.metricLabel}>{metric.label}</span>
             <strong className={styles.metricValue}>{metric.value}</strong>
           </div>
@@ -704,7 +711,7 @@ function ClarificationStrip({
         : "Everything left is optional detail.";
 
   return (
-    <section className={cx(styles.clarificationStrip, open ? styles.clarificationStripOpen : "")}>
+    <section className={cx(styles.clarificationStrip, open ? styles.clarificationStripOpen : "", blocking.length ? styles.clarificationStripBlocking : "")}>
       <div className={styles.clarificationSummary}>
         <button
           type="button"
@@ -1166,8 +1173,8 @@ function EvidencePanel({ viewModel }) {
               <span className={styles.metaLabel}>Common missing information</span>
               <DetailList items={need.commonMissing} />
             </div>
-            <div className={styles.evidenceSection}>
-              <span className={styles.metaLabel}>Common blockers</span>
+            <div className={cx(styles.evidenceSection, styles.evidenceSectionBlockers)}>
+              <span className={cx(styles.metaLabel, styles.metaLabelBlockers)}>Common blockers</span>
               <DetailList items={need.blockers} />
             </div>
           </div>
@@ -1191,7 +1198,19 @@ function SupportingContextPanel({ result, viewModel, description, copied, onCopy
           <span className={styles.contextEyebrow}>Analysis context</span>
           <h2 className={styles.contextTitle}>Supporting context</h2>
         </div>
-        {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        <div className={styles.contextSummaryRight}>
+          {!open && viewModel.triggeredDirectives.length ? (
+            <div className={styles.chipList}>
+              {viewModel.triggeredDirectives.slice(0, 3).map((dk) => (
+                <DirectivePill key={dk} directiveKey={dk} />
+              ))}
+              {viewModel.triggeredDirectives.length > 3 ? (
+                <span className={styles.clarificationOverflow}>+{viewModel.triggeredDirectives.length - 3}</span>
+              ) : null}
+            </div>
+          ) : null}
+          {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </div>
       </summary>
 
       <div className={styles.contextBody}>
@@ -1551,7 +1570,7 @@ export default function AnalyzeWorkspace() {
           </div>
         ) : (
           <div className={layoutStyles.resultsGrid}>
-            <div className={layoutStyles.resultsMain} ref={resultsRef}>
+            <div className={cx(layoutStyles.resultsMain, styles.resultsEnter)} ref={resultsRef}>
               <OverviewPanel result={result} viewModel={viewModel} />
               <TrustLayerPanel viewModel={viewModel} />
               <ClarificationStrip
