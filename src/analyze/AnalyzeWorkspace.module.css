@@ -466,6 +466,15 @@
   flex-wrap: wrap;
 }
 
+.identityConfidenceBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 5px;
+  border-radius: 10px;
+  border: 1px solid rgba(125,185,255,0.14);
+  background: rgba(125,185,255,0.06);
+}
+
 .identityLabel {
   color: var(--text-soft);
   font-size: 0.67rem;
@@ -507,6 +516,8 @@
   border-radius: 10px;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.05);
+  position: relative;
+  overflow: hidden;
 }
 
 .metricLabel {
@@ -738,6 +749,22 @@
   border-radius: 10px;
   border: 1px solid var(--border);
   background: rgba(12,20,34,0.68);
+  position: relative;
+  overflow: hidden;
+}
+.clarificationItem::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: rgba(154,176,199,0.45);
+  border-radius: 3px 0 0 3px;
+}
+.clarificationItemBlocker::before {
+  background: rgba(240,192,103,0.70);
+}
+.clarificationItemRouteAffecting::before {
+  background: rgba(125,185,255,0.60);
 }
 
 .clarificationItemHeader {
@@ -766,6 +793,26 @@
   flex-wrap: wrap;
   gap: 5px;
   padding-top: 2px;
+}
+
+/* ─── Suggestion chips (missing-input examples) ──── */
+
+.suggestionChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(120,213,193,0.22);
+  background: rgba(120,213,193,0.05);
+  color: var(--text);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
+}
+.suggestionChip:hover {
+  border-color: rgba(120,213,193,0.42);
+  background: rgba(120,213,193,0.11);
+  color: var(--text-strong);
 }
 
 /* ─── Comparison ──────────────────────────────────── */
@@ -1493,12 +1540,28 @@
   background: rgba(128,214,168,0.07);
 }
 .metricCardPositive .metricValue { color: #9ce0bc; }
+.metricCardPositive::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: rgba(128,214,168,0.70);
+  border-radius: 3px 0 0 3px;
+}
 
 .metricCardWarning {
   border-color: rgba(240,192,103,0.22);
   background: rgba(240,192,103,0.07);
 }
 .metricCardWarning .metricValue { color: #f5cc81; }
+.metricCardWarning::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: rgba(240,192,103,0.70);
+  border-radius: 3px 0 0 3px;
+}
 
 /* ─── Clarification strip blocking state ─────────── */
 
@@ -1509,6 +1572,18 @@
 .clarificationStripBlocking.clarificationStripOpen {
   border-color: rgba(240,192,103,0.3);
 }
+
+/* ─── Evidence section icon rows ─────────────────── */
+
+.evidenceSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.evidenceSectionIconCheck  { color: #9ce0bc; flex-shrink: 0; }
+.evidenceSectionIconMissing { color: #f5cc81; flex-shrink: 0; }
+.evidenceSectionIconBlocker { color: #f4947a; flex-shrink: 0; }
 
 /* ─── Evidence blockers section ───────────────────── */
 

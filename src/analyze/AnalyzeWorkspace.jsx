@@ -9,8 +9,10 @@ import {
 } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import {
+  AlertCircle,
   AlertTriangle,
   ArrowUp,
+  Ban,
   Check,
   ChevronDown,
   ChevronUp,
@@ -545,9 +547,11 @@ function OverviewPanel({ result, viewModel }) {
       <div className={styles.identityCard}>
         <div className={styles.identityCardTop}>
           <span className={styles.identityLabel}>Matched product type</span>
-          <TonePill tone={viewModel.classificationConfidence.tone}>
-            {viewModel.classificationConfidence.label} confidence
-          </TonePill>
+          <div className={styles.identityConfidenceBadge}>
+            <TonePill tone={viewModel.classificationConfidence.tone}>
+              {viewModel.classificationConfidence.label} confidence
+            </TonePill>
+          </div>
         </div>
         <h2 className={styles.identityType}>
           {formatUiLabel(viewModel.productIdentity.type || "Product route")}
@@ -640,6 +644,12 @@ function missingSeverityLabel(severity) {
   if (severity === "blocker") return "Blocker";
   if (severity === "route-affecting") return "Route-affecting";
   return "Helpful";
+}
+
+function clarificationItemClass(severity) {
+  if (severity === "blocker") return styles.clarificationItemBlocker;
+  if (severity === "route-affecting") return styles.clarificationItemRouteAffecting;
+  return "";
 }
 
 function ClarificationStrip({
@@ -768,7 +778,7 @@ function ClarificationStrip({
           {allMissing.length ? (
             <div className={styles.clarificationList}>
               {allMissing.map((item) => (
-                <div key={item.key} className={styles.clarificationItem}>
+                <div key={item.key} className={cx(styles.clarificationItem, clarificationItemClass(item.severity))}>
                   <div className={styles.clarificationItemHeader}>
                     <span className={styles.clarificationItemTitle}>{item.title}</span>
                     <TonePill tone={missingSeverityTone(item.severity)}>
@@ -1118,12 +1128,18 @@ function ParallelObligationsPanel({ viewModel }) {
   );
 }
 
+const EVIDENCE_SECTIONS = [
+  { key: "evidence", icon: Check, iconClass: styles.evidenceSectionIconCheck, label: "Typical evidence", field: "typicalEvidence", blockersClass: "" },
+  { key: "missing", icon: AlertCircle, iconClass: styles.evidenceSectionIconMissing, label: "Common gaps", field: "commonMissing", blockersClass: "" },
+  { key: "blockers", icon: Ban, iconClass: styles.evidenceSectionIconBlocker, label: "Blockers", field: "blockers", blockersClass: styles.evidenceSectionBlockers },
+];
+
 function EvidencePanel({ viewModel }) {
   return (
     <Surface
       eyebrow="Evidence gaps"
       title="Evidence and common gaps"
-      text="A practical pre-lab checklist for the major routes currently in view."
+      text="Pre-lab checklist for the active compliance routes."
       bodyClassName={styles.evidenceGrid}
     >
       {viewModel.evidenceNeeds.length ? (
@@ -1133,18 +1149,17 @@ function EvidencePanel({ viewModel }) {
               <h3 className={styles.groupTitle}>{need.label}</h3>
               <DirectivePill directiveKey={need.key} />
             </div>
-            <div className={styles.evidenceSection}>
-              <span className={styles.metaLabel}>Typical evidence expected</span>
-              <DetailList items={need.typicalEvidence} />
-            </div>
-            <div className={styles.evidenceSection}>
-              <span className={styles.metaLabel}>Common missing information</span>
-              <DetailList items={need.commonMissing} />
-            </div>
-            <div className={cx(styles.evidenceSection, styles.evidenceSectionBlockers)}>
-              <span className={cx(styles.metaLabel, styles.metaLabelBlockers)}>Common blockers</span>
-              <DetailList items={need.blockers} />
-            </div>
+            {EVIDENCE_SECTIONS.map(({ key, icon: Icon, iconClass, label, field, blockersClass }) =>
+              need[field]?.length ? (
+                <div key={key} className={cx(styles.evidenceSection, blockersClass)}>
+                  <div className={styles.evidenceSectionHeader}>
+                    <Icon size={11} className={iconClass} />
+                    <span className={blockersClass ? cx(styles.metaLabel, styles.metaLabelBlockers) : styles.metaLabel}>{label}</span>
+                  </div>
+                  <DetailList items={need[field]} />
+                </div>
+              ) : null
+            )}
           </div>
         ))
       ) : (
