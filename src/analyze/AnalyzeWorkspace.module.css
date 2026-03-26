@@ -155,6 +155,7 @@
   box-shadow: 0 0 0 3px rgba(125,185,255,0.06);
 }
 .textarea::placeholder { color: var(--text-soft); }
+.textareaCompact { min-height: 112px; }
 
 /* ─── Template chips ──────────────────────────────── */
 

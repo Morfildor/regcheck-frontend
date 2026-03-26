@@ -14,16 +14,26 @@
 
 .resultsGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
   gap: 20px;
   align-items: start;
 }
 
 .resultsMain,
-.resultsAside,
 .statusStack {
   display: grid;
   gap: 14px;
+}
+
+.resultsAside {
+  display: grid;
+  gap: 14px;
+  position: sticky;
+  top: 74px; /* header (60px) + gap (14px) */
+  max-height: calc(100dvh - 88px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
 }
 
 /* Removed zone header styles — the zone title section was removed from JSX
@@ -32,6 +42,14 @@
 @media (max-width: 1220px) {
   .resultsGrid {
     grid-template-columns: 1fr;
+  }
+
+  /* On smaller screens, show composer before results */
+  .resultsAside {
+    order: -1;
+    position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 

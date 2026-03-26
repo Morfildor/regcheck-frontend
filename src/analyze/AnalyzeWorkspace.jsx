@@ -447,8 +447,7 @@ function ComposerSurface({
     >
       <textarea
         id="analyze-description"
-        className={styles.textarea}
-        rows={hasResult ? 6 : 8}
+        className={cx(styles.textarea, hasResult ? styles.textareaCompact : "")}
         value={description}
         onChange={(event) => onDescriptionChange(event.target.value)}
         aria-label="Describe your product"
@@ -677,10 +676,10 @@ function ClarificationStrip({
   onReanalyze,
   onApplyMissingInput,
 }) {
-  const [open, setOpen] = useState(false);
-  const knownFacts = extractKnownFacts(description, result);
   const blocking = viewModel.missingInputs.filter((item) => item.severity === "blocker");
   const routeAffecting = viewModel.missingInputs.filter((item) => item.severity === "route-affecting");
+  const [open, setOpen] = useState(() => blocking.length > 0 || routeAffecting.length > 0);
+  const knownFacts = extractKnownFacts(description, result);
   const helpful = viewModel.missingInputs.filter((item) => item.severity === "helpful");
   const allMissing = [...blocking, ...routeAffecting, ...helpful];
   const previewItems = allMissing.slice(0, 3);
@@ -1530,33 +1529,29 @@ export default function AnalyzeWorkspace() {
         }
         mainClassName={layoutStyles.main}
       >
-        <div className={cx(layoutStyles.zone, !result ? layoutStyles.landingStack : "")}>
-          <ComposerSurface
-            description={description}
-            onDescriptionChange={setDescription}
-            onAnalyze={runAnalysis}
-            onReset={handleReset}
-            onRestorePrevious={handleRestorePrevious}
-            previousSnapshot={previousSnapshot}
-            busy={busy}
-            dirty={dirty}
-            suggestions={suggestions}
-            templates={templates}
-            viewModel={viewModel}
-            hasResult={Boolean(result)}
-          />
-
-          <AnalyzeStatus busy={busy} />
-          <ErrorBanner message={error} />
-
-          {!result && !busy ? <EmptyStateGuidance /> : null}
-        </div>
-
-        <div ref={resultsRef} />
-
-        {result ? (
+        {!result ? (
+          <div className={layoutStyles.landingStack}>
+            <ComposerSurface
+              description={description}
+              onDescriptionChange={setDescription}
+              onAnalyze={runAnalysis}
+              onReset={handleReset}
+              onRestorePrevious={handleRestorePrevious}
+              previousSnapshot={previousSnapshot}
+              busy={busy}
+              dirty={dirty}
+              suggestions={suggestions}
+              templates={templates}
+              viewModel={viewModel}
+              hasResult={false}
+            />
+            <AnalyzeStatus busy={busy} />
+            <ErrorBanner message={error} />
+            {!busy ? <EmptyStateGuidance /> : null}
+          </div>
+        ) : (
           <div className={layoutStyles.resultsGrid}>
-            <div className={layoutStyles.resultsMain}>
+            <div className={layoutStyles.resultsMain} ref={resultsRef}>
               <OverviewPanel result={result} viewModel={viewModel} />
               <TrustLayerPanel viewModel={viewModel} />
               <ClarificationStrip
@@ -1575,9 +1570,6 @@ export default function AnalyzeWorkspace() {
               <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
               <ParallelObligationsPanel key={`parallel-${resultRevision}`} viewModel={viewModel} />
               <EvidencePanel viewModel={viewModel} />
-            </div>
-
-            <div className={layoutStyles.resultsAside}>
               <SupportingContextPanel
                 result={result}
                 viewModel={viewModel}
@@ -1586,8 +1578,27 @@ export default function AnalyzeWorkspace() {
                 onCopy={handleCopy}
               />
             </div>
+
+            <div className={layoutStyles.resultsAside}>
+              <ComposerSurface
+                description={description}
+                onDescriptionChange={setDescription}
+                onAnalyze={runAnalysis}
+                onReset={handleReset}
+                onRestorePrevious={handleRestorePrevious}
+                previousSnapshot={previousSnapshot}
+                busy={busy}
+                dirty={dirty}
+                suggestions={suggestions}
+                templates={templates}
+                viewModel={viewModel}
+                hasResult={true}
+              />
+              <AnalyzeStatus busy={busy} />
+              <ErrorBanner message={error} />
+            </div>
           </div>
-        ) : null}
+        )}
       </AppShell>
 
       <ScrollTopButton visible={scrolled} />
