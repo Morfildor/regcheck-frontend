@@ -583,6 +583,32 @@ export function inferStandardCategory(item) {
   return null;
 }
 
+// Maps vertical standard codes to the product types they cover.
+// Used to resolve the correct product type when the backend returns a generic
+// label (e.g. "heat pump") for a standard that also covers other product types.
+export const VERTICAL_STANDARD_SCOPE = {
+  "60335-2-40": {
+    // EN 60335-2-40: Particular requirements for electrical heat pumps,
+    // air-conditioners and dehumidifiers
+    scopeLabel: "Heat pumps, air conditioners and dehumidifiers",
+    productTypes: ["Heat pump", "Air conditioner", "Dehumidifier"],
+    detect: [
+      { pattern: /air.?condition/i, type: "Air conditioner" },
+      { pattern: /dehumidif/i,      type: "Dehumidifier" },
+    ],
+    defaultType: "Heat pump",
+  },
+};
+
+export function getStandardScope(code) {
+  // Strip any leading org prefixes (e.g. "EN", "IEC", "EN IEC", "BS EN") and
+  // find the numeric part like "60335-2-40"
+  const normalized = String(code || "")
+    .replace(/^(?:(?:EN|IEC|BS|DIN|NF)\s*)+/i, "")
+    .trim();
+  return VERTICAL_STANDARD_SCOPE[normalized] || null;
+}
+
 export function joinText(base, addition) {
   const current = String(base || "").trim();
   const next = String(addition || "").trim();

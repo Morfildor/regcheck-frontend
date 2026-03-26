@@ -37,6 +37,7 @@ import {
   directiveTone,
   formatStageLabel,
   formatUiLabel,
+  getStandardScope,
   inferStandardCategory,
   joinText,
   routeTitle,
@@ -822,6 +823,7 @@ function ComparisonPanel({ changes }) {
 function StandardCard({ item }) {
   const hasVersionInfo = item.version || item.dated_version || item.harmonized_reference;
   const categoryTag = inferStandardCategory(item);
+  const scope = getStandardScope(item.code);
   return (
     <article className={styles.standardCard}>
       {/* Row 1: code badge + category pill */}
@@ -829,6 +831,16 @@ function StandardCard({ item }) {
         <span className={styles.standardCode}>{item.code || "Standard"}</span>
         {categoryTag ? <TonePill tone="muted">{categoryTag}</TonePill> : null}
       </div>
+      {scope ? (
+        <div className={styles.standardScopeRow}>
+          <span className={styles.standardScopeLabel}>Covers</span>
+          <div className={styles.standardScopeChips}>
+            {scope.productTypes.map((pt) => (
+              <span key={pt} className={styles.standardScopeChip}>{pt}</span>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* Row 2: title + rationale */}
       <div className={styles.standardCardBody}>

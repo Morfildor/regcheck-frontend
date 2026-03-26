@@ -8,6 +8,7 @@ import {
   directiveRank,
   isParallelObligationDirectiveKey,
   titleCaseMinor,
+  VERTICAL_STANDARD_SCOPE,
 } from "./helpers";
 
 /** @typedef {import("./types").AnalysisResult} AnalysisResult */
@@ -373,6 +374,7 @@ function inferBaseSafetyRoute(result, routeSections) {
     /robot.?vac/, /air.?purifier/, /fan\b/, /heater/, /dishwasher/,
     /washing.?machine/, /dryer/, /blender/, /mixer/, /toaster/,
     /fridge/, /freezer/, /appliance/,
+    /air.?condition/, /heat.?pump/, /dehumidif/, /hvac/, /chiller/,
   ];
 
   const avictHints = [
@@ -398,6 +400,35 @@ function inferBaseSafetyRoute(result, routeSections) {
   if (hasApplianceHint && !hasAvictHint) return BASE_SAFETY_ROUTE_COPY.EN_60335;
 
   return null;
+}
+
+function resolveProductType(result, routeSections, descriptionText) {
+  const rawType = result?.product_type || "";
+
+  const allCodes = (routeSections || [])
+    .flatMap((section) => section.items || [])
+    .map((item) => String(item?.code || "").toUpperCase());
+
+  const productText = [
+    rawType,
+    result?.summary || "",
+    descriptionText || "",
+    ...(result?.all_traits || []),
+  ].join(" ").toLowerCase();
+
+  for (const [stdKey, scope] of Object.entries(VERTICAL_STANDARD_SCOPE)) {
+    const hasStandard = allCodes.some((code) => code.includes(stdKey.toUpperCase()));
+    if (!hasStandard) continue;
+
+    for (const { pattern, type } of scope.detect) {
+      if (pattern.test(productText)) return type;
+    }
+
+    // Standard matched but no specific subtype detected — use the default type
+    return scope.defaultType;
+  }
+
+  return rawType;
 }
 
 function inferAssumptions(result, routeSections, descriptionText) {
@@ -689,7 +720,7 @@ export function buildAnalysisViewModel(result, descriptionText = "") {
   );
   const warnings = missingInputs.filter((item) => item.severity !== "helpful");
   const productIdentity = {
-    type: result?.product_type || "",
+    type: resolveProductType(result, decoratedRouteSections, descriptionText),
     family: result?.product_family || "",
     subtype: result?.product_subtype || "",
     stage: result?.product_match_stage || "",

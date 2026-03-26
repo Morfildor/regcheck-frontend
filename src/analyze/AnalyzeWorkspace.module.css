@@ -984,6 +984,43 @@
   padding: 12px 14px 0;
 }
 
+/* Scope row: shows product types covered by the standard */
+.standardScopeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px 0;
+  flex-wrap: wrap;
+}
+
+.standardScopeLabel {
+  font-size: 0.67rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.standardScopeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.standardScopeChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background: rgba(125, 185, 255, 0.08);
+  border: 1px solid rgba(125, 185, 255, 0.18);
+  color: #93c5ff;
+  white-space: nowrap;
+}
+
 /* Main content area */
 .standardCardBody {
   padding: 8px 14px 12px;
@@ -1621,7 +1658,7 @@
 @media (max-width: 768px) {
   .actionBar {
     position: sticky;
-    bottom: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
     z-index: 20;
     padding: 10px 12px;
     margin: 0 -2px;
@@ -1637,7 +1674,40 @@
 
   .actionBar .actionButtonPrimary {
     flex: 1;
+    min-height: 44px;
+  }
+
+  .actionBar .actionButtonSecondary {
+    min-height: 44px;
+  }
+
+  /* Prevent iOS auto-zoom on textarea focus */
+  .textarea {
+    font-size: 1rem;
+  }
+
+  /* Bigger tap targets for quick-fill chips */
+  .templateChip {
+    padding: 8px 12px;
     min-height: 40px;
+  }
+
+  .scopeGapChip {
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+
+  .suggestionChip {
+    padding: 7px 12px;
+    min-height: 38px;
+  }
+
+  /* Scroll-to-top button above iPhone gesture bar */
+  .scrollTop {
+    bottom: 80px;
+    width: 40px;
+    height: 40px;
+    right: 14px;
   }
 
   .accordionToggle {
@@ -1687,7 +1757,7 @@
 @media (max-width: 960px) {
   .actionBar {
     position: sticky;
-    bottom: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
     padding: 10px;
     border-radius: 14px;
     border: 1px solid rgba(255,255,255,0.06);
@@ -1698,9 +1768,24 @@
 }
 
 @media (max-width: 720px) {
-  .headerActions, .actionBar, .progressBanner, .errorBanner {
+  .headerActions, .progressBanner, .errorBanner {
     flex-direction: column; align-items: stretch;
   }
+
+  /* Primary button spans full width; secondary buttons share the row below */
+  .actionBar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+  .actionBar .actionButtonPrimary {
+    flex-basis: 100%;
+  }
+  .actionBar .actionButtonSecondary {
+    flex: 1;
+    justify-content: center;
+  }
+
   .clarificationSummary {
     flex-direction: column;
     align-items: stretch;
@@ -1714,6 +1799,12 @@
   .clarificationPreview {
     justify-content: flex-start;
   }
+  /* Hide item-title preview chips — too many and too small on narrow screens */
+  .clarificationPreviewChip,
+  .clarificationOverflow {
+    display: none;
+  }
+
   .accordionToggle, .contextSummary { padding: 12px 13px; }
   .accordionBody { padding: 0 11px 11px; }
   .contextBody { padding: 10px 13px 13px; }
