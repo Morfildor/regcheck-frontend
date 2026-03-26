@@ -446,49 +446,138 @@ export function inferStandardCategory(item) {
   const code = String(item?.code || "").toUpperCase();
   const title = String(item?.title || "").toLowerCase();
 
-  // Cybersecurity
+  // ── Cybersecurity ─────────────────────────────────────────────────────────
   if (/18031/.test(code)) return "Cybersecurity";
 
-  // RF Exposure
-  if (/62479|50663|62311/.test(code)) return "RF Exposure";
+  // ── RF Exposure ───────────────────────────────────────────────────────────
+  // EN 62479 / EN 50663 / EN 62311: general RF exposure assessment
+  // EN 50566: handheld and body-mounted devices
+  // EN 50364: low-frequency fields (induction, wireless charging proximity)
+  if (/62479|50663|62311|50566|50364/.test(code)) return "RF Exposure";
 
-  // EMF
+  // ── EMF ───────────────────────────────────────────────────────────────────
+  // EN 62233: measurement of EMF for household appliances
   if (/62233/.test(code)) return "EMF";
 
-  // Safety – horizontal (general Part 1 standard)
+  // ── Optical / photobiological radiation ───────────────────────────────────
+  // EN 62471: photobiological safety of lamps and lamp systems
+  // EN 60825: laser safety
+  if (/62471/.test(code)) return "Photobiological Safety";
+  if (/60825/.test(code)) return "Laser Safety";
+
+  // ── Battery safety ────────────────────────────────────────────────────────
+  // EN 62133-1/-2: portable sealed secondary cells (nickel / lithium)
+  // EN 62619: stationary lithium-ion battery systems
+  if (/62133|62619/.test(code)) return "Battery Safety";
+  // EN 62281: safety of primary and secondary lithium cells during transport
+  if (/62281/.test(code)) return "Battery Transport";
+
+  // ── Safety – horizontal (general / cross-sector Part 1 standards) ─────────
+  // EN 60335-1: household appliances – general requirements
+  // EN 62368-1: AV / ICT equipment – current horizontal safety standard
+  // EN 60950-1: legacy IT equipment safety (superseded by 62368-1)
+  // EN 60065: legacy audio/video equipment safety (superseded by 62368-1)
+  // EN 61010-1: measurement, control, and laboratory equipment
   if (/60335-1\b/.test(code) || /62368-1\b/.test(code)) return "Horizontal Safety";
+  if (/60950-1\b/.test(code) || /60065\b/.test(code)) return "Horizontal Safety";
+  if (/61010-1\b/.test(code)) return "Horizontal Safety";
 
-  // Safety – vertical (product-specific Part 2 standard)
+  // ── Safety – vertical (product-specific Part 2 standards) ────────────────
+  // EN 60335-2-XX: specific household appliance types
+  // EN 60745-2-XX: specific handheld power tool types
   if (/60335-2-\d+/.test(code)) return "Vertical Safety";
+  if (/60745-2-\d+/.test(code)) return "Vertical Safety";
 
-  // Radio – specific bands / technologies
+  // ── Safety – specialist types ─────────────────────────────────────────────
+  // EN 60745-1: handheld motor-operated electric tools – general
+  // EN 60598-X: luminaires (general and specific)
+  // EN 61558-X: safety of transformers, reactors, and power supply units
+  // EN 60730-X: automatic electrical controls
+  // EN 61347-X: lamp control gear
+  // EN 60204-1: safety of machinery – electrical equipment
+  if (/60745-1\b/.test(code)) return "Power Tool Safety";
+  if (/60598/.test(code)) return "Luminaire Safety";
+  if (/61558/.test(code)) return "Transformer Safety";
+  if (/60730/.test(code)) return "Control Safety";
+  if (/61347/.test(code)) return "Lamp Gear Safety";
+  if (/60204/.test(code)) return "Machine Electrical Safety";
+
+  // ── Functional safety / risk assessment ───────────────────────────────────
+  // EN ISO 13849-X: safety-related parts of control systems (PLr)
+  // EN 62061: functional safety of safety-related electrical systems (SIL)
+  // EN ISO 12100: risk assessment and risk reduction for machinery
+  if (/13849|62061/.test(code)) return "Functional Safety";
+  if (/12100/.test(code)) return "Risk Assessment";
+
+  // ── Radio – specific bands / technologies ─────────────────────────────────
+  // ETSI EN 301 893: 5 GHz RLAN (Wi-Fi 5)
+  // ETSI EN 303 687: 6 GHz RLAN (Wi-Fi 6E / Wi-Fi 7)
+  // ETSI EN 300 328: 2.4 GHz ISM (Wi-Fi b/g/n/ax, Bluetooth, BLE, Zigbee, Thread)
+  // ETSI EN 302 065 / EN 303 883: UWB
+  // ETSI EN 303 417: wireless power transmission (Qi-family)
+  // ETSI EN 300 330: NFC and RFID short-range devices
+  // ETSI EN 300 440: short-range devices above 1 GHz
+  // ETSI EN 300 220: short-range devices below 1 GHz (SRD)
+  // ETSI EN 301 511: GSM handsets
+  // ETSI EN 301 908-X: IMT / LTE / 5G cellular base and mobile stations
+  // ETSI EN 303 348: 5G NR user equipment
+  // ETSI EN 303 413: GNSS receivers
+  // ETSI EN 303 131 / EN 302 755: DVB-T / DAB broadcast receivers
+  // ETSI EN 301 489-X: EMC for radio equipment (all sub-parts)
   if (/301\s*893/.test(code)) return "Wi-Fi 5 GHz";
   if (/303\s*687/.test(code)) return "Wi-Fi 6 GHz";
   if (/300\s*328/.test(code)) return "Wi-Fi / BT 2.4 GHz";
+  if (/302\s*065|303\s*883/.test(code)) return "UWB";
+  if (/303\s*417/.test(code)) return "Wireless Power";
   if (/300\s*330/.test(code)) return "NFC / RFID";
   if (/300\s*440/.test(code)) return "Short Range Radio";
   if (/300\s*220/.test(code)) return "SRD";
   if (/301\s*511/.test(code)) return "GSM";
-  if (/301\s*908/.test(code)) return "Cellular";
+  if (/301\s*908|303\s*348/.test(code)) return "Cellular";
   if (/303\s*413/.test(code)) return "GNSS";
+  if (/303\s*131|302\s*755/.test(code)) return "Broadcast Receiver";
   if (/301\s*489/.test(code)) return "Radio EMC";
 
-  // EMC – specific limits
-  if (/61000-3-2/.test(code)) return "Harmonics";
-  if (/61000-3-3/.test(code)) return "Flicker";
+  // ── EMC – conducted limits ────────────────────────────────────────────────
+  // EN 61000-3-2 / EN 61000-3-12: harmonic current emissions
+  // EN 61000-3-3 / EN 61000-3-11: voltage fluctuations and flicker
+  if (/61000-3-2|61000-3-12/.test(code)) return "Harmonics";
+  if (/61000-3-3|61000-3-11/.test(code)) return "Flicker";
 
-  // EMC – immunity (before emissions to avoid false positives)
-  if (/55014-2|55035|55024|61000-4|61000-6-1\b|61000-6-2\b/.test(code)) return "Immunity";
+  // ── EMC – immunity ────────────────────────────────────────────────────────
+  // EN 55014-2: household appliances – immunity
+  // EN 55035: multimedia equipment – immunity (replaces EN 55024)
+  // EN 55024: IT equipment – immunity (legacy)
+  // EN 55020: broadcast receivers – immunity (legacy)
+  // EN 61000-4-X: all immunity test standards (ESD, RF, EFT, surge, etc.)
+  // EN 61000-6-1/-2: generic immunity for residential / industrial
+  if (/55014-2|55035|55024|55020|61000-4|61000-6-1\b|61000-6-2\b/.test(code)) return "Immunity";
 
-  // EMC – emissions
-  if (/55014-1|55032|55011|55015|61000-6-3\b|61000-6-4\b/.test(code)) return "Emissions";
+  // ── EMC – emissions ───────────────────────────────────────────────────────
+  // EN 55014-1: household appliances – emissions
+  // EN 55032: multimedia equipment – emissions (replaces EN 55022)
+  // EN 55022: IT equipment – emissions (legacy)
+  // EN 55013: broadcast receivers – emissions (legacy)
+  // EN 55011: industrial, scientific, medical (ISM) equipment
+  // EN 55015: electrical lighting and similar equipment
+  // EN 61000-6-3/-4: generic emissions for residential / industrial
+  if (/55014-1|55032|55022|55013|55011|55015|61000-6-3\b|61000-6-4\b/.test(code)) return "Emissions";
 
-  // Title-based fallbacks
+  // ── Energy / standby power ────────────────────────────────────────────────
+  // EN 50564: measurement of low-power-mode and off-mode power consumption
+  // EN 62301: measurement of standby power
+  // EN 62087: power consumption of audio/video and related equipment
+  if (/50564|62301|62087/.test(code)) return "Standby Power";
+
+  // ── Title-based fallbacks ─────────────────────────────────────────────────
   if (/bluetooth/i.test(title) || /bluetooth/i.test(code)) return "Bluetooth";
   if (/wi.?fi|wlan/i.test(title) || /wi.?fi|wlan/i.test(code)) return "Wi-Fi";
   if (/emission/i.test(title)) return "Emissions";
   if (/immunit/i.test(title)) return "Immunity";
   if (/radio/i.test(title)) return "Radio";
+  if (/laser/i.test(title)) return "Laser Safety";
+  if (/battery/i.test(title)) return "Battery Safety";
+  if (/standby|power consumption/i.test(title)) return "Standby Power";
   if (/safety/i.test(title)) return "Safety";
 
   return null;
