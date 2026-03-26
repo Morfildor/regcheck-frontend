@@ -678,7 +678,7 @@ function ClarificationStrip({
 }) {
   const blocking = viewModel.missingInputs.filter((item) => item.severity === "blocker");
   const routeAffecting = viewModel.missingInputs.filter((item) => item.severity === "route-affecting");
-  const [open, setOpen] = useState(() => blocking.length > 0 || routeAffecting.length > 0);
+  const [open, setOpen] = useState(false);
   const knownFacts = extractKnownFacts(description, result);
   const helpful = viewModel.missingInputs.filter((item) => item.severity === "helpful");
   const allMissing = [...blocking, ...routeAffecting, ...helpful];
