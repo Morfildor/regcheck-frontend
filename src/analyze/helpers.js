@@ -442,6 +442,58 @@ export function normalizeStandardDirective(item) {
   );
 }
 
+export function inferStandardCategory(item) {
+  const code = String(item?.code || "").toUpperCase();
+  const title = String(item?.title || "").toLowerCase();
+
+  // Cybersecurity
+  if (/18031/.test(code)) return "Cybersecurity";
+
+  // RF Exposure
+  if (/62479|50663|62311/.test(code)) return "RF Exposure";
+
+  // EMF
+  if (/62233/.test(code)) return "EMF";
+
+  // Safety – horizontal (general Part 1 standard)
+  if (/60335-1\b/.test(code) || /62368-1\b/.test(code)) return "Horizontal Safety";
+
+  // Safety – vertical (product-specific Part 2 standard)
+  if (/60335-2-\d+/.test(code)) return "Vertical Safety";
+
+  // Radio – specific bands / technologies
+  if (/301\s*893/.test(code)) return "Wi-Fi 5 GHz";
+  if (/303\s*687/.test(code)) return "Wi-Fi 6 GHz";
+  if (/300\s*328/.test(code)) return "Wi-Fi / BT 2.4 GHz";
+  if (/300\s*330/.test(code)) return "NFC / RFID";
+  if (/300\s*440/.test(code)) return "Short Range Radio";
+  if (/300\s*220/.test(code)) return "SRD";
+  if (/301\s*511/.test(code)) return "GSM";
+  if (/301\s*908/.test(code)) return "Cellular";
+  if (/303\s*413/.test(code)) return "GNSS";
+  if (/301\s*489/.test(code)) return "Radio EMC";
+
+  // EMC – specific limits
+  if (/61000-3-2/.test(code)) return "Harmonics";
+  if (/61000-3-3/.test(code)) return "Flicker";
+
+  // EMC – immunity (before emissions to avoid false positives)
+  if (/55014-2|55035|55024|61000-4|61000-6-1\b|61000-6-2\b/.test(code)) return "Immunity";
+
+  // EMC – emissions
+  if (/55014-1|55032|55011|55015|61000-6-3\b|61000-6-4\b/.test(code)) return "Emissions";
+
+  // Title-based fallbacks
+  if (/bluetooth/i.test(title) || /bluetooth/i.test(code)) return "Bluetooth";
+  if (/wi.?fi|wlan/i.test(title) || /wi.?fi|wlan/i.test(code)) return "Wi-Fi";
+  if (/emission/i.test(title)) return "Emissions";
+  if (/immunit/i.test(title)) return "Immunity";
+  if (/radio/i.test(title)) return "Radio";
+  if (/safety/i.test(title)) return "Safety";
+
+  return null;
+}
+
 export function joinText(base, addition) {
   const current = String(base || "").trim();
   const next = String(addition || "").trim();

@@ -37,6 +37,7 @@ import {
   directiveTone,
   formatStageLabel,
   formatUiLabel,
+  inferStandardCategory,
   joinText,
   routeTitle,
   titleCaseMinor,
@@ -818,14 +819,15 @@ function ComparisonPanel({ changes }) {
 }
 
 
-function StandardCard({ item, sectionKey }) {
+function StandardCard({ item }) {
   const hasVersionInfo = item.version || item.dated_version || item.harmonized_reference;
+  const categoryTag = inferStandardCategory(item);
   return (
     <article className={styles.standardCard}>
-      {/* Row 1: code badge + directive pill + applicability */}
+      {/* Row 1: code badge + category pill */}
       <div className={styles.standardCardTop}>
         <span className={styles.standardCode}>{item.code || "Standard"}</span>
-        <DirectivePill directiveKey={sectionKey} />
+        {categoryTag ? <TonePill tone="muted">{categoryTag}</TonePill> : null}
       </div>
 
       {/* Row 2: title + rationale */}
@@ -941,7 +943,6 @@ function RouteSectionCard({ section, open, onToggle }) {
               <StandardCard
                 key={`${section.key}-${item.code || item.title}-${item.version || ""}`}
                 item={item}
-                sectionKey={section.key || "OTHER"}
               />
             ))
           ) : (
