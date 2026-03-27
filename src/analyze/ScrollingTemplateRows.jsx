@@ -8,8 +8,8 @@ const ROW_CONFIGS = [
   { direction: +1, speed: 0.48 }, // bottom row: left  → right
 ];
 
-const GAP = 32;              // px gap between pills
-const PILL_ESTIMATE_W = 155; // estimated pill width before DOM measurement
+const GAP = 16;              // px gap between pills
+const PILL_ESTIMATE_W = 140; // estimated pill width before DOM measurement
 const HISTORY_SIZE = 8;      // anti-repetition window per row
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -37,6 +37,9 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
 
   // DOM element map: pill id → HTMLButtonElement
   const pillElsRef = useRef(new Map());
+
+  // Guards the one-time post-paint redistribution
+  const redistributedRef = useRef(false);
 
   // Exposes latest pool to the stable createPill callback
   const poolRef = useRef(pool);
@@ -110,6 +113,34 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
         return;
       }
 
+      // ── One-time post-paint redistribution using actual widths ──
+      // Runs on the first frame where every pill has a measured DOM element.
+      // Corrects the initial estimate-based positions so pills never overlap.
+      if (!redistributedRef.current) {
+        const allMeasured = rowsRef.current.every(
+          (pills) =>
+            pills.length > 0 && pills.every((p) => pillElsRef.current.has(p.id))
+        );
+        if (allMeasured) {
+          redistributedRef.current = true;
+          rowsRef.current.forEach((pills) => {
+            // Sort ascending by x so we redistribute left → right
+            const sorted = [...pills].sort((a, b) => a.x - b.x);
+            let cursor = sorted[0].x;
+            for (const p of sorted) {
+              p.x = cursor;
+              const el = pillElsRef.current.get(p.id);
+              if (el) {
+                el.style.transform = `translateX(${p.x}px)`;
+                cursor += el.offsetWidth + GAP;
+              } else {
+                cursor += PILL_ESTIMATE_W + GAP;
+              }
+            }
+          });
+        }
+      }
+
       let structureChanged = false;
 
       ROW_CONFIGS.forEach(({ direction, speed }, rowIndex) => {
@@ -147,7 +178,7 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
         for (const _ of exiting) { // eslint-disable-line no-unused-vars
           let spawnX;
           if (direction === -1) {
-            // RTL: spawn beyond the rightmost surviving pill
+            // RTL: spawn beyond the rightmost surviving pill (uses actual widths)
             let maxRight = w;
             for (const p of survivors) {
               const el = pillElsRef.current.get(p.id);
@@ -157,12 +188,17 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
             }
             spawnX = maxRight + GAP;
           } else {
-            // LTR: spawn before the leftmost surviving pill
+            // LTR: spawn before the leftmost surviving pill.
+            // Use the leftmost pill's actual width as a proxy for the incoming
+            // pill to get a tighter estimate than the static PILL_ESTIMATE_W.
             let minLeft = survivors.length > 0 ? survivors[0].x : 0;
+            let minPill = survivors[0];
             for (const p of survivors) {
-              if (p.x < minLeft) minLeft = p.x;
+              if (p.x < minLeft) { minLeft = p.x; minPill = p; }
             }
-            spawnX = minLeft - GAP - PILL_ESTIMATE_W;
+            const proxyEl = minPill ? pillElsRef.current.get(minPill.id) : null;
+            const proxyW = proxyEl ? proxyEl.offsetWidth : PILL_ESTIMATE_W;
+            spawnX = minLeft - GAP - proxyW;
           }
           survivors.push(createPillRef.current(rowIndex, spawnX));
         }
