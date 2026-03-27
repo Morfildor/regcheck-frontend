@@ -8,8 +8,8 @@ const ROW_CONFIGS = [
   { direction: +1, speed: 0.48 }, // bottom row: left  → right
 ];
 
-const GAP = 22;              // px gap between pills
-const PILL_ESTIMATE_W = 92;  // estimated pill width before DOM measurement
+const GAP = 32;              // px gap between pills
+const PILL_ESTIMATE_W = 155; // estimated pill width before DOM measurement
 const HISTORY_SIZE = 8;      // anti-repetition window per row
 
 // ─── Helpers ─────────────────────────────────────────────────────
