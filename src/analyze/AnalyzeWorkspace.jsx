@@ -527,7 +527,22 @@ function ComposerSurface({
   viewModel,
   hasResult,
 }) {
+  const [touched, setTouched] = useState(false);
   const analyzeLabel = hasResult ? "Re-run analysis" : "Analyze product";
+  const isEmpty = !description.trim();
+  const showValidation = touched && isEmpty;
+
+  useEffect(() => {
+    if (isEmpty) setTouched(false);
+  }, [isEmpty]);
+
+  function handleAnalyze() {
+    if (isEmpty) {
+      setTouched(true);
+      return;
+    }
+    onAnalyze();
+  }
 
   return (
     <Surface
@@ -542,12 +557,21 @@ function ComposerSurface({
     >
       <textarea
         id="analyze-description"
-        className={cx(styles.textarea, hasResult ? styles.textareaCompact : "")}
+        className={cx(styles.textarea, hasResult ? styles.textareaCompact : "", showValidation ? styles.textareaError : "")}
         value={description}
         onChange={(event) => onDescriptionChange(event.target.value)}
+        onBlur={() => setTouched(true)}
         aria-label="Describe your product"
+        aria-invalid={showValidation ? "true" : undefined}
+        aria-describedby={showValidation ? "desc-validation-msg" : undefined}
         placeholder="Example: Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path."
       />
+
+      {showValidation ? (
+        <p id="desc-validation-msg" className={styles.validationMsg} role="alert">
+          Add a product description to run the analysis.
+        </p>
+      ) : null}
 
       <ComposerStatus active={hasResult} viewModel={viewModel} dirty={dirty} />
 
@@ -559,7 +583,13 @@ function ComposerSurface({
       ) : null}
 
       <div className={styles.actionBar} data-mobile-sticky="true">
-        <button type="button" className={cx(styles.actionButton, styles.actionButtonPrimary)} onClick={onAnalyze}>
+        <button
+          type="button"
+          className={cx(styles.actionButton, styles.actionButtonPrimary)}
+          onClick={handleAnalyze}
+          disabled={busy}
+          aria-disabled={isEmpty ? "true" : undefined}
+        >
           {busy ? <LoaderCircle size={15} className={styles.spin} /> : <Sparkles size={15} />}
           {analyzeLabel}
         </button>
@@ -1394,7 +1424,7 @@ function SupportingContextPanel({ result, viewModel, description, copied, onCopy
   );
 }
 
-function ErrorBanner({ message }) {
+function ErrorBanner({ message, onRetry }) {
   if (!message) return null;
 
   const isNetwork = /network|fetch|failed to fetch|load failed|unavailable|timeout|abort/i.test(message);
@@ -1402,7 +1432,7 @@ function ErrorBanner({ message }) {
   return (
     <div className={styles.errorBanner} role="alert">
       <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-      <div>
+      <div className={styles.errorBody}>
         <div className={styles.errorTitle}>
           {isNetwork ? "API unreachable" : "Analysis error"}
         </div>
@@ -1412,6 +1442,12 @@ function ErrorBanner({ message }) {
             : message}
         </div>
       </div>
+      {onRetry ? (
+        <button type="button" className={styles.errorRetry} onClick={onRetry}>
+          <RefreshCcw size={13} />
+          Try again
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -1718,7 +1754,7 @@ export default function AnalyzeWorkspace() {
               hasResult={false}
             />
             <AnalyzeStatus busy={busy} />
-            <ErrorBanner message={error} />
+            <ErrorBanner message={error} onRetry={error ? runAnalysis : null} />
             {!busy ? <EmptyStateGuidance hasError={Boolean(error)} /> : null}
           </div>
         ) : (
@@ -1767,7 +1803,7 @@ export default function AnalyzeWorkspace() {
                 hasResult={true}
               />
               <AnalyzeStatus busy={busy} />
-              <ErrorBanner message={error} />
+              <ErrorBanner message={error} onRetry={error ? runAnalysis : null} />
             </div>
           </div>
         )}

@@ -1,9 +1,13 @@
-import { Mail, Send } from "lucide-react";
+import { ArrowRight, Mail, Send } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Surface from "../shared/ui/Surface";
 import MarketingLayout from "./MarketingLayout";
 import styles from "./MarketingPage.module.css";
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
 
 const CONTACT_TOPICS = [
   "Consultation request",
@@ -29,6 +33,9 @@ export default function ContactPage() {
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+
+  const emailInvalid = emailTouched && form.email && !isValidEmail(form.email);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -62,11 +69,11 @@ export default function ContactPage() {
       <Surface bodyClassName={styles.hero}>
         <div className={styles.heroCopy}>
           <span className={styles.heroEyebrow}>Start a discussion</span>
-          <h1 className={styles.heroTitle}>Bring the current blocker. We’ll start from the route.</h1>
+          <h1 className={styles.heroTitle}>Bring the current blocker.</h1>
           <p className={styles.heroText}>
-            Use the form below to draft an inquiry around your current product or workflow.
-            RuleGrid is best discussed with enough product context to understand whether the route
-            issue is about scope, missing inputs, or expert escalation.
+            Use the form to open a discussion around your product or workflow. If your main need
+            is route clarity right now, the analyzer is faster — start there and bring the result
+            into the conversation.
           </p>
         </div>
 
@@ -98,14 +105,22 @@ export default function ContactPage() {
               <label className={styles.field}>
                 <span className={styles.fieldLabel}>Email</span>
                 <input
-                  className={styles.fieldInput}
+                  className={`${styles.fieldInput}${emailInvalid ? ` ${styles.fieldInputError}` : ""}`}
                   name="email"
                   type="email"
                   value={form.email}
                   onChange={handleChange}
+                  onBlur={() => setEmailTouched(true)}
                   placeholder="you@company.com"
+                  aria-invalid={emailInvalid ? "true" : undefined}
+                  aria-describedby={emailInvalid ? "email-error" : undefined}
                   required
                 />
+                {emailInvalid ? (
+                  <span id="email-error" className={styles.fieldError} role="alert">
+                    Enter a valid email address.
+                  </span>
+                ) : null}
               </label>
               <label className={styles.field}>
                 <span className={styles.fieldLabel}>Company</span>
@@ -176,12 +191,13 @@ export default function ContactPage() {
 
           <Surface eyebrow="Fastest route" title="Try the analyzer first">
             <p className={styles.contactNote}>
-              If your main blocker is route clarity rather than consulting availability, start in
-              the analyzer and bring the resulting route into the discussion.
+              If your main blocker is route clarity, start in the analyzer and bring the resulting
+              route into the discussion. It takes seconds with a rough product description.
             </p>
             <div className={styles.buttonRow}>
-              <Link to="/analyze" className={styles.buttonSecondary}>
+              <Link to="/analyze" className={styles.buttonPrimary}>
                 Open analyzer
+                <ArrowRight size={14} />
               </Link>
             </div>
           </Surface>

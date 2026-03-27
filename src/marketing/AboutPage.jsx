@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Surface from "../shared/ui/Surface";
 import MarketingLayout from "./MarketingLayout";
@@ -122,6 +123,24 @@ export default function AboutPage() {
               <p className={styles.stepText}>{item.text}</p>
             </div>
           ))}
+        </div>
+      </Surface>
+
+      <Surface bodyClassName={styles.ctaBlock}>
+        <div className={styles.ctaCopy}>
+          <h2 className={styles.ctaTitle}>Ready to scope a product?</h2>
+          <p className={styles.ctaText}>
+            Paste a rough description and get a first-pass EU regulatory route in seconds.
+          </p>
+        </div>
+        <div className={styles.ctaActions}>
+          <Link to="/analyze" className={styles.buttonPrimary}>
+            Open analyzer
+            <ArrowRight size={14} />
+          </Link>
+          <Link to="/contact" className={styles.buttonSecondary}>
+            Get in touch
+          </Link>
         </div>
       </Surface>
     </MarketingLayout>

@@ -125,9 +125,11 @@ export default function HomePage() {
       actions={
         <Link to="/analyze" className={styles.headerAction}>
           Open analyzer
+          <ArrowRight size={13} />
         </Link>
       }
     >
+      <div className={styles.heroGroup}>
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
           <span className={styles.eyebrow}>EU product scoping</span>
@@ -141,6 +143,13 @@ export default function HomePage() {
             <span className={styles.signal}>Built for early routing</span>
             <span className={styles.signal}>Works with incomplete detail</span>
             <span className={styles.signal}>Not a certification decision</span>
+          </div>
+
+          <div className={styles.heroCTARow}>
+            <Link to="/analyze" className={styles.heroCTA}>
+              Open the analyzer
+              <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
 
@@ -202,6 +211,7 @@ export default function HomePage() {
           </div>
         ))}
       </section>
+      </div>{/* end heroGroup */}
 
       <section className={styles.lowerGrid}>
         <section className={styles.sectionBlock}>
