@@ -5,39 +5,269 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0c1521" />
-    <meta
-      name="description"
-      content="RuleGrid is an analyzer-first EU regulatory scoping workspace for compliance, engineering, and sourcing teams."
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>RuleGrid</title>
+    <!-- Default meta — overridden per-route by inline script below -->
+    <title>RuleGrid — EU Product Regulatory Scoping</title>
+    <meta name="description" content="RuleGrid is an analyzer-first EU regulatory scoping workspace. Describe a product and get a first-pass route covering directives, standards, and parallel obligations." />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="RuleGrid" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="RuleGrid — EU Product Regulatory Scoping" />
+    <meta property="og:description" content="Describe a product and get a first-pass EU regulatory route for compliance, engineering, and sourcing teams." />
+    <meta property="og:url" content="https://rulegrid.net" />
+
+    <!-- Twitter card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="RuleGrid — EU Product Regulatory Scoping" />
+    <meta name="twitter:description" content="Describe a product and get a first-pass EU regulatory route for compliance, engineering, and sourcing teams." />
+
+    <link rel="canonical" href="https://rulegrid.net" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- Pre-hydration styles: visible before React bundle loads -->
+    <style>
+      :root {
+        --pre-bg: #111e2e; --pre-bg-alt: #152232;
+        --pre-text: #d4e8f8; --pre-strong: #edf7ff;
+        --pre-muted: #a8c2d8; --pre-soft: #8aa5bb;
+        --pre-accent: #7db9ff; --pre-teal: #78d5c1;
+        --pre-border: rgba(255,255,255,0.13);
+        --pre-border-sm: rgba(255,255,255,0.08);
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 16px;
+        color: var(--pre-text);
+        background: var(--pre-bg-alt);
+        background-image:
+          radial-gradient(ellipse 70% 45% at 8% -5%, rgba(125,185,255,0.16), transparent),
+          radial-gradient(ellipse 55% 38% at 92% 4%, rgba(120,213,193,0.11), transparent),
+          linear-gradient(180deg, #152232 0%, #111e2e 45%, #0e1c2c 100%);
+        background-attachment: fixed;
+      }
+      #root { min-height: 100vh; }
+      .pre-shell { min-height: 100vh; display: grid; align-content: start; }
+      .pre-nav {
+        position: sticky; top: 0; z-index: 40;
+        height: 60px;
+        background: rgba(8,13,22,0.72);
+        border-bottom: 1px solid var(--pre-border-sm);
+        backdrop-filter: blur(28px);
+        -webkit-backdrop-filter: blur(28px);
+        display: flex; align-items: center; gap: 20px;
+        padding: 0 max(20px, calc((100% - 1360px) / 2 + 20px));
+      }
+      .pre-brand {
+        display: flex; align-items: center; gap: 9px;
+        text-decoration: none; color: inherit; flex-shrink: 0;
+      }
+      .pre-brand-mark {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(145deg, rgba(125,185,255,0.2), rgba(120,213,193,0.12));
+        border: 1px solid rgba(125,185,255,0.18);
+      }
+      .pre-brand-name {
+        font-size: 1.05rem; font-weight: 600;
+        color: var(--pre-strong); letter-spacing: -0.01em;
+      }
+      .pre-nav-links {
+        display: flex; align-items: center; gap: 2px;
+      }
+      .pre-nav-link {
+        color: var(--pre-muted); text-decoration: none;
+        padding: 6px 10px; border-radius: 7px; font-size: 0.88rem;
+      }
+      .pre-main {
+        width: min(1360px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 24px 0 80px;
+        display: grid; gap: 24px;
+      }
+      .pre-card {
+        background: rgba(13,22,38,0.78);
+        border: 1px solid var(--pre-border);
+        border-radius: 16px; overflow: hidden;
+      }
+      .pre-card-header { padding: 20px 22px 0; display: grid; gap: 6px; }
+      .pre-card-body { padding: 14px 22px 22px; display: grid; gap: 14px; }
+      .pre-eyebrow {
+        color: var(--pre-accent);
+        font-size: 0.68rem; font-weight: 600;
+        letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.72;
+      }
+      .pre-h1 {
+        margin: 0; color: var(--pre-strong);
+        font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+        line-height: 1.1; letter-spacing: -0.02em;
+      }
+      .pre-h1-lg {
+        font-size: clamp(2rem, 5vw, 3.4rem);
+        line-height: 0.98; max-width: 14ch;
+      }
+      .pre-h2 { margin: 0; color: var(--pre-strong); font-size: clamp(1.1rem, 2vw, 1.5rem); line-height: 1.15; letter-spacing: -0.01em; }
+      .pre-p { margin: 0; color: var(--pre-muted); font-size: 0.95rem; line-height: 1.62; max-width: 60ch; }
+      .pre-signals { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+      .pre-signal {
+        display: inline-flex; align-items: center;
+        min-height: 28px; padding: 0 10px;
+        border-radius: 999px; border: 1px solid rgba(255,255,255,0.09);
+        background: rgba(255,255,255,0.03);
+        color: var(--pre-soft); font-size: 0.83rem;
+      }
+      .pre-textarea {
+        width: 100%; min-height: 156px; padding: 14px 16px;
+        border-radius: 14px; border: 1px solid rgba(125,185,255,0.18);
+        background: rgba(10,16,28,0.8); color: var(--pre-text);
+        font: inherit; font-size: 0.95rem; line-height: 1.65; resize: vertical;
+      }
+      .pre-textarea::placeholder { color: var(--pre-soft); }
+      .pre-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        min-height: 38px; padding: 0 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(125,185,255,0.32);
+        background: linear-gradient(160deg, rgba(125,185,255,0.22), rgba(125,185,255,0.12));
+        color: var(--pre-strong); font: inherit; font-size: 0.88rem; font-weight: 500; cursor: pointer;
+      }
+      .pre-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
+        gap: 28px; align-items: start;
+      }
+      .pre-hero-copy { display: grid; gap: 16px; }
+      .pre-panel {
+        display: grid; gap: 16px; padding: 22px;
+        border-radius: 20px;
+        border: 1px solid rgba(125,185,255,0.14);
+        background:
+          radial-gradient(circle at top right, rgba(125,185,255,0.08), transparent 34%),
+          linear-gradient(180deg, rgba(12,20,32,0.92) 0%, rgba(9,15,26,0.88) 100%);
+      }
+      .pre-panel-header { display: grid; gap: 8px; }
+      .pre-two-col { display: grid; gap: 12px; }
+      .pre-guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+      .pre-guide-card {
+        display: grid; gap: 9px; padding: 13px 14px;
+        border-radius: 12px; border: 1px solid var(--pre-border);
+        background: rgba(255,255,255,0.04);
+      }
+      .pre-guide-title { color: var(--pre-muted); font-size: 0.82rem; font-weight: 500; }
+      .pre-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+      .pre-list li { display: flex; gap: 10px; color: var(--pre-text); font-size: 0.84rem; line-height: 1.5; }
+      .pre-list li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--pre-teal); flex-shrink: 0; margin-top: 8px; }
+      .pre-step-grid { display: grid; gap: 10px; }
+      .pre-step {
+        display: grid; gap: 9px; padding: 14px 16px;
+        border-radius: 12px; border: 1px solid var(--pre-border-sm);
+        background: rgba(255,255,255,0.02);
+      }
+      .pre-step-n {
+        width: 28px; height: 28px; display: grid; place-items: center;
+        border-radius: 8px; border: 1px solid rgba(125,185,255,0.18);
+        background: rgba(125,185,255,0.08); color: var(--pre-accent);
+        font-size: 0.8rem; font-weight: 700;
+      }
+      .pre-step-title { color: var(--pre-strong); font-size: 0.92rem; font-weight: 600; }
+      .pre-step-text { color: var(--pre-muted); font-size: 0.85rem; line-height: 1.56; margin: 0; }
+      .pre-accent-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+      .pre-accent-item { display: flex; gap: 10px; color: var(--pre-muted); font-size: 0.9rem; line-height: 1.55; }
+      .pre-accent-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pre-teal); flex-shrink: 0; margin-top: 8px; }
+      .pre-muted-dot { background: var(--pre-soft); }
+      @media (max-width: 1080px) {
+        .pre-hero, .pre-two-col { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 720px) {
+        .pre-main { width: calc(100% - 24px); }
+        .pre-h1-lg { font-size: clamp(1.75rem, 9vw, 2.8rem); }
+        .pre-panel { padding: 16px; }
+        .pre-nav { padding: 0 12px; }
+        .pre-step-grid { grid-template-columns: 1fr; }
+      }
+      @media (min-width: 768px) {
+        .pre-step-grid { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (min-width: 1080px) {
+        .pre-step-grid { grid-template-columns: repeat(4, 1fr); }
+      }
+    </style>
   </head>
   <body>
-    <noscript>RuleGrid requires JavaScript to render the analyzer workspace.</noscript>
+    <noscript>
+      <div style="padding:40px 20px;max-width:800px;margin:0 auto;color:#d4e8f8;background:#111e2e;min-height:100vh;font-family:system-ui,sans-serif;">
+        <h1 style="color:#edf7ff;margin:0 0 16px;font-size:2rem;">RuleGrid — EU Product Regulatory Scoping</h1>
+        <p style="line-height:1.65;color:#a8c2d8;margin:0 0 12px;">RuleGrid is an analyzer-first EU regulatory scoping workspace for compliance, engineering, and sourcing teams.</p>
+        <p style="line-height:1.65;color:#a8c2d8;margin:0 0 12px;">Describe a product and get a first-pass route covering directive families, a standards route, parallel obligations, and clarification prompts — all before formal review begins.</p>
+        <p style="color:#8aa5bb;font-size:0.9rem;margin:24px 0 0;">JavaScript is required to use the interactive analyzer. Please enable JavaScript in your browser to continue.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+    <script>
+      (function () {
+        var path = window.location.pathname.replace(/\/$/, '') || '/';
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+        // Route-specific meta
+        var routeMeta = {
+          '/analyze': {
+            title: 'Analyze — RuleGrid',
+            description: 'Describe your product and get directive families, a standards route, parallel obligations, and clarification prompts for EU regulatory scoping.',
+            url: 'https://rulegrid.net/analyze'
+          },
+          '/about': {
+            title: 'About — RuleGrid',
+            description: 'Where RuleGrid fits in a compliance-team workflow and where formal expert review still takes over. Built for compliance, engineering, and sourcing teams.',
+            url: 'https://rulegrid.net/about'
+          },
+          '/contact': {
+            title: 'Contact — RuleGrid',
+            description: 'Get in touch with the RuleGrid team to discuss workflow integration or ask questions about EU regulatory scoping.',
+            url: 'https://rulegrid.net/contact'
+          },
+          '/tools': {
+            title: 'Tools — RuleGrid',
+            description: 'Upcoming modules and workflow tools for EU regulatory scoping on the RuleGrid platform.',
+            url: 'https://rulegrid.net/tools'
+          }
+        };
+        var m = routeMeta[path];
+        if (m) {
+          document.title = m.title;
+          var setMeta = function (sel, attr, val) {
+            var el = document.querySelector(sel);
+            if (el) el.setAttribute(attr, val);
+          };
+          setMeta('meta[name="description"]', 'content', m.description);
+          setMeta('meta[property="og:title"]', 'content', m.title);
+          setMeta('meta[property="og:description"]', 'content', m.description);
+          setMeta('meta[property="og:url"]', 'content', m.url);
+          setMeta('meta[name="twitter:title"]', 'content', m.title);
+          setMeta('meta[name="twitter:description"]', 'content', m.description);
+          setMeta('link[rel="canonical"]', 'href', m.url);
+        }
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+        // Pre-hydration nav HTML
+        var NAV = '<nav class="pre-nav"><a class="pre-brand" href="/"><div class="pre-brand-mark"></div><span class="pre-brand-name">RuleGrid</span></a><div class="pre-nav-links"><a class="pre-nav-link" href="/">Home</a><a class="pre-nav-link" href="/analyze">Analyzer</a><a class="pre-nav-link" href="/about">About</a></div></nav>';
+
+        var html = '';
+
+        if (path === '/' || path === '') {
+          html = '<div class="pre-shell">' + NAV + '<main class="pre-main"><section class="pre-hero"><div class="pre-hero-copy"><span class="pre-eyebrow">EU product scoping</span><h1 class="pre-h1 pre-h1-lg">Start with what you know about the product.</h1><p class="pre-p">Paste a rough description. RuleGrid carries it into the analyzer so the team can review likely directives, standards, and missing details from a real starting point.</p><div class="pre-signals"><span class="pre-signal">Built for early routing</span><span class="pre-signal">Works with incomplete detail</span><span class="pre-signal">Not a certification decision</span></div></div><div class="pre-panel"><div class="pre-panel-header"><span class="pre-eyebrow">Quick start</span><h2 class="pre-h2">Describe the product</h2><p class="pre-p" style="font-size:0.88rem;">You can refine the draft after you land on /analyze.</p></div><textarea class="pre-textarea" placeholder="Example: Connected espresso machine with mains power, Wi-Fi app control, OTA updates, grinder, and food-contact brew path." rows="7" aria-label="Product description"></textarea><button class="pre-btn" type="button">Analyze product</button></div></section></main></div>';
+
+        } else if (path === '/analyze') {
+          html = '<div class="pre-shell">' + NAV + '<main class="pre-main"><div class="pre-card"><div class="pre-card-header"><span class="pre-eyebrow">Analyze</span><h1 class="pre-h1">Describe the product</h1><p class="pre-p">Include product function, power source, radios, battery, accessories, and intended environment.</p></div><div class="pre-card-body"><textarea class="pre-textarea" placeholder="Example: Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path." rows="6" aria-label="Describe your product"></textarea><button class="pre-btn" type="button">Analyze product</button><div class="pre-guide-grid"><div class="pre-guide-card"><span class="pre-guide-title">What helps most</span><ul class="pre-list"><li>Power source</li><li>Connectivity type</li><li>Battery details</li><li>Intended use</li><li>Environment</li></ul></div><div class="pre-guide-card"><span class="pre-guide-title">The analyzer returns</span><ul class="pre-list"><li>Directive families</li><li>Standards route</li><li>Parallel obligations</li><li>Clarification prompts</li></ul></div></div></div></div></main></div>';
+
+        } else if (path === '/about') {
+          html = '<div class="pre-shell">' + NAV + '<main class="pre-main"><div class="pre-card"><div class="pre-card-header"><span class="pre-eyebrow">Confidence and boundaries</span><h1 class="pre-h1" style="max-width:22ch;">A first-pass scoping system for teams, not a replacement for experts.</h1><p class="pre-p">RuleGrid is strongest when it helps compliance, engineering, and sourcing teams create a clearer first route and a better handoff package before specialist review becomes the bottleneck.</p></div><div class="pre-card-body"></div></div><div class="pre-two-col"><div class="pre-card"><div class="pre-card-header"><span class="pre-eyebrow">Designed for</span><h2 class="pre-h2">Where it fits</h2></div><div class="pre-card-body"><ul class="pre-accent-list"><li class="pre-accent-item"><span class="pre-accent-dot"></span>Concept and intake-stage consumer or connected products</li><li class="pre-accent-item"><span class="pre-accent-dot"></span>Internal route triage before deeper expert review begins</li><li class="pre-accent-item"><span class="pre-accent-dot"></span>Clarifying the impact of radios, software, cloud, or material details</li><li class="pre-accent-item"><span class="pre-accent-dot"></span>Creating a better handoff baseline for labs or consultants</li></ul></div></div><div class="pre-card"><div class="pre-card-header"><span class="pre-eyebrow">Still required</span><h2 class="pre-h2">Where formal review takes over</h2></div><div class="pre-card-body"><ul class="pre-accent-list"><li class="pre-accent-item"><span class="pre-accent-dot pre-muted-dot"></span>Formal conformity assessment and accredited testing</li><li class="pre-accent-item"><span class="pre-accent-dot pre-muted-dot"></span>Final legal or certification decisions</li><li class="pre-accent-item"><span class="pre-accent-dot pre-muted-dot"></span>A substitute for product-specific specialist judgment</li><li class="pre-accent-item"><span class="pre-accent-dot pre-muted-dot"></span>A guarantee that every Member State nuance is captured</li></ul></div></div></div><div class="pre-card"><div class="pre-card-header"><span class="pre-eyebrow">Recommended workflow</span><h2 class="pre-h2">How compliance teams get the most from it</h2></div><div class="pre-card-body"><div class="pre-step-grid"><div class="pre-step"><div class="pre-step-n">1</div><div class="pre-step-title">Bring real product detail</div><p class="pre-step-text">Even imperfect descriptions improve quickly if they include the core function, power, radios, and software dependencies.</p></div><div class="pre-step"><div class="pre-step-n">2</div><div class="pre-step-title">Interrogate the first route</div><p class="pre-step-text">Use the initial result as a working hypothesis and challenge it against your own engineering and sourcing facts.</p></div><div class="pre-step"><div class="pre-step-n">3</div><div class="pre-step-title">Close the gaps that matter</div><p class="pre-step-text">Apply clarifications and re-run when the product description still leaves scope-changing uncertainty.</p></div><div class="pre-step"><div class="pre-step-n">4</div><div class="pre-step-title">Escalate with context</div><p class="pre-step-text">Move into expert review with a tighter route summary, clearer unknowns, and fewer repeated discovery questions.</p></div></div></div></div></main></div>';
+        }
+
+        if (html) {
+          document.getElementById('root').innerHTML = html;
+        }
+      })();
+    </script>
   </body>
 </html>

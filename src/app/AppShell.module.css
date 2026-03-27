@@ -124,9 +124,9 @@
 .main {
   width: min(1360px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 24px 0 80px;
+  padding: 28px 0 88px;
   display: grid;
-  gap: 24px;
+  gap: 28px;
   position: relative;
   z-index: 1;
 }

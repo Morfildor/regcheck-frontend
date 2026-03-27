@@ -406,7 +406,7 @@ function HeaderActions({ result, totalStandards, onReset, onCopy, copied }) {
     <div className={styles.headerActions}>
       <TonePill tone="strong">{formatUiLabel(result?.overall_risk || "medium")} risk</TonePill>
       <span className={styles.headerMetric}>{totalStandards} standards</span>
-      <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onCopy}>
+      <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onCopy} aria-live="polite">
         {copied ? <Check size={14} /> : <Copy size={14} />}
         {copied ? "Copied" : "Copy"}
       </button>
@@ -582,7 +582,7 @@ function ComposerSurface({
   );
 }
 
-function EmptyStateGuidance() {
+function EmptyStateGuidance({ hasError }) {
   const sections = [
     {
       key: "helps",
@@ -599,24 +599,35 @@ function EmptyStateGuidance() {
   ];
 
   return (
-    <div className={styles.guidanceGrid}>
-      {sections.map((section) => {
-        const Icon = section.icon;
-        return (
-          <div key={section.key} className={styles.guidanceCard}>
-            <div className={styles.guidanceCardTitle}>
-              <Icon size={14} />
-              <span className={styles.sectionLabel}>{section.label}</span>
+    <div className={styles.emptyStateBody}>
+      {hasError ? (
+        <div className={styles.apiUnavailableCard}>
+          <p className={styles.apiUnavailableTitle}>API may be starting up</p>
+          <p className={styles.apiUnavailableText}>
+            The analyzer backend sometimes takes a moment to wake up after inactivity. Paste a
+            product description below and try again — it usually responds within 10–20 seconds.
+          </p>
+        </div>
+      ) : null}
+      <div className={styles.guidanceGrid}>
+        {sections.map((section) => {
+          const Icon = section.icon;
+          return (
+            <div key={section.key} className={styles.guidanceCard}>
+              <div className={styles.guidanceCardTitle}>
+                <Icon size={14} />
+                <span className={styles.sectionLabel}>{section.label}</span>
+              </div>
+              <CompactList
+                items={section.items}
+                className={styles.guidanceList}
+                itemClassName={styles.guidanceItem}
+                markerClassName={styles.guidanceMarker}
+              />
             </div>
-            <CompactList
-              items={section.items}
-              className={styles.guidanceList}
-              itemClassName={styles.guidanceItem}
-              markerClassName={styles.guidanceMarker}
-            />
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -856,7 +867,7 @@ function ClarificationStrip({
               <span className={styles.sectionLabel}>Known</span>
               <div className={styles.chipList}>
                 {knownFacts.map((fact) => (
-                  <span key={fact} className={styles.listChip}>
+                  <span key={fact} className={styles.knownChip}>
                     {fact}
                   </span>
                 ))}
@@ -869,7 +880,7 @@ function ClarificationStrip({
               <span className={styles.sectionLabel}>Assumed</span>
               <div className={styles.chipList}>
                 {viewModel.assumptions.map((assumption) => (
-                  <span key={assumption} className={styles.listChip}>
+                  <span key={assumption} className={styles.assumedChip}>
                     {titleCaseMinor(assumption)}
                   </span>
                 ))}
@@ -1343,7 +1354,7 @@ function SupportingContextPanel({ result, viewModel, description, copied, onCopy
 
         <div className={styles.infoCard}>
           <span className={styles.sectionLabel}>Copy / export</span>
-          <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary, styles.fullWidthButton)} onClick={onCopy}>
+          <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary, styles.fullWidthButton)} onClick={onCopy} aria-live="polite">
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {copied ? "Copied to clipboard" : "Copy analysis summary"}
           </button>
@@ -1363,12 +1374,20 @@ function SupportingContextPanel({ result, viewModel, description, copied, onCopy
 function ErrorBanner({ message }) {
   if (!message) return null;
 
+  const isNetwork = /network|fetch|failed to fetch|load failed|unavailable|timeout|abort/i.test(message);
+
   return (
     <div className={styles.errorBanner} role="alert">
-      <AlertTriangle size={16} />
+      <AlertTriangle size={16} style={{ flexShrink: 0 }} />
       <div>
-        <div className={styles.errorTitle}>Analysis error</div>
-        <div className={styles.errorText}>{message}</div>
+        <div className={styles.errorTitle}>
+          {isNetwork ? "API unreachable" : "Analysis error"}
+        </div>
+        <div className={styles.errorText}>
+          {isNetwork
+            ? "The analyzer could not reach the API. The service may be starting up — try again in a moment."
+            : message}
+        </div>
       </div>
     </div>
   );
@@ -1677,7 +1696,7 @@ export default function AnalyzeWorkspace() {
             />
             <AnalyzeStatus busy={busy} />
             <ErrorBanner message={error} />
-            {!busy ? <EmptyStateGuidance /> : null}
+            {!busy ? <EmptyStateGuidance hasError={Boolean(error)} /> : null}
           </div>
         ) : (
           <div className={layoutStyles.resultsGrid}>

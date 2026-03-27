@@ -1,36 +1,36 @@
 .main {
-  gap: 18px;
+  gap: 20px;
 }
 
 .zone {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .landingStack {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .resultsGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
-  gap: 20px;
+  gap: 22px;
   align-items: start;
 }
 
 .resultsMain,
 .statusStack {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .resultsAside {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   position: sticky;
-  top: 74px; /* header (60px) + gap (14px) */
-  max-height: calc(100dvh - 88px);
+  top: 76px; /* header (60px) + gap (16px) */
+  max-height: calc(100dvh - 90px);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.08) transparent;
@@ -64,16 +64,16 @@
 
 @media (max-width: 768px) {
   .main {
-    gap: 12px;
+    gap: 14px;
   }
 
   .zone {
-    gap: 10px;
+    gap: 11px;
   }
 
   .resultsGrid,
   .resultsMain,
   .resultsAside {
-    gap: 10px;
+    gap: 12px;
   }
 }

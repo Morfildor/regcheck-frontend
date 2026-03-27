@@ -1106,11 +1106,15 @@ export function formatStageLabel(stage) {
 export function buildClipboardSummary({ result, description, routeSections, legislationGroups, missingInputs = [], evidenceNeeds = [] }) {
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
+  const confidenceLabel = formatUiLabel(confidence);
   const isPreliminary = String(confidence).toLowerCase() !== "high";
   const traits = result?.all_traits || [];
+  const riskLabel = formatUiLabel(result?.overall_risk || "medium");
+  const productType = formatUiLabel(result?.product_type || "unclear");
 
   const blockers = missingInputs.filter((item) => item.severity === "blocker");
   const routeAffecting = missingInputs.filter((item) => item.severity === "route-affecting");
+  const hasWarnings = blockers.length > 0 || routeAffecting.length > 0;
 
   const nextActionLines = evidenceNeeds.flatMap((need) =>
     (need.nextActions || []).map((action) => `  [${need.label}] ${action}`)
@@ -1120,46 +1124,55 @@ export function buildClipboardSummary({ result, description, routeSections, legi
     .filter((group) => group.key === "non_ce" || group.groupKey === "non_ce")
     .flatMap((group) => group.items || []);
 
+  const totalStandards = routeSections.reduce((sum, s) => sum + (s.items || []).length, 0);
+  const divider = "─────────────────────────────────────────────────";
+
   return [
-    "RuleGrid analysis summary",
-    "─────────────────────────────────────────",
+    "RuleGrid — First-pass regulatory analysis",
+    divider,
     "",
-    "ANALYZED DESCRIPTION",
+    // Headline metrics — most important at top
+    `Confidence:  ${confidenceLabel}${isPreliminary ? "  (re-run with more detail to improve)" : ""}`,
+    `Risk level:  ${riskLabel}`,
+    `Match:       ${productType}  ·  ${totalStandards} standard${totalStandards === 1 ? "" : "s"}`,
+    result?.summary ? `Summary:     ${result.summary}` : null,
+    "",
+    // Warnings before the route — highest priority
+    hasWarnings ? "WARNINGS" : null,
+    hasWarnings ? divider.slice(0, 40) : null,
+    ...blockers.map((item) => `  ▲ [Blocker]         ${item.title}: ${item.reason}`),
+    ...routeAffecting.map((item) => `  · [Route-affecting] ${item.title}: ${item.reason}`),
+    hasWarnings ? "" : null,
+    // Standards route
+    "STANDARDS ROUTE",
+    divider.slice(0, 40),
+    ...routeSections.flatMap((section) => [
+      `${routeTitle(section)}  (${(section.items || []).length})`,
+      ...sortStandardItems(section.items || []).map((item) =>
+        `  • ${item.code}${item.title ? `  —  ${item.title}` : ""}`
+      ),
+      "",
+    ]),
+    // Parallel obligations
+    "PARALLEL OBLIGATIONS",
+    divider.slice(0, 40),
+    ...(parallelItems.length
+      ? parallelItems.map((item) => `  • ${item.code || item.title}${item.title && item.code ? `  —  ${item.title}` : ""}`)
+      : ["  None returned beyond the primary directive route."]),
+    "",
+    // Next actions
+    ...(nextActionLines.length
+      ? ["NEXT ACTIONS (pre-lab)", divider.slice(0, 40), ...nextActionLines, ""]
+      : []),
+    // Detected traits
+    ...(traits.length ? [`Detected traits: ${traits.join(", ")}`, ""] : []),
+    // Description at end for reference
+    "DESCRIPTION USED",
+    divider.slice(0, 40),
     description || "(none)",
     "",
-    "PRODUCT IDENTIFICATION",
-    `Matched type:  ${formatUiLabel(result?.product_type || "unclear")}`,
-    `Confidence:    ${formatUiLabel(confidence)}${isPreliminary ? " — preliminary; re-run with more detail to improve." : ""}`,
-    `Overall risk:  ${formatUiLabel(result?.overall_risk || "medium")}`,
-    result?.summary ? `Summary:       ${result.summary}` : null,
-    "",
-    "TRIGGERED ROUTES",
-    ...routeSections.map((section) =>
-      `  ${routeTitle(section)} — ${(section.items || []).length} standard${(section.items || []).length === 1 ? "" : "s"}`
-    ),
-    "",
-    "STANDARDS ROUTE",
-    ...routeSections.flatMap((section) => [
-      `${routeTitle(section)} (${section.count || 0})`,
-      ...sortStandardItems(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
-    ]),
-    "",
-    "PARALLEL OBLIGATIONS",
-    parallelItems.length
-      ? parallelItems.map((item) => `  • ${item.code || item.title} — ${item.title || ""}`)
-      : ["  None returned beyond the primary route."],
-    blockers.length || routeAffecting.length
-      ? [
-          "",
-          "OPEN BLOCKERS & ROUTE-AFFECTING ITEMS",
-          ...blockers.map((item) => `  [Blocker] ${item.title}: ${item.reason}`),
-          ...routeAffecting.map((item) => `  [Route-affecting] ${item.title}: ${item.reason}`),
-        ]
-      : [],
-    nextActionLines.length
-      ? ["", "NEXT ACTIONS", ...nextActionLines]
-      : [],
-    traits.length ? ["", `Detected traits: ${traits.join(", ")}`] : [],
+    divider,
+    "RuleGrid · First-pass analysis only · Not a conformity decision or legal advice",
   ]
     .flat()
     .filter((line) => line !== null)

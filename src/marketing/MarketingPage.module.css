@@ -7,7 +7,7 @@
   align-items: start;
 }
 
-.heroCopy { display: grid; gap: 20px; }
+.heroCopy { display: grid; gap: 22px; }
 
 .heroEyebrow {
   display: inline-flex;
@@ -153,7 +153,7 @@
 .trustGrid, .featureGrid, .stepGrid, .twoCol,
 .toolsGrid, .contactGrid, .formGrid {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .trustGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -182,7 +182,7 @@
 /* ─── Cards — metric / feature / step / tool ──────── */
 
 .metricCard, .featureCard, .stepCard, .toolCard {
-  padding: 15px 16px;
+  padding: 16px 18px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.018);
@@ -201,7 +201,7 @@
   font-size: 0.89rem;
 }
 
-.stepCard { display: grid; gap: 11px; }
+.stepCard { display: grid; gap: 12px; }
 
 .stepNumber {
   width: 30px; height: 30px;

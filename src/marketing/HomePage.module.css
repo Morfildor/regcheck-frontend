@@ -31,7 +31,7 @@
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
-  gap: 28px;
+  gap: 32px;
   align-items: start;
 }
 
@@ -40,7 +40,7 @@
 .sectionBlock,
 .listGroup {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .eyebrow,
@@ -122,7 +122,7 @@
 .intakePanel {
   display: grid;
   gap: 18px;
-  padding: 22px;
+  padding: 24px;
   border-radius: 20px;
   border: 1px solid rgba(125, 185, 255, 0.14);
   background:
@@ -239,7 +239,7 @@
 .outputItem {
   display: grid;
   gap: 8px;
-  padding: 18px 14px 18px 0;
+  padding: 20px 14px 20px 0;
 }
 
 .outputItem:not(:last-child) {
@@ -258,12 +258,12 @@
 .lowerGrid {
   display: grid;
   grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-  gap: 30px;
+  gap: 36px;
 }
 
 .sectionBlock {
   align-content: start;
-  padding-top: 8px;
+  padding-top: 10px;
 }
 
 .listGrid {
@@ -322,6 +322,13 @@
   color: var(--text-strong);
 }
 
+@media (max-width: 1200px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+    gap: 24px;
+  }
+}
+
 @media (max-width: 1080px) {
   .hero,
   .lowerGrid,
@@ -329,6 +336,8 @@
   .outputStrip {
     grid-template-columns: 1fr;
   }
+
+  .hero { gap: 20px; }
 
   .outputItem {
     padding: 16px 0;
