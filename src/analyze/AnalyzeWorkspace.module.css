@@ -1621,6 +1621,7 @@
 .evidenceSectionIconCheck  { color: #9ce0bc; flex-shrink: 0; }
 .evidenceSectionIconMissing { color: #f5cc81; flex-shrink: 0; }
 .evidenceSectionIconBlocker { color: #f4947a; flex-shrink: 0; }
+.evidenceSectionIconNext    { color: #7db9ff; flex-shrink: 0; }
 
 /* ─── Evidence blockers section ───────────────────── */
 
@@ -1643,6 +1644,77 @@
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+}
+
+/* ─── Glossary tooltip ────────────────────────────── */
+
+.glossaryTip {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted rgba(180,200,230,0.35);
+  display: inline;
+}
+
+.glossaryTip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: 320px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(12,18,32,0.97);
+  border: 1px solid rgba(125,185,255,0.22);
+  color: var(--text);
+  font-size: 0.74rem;
+  line-height: 1.5;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  text-align: left;
+}
+
+.glossaryTip:hover::after,
+.glossaryTip:focus-within::after {
+  opacity: 1;
+}
+
+/* ─── Risk driver row ─────────────────────────────── */
+
+.riskDriverRow {
+  display: grid;
+  gap: 6px;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--border-sm);
+}
+
+/* ─── Clarification section header (Missing label) ── */
+
+.clarificationSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+/* ─── Timing / applicability badge ───────────────── */
+
+.timingBadge {
+  display: inline-block;
+  margin: 3px 0 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid rgba(125,185,255,0.2);
+  background: rgba(125,185,255,0.07);
+  color: #93c5ff;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  font-weight: 500;
 }
 
 /* ─── Results enter animation ─────────────────────── */

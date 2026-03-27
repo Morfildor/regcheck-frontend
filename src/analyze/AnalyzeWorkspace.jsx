@@ -11,6 +11,7 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
   AlertTriangle,
+  ArrowRight,
   ArrowUp,
   Ban,
   Check,
@@ -52,6 +53,36 @@ const EXAMPLE_DETAILS = [
   "included accessories",
   "environment / installation context",
 ];
+
+const DIRECTIVE_GLOSSARY = {
+  LVD: "Low Voltage Directive (2014/35/EU) — applies to electrical equipment 50–1000 V AC / 75–1500 V DC.",
+  EMC: "Electromagnetic Compatibility Directive (2014/30/EU) — governs emissions and immunity of electrical apparatus.",
+  RED: "Radio Equipment Directive (2014/53/EU) — applies to Wi-Fi, Bluetooth, cellular, and other intentional radiators.",
+  RED_CYBER: "RED Art. 3(3)(d/e/f) cybersecurity delegated act — adds security requirements for internet-connected radio equipment.",
+  ROHS: "RoHS Directive (2011/65/EU) — restricts ten hazardous substances in electrical and electronic equipment.",
+  REACH: "REACH Regulation (EC 1907/2006) — chemical substance duties including SVHC communication and Annex XVII restrictions.",
+  WEEE: "WEEE Directive (2012/19/EU) — producer registration, take-back obligations, and crossed-bin marking for EEE.",
+  GPSR: "General Product Safety Regulation (EU 2023/988) — applies to all consumer products; replaces GPSD from Dec 2024.",
+  CRA: "Cyber Resilience Act (EU 2024/2847) — cybersecurity-by-design for products with digital elements; most obligations from Dec 2027.",
+  MDR: "Medical Device Regulation (EU 2017/745) — clinical evidence, notified body, and UDI required for medical devices.",
+  GDPR: "GDPR (EU 2016/679) — personal data processing duties including lawful basis, rights, and security measures.",
+  BATTERY: "EU Battery Regulation (EU 2023/1542) — labelling, chemistry disclosure, removability, and EoL duties for batteries.",
+  ECO: "Ecodesign Directive (2009/125/EC) framework — binding requirements set in implementing measures for energy-related products.",
+  ESPR: "Ecodesign for Sustainable Products Regulation (EU 2024/1781) — successor to ESPR; product-specific measures forthcoming.",
+  AI_Act: "AI Act (EU 2024/1689) — risk-based requirements for AI systems; high-risk AI requires conformity assessment.",
+  FCM: "Food Contact Materials Regulation (EC 1935/2004) — inertness and traceability for materials contacting food.",
+};
+
+/** Returns timing / applicability label for a directive key, or null. */
+function getTimingLabel(directiveKey) {
+  const key = String(directiveKey || "").toUpperCase();
+  if (key === "CRA") return "Obligations from Dec 2027";
+  if (key === "GDPR") return "Only if personal data processed";
+  if (key === "MDR") return "Only if marketed with medical claim";
+  if (key === "ESPR") return "Review-dependent";
+  if (key === "AI_ACT" || key === "AI_Act") return "Upcoming — risk classification required";
+  return null;
+}
 
 const PILL_TONE_CLASS = {
   positive: styles.pillPositive,
@@ -149,16 +180,24 @@ function extractKnownFacts(description, result) {
   const facts = [];
 
   if (result?.product_type) facts.push(formatUiLabel(result.product_type));
-  if (/mains|230v|240v|plug|corded|ac/.test(lowered)) facts.push("Mains power stated");
-  if (/battery|rechargeable|lithium|cell/.test(lowered)) facts.push("Battery stated");
-  if (/wifi|wi-fi|bluetooth|radio|wireless/.test(lowered)) facts.push("Wireless connectivity stated");
-  if (/no wireless|no radio|local only/.test(lowered)) facts.push("No radio stated");
-  if (/consumer|household|home/.test(lowered)) facts.push("Consumer use stated");
+  if (/mains|230v|240v|plug|corded|ac\b/.test(lowered)) facts.push("Mains power stated");
+  if (/battery|rechargeable|lithium|li.?ion/.test(lowered)) facts.push("Battery stated");
+  if (/wifi|wi.?fi/.test(lowered)) facts.push("Wi-Fi stated");
+  if (/bluetooth|ble\b/.test(lowered)) facts.push("Bluetooth stated");
+  if (/nfc\b/.test(lowered)) facts.push("NFC stated");
+  if (/no wireless|no radio|local.?only/.test(lowered)) facts.push("No radio stated");
+  if (/cloud.?account|cloud.?required/.test(lowered)) facts.push("Cloud account stated");
+  if (/local.?only|local.?control|no.?cloud/.test(lowered)) facts.push("Local-only stated");
+  if (/ota|firmware.?update/.test(lowered)) facts.push("OTA updates stated");
+  if (/app.?control|app.?sync/.test(lowered)) facts.push("App control stated");
+  if (/consumer|household|home\b/.test(lowered)) facts.push("Consumer use stated");
   if (/professional|industrial|commercial/.test(lowered)) facts.push("Professional use stated");
-  if (/outdoor|weather|ip\d/.test(lowered)) facts.push("Outdoor or installation context stated");
+  if (/outdoor|weather|ip\d/.test(lowered)) facts.push("Outdoor / installation stated");
+  if (/indoor\b/.test(lowered)) facts.push("Indoor use stated");
+  if (/wearable|on.?body|body.?contact|worn\b/.test(lowered)) facts.push("Body-contact / wearable stated");
   if (/charger|adapter|power supply/.test(lowered)) facts.push("Accessory power hardware stated");
 
-  return [...new Set(facts)].slice(0, 6);
+  return [...new Set(facts)].slice(0, 8);
 }
 
 const SCOPE_GAPS = [
@@ -168,7 +207,8 @@ const SCOPE_GAPS = [
     detect: (d) => !/mains|230v|240v|ac\s*power|rechargeable|lithium|battery|usb.?c?\s*power|external.*adapter|powered via/.test(d),
     chips: [
       { label: "Mains (230V)", text: "mains powered (230 V AC)" },
-      { label: "Battery", text: "rechargeable lithium battery" },
+      { label: "Rechargeable battery", text: "rechargeable lithium battery" },
+      { label: "Replaceable battery", text: "replaceable battery cells" },
       { label: "AC adapter", text: "powered via external AC/DC adapter" },
     ],
   },
@@ -179,35 +219,42 @@ const SCOPE_GAPS = [
     chips: [
       { label: "Wi-Fi", text: "Wi-Fi" },
       { label: "Bluetooth", text: "Bluetooth LE" },
+      { label: "NFC", text: "NFC" },
       { label: "None", text: "no wireless connectivity" },
     ],
   },
   {
     id: "user",
     question: "Who uses it?",
-    detect: (d) => !/consumer|household|professional|industrial|commercial/.test(d),
+    detect: (d) => !/consumer|household|professional|industrial|commercial|child|patient/.test(d),
     chips: [
       { label: "Consumers", text: "consumer use" },
       { label: "Professionals", text: "professional use" },
+      { label: "Child-related", text: "intended for use by children" },
+      { label: "Patient-related", text: "patient-related use" },
     ],
   },
   {
     id: "environment",
     question: "Where used?",
-    detect: (d) => !/indoor|outdoor|installation|ip\d|weather/.test(d),
+    detect: (d) => !/indoor|outdoor|installation|ip\d|weather|portable\b|fixed\b|on.?body|wearable/.test(d),
     chips: [
       { label: "Indoors", text: "indoor use only" },
       { label: "Outdoors", text: "outdoor rated" },
+      { label: "Portable", text: "portable device" },
+      { label: "On-body", text: "worn on body" },
     ],
   },
   {
     id: "cloud",
-    question: "Needs internet?",
+    question: "App / cloud?",
     detect: (d) =>
       /wifi|wi.?fi|bluetooth|wireless|connected/.test(d) &&
-      !/cloud|account.?required|local.?only|local.?lan|no.?cloud/.test(d),
+      !/cloud|account.?required|local.?only|local.?lan|no.?cloud|app.?only|app.?control|app.?sync/.test(d),
     chips: [
-      { label: "Cloud / app", text: "cloud account required" },
+      { label: "Cloud required", text: "cloud account required" },
+      { label: "App only", text: "app control, local only, no cloud dependency" },
+      { label: "Cloud optional", text: "cloud optional, local control also available" },
       { label: "Local only", text: "local control only, no cloud" },
     ],
   },
@@ -243,19 +290,32 @@ function TonePill({ children, tone = "muted", strong = false }) {
   );
 }
 
+function GlossaryTip({ directiveKey, children }) {
+  const definition = DIRECTIVE_GLOSSARY[directiveKey];
+  if (!definition) return <>{children}</>;
+  return (
+    <span className={styles.glossaryTip} data-tooltip={definition}>
+      {children}
+    </span>
+  );
+}
+
 function DirectivePill({ directiveKey }) {
   const tone = directiveTone(directiveKey);
+  const shortLabel = directiveShort(directiveKey);
   return (
-    <span
-      className={styles.directivePill}
-      style={{
-        "--directive-bg": tone.bg,
-        "--directive-border": tone.bd,
-        "--directive-text": tone.text,
-      }}
-    >
-      {directiveShort(directiveKey)}
-    </span>
+    <GlossaryTip directiveKey={directiveKey}>
+      <span
+        className={styles.directivePill}
+        style={{
+          "--directive-bg": tone.bg,
+          "--directive-border": tone.bd,
+          "--directive-text": tone.text,
+        }}
+      >
+        {shortLabel}
+      </span>
+    </GlossaryTip>
   );
 }
 
@@ -581,6 +641,17 @@ function OverviewPanel({ result, viewModel }) {
           ))}
         </div>
       </div>
+
+      {viewModel.riskDrivers?.length ? (
+        <div className={styles.riskDriverRow}>
+          <span className={styles.sectionLabel}>Risk driven by</span>
+          <div className={styles.chipList}>
+            {viewModel.riskDrivers.map((driver) => (
+              <span key={driver} className={styles.listChip}>{driver}</span>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </Surface>
   );
 }
@@ -779,6 +850,15 @@ function ClarificationStrip({
 
           {allMissing.length ? (
             <div className={styles.clarificationList}>
+              <div className={styles.clarificationSectionHeader}>
+                <span className={styles.sectionLabel}>Missing</span>
+                {blocking.length ? (
+                  <TonePill tone="warning">{blocking.length} blocker{blocking.length === 1 ? "" : "s"}</TonePill>
+                ) : null}
+                {routeAffecting.length ? (
+                  <TonePill tone="strong">{routeAffecting.length} route-affecting</TonePill>
+                ) : null}
+              </div>
               {allMissing.map((item) => (
                 <div key={item.key} className={cx(styles.clarificationItem, clarificationItemClass(item.severity))}>
                   <div className={styles.clarificationItemHeader}>
@@ -1059,6 +1139,9 @@ function ParallelObligationCard({ item }) {
         </div>
         <div className={styles.obligationCardBody}>
           <h4 className={styles.obligationTitle}>{titleCaseMinor(item.title || "Untitled obligation")}</h4>
+          {getTimingLabel(item.directive_key) ? (
+            <span className={styles.timingBadge}>{getTimingLabel(item.directive_key)}</span>
+          ) : null}
           {normalizedPreview ? <p className={styles.obligationPreview}>{normalizedPreview}</p> : null}
         </div>
       </button>
@@ -1145,6 +1228,7 @@ const EVIDENCE_SECTIONS = [
   { key: "evidence", icon: Check, iconClass: styles.evidenceSectionIconCheck, label: "Typical evidence", field: "typicalEvidence", blockersClass: "" },
   { key: "missing", icon: AlertCircle, iconClass: styles.evidenceSectionIconMissing, label: "Common gaps", field: "commonMissing", blockersClass: "" },
   { key: "blockers", icon: Ban, iconClass: styles.evidenceSectionIconBlocker, label: "Blockers", field: "blockers", blockersClass: styles.evidenceSectionBlockers },
+  { key: "nextActions", icon: ArrowRight, iconClass: styles.evidenceSectionIconNext, label: "Next actions", field: "nextActions", blockersClass: "" },
 ];
 
 function EvidencePanel({ viewModel }) {
@@ -1398,6 +1482,8 @@ export default function AnalyzeWorkspace() {
       description: analyzedDescription || description,
       routeSections: viewModel.routeSections,
       legislationGroups: viewModel.legislationGroups,
+      missingInputs: viewModel.missingInputs,
+      evidenceNeeds: viewModel.evidenceNeeds,
     });
 
     const fallbackCopy = (value) => {
@@ -1431,7 +1517,7 @@ export default function AnalyzeWorkspace() {
       fallbackCopy(text);
       setAnalysisCopied(true);
     }
-  }, [analyzedDescription, description, result, viewModel.legislationGroups, viewModel.routeSections]);
+  }, [analyzedDescription, description, result, viewModel.legislationGroups, viewModel.routeSections, viewModel.missingInputs, viewModel.evidenceNeeds]);
 
   const runAnalysis = useCallback(async () => {
     const payload = String(description || "").trim();

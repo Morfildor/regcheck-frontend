@@ -1103,50 +1103,65 @@ export function formatStageLabel(stage) {
 
 
 
-export function buildClipboardSummary({ result, description, routeSections, legislationGroups }) {
+export function buildClipboardSummary({ result, description, routeSections, legislationGroups, missingInputs = [], evidenceNeeds = [] }) {
   const confidence =
     result?.confidence_panel?.confidence || result?.product_match_confidence || "low";
-  const missingItems = result?.missing_information_items || [];
+  const isPreliminary = String(confidence).toLowerCase() !== "high";
   const traits = result?.all_traits || [];
-  const diagnostics = result?.diagnostics || [];
+
+  const blockers = missingInputs.filter((item) => item.severity === "blocker");
+  const routeAffecting = missingInputs.filter((item) => item.severity === "route-affecting");
+
+  const nextActionLines = evidenceNeeds.flatMap((need) =>
+    (need.nextActions || []).map((action) => `  [${need.label}] ${action}`)
+  );
+
+  const parallelItems = legislationGroups
+    .filter((group) => group.key === "non_ce" || group.groupKey === "non_ce")
+    .flatMap((group) => group.items || []);
 
   return [
     "RuleGrid analysis summary",
+    "─────────────────────────────────────────",
     "",
-    `Input: ${description || ""}`,
+    "ANALYZED DESCRIPTION",
+    description || "(none)",
     "",
-    `Detected product: ${formatUiLabel(result?.product_type || "unclear")}`,
-    `Confidence: ${formatUiLabel(confidence)}`,
-    `Overall risk: ${formatUiLabel(result?.overall_risk || "MEDIUM")}`,
+    "PRODUCT IDENTIFICATION",
+    `Matched type:  ${formatUiLabel(result?.product_type || "unclear")}`,
+    `Confidence:    ${formatUiLabel(confidence)}${isPreliminary ? " — preliminary; re-run with more detail to improve." : ""}`,
+    `Overall risk:  ${formatUiLabel(result?.overall_risk || "medium")}`,
+    result?.summary ? `Summary:       ${result.summary}` : null,
     "",
-    `Summary: ${result?.summary || ""}`,
+    "TRIGGERED ROUTES",
+    ...routeSections.map((section) =>
+      `  ${routeTitle(section)} — ${(section.items || []).length} standard${(section.items || []).length === 1 ? "" : "s"}`
+    ),
     "",
-    "Standards route:",
+    "STANDARDS ROUTE",
     ...routeSections.flatMap((section) => [
-      `- ${routeTitle(section)} (${section.count || 0})`,
+      `${routeTitle(section)} (${section.count || 0})`,
       ...sortStandardItems(section.items || []).map((item) => `  • ${item.code} — ${item.title}`),
     ]),
     "",
-    "Applicable legislation:",
-    ...legislationGroups.flatMap((group) => [
-      `- ${titleCaseMinor(group.title || compactLegislationGroupLabel(group))}`,
-      ...(group.items || []).map((item) => `  • ${item.code} — ${item.title}`),
-    ]),
-    missingItems.length
+    "PARALLEL OBLIGATIONS",
+    parallelItems.length
+      ? parallelItems.map((item) => `  • ${item.code || item.title} — ${item.title || ""}`)
+      : ["  None returned beyond the primary route."],
+    blockers.length || routeAffecting.length
       ? [
           "",
-          "Missing information items:",
-          ...missingItems.map(
-            (item) =>
-              `- ${gapLabel(item.key)}: ${item.message || ""}${
-                item.examples?.length ? ` (${item.examples.join(", ")})` : ""
-              }`
-          ),
+          "OPEN BLOCKERS & ROUTE-AFFECTING ITEMS",
+          ...blockers.map((item) => `  [Blocker] ${item.title}: ${item.reason}`),
+          ...routeAffecting.map((item) => `  [Route-affecting] ${item.title}: ${item.reason}`),
         ]
       : [],
+    nextActionLines.length
+      ? ["", "NEXT ACTIONS", ...nextActionLines]
+      : [],
     traits.length ? ["", `Detected traits: ${traits.join(", ")}`] : [],
-    diagnostics.length ? ["", "Diagnostics:", ...diagnostics.map((line) => `- ${line}`)] : [],
   ]
     .flat()
+    .filter((line) => line !== null)
     .join("\n");
 }

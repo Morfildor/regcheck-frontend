@@ -37,13 +37,25 @@ const BASE_SAFETY_ROUTE_COPY = {
 };
 
 const MISSING_INPUT_HINTS = [
-  { key: "wireless_connectivity", match: /(wifi|bluetooth|radio|wireless|connect)/i, title: "Wireless connectivity", severity: "blocker", reason: "Can introduce RED and cybersecurity obligations." },
-  { key: "battery_type", match: /(battery|rechargeable|lithium|cell)/i, title: "Battery type", severity: "route-affecting", reason: "Changes battery, charger, and transport obligations." },
+  { key: "wireless_connectivity", match: /(wifi|wi.?fi|bluetooth|ble\b|nfc\b|radio|wireless|no.?radio|no.?wireless)/i, title: "Wireless connectivity", severity: "blocker", reason: "Can introduce RED and cybersecurity obligations." },
+  { key: "battery_type", match: /(battery|rechargeable|lithium|li.?ion|alkaline|nimh|cell)/i, title: "Battery type", severity: "route-affecting", reason: "Changes battery, charger, and transport obligations." },
   { key: "charger_included", match: /(charger|adapter|power supply)/i, title: "Charger included", severity: "route-affecting", reason: "External PSU and included accessories affect evidence scope." },
   { key: "display_laser_uv", match: /(display|laser|uv|light source)/i, title: "Display / laser / UV source", severity: "route-affecting", reason: "Can change safety and adjacent-framework review." },
-  { key: "environment", match: /(outdoor|indoor|installation|ip|weather)/i, title: "Intended environment", severity: "helpful", reason: "Installation context can alter safety assumptions and evidence." },
-  { key: "consumer_professional", match: /(consumer|professional|industrial|commercial)/i, title: "Consumer vs professional use", severity: "blocker", reason: "Product identity and route assumptions depend on intended use." },
+  { key: "environment", match: /(outdoor|indoor|installation|ip\d|weather|portable|fixed|on.?body|wearable)/i, title: "Intended environment", severity: "helpful", reason: "Installation context can alter safety assumptions and evidence." },
+  { key: "consumer_professional", match: /(consumer|professional|industrial|commercial|household|child|patient)/i, title: "Consumer vs professional use", severity: "blocker", reason: "Product identity and route assumptions depend on intended use." },
 ];
+
+/**
+ * Patterns that suppress a guidance item key when matched in the description.
+ * If the user already stated these facts, the item is not noise-worthy.
+ */
+const GUIDANCE_SUPPRESSORS = {
+  radio_stack: /(wifi|wi.?fi|bluetooth|ble\b|nfc\b|zigbee|z.?wave|cellular|lte\b|5g\b|no.?radio|no.?wireless)/i,
+  connected_architecture: /(cloud.?account|cloud.?required|cloud.?optional|local.?only|local.?control|local.?lan|ota|firmware.?update|app.?control|app.?sync)/i,
+  battery: /(lithium|li.?ion|rechargeable.?battery|replaceable.?battery|primary.?cell)/i,
+  data_functions: /(camera|microphone|voice.?input|personal.?data|user.?account)/i,
+  food_contact: /(food.?contact|wetted.?path|brew.?path|food.?touch)/i,
+};
 
 const ROUTE_EVIDENCE_LIBRARY = {
   LVD: {
@@ -66,6 +78,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
       "No insulation or earthing drawings",
       "Instructions don't cover real use conditions",
     ],
+    nextActions: [
+      "Lock power architecture and voltage / current ratings",
+      "Confirm protective class (I / II / III) and IP rating",
+      "Prepare or obtain insulation and earthing drawings",
+      "Schedule LVD safety test session",
+    ],
   },
   EMC: {
     label: "EMC",
@@ -86,6 +104,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
       "No stable port or accessory configuration",
       "No repeatable test mode matrix",
       "Compliance relies on undocumented user constraints",
+    ],
+    nextActions: [
+      "Define and document worst-case operating mode matrix",
+      "Confirm all shipped accessories and cable lengths",
+      "Declare residential or industrial environment class",
+      "Freeze firmware version before EMC testing",
     ],
   },
   RED: {
@@ -108,6 +132,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
       "No final module or antenna path selected",
       "User-changeable radio options undocumented",
     ],
+    nextActions: [
+      "Confirm final radio module, chipset, and firmware version",
+      "Document all antenna variants and placement",
+      "Build frequency / power table for user instructions",
+      "Align DoC, label, and tested build configuration",
+    ],
   },
   RED_CYBER: {
     label: "RED Cyber",
@@ -129,6 +159,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
       "Passwordless or weak-default-credential path open",
       "App or cloud architecture still moving",
     ],
+    nextActions: [
+      "Inventory all internet-facing services and APIs",
+      "Document default credential policy and recovery flows",
+      "Tie OTA delivery to a signed firmware process",
+      "Map personal-data and monetary processing scope",
+    ],
   },
   BATTERY: {
     label: "Battery",
@@ -149,6 +185,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
       "Battery type unknown at scoping stage",
       "Design conflicts with claimed replaceability route",
       "No supplier-backed battery specification exists",
+    ],
+    nextActions: [
+      "Lock battery chemistry, model, and Wh capacity",
+      "Decide embedded vs. replaceable and document rationale",
+      "Add capacity, symbol, and QR code to label artwork",
+      "Obtain charging profile from battery supplier",
     ],
   },
   REACH: {
@@ -173,6 +215,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
       "Supplier can't confirm Candidate List status",
       "Likely SVHC with no Art. 33/7(2) decision recorded",
     ],
+    nextActions: [
+      "Request article-level declarations from all suppliers",
+      "Run Candidate List screening on current BOM",
+      "Prepare Article 33 consumer communication text",
+      "Assess Article 7(2) notification threshold and owner",
+    ],
   },
   ROHS: {
     label: "RoHS",
@@ -190,6 +238,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
     blockers: [
       "No material declarations for high-risk parts",
       "Compliance depends on unvalidated exemption",
+    ],
+    nextActions: [
+      "Collect homogeneous-material declarations for final BOM",
+      "Confirm EEE category and any scope exclusions",
+      "Verify Annex III/IV exemption wording and expiry",
+      "Include accessories, cables, and spare parts in scope",
     ],
   },
   WEEE: {
@@ -209,6 +263,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
       "Markets known but no producer strategy exists",
       "WEEE ownership not assigned to any team",
     ],
+    nextActions: [
+      "Confirm WEEE category for each product family",
+      "Assign producer-of-record for each target market",
+      "Finalise crossed-out bin marking placement",
+      "Set up or join national take-back schemes",
+    ],
   },
   FCM: {
     label: "FCM",
@@ -225,6 +285,11 @@ const ROUTE_EVIDENCE_LIBRARY = {
     blockers: [
       "Food-contact parts with no traceable supplier",
       "Intended food type or temperature not locked",
+    ],
+    nextActions: [
+      "Map the complete wetted-path BOM at material level",
+      "Define worst-case food type, temperature, and contact time",
+      "Collect supplier compliance docs for seals, coatings, inks",
     ],
   },
   FCM_PLASTIC: {
@@ -243,6 +308,11 @@ const ROUTE_EVIDENCE_LIBRARY = {
       "No supplier declaration for plastic food-contact parts",
       "No migration evidence for worst-case use",
     ],
+    nextActions: [
+      "Freeze polymer and additive formulation with supplier",
+      "Match migration test simulants to actual food types",
+      "Obtain plastic DoC for each grade in the wetted path",
+    ],
   },
   CRA: {
     label: "CRA",
@@ -259,6 +329,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
     blockers: [
       "No owner for vulnerability handling or patches",
       "Software architecture still moving, boundary can't be frozen",
+    ],
+    nextActions: [
+      "Define product boundary and software inventory",
+      "Assign coordinated vulnerability disclosure owner",
+      "Commit to a minimum security-update support period",
+      "Map app and cloud responsibilities to product boundary",
     ],
   },
   ECO: {
@@ -278,6 +354,12 @@ const ROUTE_EVIDENCE_LIBRARY = {
     blockers: [
       "Relevant implementing measures not checked at all",
       "Energy-mode behavior not final enough to review",
+    ],
+    nextActions: [
+      "Map SKU to every applicable ecodesign implementing measure",
+      "Define and lock off, standby, and networked-standby modes",
+      "Run energy measurements per hardware/firmware/accessories",
+      "Check EPS, display, and repair/spare-part obligations",
     ],
   },
 };
@@ -476,19 +558,25 @@ function inferConfidence(result, missingInputs) {
   return { label: "Needs confirmation", tone: "warning" };
 }
 
-function normalizeMissingInputs(result, guidanceItems, descriptionText) {
+function normalizeMissingInputs(guidanceItems, descriptionText) {
   const lowered = String(descriptionText || "").toLowerCase();
-  const items = (guidanceItems || []).map((item) => {
-    const key = item.key || item.title || "missing-input";
-    const severity = item.importance === "high" ? "blocker" : item.importance === "medium" ? "route-affecting" : "helpful";
-    return {
-      key,
-      title: item.title || titleCaseMinor(item.message || key),
-      severity,
-      reason: item.description || item.message || "More detail would tighten this route.",
-      examples: item.choices || item.examples || [],
-    };
-  });
+  const items = (guidanceItems || [])
+    .filter((item) => {
+      // Suppress guidance items whose topic is already stated in the description
+      const suppressor = GUIDANCE_SUPPRESSORS[item.key];
+      return !(suppressor && lowered && suppressor.test(lowered));
+    })
+    .map((item) => {
+      const key = item.key || item.title || "missing-input";
+      const severity = item.importance === "high" ? "blocker" : item.importance === "medium" ? "route-affecting" : "helpful";
+      return {
+        key,
+        title: item.title || titleCaseMinor(item.message || key),
+        severity,
+        reason: item.description || item.message || "More detail would tighten this route.",
+        examples: item.choices || item.examples || [],
+      };
+    });
 
   MISSING_INPUT_HINTS.forEach((hint) => {
     if (!lowered || hint.match.test(lowered)) return;
@@ -506,6 +594,34 @@ function normalizeMissingInputs(result, guidanceItems, descriptionText) {
     const rank = { blocker: 0, "route-affecting": 1, helpful: 2 };
     return rank[a.severity] - rank[b.severity];
   });
+}
+
+function inferRiskDrivers(result, routeSections, descriptionText) {
+  const drivers = [];
+  const lowered = String(descriptionText || "").toLowerCase();
+  const traits = new Set(result?.all_traits || []);
+  const hasRadioRoute = routeSections.some((s) => s.key === "RED" || s.key === "RED_CYBER");
+
+  if (hasRadioRoute || traits.has("radio") || /wifi|wi.?fi|bluetooth|nfc\b|wireless/.test(lowered)) {
+    drivers.push("radio transmission (RED)");
+  }
+  if (traits.has("cloud") || traits.has("ota") || /cloud.?account|ota|firmware.?update|app.?control/.test(lowered)) {
+    drivers.push("cloud / OTA connectivity");
+  }
+  if (traits.has("battery_powered") || /lithium|li.?ion|rechargeable.?battery/.test(lowered)) {
+    drivers.push("lithium battery");
+  }
+  if (/wearable|on.?body|body.?contact|worn\b|personal care|toothbrush|earphone|headphone/.test(lowered)) {
+    drivers.push("body-contact use");
+  }
+  if (traits.has("camera") || traits.has("microphone") || /camera|microphone|personal.?data|voice.?assistant/.test(lowered)) {
+    drivers.push("personal data processing");
+  }
+  if (/medical|patient|health.?monitor|clinical|therapeutic|diagnostic/.test(lowered)) {
+    drivers.push("medical-boundary uncertainty");
+  }
+
+  return drivers;
 }
 
 function rationaleForStandard(item, sectionKey, baseSafetyRoute) {
@@ -685,10 +801,11 @@ export function buildAnalysisViewModel(result, descriptionText = "") {
   const baseSafetyRoute = inferBaseSafetyRoute(result, routeSections);
   const decoratedRouteSections = decorateRouteSections(routeSections, baseSafetyRoute);
   const decoratedLegislationGroups = decorateLegislationGroups(legislationGroups);
-  const missingInputs = normalizeMissingInputs(result, guidanceItems, descriptionText);
+  const missingInputs = normalizeMissingInputs(guidanceItems, descriptionText);
   const assumptions = inferAssumptions(result, decoratedRouteSections, descriptionText);
   const resultMaturity = inferMaturity(result, assumptions, missingInputs);
   const classificationConfidence = inferConfidence(result, missingInputs);
+  const riskDrivers = inferRiskDrivers(result, decoratedRouteSections, descriptionText);
   const evidenceNeeds = buildEvidenceNeeds(decoratedRouteSections, decoratedLegislationGroups);
   const totalStandards = decoratedRouteSections.reduce(
     (count, section) => count + (section.items || []).length,
@@ -773,5 +890,6 @@ export function buildAnalysisViewModel(result, descriptionText = "") {
     warnings,
     clarificationState,
     decisionSignals,
+    riskDrivers,
   };
 }
