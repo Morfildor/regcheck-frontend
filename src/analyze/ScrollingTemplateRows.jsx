@@ -3,11 +3,9 @@ import styles from "./ScrollingTemplateRows.module.css";
 import { DEFAULT_TEMPLATES } from "./helpers";
 
 // ─── Row configuration ────────────────────────────────────────────
-// baseSpeed is calibrated at REFERENCE_W; actual speed scales with container width
-const REFERENCE_W = 1200; // px
 const ROW_CONFIGS = [
-  { direction: -1, baseSpeed: 0.14 }, // top row:    right → left
-  { direction: +1, baseSpeed: 0.12 }, // bottom row: left  → right
+  { direction: -1, speed: 0.14 }, // top row:    right → left
+  { direction: +1, speed: 0.12 }, // bottom row: left  → right
 ];
 
 const GAP = 16;              // px gap between pills
@@ -145,14 +143,9 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
 
       let structureChanged = false;
 
-      ROW_CONFIGS.forEach(({ direction, baseSpeed }, rowIndex) => {
+      ROW_CONFIGS.forEach(({ direction, speed }, rowIndex) => {
         const pills = rowsRef.current[rowIndex];
         if (!pills.length) return;
-
-        // Scale speed linearly with container width, clamped to a sensible range
-        // → slow drift on mobile, brisker on wide desktop
-        const scale = Math.min(Math.max(w / REFERENCE_W, 0.25), 1.8);
-        const speed = baseSpeed * scale;
 
         // Move every pill and push the new x directly to its DOM transform
         for (const pill of pills) {
