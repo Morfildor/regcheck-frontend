@@ -1462,7 +1462,7 @@ export default function AnalyzeWorkspace() {
   const requestSequenceRef = useRef(0);
   const resultsRef = useRef(null);
   const shouldAutorun = useRef(searchParams.get("autorun") === "1");
-  const [templateOrder] = useState(() => Array.from({ length: 48 }, () => Math.random()));
+  const [templateOrder] = useState(() => Array.from({ length: 120 }, () => Math.random()));
 
   const viewModel = useMemo(
     () => buildAnalysisViewModel(result, analyzedDescription || description),
