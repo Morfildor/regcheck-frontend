@@ -74,6 +74,38 @@ const DIRECTIVE_GLOSSARY = {
   FCM: "Food Contact Materials Regulation (EC 1935/2004) — inertness and traceability for materials contacting food.",
 };
 
+const RISK_GLOSSARY = {
+  low: "Low risk: few high-severity obligations identified. Standard CE marking should proceed without critical blockers.",
+  medium: "Medium risk: some obligations require attention. Clarify open items before scoping evidence.",
+  high: "High risk: multiple high-severity obligations identified. Prioritize clarification before testing.",
+  critical: "Critical risk: severe obligations identified across multiple areas. Immediate expert review required.",
+};
+
+const CONFIDENCE_GLOSSARY = {
+  "high confidence": "Product matched with high certainty. The route is unlikely to shift with more detail.",
+  "preliminary only": "Blockers are open. Resolve them before relying on this route.",
+  "needs confirmation": "Route is plausible but open items may shift specific obligations.",
+};
+
+const MATURITY_GLOSSARY = {
+  "initial scope": "Blockers are unresolved. The route may change significantly with more product detail.",
+  "conditional scope": "No blockers, but route-affecting items remain. Scope is plausible, not finalized.",
+  "evidence-ready scope": "No blockers or route-affecting gaps. Scope is stable and ready for evidence planning.",
+};
+
+const APPLICABILITY_GLOSSARY = {
+  "core applicable": "Applies directly to this product type. Include in the primary compliance scope.",
+  "conditional": "Applicability depends on product features or market facts. Verify whether the condition is met.",
+  "supplementary": "Lower-priority — may apply depending on further design or use-case details.",
+  "route review": "Applicability uncertain. Review the full directive scope against this product.",
+};
+
+const SEVERITY_GLOSSARY = {
+  blocker: "Missing input that can materially change the compliance route. Resolve before relying on this result.",
+  "route-affecting": "Missing input that may shift specific obligations or evidence scope. Confirm before testing.",
+  helpful: "Optional detail that can tighten the route but is unlikely to change it materially.",
+};
+
 /** Returns timing / applicability label for a directive key, or null. */
 function getTimingLabel(directiveKey) {
   const key = String(directiveKey || "").toUpperCase();
@@ -283,16 +315,17 @@ function useScopeGapGroups(description) {
 }
 
 
-function TonePill({ children, tone = "muted", strong = false }) {
-  return (
+function TonePill({ children, tone = "muted", strong = false, tip }) {
+  const el = (
     <span className={cx(styles.pill, PILL_TONE_CLASS[tone], strong ? styles.pillStrong : "")}>
       {children}
     </span>
   );
+  return tip ? <GlossaryTip title={tip}>{el}</GlossaryTip> : el;
 }
 
-function GlossaryTip({ directiveKey, children }) {
-  const definition = DIRECTIVE_GLOSSARY[directiveKey];
+function GlossaryTip({ directiveKey, title, children }) {
+  const definition = title || DIRECTIVE_GLOSSARY[directiveKey];
   const [tipPos, setTipPos] = useState(null);
   const spanRef = useRef(null);
   const hideTimerRef = useRef(null);
@@ -404,7 +437,7 @@ function HeaderActions({ result, totalStandards, onReset, onCopy, copied }) {
 
   return (
     <div className={styles.headerActions}>
-      <TonePill tone="strong">{formatUiLabel(result?.overall_risk || "medium")} risk</TonePill>
+      <TonePill tone="strong" tip={RISK_GLOSSARY[result?.overall_risk?.toLowerCase() || "medium"]}>{formatUiLabel(result?.overall_risk || "medium")} risk</TonePill>
       <span className={styles.headerMetric}>{totalStandards} standards</span>
       <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onCopy} aria-live="polite">
         {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -650,7 +683,7 @@ function OverviewPanel({ result, viewModel }) {
         <div className={styles.identityCardTop}>
           <span className={styles.identityLabel}>Matched product type</span>
           <div className={styles.identityConfidenceBadge}>
-            <TonePill tone={viewModel.classificationConfidence.tone}>
+            <TonePill tone={viewModel.classificationConfidence.tone} tip={CONFIDENCE_GLOSSARY[viewModel.classificationConfidence.label.toLowerCase()]}>
               {viewModel.classificationConfidence.label} confidence
             </TonePill>
           </div>
@@ -708,8 +741,8 @@ function TrustLayerPanel({ viewModel }) {
       <summary className={styles.trustBarSummary}>
         <span className={styles.trustBarLabel}>Confidence</span>
         <div className={styles.trustBarPills}>
-          <TonePill tone={viewModel.resultMaturity.tone} strong>{viewModel.resultMaturity.label}</TonePill>
-          <TonePill tone={viewModel.classificationConfidence.tone}>{viewModel.classificationConfidence.label}</TonePill>
+          <TonePill tone={viewModel.resultMaturity.tone} strong tip={MATURITY_GLOSSARY[viewModel.resultMaturity.label.toLowerCase()]}>{viewModel.resultMaturity.label}</TonePill>
+          <TonePill tone={viewModel.classificationConfidence.tone} tip={CONFIDENCE_GLOSSARY[viewModel.classificationConfidence.label.toLowerCase()]}>{viewModel.classificationConfidence.label}</TonePill>
           <span className={styles.trustBarMeta}>{trustSummary}</span>
         </div>
         <ChevronDown size={13} className={styles.trustBarChevron} />
@@ -823,15 +856,15 @@ function ClarificationStrip({
           <div className={styles.clarificationSummaryRight}>
             <div className={styles.clarificationPreview}>
               {blocking.length ? (
-                <TonePill tone="warning">{blocking.length} blocker{blocking.length === 1 ? "" : "s"}</TonePill>
+                <TonePill tone="warning" tip={SEVERITY_GLOSSARY["blocker"]}>{blocking.length} blocker{blocking.length === 1 ? "" : "s"}</TonePill>
               ) : null}
               {routeAffecting.length ? (
-                <TonePill tone="strong">
+                <TonePill tone="strong" tip={SEVERITY_GLOSSARY["route-affecting"]}>
                   {routeAffecting.length} route-affecting
                 </TonePill>
               ) : null}
               {!blocking.length && !routeAffecting.length && allMissing.length ? (
-                <TonePill tone="muted">Optional only</TonePill>
+                <TonePill tone="muted" tip="No blockers or route-affecting items remain. All clarifications are optional refinements.">Optional only</TonePill>
               ) : null}
               {previewItems.map((item) => (
                 <span key={item.key} className={styles.clarificationPreviewChip}>
@@ -896,17 +929,17 @@ function ClarificationStrip({
               <div className={styles.clarificationSectionHeader}>
                 <span className={styles.sectionLabel}>Missing</span>
                 {blocking.length ? (
-                  <TonePill tone="warning">{blocking.length} blocker{blocking.length === 1 ? "" : "s"}</TonePill>
+                  <TonePill tone="warning" tip={SEVERITY_GLOSSARY["blocker"]}>{blocking.length} blocker{blocking.length === 1 ? "" : "s"}</TonePill>
                 ) : null}
                 {routeAffecting.length ? (
-                  <TonePill tone="strong">{routeAffecting.length} route-affecting</TonePill>
+                  <TonePill tone="strong" tip={SEVERITY_GLOSSARY["route-affecting"]}>{routeAffecting.length} route-affecting</TonePill>
                 ) : null}
               </div>
               {allMissing.map((item) => (
                 <div key={item.key} className={cx(styles.clarificationItem, clarificationItemClass(item.severity))}>
                   <div className={styles.clarificationItemHeader}>
                     <span className={styles.clarificationItemTitle}>{item.title}</span>
-                    <TonePill tone={missingSeverityTone(item.severity)}>
+                    <TonePill tone={missingSeverityTone(item.severity)} tip={SEVERITY_GLOSSARY[item.severity]}>
                       {missingSeverityLabel(item.severity)}
                     </TonePill>
                   </div>
@@ -1065,7 +1098,7 @@ function RouteSectionCard({ section, open, onToggle }) {
           {/* Pills always below the text — never beside it */}
           <div className={styles.accordionTitleMeta}>
             <DirectivePill directiveKey={section.key || "OTHER"} />
-            <TonePill tone={applicabilityTone}>{section.applicabilityBucket || "Route review"}</TonePill>
+            <TonePill tone={applicabilityTone} tip={APPLICABILITY_GLOSSARY[(section.applicabilityBucket || "Route review").toLowerCase()]}>{section.applicabilityBucket || "Route review"}</TonePill>
           </div>
         </div>
         {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
