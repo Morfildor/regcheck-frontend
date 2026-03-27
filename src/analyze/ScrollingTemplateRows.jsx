@@ -4,8 +4,8 @@ import { DEFAULT_TEMPLATES } from "./helpers";
 
 // ─── Row configuration ────────────────────────────────────────────
 const ROW_CONFIGS = [
-  { direction: -1, speed: 0.14 }, // top row:    right → left
-  { direction: +1, speed: 0.12 }, // bottom row: left  → right
+  { direction: -1, speed: 0.15 }, // top row:    right → left
+  { direction: +1, speed: 0.15 }, // bottom row: left  → right
 ];
 
 const GAP = 16;              // px gap between pills
