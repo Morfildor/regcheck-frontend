@@ -11,8 +11,6 @@ const ROW_CONFIGS = [
 const GAP = 16;              // px gap between pills
 const PILL_ESTIMATE_W = 140; // estimated pill width before DOM measurement
 const HISTORY_SIZE = 8;      // anti-repetition window per row
-const MOMENTUM_FRICTION = 0.90; // velocity multiplier per frame during coast
-const MOMENTUM_THRESHOLD = 0.15; // px/frame below which momentum is considered done
 
 // ─── Helpers ─────────────────────────────────────────────────────
 function pickTemplate(pool, history) {
@@ -42,14 +40,6 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
 
   // Guards the one-time post-paint redistribution
   const redistributedRef = useRef(false);
-
-  // Touch drag + momentum state
-  const isDraggingRef = useRef(false);
-  const lastTouchXRef = useRef(0);
-  const velocityRef = useRef(0);       // px/frame at moment of release
-  const momentumRef = useRef(false);   // true while coasting after drag
-  // Rolling velocity samples for smoother release detection
-  const velocitySamplesRef = useRef([]);
 
   // Exposes latest pool to the stable createPill callback
   const poolRef = useRef(pool);
@@ -114,71 +104,6 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
     return () => ro.disconnect();
   }, []);
 
-  // ── Touch drag + momentum ────────────────────────────────────
-  // addEventListener (not React props) so we can pass passive:false on
-  // touchmove and call preventDefault to suppress page scroll.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const onTouchStart = (e) => {
-      if (e.touches.length !== 1) return;
-      isDraggingRef.current = true;
-      momentumRef.current = false;
-      velocityRef.current = 0;
-      velocitySamplesRef.current = [];
-      lastTouchXRef.current = e.touches[0].clientX;
-    };
-
-    const onTouchMove = (e) => {
-      if (!isDraggingRef.current || e.touches.length !== 1) return;
-      e.preventDefault(); // block page scroll while swiping pills
-      const x = e.touches[0].clientX;
-      const dx = x - lastTouchXRef.current;
-      lastTouchXRef.current = x;
-
-      // Keep a rolling window of recent deltas for smooth release velocity
-      velocitySamplesRef.current.push(dx);
-      if (velocitySamplesRef.current.length > 6) velocitySamplesRef.current.shift();
-
-      // Move all pills in all rows by the drag delta
-      rowsRef.current.forEach((pills) => {
-        for (const pill of pills) {
-          pill.x += dx;
-          const pillEl = pillElsRef.current.get(pill.id);
-          if (pillEl) pillEl.style.transform = `translateX(${pill.x}px)`;
-        }
-      });
-    };
-
-    const onTouchEnd = () => {
-      isDraggingRef.current = false;
-      // Average recent samples for a stable release velocity
-      const samples = velocitySamplesRef.current;
-      const avg =
-        samples.length > 0
-          ? samples.reduce((a, b) => a + b, 0) / samples.length
-          : 0;
-      velocityRef.current = avg;
-      velocitySamplesRef.current = [];
-      if (Math.abs(avg) > MOMENTUM_THRESHOLD) {
-        momentumRef.current = true;
-      }
-    };
-
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    el.addEventListener("touchend", onTouchEnd, { passive: true });
-    el.addEventListener("touchcancel", onTouchEnd, { passive: true });
-
-    return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchEnd);
-    };
-  }, []);
-
   // ── RAF animation loop (starts once, never restarts) ─────────
   useEffect(() => {
     const tick = () => {
@@ -199,7 +124,6 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
         if (allMeasured) {
           redistributedRef.current = true;
           rowsRef.current.forEach((pills) => {
-            // Sort ascending by x so we redistribute left → right
             const sorted = [...pills].sort((a, b) => a.x - b.x);
             let cursor = sorted[0].x;
             for (const p of sorted) {
@@ -216,39 +140,17 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
         }
       }
 
-      // ── Momentum coast (after touch release) ──────────────────
-      if (momentumRef.current) {
-        velocityRef.current *= MOMENTUM_FRICTION;
-        if (Math.abs(velocityRef.current) < MOMENTUM_THRESHOLD) {
-          velocityRef.current = 0;
-          momentumRef.current = false;
-        } else {
-          const v = velocityRef.current;
-          rowsRef.current.forEach((pills) => {
-            for (const pill of pills) {
-              pill.x += v;
-              const el = pillElsRef.current.get(pill.id);
-              if (el) el.style.transform = `translateX(${pill.x}px)`;
-            }
-          });
-          rafRef.current = requestAnimationFrame(tick);
-          return; // skip auto-scroll and exit checks while coasting
-        }
-      }
-
       let structureChanged = false;
 
       ROW_CONFIGS.forEach(({ direction, speed }, rowIndex) => {
         const pills = rowsRef.current[rowIndex];
         if (!pills.length) return;
 
-        // Pause auto-scroll while the user is dragging
-        if (!isDraggingRef.current) {
-          for (const pill of pills) {
-            pill.x += direction * speed;
-            const el = pillElsRef.current.get(pill.id);
-            if (el) el.style.transform = `translateX(${pill.x}px)`;
-          }
+        // Move every pill and push the new x directly to its DOM transform
+        for (const pill of pills) {
+          pill.x += direction * speed;
+          const el = pillElsRef.current.get(pill.id);
+          if (el) el.style.transform = `translateX(${pill.x}px)`;
         }
 
         // Collect pills that have fully exited the container
