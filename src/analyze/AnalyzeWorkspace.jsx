@@ -45,6 +45,7 @@ import {
   routeTitle,
   titleCaseMinor,
 } from "./helpers";
+import ScrollingTemplateRows from "./ScrollingTemplateRows";
 
 const EXAMPLE_DETAILS = [
   "power source",
@@ -550,25 +551,11 @@ function ComposerSurface({
 
       <ComposerStatus active={hasResult} viewModel={viewModel} dirty={dirty} />
 
-      {/* Template chips: visible before first analysis, hide when keyword already present */}
       {!hasResult ? (
-        <div className={styles.templateRow}>
-          {templates.slice(0, 10).filter((template) => {
-            const d = description.toLowerCase();
-            const keyword = template.label.toLowerCase().replace(/smart\s+/, "");
-            const firstWord = keyword.split(/\s+/)[0];
-            return !d.includes(firstWord) || firstWord.length < 4;
-          }).map((template) => (
-            <button
-              key={template.label}
-              type="button"
-              className={styles.templateChip}
-              onClick={() => onDescriptionChange(template.text)}
-            >
-              {template.label}
-            </button>
-          ))}
-        </div>
+        <ScrollingTemplateRows
+          templates={templates}
+          onSelect={onDescriptionChange}
+        />
       ) : null}
 
       <div className={styles.actionBar} data-mobile-sticky="true">

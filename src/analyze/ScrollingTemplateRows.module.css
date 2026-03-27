@@ -1,0 +1,66 @@
+/* ─── Scrolling template row container ───────────────── */
+
+.scrollingRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  /* Soft fade at both horizontal edges */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 5%,
+    #000 95%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 5%,
+    #000 95%,
+    transparent 100%
+  );
+}
+
+/* ─── Individual row ─────────────────────────────────── */
+
+.row {
+  position: relative;
+  height: 30px;
+  overflow: hidden;
+}
+
+/* ─── Moving pill ────────────────────────────────────── */
+
+.pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  will-change: transform;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pill:hover {
+  border-color: rgba(125, 185, 255, 0.26);
+  background: rgba(125, 185, 255, 0.08);
+  color: var(--text-strong);
+}
+
+.pill:focus-visible {
+  outline: 2px solid rgba(125, 185, 255, 0.5);
+  outline-offset: 2px;
+}
