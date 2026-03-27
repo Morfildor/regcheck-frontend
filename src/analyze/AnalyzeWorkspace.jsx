@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
@@ -292,10 +293,31 @@ function TonePill({ children, tone = "muted", strong = false }) {
 
 function GlossaryTip({ directiveKey, children }) {
   const definition = DIRECTIVE_GLOSSARY[directiveKey];
+  const [tipPos, setTipPos] = useState(null);
+  const spanRef = useRef(null);
+
   if (!definition) return <>{children}</>;
+
   return (
-    <span className={styles.glossaryTip} data-tooltip={definition}>
+    <span
+      ref={spanRef}
+      className={styles.glossaryTip}
+      onMouseEnter={() => {
+        const rect = spanRef.current?.getBoundingClientRect();
+        if (rect) setTipPos({ x: rect.left + rect.width / 2, y: rect.top });
+      }}
+      onMouseLeave={() => setTipPos(null)}
+    >
       {children}
+      {tipPos && createPortal(
+        <span
+          className={styles.glossaryTipFloat}
+          style={{ left: tipPos.x, top: tipPos.y }}
+        >
+          {definition}
+        </span>,
+        document.body
+      )}
     </span>
   );
 }
