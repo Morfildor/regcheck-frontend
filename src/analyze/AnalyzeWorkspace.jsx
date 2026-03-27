@@ -295,6 +295,7 @@ function GlossaryTip({ directiveKey, children }) {
   const definition = DIRECTIVE_GLOSSARY[directiveKey];
   const [tipPos, setTipPos] = useState(null);
   const spanRef = useRef(null);
+  const hideTimerRef = useRef(null);
 
   if (!definition) return <>{children}</>;
 
@@ -303,10 +304,16 @@ function GlossaryTip({ directiveKey, children }) {
       ref={spanRef}
       className={styles.glossaryTip}
       onMouseEnter={() => {
+        if (hideTimerRef.current) {
+          clearTimeout(hideTimerRef.current);
+          hideTimerRef.current = null;
+        }
         const rect = spanRef.current?.getBoundingClientRect();
         if (rect) setTipPos({ x: rect.left + rect.width / 2, y: rect.top });
       }}
-      onMouseLeave={() => setTipPos(null)}
+      onMouseLeave={() => {
+        hideTimerRef.current = setTimeout(() => setTipPos(null), 180);
+      }}
     >
       {children}
       {tipPos && createPortal(
