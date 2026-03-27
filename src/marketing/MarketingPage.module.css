@@ -167,8 +167,8 @@
 .metricLabel, .smallLabel {
   color: var(--text-soft);
   text-transform: uppercase;
-  letter-spacing: 0.09em;
-  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
   font-weight: 500;
 }
 

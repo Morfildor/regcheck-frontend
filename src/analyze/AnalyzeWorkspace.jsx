@@ -501,8 +501,8 @@ function ComposerSurface({
       title={hasResult ? "Refine the current scope" : "Describe the product"}
       text={
         hasResult
-          ? "Keep the current result visible while you tighten the description, then re-run."
-          : "Include product function, power source, radios, battery, accessories, and intended environment."
+          ? "Keep the current result visible while you refine the description, then re-run."
+          : "Include power source, wireless connectivity, battery type, intended use, and environment."
       }
       bodyClassName={styles.composerBody}
     >
@@ -723,6 +723,9 @@ function TrustLayerPanel({ viewModel }) {
         ) : (
           <span className={styles.emptyCopy}>No explicit assumptions surfaced.</span>
         )}
+        <p className={styles.trustBarDisclaimer}>
+          Preliminary result — requires expert review before formal assessment or certification decisions.
+        </p>
       </div>
     </details>
   );

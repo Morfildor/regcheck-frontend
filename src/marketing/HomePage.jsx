@@ -148,7 +148,7 @@ export default function HomePage() {
           <div className={styles.panelHeader}>
             <span className={styles.panelEyebrow}>Quick start</span>
             <h2 className={styles.panelTitle}>Describe the product</h2>
-            <p className={styles.panelText}>You can refine the draft after you land on `/analyze`.</p>
+            <p className={styles.panelText}>You can refine the description directly in the analyzer.</p>
           </div>
 
           <label className={styles.field}>

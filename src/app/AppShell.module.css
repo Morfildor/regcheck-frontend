@@ -71,9 +71,14 @@
   letter-spacing: -0.01em;
 }
 
-/* Subtitle hidden by default — reduces visual clutter in header */
 .brandSubtitle {
-  display: none;
+  font-size: 0.63rem;
+  color: var(--text-soft);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1;
+  opacity: 0.65;
+  margin-top: 3px;
 }
 
 .primaryNav {
