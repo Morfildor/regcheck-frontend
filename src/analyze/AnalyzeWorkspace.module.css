@@ -2757,3 +2757,280 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ─── Header compact button size ─────────────────────── */
+
+.actionButtonSm {
+  min-height: 30px;
+  padding: 0 11px;
+  font-size: 0.8rem;
+}
+
+/* ─── Jump to standards button (in Action Required) ──── */
+
+.actionRequiredHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.jumpToStandardsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(125,185,255,0.20);
+  background: rgba(125,185,255,0.07);
+  color: #93c5ff;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.14s, background 0.14s;
+}
+.jumpToStandardsBtn:hover {
+  border-color: rgba(125,185,255,0.38);
+  background: rgba(125,185,255,0.13);
+}
+[data-theme="light"] .jumpToStandardsBtn {
+  border-color: rgba(21,83,182,0.18);
+  background: rgba(21,83,182,0.06);
+  color: #1553b6;
+}
+[data-theme="light"] .jumpToStandardsBtn:hover {
+  border-color: rgba(21,83,182,0.32);
+  background: rgba(21,83,182,0.11);
+}
+
+/* ─── Action items: visual separator between groups ──── */
+
+.actionItemListSeparated {
+  border-top: 1px solid var(--border-sm);
+}
+
+/* ─── Show more route-affecting button ───────────────── */
+
+.actionShowMore {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px 17px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border-sm);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.actionShowMore:hover {
+  background: rgba(255,255,255,0.02);
+  color: var(--text-muted);
+}
+[data-theme="light"] .actionShowMore {
+  border-top-color: rgba(14,38,88,0.07);
+}
+[data-theme="light"] .actionShowMore:hover {
+  background: rgba(14,38,88,0.025);
+}
+
+/* ─── Standards search input ─────────────────────────── */
+
+.standardsSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  transition: border-color 0.14s, background 0.14s;
+}
+.standardsSearch:focus-within {
+  border-color: rgba(125,185,255,0.24);
+  background: rgba(125,185,255,0.04);
+}
+[data-theme="light"] .standardsSearch {
+  border-color: rgba(14,38,88,0.10);
+  background: rgba(14,38,88,0.03);
+}
+[data-theme="light"] .standardsSearch:focus-within {
+  border-color: rgba(21,83,182,0.22);
+  background: rgba(21,83,182,0.04);
+}
+
+.standardsSearchIcon {
+  color: var(--text-soft);
+  flex-shrink: 0;
+}
+
+.standardsSearchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  padding: 3px 0;
+  outline: none;
+}
+.standardsSearchInput::placeholder { color: var(--text-soft); opacity: 0.7; }
+.standardsSearchInput::-webkit-search-cancel-button { display: none; }
+
+.standardsSearchClear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
+}
+.standardsSearchClear:hover {
+  background: rgba(255,255,255,0.14);
+  color: var(--text-muted);
+}
+
+/* ─── Page section nav improvements ─────────────────── */
+
+.pageSectionNavAccent {
+  border-color: rgba(125,185,255,0.22);
+  color: var(--text-muted);
+}
+.pageSectionNavAccent:hover {
+  border-color: rgba(125,185,255,0.38);
+  background: rgba(125,185,255,0.09);
+  color: var(--text-strong);
+}
+
+.pageSectionNavCountAccent {
+  background: rgba(125,185,255,0.12);
+  border-color: rgba(125,185,255,0.22);
+  color: #93c5ff;
+}
+
+.pageSectionNavLVD {
+  border-color: rgba(125,185,255,0.28);
+  background: rgba(125,185,255,0.07);
+  color: #93c5ff;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.pageSectionNavLVD:hover {
+  border-color: rgba(125,185,255,0.44);
+  background: rgba(125,185,255,0.13);
+  color: #b8d8ff;
+}
+[data-theme="light"] .pageSectionNavLVD {
+  border-color: rgba(21,83,182,0.22);
+  background: rgba(21,83,182,0.06);
+  color: #1553b6;
+}
+[data-theme="light"] .pageSectionNavLVD:hover {
+  border-color: rgba(21,83,182,0.36);
+  background: rgba(21,83,182,0.11);
+}
+
+/* ─── Route nav LVD emphasis chip ───────────────────── */
+
+.routeNavChipLVD {
+  border-color: rgba(125,185,255,0.28) !important;
+  background: rgba(125,185,255,0.10) !important;
+  box-shadow: 0 0 0 1px rgba(125,185,255,0.06);
+}
+.routeNavChipLVD .routeNavLabel {
+  color: #93c5ff;
+}
+.routeNavChipLVD:hover {
+  border-color: rgba(125,185,255,0.42) !important;
+  background: rgba(125,185,255,0.16) !important;
+}
+
+/* ─── Aside collapse / show controls ────────────────── */
+
+.asideCollapseRow {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 2px 4px;
+}
+
+.asideCollapseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.09);
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
+}
+.asideCollapseBtn:hover {
+  border-color: rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted);
+}
+[data-theme="light"] .asideCollapseBtn {
+  border-color: rgba(14,38,88,0.10);
+}
+[data-theme="light"] .asideCollapseBtn:hover {
+  border-color: rgba(14,38,88,0.18);
+  background: rgba(14,38,88,0.04);
+}
+
+.asideShowBar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.asideShowBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(125,185,255,0.20);
+  background: rgba(125,185,255,0.06);
+  color: #93c5ff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+}
+.asideShowBtn:hover {
+  border-color: rgba(125,185,255,0.36);
+  background: rgba(125,185,255,0.12);
+}
+[data-theme="light"] .asideShowBtn {
+  border-color: rgba(21,83,182,0.18);
+  background: rgba(21,83,182,0.05);
+  color: #1553b6;
+}
+[data-theme="light"] .asideShowBtn:hover {
+  border-color: rgba(21,83,182,0.30);
+  background: rgba(21,83,182,0.09);
+}
+
+/* ─── Route nav: remove standalone label, tighten wrap ─ */
+
+.routeNavWrap {
+  gap: 6px;
+}
+
+/* ─── Visual consistency: slightly reduce section stack gap ── */
+
+.sectionStack { gap: 10px; }

@@ -17,8 +17,11 @@ import {
   Ban,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Copy,
+  Download,
   LoaderCircle,
   RefreshCcw,
   RotateCcw,
@@ -467,20 +470,20 @@ function ComposerStatus({ active, viewModel, dirty }) {
 
 function HeaderActions({ result, totalStandards, onReset, onCopy, copied }) {
   if (!result) {
-    return <span className={styles.headerHint}>Describe the product to get a scoped route.</span>;
+    return <span className={styles.headerHint}>Describe your product to get a scoped route.</span>;
   }
 
   return (
     <div className={styles.headerActions}>
       <TonePill tone="strong" tip={RISK_GLOSSARY[result?.overall_risk?.toLowerCase() || "medium"]}>{formatUiLabel(result?.overall_risk || "medium")} risk</TonePill>
-      <span className={styles.headerMetric}>{totalStandards} standards</span>
-      <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onCopy} aria-live="polite">
-        {copied ? <Check size={14} /> : <Copy size={14} />}
-        {copied ? "Copied" : "Copy"}
+      <span className={styles.headerMetric}>{totalStandards} standard{totalStandards === 1 ? "" : "s"}</span>
+      <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary, styles.actionButtonSm)} onClick={onCopy} aria-live="polite" title="Copy analysis summary to clipboard">
+        {copied ? <Check size={13} /> : <Download size={13} />}
+        {copied ? "Copied" : "Export"}
       </button>
-      <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onReset}>
-        <RefreshCcw size={14} />
-        New analysis
+      <button type="button" className={cx(styles.actionButton, styles.actionButtonGhost, styles.actionButtonSm)} onClick={onReset} title="Start a new analysis">
+        <RefreshCcw size={13} />
+        New
       </button>
     </div>
   );
@@ -865,12 +868,25 @@ function ActionRequiredPanel({
   const blocking = viewModel.missingInputs.filter((i) => i.severity === "blocker");
   const routeAffecting = viewModel.missingInputs.filter((i) => i.severity === "route-affecting");
   const helpful = viewModel.missingInputs.filter((i) => i.severity === "helpful");
+  const [showAllRoute, setShowAllRoute] = useState(false);
   const [showOptional, setShowOptional] = useState(false);
 
   const hasAny = blocking.length || routeAffecting.length || helpful.length;
   if (!hasAny && !dirty) return null;
 
   const totalCritical = blocking.length + routeAffecting.length;
+  const ROUTE_INITIAL_LIMIT = 3;
+  const visibleRouteAffecting = showAllRoute ? routeAffecting : routeAffecting.slice(0, ROUTE_INITIAL_LIMIT);
+  const hiddenRouteCount = routeAffecting.length - ROUTE_INITIAL_LIMIT;
+
+  function scrollToStandards() {
+    const el = document.getElementById("section-standards");
+    if (!el) return;
+    const header = document.querySelector("header");
+    const headerH = header ? header.getBoundingClientRect().height : 0;
+    const top = el.getBoundingClientRect().top + window.scrollY - headerH - 16;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  }
 
   return (
     <section
@@ -902,30 +918,58 @@ function ActionRequiredPanel({
             ) : null}
           </div>
         </div>
-        {dirty ? (
+        <div className={styles.actionRequiredHeaderRight}>
           <button
             type="button"
-            className={cx(styles.actionButton, styles.actionButtonPrimary, styles.actionRequiredRunBtn)}
-            onClick={onReanalyze}
-            disabled={busy}
+            className={styles.jumpToStandardsBtn}
+            onClick={scrollToStandards}
+            title="Jump to standards route"
           >
-            {busy ? <LoaderCircle size={13} className={styles.spin} /> : <RefreshCcw size={13} />}
-            Re-run
+            Standards <ArrowRight size={11} />
           </button>
-        ) : null}
+          {dirty ? (
+            <button
+              type="button"
+              className={cx(styles.actionButton, styles.actionButtonPrimary, styles.actionRequiredRunBtn)}
+              onClick={onReanalyze}
+              disabled={busy}
+            >
+              {busy ? <LoaderCircle size={13} className={styles.spin} /> : <RefreshCcw size={13} />}
+              Re-run
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      {(blocking.length || routeAffecting.length) ? (
+      {/* Critical blockers — always fully visible */}
+      {blocking.length ? (
         <div className={styles.actionItemList}>
           {blocking.map((item) => (
-            <ActionRequiredItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
-          ))}
-          {routeAffecting.map((item) => (
             <ActionRequiredItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
           ))}
         </div>
       ) : null}
 
+      {/* Route-affecting — show first few, expand on demand */}
+      {routeAffecting.length ? (
+        <div className={cx(styles.actionItemList, blocking.length ? styles.actionItemListSeparated : "")}>
+          {visibleRouteAffecting.map((item) => (
+            <ActionRequiredItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
+          ))}
+          {hiddenRouteCount > 0 && !showAllRoute ? (
+            <button
+              type="button"
+              className={styles.actionShowMore}
+              onClick={() => setShowAllRoute(true)}
+            >
+              <ChevronDown size={12} />
+              {hiddenRouteCount} more route-affecting item{hiddenRouteCount === 1 ? "" : "s"}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Optional refinements — collapsed by default */}
       {helpful.length ? (
         <div className={styles.actionOptional}>
           <button
@@ -958,13 +1002,14 @@ function PageSectionNav({ viewModel }) {
     (viewModel.peripheralLegislationGroups?.length || 0) > 0;
   const hasEvidence = viewModel.evidenceNeeds.length > 0;
   const blockerCount = viewModel.decisionSignals.blockerCount;
+  const hasLVD = viewModel.routeSections.some((s) => (s.key || "").toUpperCase() === "LVD");
 
   const navItems = [
     { id: "section-summary", label: "Summary" },
     hasIssues ? { id: "section-action", label: "Action required", count: blockerCount > 0 ? blockerCount : null, warning: blockerCount > 0 } : null,
-    hasStandards ? { id: "section-standards", label: "Standards", count: viewModel.totalStandards } : null,
-    hasParallel ? { id: "section-parallel", label: "Parallel obligations" } : null,
-    hasEvidence ? { id: "section-evidence", label: "Evidence gaps" } : null,
+    hasStandards ? { id: "section-standards", label: "Standards", count: viewModel.totalStandards, accent: true } : null,
+    hasParallel ? { id: "section-parallel", label: "Obligations" } : null,
+    hasEvidence ? { id: "section-evidence", label: "Evidence" } : null,
   ].filter(Boolean);
 
   if (navItems.length < 3) return null;
@@ -978,23 +1023,49 @@ function PageSectionNav({ viewModel }) {
     window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }
 
+  function scrollToLVD() {
+    const target = document.getElementById("route-section-lvd");
+    if (!target) {
+      scrollTo("section-standards");
+      return;
+    }
+    const header = document.querySelector("header");
+    const headerH = header ? header.getBoundingClientRect().height : 0;
+    const top = target.getBoundingClientRect().top + window.scrollY - headerH - 16;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  }
+
   return (
     <nav className={styles.pageSectionNav} aria-label="Jump to results section">
       {navItems.map((item) => (
         <button
           key={item.id}
           type="button"
-          className={cx(styles.pageSectionNavItem, item.warning ? styles.pageSectionNavWarning : "")}
+          className={cx(
+            styles.pageSectionNavItem,
+            item.warning ? styles.pageSectionNavWarning : "",
+            item.accent ? styles.pageSectionNavAccent : ""
+          )}
           onClick={() => scrollTo(item.id)}
         >
           {item.label}
           {item.count != null ? (
-            <span className={cx(styles.pageSectionNavCount, item.warning ? styles.pageSectionNavCountWarning : "")}>
+            <span className={cx(styles.pageSectionNavCount, item.warning ? styles.pageSectionNavCountWarning : "", item.accent ? styles.pageSectionNavCountAccent : "")}>
               {item.count}
             </span>
           ) : null}
         </button>
       ))}
+      {hasLVD ? (
+        <button
+          type="button"
+          className={cx(styles.pageSectionNavItem, styles.pageSectionNavLVD)}
+          onClick={scrollToLVD}
+          title="Jump directly to LVD standards"
+        >
+          → LVD
+        </button>
+      ) : null}
     </nav>
   );
 }
@@ -1067,33 +1138,38 @@ function RouteQuickNav({ sections, openKeys }) {
   const scrollToSection = (keyOrTitle) => {
     const target = document.getElementById(`route-section-${slugify(keyOrTitle)}`);
     if (!target) return;
-    const top = target.getBoundingClientRect().top + window.scrollY - 108;
+    const header = document.querySelector("header");
+    const headerH = header ? header.getBoundingClientRect().height : 0;
+    const top = target.getBoundingClientRect().top + window.scrollY - headerH - 16;
     window.scrollTo({ top, behavior: "smooth" });
   };
 
   return (
     <div className={styles.routeNavWrap}>
-      <span className={styles.sectionLabel}>Jump to section</span>
       <div className={styles.routeNav}>
-      {orderedSections.map((section) => (
-        <button
-          key={`jump-${section.key || section.title}`}
-          type="button"
-          className={cx(
-            styles.routeNavChip,
-            ROUTE_SECTION_CLASS[section.sectionKind],
-            openKeys?.has(section.key || section.title) ? styles.routeNavChipActive : ""
-          )}
-          onClick={() => scrollToSection(section.key || section.title)}
-          aria-label={`Jump to ${routeTitle(section)}`}
-          aria-pressed={openKeys?.has(section.key || section.title) || false}
-        >
-          <span className={styles.routeNavLabel}>{directiveShort(section.key || "OTHER")}</span>
-          <span className={styles.routeNavMeta}>
-            {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"}
-          </span>
-        </button>
-      ))}
+        {orderedSections.map((section) => {
+          const isLVD = (section.key || "").toUpperCase() === "LVD";
+          return (
+            <button
+              key={`jump-${section.key || section.title}`}
+              type="button"
+              className={cx(
+                styles.routeNavChip,
+                ROUTE_SECTION_CLASS[section.sectionKind],
+                openKeys?.has(section.key || section.title) ? styles.routeNavChipActive : "",
+                isLVD ? styles.routeNavChipLVD : ""
+              )}
+              onClick={() => scrollToSection(section.key || section.title)}
+              aria-label={`Jump to ${routeTitle(section)}`}
+              aria-pressed={openKeys?.has(section.key || section.title) || false}
+            >
+              <span className={styles.routeNavLabel}>{directiveShort(section.key || "OTHER")}</span>
+              <span className={styles.routeNavMeta}>
+                {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -1170,6 +1246,7 @@ function StandardsRoutePanel({ viewModel }) {
     const first = viewModel.routeSections[0]?.key;
     return first ? new Set([first]) : new Set();
   });
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toggleSection = useCallback((key) => {
     setOpenKeys((current) => {
@@ -1180,18 +1257,58 @@ function StandardsRoutePanel({ viewModel }) {
     });
   }, []);
 
+  const filteredSections = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return viewModel.routeSections;
+    return viewModel.routeSections.filter(
+      (s) =>
+        (s.key || "").toLowerCase().includes(q) ||
+        (s.title || "").toLowerCase().includes(q) ||
+        (s.items || []).some(
+          (i) =>
+            (i.code || "").toLowerCase().includes(q) ||
+            (i.title || "").toLowerCase().includes(q)
+        )
+    );
+  }, [viewModel.routeSections, searchQuery]);
+
   return (
     <Surface
+      id="section-standards"
       eyebrow="Compliance route"
       title="Standards"
-      text="Ordered by directive family: LVD and EMC first, then RED and RED Cyber, followed by further applicable routes."
+      text={`${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"} across ${viewModel.routeSections.length} directive group${viewModel.routeSections.length === 1 ? "" : "s"} — LVD and EMC first, then RED, followed by further applicable routes.`}
       bodyClassName={styles.sectionStack}
     >
       <RouteQuickNav sections={viewModel.routeSections} openKeys={openKeys} />
 
-      {viewModel.routeSections.length ? (
+      {viewModel.routeSections.length > 2 ? (
+        <div className={styles.standardsSearch}>
+          <Search size={13} className={styles.standardsSearchIcon} />
+          <input
+            type="search"
+            className={styles.standardsSearchInput}
+            placeholder="Filter by directive or standard…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Filter standards"
+          />
+          {searchQuery ? (
+            <button
+              type="button"
+              className={styles.standardsSearchClear}
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear filter"
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {filteredSections.length ? (
         <div className={styles.sectionStack}>
-          {viewModel.routeSections.map((section) => (
+          {filteredSections.map((section) => (
             <RouteSectionCard
               key={section.key || section.title}
               section={section}
@@ -1200,6 +1317,8 @@ function StandardsRoutePanel({ viewModel }) {
             />
           ))}
         </div>
+      ) : searchQuery ? (
+        <p className={styles.emptyCopy}>No sections match "{searchQuery}".</p>
       ) : (
         <p className={styles.emptyCopy}>
           No standards route was returned. The overview and trust layer still reflect the current scope assumptions.
@@ -1508,6 +1627,7 @@ export default function AnalyzeWorkspace() {
   const resultsRef = useRef(null);
   const shouldAutorun = useRef(searchParams.get("autorun") === "1");
   const [templateOrder] = useState(() => Array.from({ length: 120 }, () => Math.random()));
+  const [asideCollapsed, setAsideCollapsed] = useState(false);
 
   const viewModel = useMemo(
     () => buildAnalysisViewModel(result, analyzedDescription || description),
@@ -1781,8 +1901,21 @@ export default function AnalyzeWorkspace() {
             {!busy ? <EmptyStateGuidance hasError={Boolean(error)} /> : null}
           </div>
         ) : (
-          <div className={layoutStyles.resultsGrid}>
+          <div className={cx(layoutStyles.resultsGrid, asideCollapsed ? layoutStyles.resultsGridFull : "")}>
             <div className={cx(layoutStyles.resultsMain, styles.resultsEnter)} ref={resultsRef}>
+              {asideCollapsed ? (
+                <div className={styles.asideShowBar}>
+                  <button
+                    type="button"
+                    className={styles.asideShowBtn}
+                    onClick={() => setAsideCollapsed(false)}
+                    title="Show refine panel"
+                  >
+                    <ChevronRight size={13} />
+                    Refine
+                  </button>
+                </div>
+              ) : null}
               <OverviewPanel result={result} viewModel={viewModel} />
               <TrustLayerPanel viewModel={viewModel} />
               <PageSectionNav viewModel={viewModel} />
@@ -1799,9 +1932,7 @@ export default function AnalyzeWorkspace() {
                 }}
               />
               <ComparisonPanel changes={comparisonChanges} />
-              <div id="section-standards">
-                <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
-              </div>
+              <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
               <div id="section-parallel">
                 <ParallelObligationsPanel key={`parallel-${resultRevision}`} viewModel={viewModel} />
               </div>
@@ -1818,7 +1949,17 @@ export default function AnalyzeWorkspace() {
               <DisclaimerBanner compact />
             </div>
 
-            <div className={layoutStyles.resultsAside}>
+            <div className={cx(layoutStyles.resultsAside, asideCollapsed ? layoutStyles.resultsAsideHidden : "")}>
+              <div className={styles.asideCollapseRow}>
+                <button
+                  type="button"
+                  className={styles.asideCollapseBtn}
+                  onClick={() => setAsideCollapsed(true)}
+                  title="Collapse refine panel"
+                >
+                  <ChevronLeft size={13} />
+                </button>
+              </div>
               <ComposerSurface
                 description={description}
                 onDescriptionChange={setDescription}

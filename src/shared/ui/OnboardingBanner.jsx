@@ -29,35 +29,21 @@ export default function OnboardingBanner({ onLoadSample }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <section className={styles.banner} aria-label="How to use the analyzer">
+    <section className={[styles.banner, expanded ? styles.bannerExpanded : ""].filter(Boolean).join(" ")} aria-label="How to use the analyzer">
       <div className={styles.header}>
-        <div className={styles.iconWrap} aria-hidden="true">
-          <BookOpen size={18} />
-        </div>
-        <div className={styles.headerText}>
-          <h2 className={styles.title}>How to get the best result</h2>
-          <p className={styles.subtitle}>
-            Describe your product and the analyzer will identify likely EU directives, standards,
-            and any details that might change the scope.
-          </p>
-        </div>
         <button
           type="button"
-          className={styles.toggleBtn}
+          className={styles.headerToggle}
           aria-expanded={expanded}
           aria-controls="onboarding-details"
           onClick={() => setExpanded((v) => !v)}
         >
+          <BookOpen size={13} className={styles.headerIcon} aria-hidden="true" />
+          <span className={styles.title}>Tips for a better result</span>
           {expanded ? (
-            <>
-              <ChevronUp size={16} aria-hidden="true" />
-              <span className={styles.toggleLabel}>Less</span>
-            </>
+            <ChevronUp size={13} className={styles.headerChevron} aria-hidden="true" />
           ) : (
-            <>
-              <ChevronDown size={16} aria-hidden="true" />
-              <span className={styles.toggleLabel}>More</span>
-            </>
+            <ChevronDown size={13} className={styles.headerChevron} aria-hidden="true" />
           )}
         </button>
       </div>
