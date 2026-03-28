@@ -599,6 +599,8 @@ function normalizeMissingInputs(guidanceItems, descriptionText, result, routeSec
   const hasChildContext = /\bchild\b|children|toy\b|infant|kid\b/.test(allContext);
   const hasMicContext = /microphone|mic\b|voice.?assistant|\bspeaker\b/.test(allContext);
   const hasFoodContext = /food|drink|water|coffee|kettle|blender|kitchen|cook|bake|grinder/.test(allContext);
+  const isMains = /mains|230v|240v|corded.?power|ac.?power|wired.?power/.test(allContext);
+  const hasBattery = /battery|rechargeable|lithium|li.?ion/.test(allContext);
 
   /** Returns true if the item's topic is irrelevant for the detected product context. */
   function isTopicIrrelevantForProduct(itemText) {
@@ -609,19 +611,33 @@ function normalizeMissingInputs(guidanceItems, descriptionText, result, routeSec
     if (TOPIC_CLUSTERS.microphone.test(t) && !hasMicContext) return true;
     if (TOPIC_CLUSTERS.child.test(t) && !hasChildContext) return true;
     if (TOPIC_CLUSTERS.food.test(t) && !hasFoodContext) return true;
+    // Battery/charger questions are irrelevant for mains-only products
+    if (/battery.?type|battery.?setup|charger|charging|battery.?chemistry/.test(t) && isMains && !hasBattery) return true;
     return false;
   }
 
-  /** Returns true if the item's topic is already answered by the description. */
+  /** Returns true if the item's topic is already answered by the description or inferred context. */
   function isAlreadyStated(item) {
     const suppressor = GUIDANCE_SUPPRESSORS[item.key];
     if (suppressor && lowered && suppressor.test(lowered)) return true;
     const itemText = `${item.title || ""} ${item.reason || ""} ${item.description || ""} ${item.message || ""}`.toLowerCase();
-    if (TOPIC_CLUSTERS.wireless.test(itemText) && /wifi|wi.?fi|bluetooth|ble\b|nfc\b|no.?wireless|no.?radio|no wireless/.test(lowered)) return true;
-    if (TOPIC_CLUSTERS.power.test(itemText) && /mains|230v|240v|rechargeable|lithium|battery|ac.?power/.test(lowered)) return true;
-    if (TOPIC_CLUSTERS.user_group.test(itemText) && /consumer|professional|industrial|household/.test(lowered)) return true;
-    if (TOPIC_CLUSTERS.cloud_arch.test(itemText) && /cloud|ota|local.?only|no.?cloud|app.?control/.test(lowered)) return true;
+    // Use allContext for topic checks — backend traits and product type count as stated context
+    if (TOPIC_CLUSTERS.wireless.test(itemText) && /wifi|wi.?fi|bluetooth|ble\b|nfc\b|no.?wireless|no.?radio|no wireless/.test(allContext)) return true;
+    if (TOPIC_CLUSTERS.power.test(itemText) && /mains|230v|240v|rechargeable|lithium|battery|ac.?power/.test(allContext)) return true;
+    if (TOPIC_CLUSTERS.user_group.test(itemText) && /consumer|professional|industrial|household/.test(allContext)) return true;
+    if (TOPIC_CLUSTERS.cloud_arch.test(itemText) && /cloud|ota|local.?only|no.?cloud|app.?control/.test(allContext)) return true;
     return false;
+  }
+
+  /** Strips examples that belong to product categories not present in this product. */
+  function filterRelevantExamples(examples) {
+    return (examples || []).filter((ex) => {
+      const e = String(ex).toLowerCase();
+      if (/heart.?rate|physiolog|vital.?sign|health.?data|activity.?data/.test(e) && !isMedical && !isWearable) return false;
+      if (/cloud.?video|video.?history|camera.?footage/.test(e) && !isCameraProduct) return false;
+      if (/body.?contact|skin.?contact|worn.?on|wearable/.test(e) && !isWearable) return false;
+      return true;
+    });
   }
 
   // Process backend guidance items with filtering
@@ -639,7 +655,7 @@ function normalizeMissingInputs(guidanceItems, descriptionText, result, routeSec
         title: item.title || titleCaseMinor(item.message || key),
         severity,
         reason: item.description || item.message || "More detail would tighten this route.",
-        examples: item.choices || item.examples || [],
+        examples: filterRelevantExamples(item.choices || item.examples || []),
       };
     });
 
@@ -678,6 +694,9 @@ function normalizeMissingInputs(guidanceItems, descriptionText, result, routeSec
       const professionalImplied = isIndustrial;
       if (consumerImplied || professionalImplied) return;
     }
+    // Suppress battery/charger hints for mains-only products
+    if (hint.key === "battery_type" && isMains && !hasBattery) return;
+    if (hint.key === "charger_included" && isMains && !hasBattery) return;
 
     let severity = hint.severity;
     if (hint.key === "wireless_connectivity" && isIndustrial) severity = "route-affecting";
