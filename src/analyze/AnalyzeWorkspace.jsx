@@ -29,6 +29,8 @@ import {
 import AppShell from "../app/AppShell";
 import PageMeta from "../shared/ui/PageMeta";
 import Surface from "../shared/ui/Surface";
+import OnboardingBanner from "../shared/ui/OnboardingBanner";
+import DisclaimerBanner from "../shared/ui/DisclaimerBanner";
 import layoutStyles from "./AnalyzeWorkspaceLayout.module.css";
 import styles from "./AnalyzeWorkspace.module.css";
 import { EMPTY_METADATA, fetchMetadataOptions, requestAnalysis } from "./api";
@@ -117,6 +119,23 @@ function getTimingLabel(directiveKey) {
   if (key === "AI_ACT" || key === "AI_Act") return "Upcoming — risk classification required";
   return null;
 }
+
+/** Maps directive keys to their curated detail page paths. */
+const DIRECTIVE_PAGE_MAP = {
+  LVD: "/directives/lvd.md",
+  EMC: "/directives/emc.md",
+  RED: "/directives/red.md",
+  RED_CYBER: "/directives/red.md",
+  ROHS: "/directives/rohs.md",
+};
+
+/** Badge config for applicabilityBucket values. */
+const APPLICABILITY_BADGE = {
+  "core applicable": { label: "Mandatory", icon: "check", tone: "positive" },
+  "conditional":     { label: "Conditional", icon: "warning", tone: "warning" },
+  "supplementary":   { label: "Supplementary", icon: "muted", tone: "muted" },
+  "route review":    { label: "Review", icon: "muted", tone: "muted" },
+};
 
 const PILL_TONE_CLASS = {
   positive: styles.pillPositive,
@@ -363,23 +382,42 @@ function GlossaryTip({ directiveKey, title, children }) {
   );
 }
 
-function DirectivePill({ directiveKey }) {
+function DirectivePill({ directiveKey, linkToPage = false }) {
   const tone = directiveTone(directiveKey);
   const shortLabel = directiveShort(directiveKey);
-  return (
-    <GlossaryTip directiveKey={directiveKey}>
-      <span
-        className={styles.directivePill}
-        style={{
-          "--directive-bg": tone.bg,
-          "--directive-border": tone.bd,
-          "--directive-text": tone.text,
-        }}
-      >
-        {shortLabel}
-      </span>
-    </GlossaryTip>
+  const pagePath = DIRECTIVE_PAGE_MAP[directiveKey];
+
+  const inner = (
+    <span
+      className={styles.directivePill}
+      style={{
+        "--directive-bg": tone.bg,
+        "--directive-border": tone.bd,
+        "--directive-text": tone.text,
+      }}
+    >
+      {shortLabel}
+    </span>
   );
+
+  const pill = <GlossaryTip directiveKey={directiveKey}>{inner}</GlossaryTip>;
+
+  if (linkToPage && pagePath) {
+    return (
+      <a
+        href={pagePath}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={styles.directivePillLink}
+        aria-label={`View ${shortLabel} directive details (opens in new tab)`}
+        title="View directive summary"
+      >
+        {pill}
+      </a>
+    );
+  }
+
+  return pill;
 }
 
 function CompactList({
@@ -972,6 +1010,76 @@ function ClarificationStrip({
   );
 }
 
+/**
+ * OpenIssuesPanel — summarises blockers and route-affecting gaps with
+ * concrete, actionable suggestions derived from the missingInputs list.
+ * Only rendered when there is at least one blocker or route-affecting item.
+ */
+function OpenIssuesPanel({ viewModel }) {
+  const blockers = viewModel.missingInputs.filter((i) => i.severity === "blocker");
+  const routeAffecting = viewModel.missingInputs.filter((i) => i.severity === "route-affecting");
+
+  if (!blockers.length && !routeAffecting.length) return null;
+
+  return (
+    <Surface
+      eyebrow="Action required"
+      title="Open issues"
+      text="Resolve these before relying on this scope for evidence planning or certification."
+      bodyClassName={styles.openIssuesBody}
+    >
+      {blockers.length ? (
+        <div className={styles.openIssueGroup}>
+          <div className={styles.openIssueGroupHeader}>
+            <TonePill tone="warning">{blockers.length} blocker{blockers.length === 1 ? "" : "s"}</TonePill>
+            <span className={styles.openIssueGroupDesc}>
+              Missing inputs that can materially change the compliance route.
+            </span>
+          </div>
+          {blockers.map((item) => (
+            <div key={item.key} className={styles.openIssueItem}>
+              <AlertTriangle size={13} className={styles.openIssueIcon} aria-hidden="true" />
+              <div className={styles.openIssueContent}>
+                <strong className={styles.openIssueTitle}>{item.title}</strong>
+                {item.reason ? (
+                  <p className={styles.openIssueReason}>{item.reason}</p>
+                ) : null}
+                {item.examples?.length ? (
+                  <p className={styles.openIssueSuggest}>
+                    Suggestion: add "{item.examples[0]}" to the description and re-run.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {routeAffecting.length ? (
+        <div className={styles.openIssueGroup}>
+          <div className={styles.openIssueGroupHeader}>
+            <TonePill tone="strong">{routeAffecting.length} route-affecting</TonePill>
+            <span className={styles.openIssueGroupDesc}>
+              May shift specific obligations or evidence scope once confirmed.
+            </span>
+          </div>
+          {routeAffecting.map((item) => (
+            <div key={item.key} className={styles.openIssueItem}>
+              <AlertCircle size={13} className={styles.openIssueIconRoute} aria-hidden="true" />
+              <div className={styles.openIssueContent}>
+                <strong className={styles.openIssueTitle}>{item.title}</strong>
+                {item.reason ? (
+                  <p className={styles.openIssueReason}>{item.reason}</p>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </Surface>
+  );
+}
+
 function ComparisonPanel({ changes }) {
   if (!changes?.length) return null;
 
@@ -1114,8 +1222,21 @@ function RouteSectionCard({ section, open, onToggle }) {
           </div>
           {/* Pills always below the text — never beside it */}
           <div className={styles.accordionTitleMeta}>
-            <DirectivePill directiveKey={section.key || "OTHER"} />
-            <TonePill tone={applicabilityTone} tip={APPLICABILITY_GLOSSARY[(section.applicabilityBucket || "Route review").toLowerCase()]}>{section.applicabilityBucket || "Route review"}</TonePill>
+            <DirectivePill directiveKey={section.key || "OTHER"} linkToPage />
+            {(() => {
+              const bucketKey = (section.applicabilityBucket || "route review").toLowerCase();
+              const badge = APPLICABILITY_BADGE[bucketKey];
+              const label = badge?.label ?? (section.applicabilityBucket || "Route review");
+              const tone = badge?.tone ?? applicabilityTone;
+              return (
+                <TonePill
+                  tone={tone}
+                  tip={APPLICABILITY_GLOSSARY[bucketKey]}
+                >
+                  {label}
+                </TonePill>
+              );
+            })()}
           </div>
         </div>
         {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
@@ -1739,6 +1860,7 @@ export default function AnalyzeWorkspace() {
       >
         {!result ? (
           <div className={layoutStyles.landingStack}>
+            <OnboardingBanner onLoadSample={(text) => setDescription(text)} />
             <ComposerSurface
               description={description}
               onDescriptionChange={setDescription}
@@ -1774,6 +1896,7 @@ export default function AnalyzeWorkspace() {
                   setDescription((current) => joinText(current, text));
                 }}
               />
+              <OpenIssuesPanel viewModel={viewModel} />
               <ComparisonPanel changes={comparisonChanges} />
               <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
               <ParallelObligationsPanel key={`parallel-${resultRevision}`} viewModel={viewModel} />
@@ -1785,6 +1908,7 @@ export default function AnalyzeWorkspace() {
                 copied={analysisCopied}
                 onCopy={handleCopy}
               />
+              <DisclaimerBanner compact />
             </div>
 
             <div className={layoutStyles.resultsAside}>

@@ -70,6 +70,21 @@
   letter-spacing: 0.02em;
 }
 
+/* Wraps a DirectivePill with a link to the directive detail page */
+.directivePillLink {
+  display: inline-flex;
+  text-decoration: none;
+  border-radius: 999px;
+}
+.directivePillLink:hover .directivePill {
+  outline: 2px solid var(--accent-28);
+  outline-offset: 1px;
+}
+.directivePillLink:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 /* ─── Action buttons ──────────────────────────────── */
 
 .actionButton {
@@ -1973,4 +1988,78 @@
     grid-template-columns: 1fr;
     padding: 10px 12px 12px;
   }
+}
+
+/* ─── Open Issues panel ──────────────────────────── */
+
+.openIssuesBody {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.openIssueGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.openIssueGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.openIssueGroupDesc {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+.openIssueItem {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface-glass);
+  border: 1px solid var(--border-sm);
+  border-radius: var(--radius-md);
+}
+
+.openIssueIcon {
+  color: #f5cc81;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.openIssueIconRoute {
+  color: #93c5ff;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.openIssueContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.openIssueTitle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.openIssueReason {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.openIssueSuggest {
+  font-size: 0.76rem;
+  color: var(--accent);
+  font-style: italic;
+  margin: 0;
 }

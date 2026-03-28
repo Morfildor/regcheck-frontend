@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { buildDynamicTemplates } from "../analyze/helpers";
+import DisclaimerBanner from "../shared/ui/DisclaimerBanner";
 import MarketingLayout from "./MarketingLayout";
 import styles from "./HomePage.module.css";
 
@@ -258,6 +259,8 @@ export default function HomePage() {
           </div>
         </section>
       </section>
+
+      <DisclaimerBanner />
 
       <div className={styles.footerLinks}>
         <Link to="/about" className={styles.footerLink}>

@@ -126,6 +126,27 @@
   gap: 8px;
 }
 
+.themeToggle {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-glass);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+  flex-shrink: 0;
+}
+
+.themeToggle:hover {
+  color: var(--text-strong);
+  border-color: var(--border-hover);
+  background: var(--accent-08);
+}
+
 .main {
   width: min(1360px, calc(100% - 40px));
   margin: 0 auto;
@@ -164,6 +185,10 @@
   }
 
   .actions {
+    /* Keep theme toggle visible; hide any extra action buttons */
+    gap: 4px;
+  }
+  .actions > *:not(.themeToggle) {
     display: none;
   }
 }

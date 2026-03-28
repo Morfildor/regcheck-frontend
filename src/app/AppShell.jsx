@@ -1,9 +1,29 @@
+import { Moon, Sun } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { PRIMARY_NAV_ITEMS } from "./navigation";
+import { useTheme } from "./ThemeContext";
 import styles from "./AppShell.module.css";
 
 function navClassName(isActive) {
   return [styles.navLink, isActive ? styles.navLinkActive : ""].filter(Boolean).join(" ");
+}
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <button
+      type="button"
+      className={styles.themeToggle}
+      onClick={toggleTheme}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-pressed={!isDark}
+      title={isDark ? "Light mode" : "Dark mode"}
+    >
+      {isDark ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
+    </button>
+  );
 }
 
 export function SiteHeader({ actions = null }) {
@@ -25,7 +45,7 @@ export function SiteHeader({ actions = null }) {
             </div>
           </Link>
 
-          <nav className={styles.primaryNav} aria-label="Primary">
+          <nav className={styles.primaryNav} aria-label="Primary navigation">
             {PRIMARY_NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -39,7 +59,10 @@ export function SiteHeader({ actions = null }) {
           </nav>
         </div>
 
-        <div className={styles.actions}>{actions}</div>
+        <div className={styles.actions}>
+          <ThemeToggle />
+          {actions}
+        </div>
       </div>
     </header>
   );
@@ -49,7 +72,13 @@ export default function AppShell({ actions = null, mainClassName = "", children 
   return (
     <div className={styles.shell}>
       <SiteHeader actions={actions} />
-      <main className={[styles.main, mainClassName].filter(Boolean).join(" ")}>{children}</main>
+      <main
+        id="main-content"
+        className={[styles.main, mainClassName].filter(Boolean).join(" ")}
+        tabIndex={-1}
+      >
+        {children}
+      </main>
     </div>
   );
 }
