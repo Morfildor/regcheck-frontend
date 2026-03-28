@@ -57,6 +57,25 @@ const GUIDANCE_SUPPRESSORS = {
   food_contact: /(food.?contact|wetted.?path|brew.?path|food.?touch)/i,
 };
 
+/**
+ * Topic clusters for semantic deduplication and product-relevance filtering.
+ * If a guidance item's combined text matches a cluster and the product context
+ * makes that cluster irrelevant, the item is suppressed before rendering.
+ */
+const TOPIC_CLUSTERS = {
+  medical:     /heart.?rate|physiolog|patient.?data|medical.?claim|clinical|vital.?sign|therapeutic|diagnostic/i,
+  body:        /body.?contact|wearable|on.?body|skin.?contact|worn.?on/i,
+  camera:      /\bcamera\b|face.?recogni|facial.?detect|video.?capture|optical.?imaging/i,
+  microphone:  /\bmicrophone\b|voice.?input|audio.?capture|speech.?rec/i,
+  child:       /child.?appeal|intended.?for.?child|toy.?safety|young.?user/i,
+  food:        /food.?contact|wetted.?path|food.?touch|ingest|brew.?path/i,
+  wireless:    /wifi|wi.?fi|bluetooth|ble\b|nfc\b|radio|wireless|intentional.?radiat/i,
+  power:       /power.?source|mains|battery|rechargeable|ac\b|voltage|usb.?power|adapter/i,
+  cloud_arch:  /cloud|ota|firmware.?update|app.?control|connected.?arch/i,
+  user_group:  /consumer|professional|user.?group|intended.?user|industrial/i,
+  environment: /environment|indoor|outdoor|installation.?context|ip.?rating/i,
+};
+
 const ROUTE_EVIDENCE_LIBRARY = {
   LVD: {
     label: "LVD",
@@ -558,13 +577,59 @@ function inferConfidence(result, missingInputs) {
   return { label: "Needs confirmation", tone: "warning" };
 }
 
-function normalizeMissingInputs(guidanceItems, descriptionText) {
+function normalizeMissingInputs(guidanceItems, descriptionText, result, routeSections) {
   const lowered = String(descriptionText || "").toLowerCase();
+
+  // Combined context: description + product type + backend traits
+  const allContext = [
+    lowered,
+    (result?.product_type || "").toLowerCase(),
+    (result?.summary || "").toLowerCase(),
+    ...(result?.all_traits || []).map((t) => String(t).toLowerCase()),
+  ].join(" ");
+
+  const routeKeys = new Set((routeSections || []).map((s) => s.key));
+
+  // Product-family flags derived from combined context
+  const isAppliance = /coffee|kettle|air.?fry|oven|vacuum|robot.?vac|air.?purif|fan\b|heater|dishwasher|washing|dryer|blender|mixer|toaster|fridge|freezer|appliance/.test(allContext);
+  const isIndustrial = /\bindustrial\b|din.?rail|control.?cabinet|plc\b|hmi\b/.test(allContext);
+  const isWearable = /wearable|on.?body|smartwatch|fitness.?band|earphone|headphone|personal.?care|toothbrush|earwear/.test(allContext);
+  const isMedical = /\bmedical\b|\bpatient\b|clinical|therapeutic|diagnostic|mdr\b/.test(allContext);
+  const isCameraProduct = /\bcamera\b|cctv|doorbell.?cam|webcam|dashcam|security.?cam|surveillance/.test(allContext);
+  const hasChildContext = /\bchild\b|children|toy\b|infant|kid\b/.test(allContext);
+  const hasMicContext = /microphone|mic\b|voice.?assistant|\bspeaker\b/.test(allContext);
+  const hasFoodContext = /food|drink|water|coffee|kettle|blender|kitchen|cook|bake|grinder/.test(allContext);
+
+  /** Returns true if the item's topic is irrelevant for the detected product context. */
+  function isTopicIrrelevantForProduct(itemText) {
+    const t = String(itemText).toLowerCase();
+    if (TOPIC_CLUSTERS.medical.test(t) && !isMedical && !isWearable) return true;
+    if (TOPIC_CLUSTERS.body.test(t) && !isWearable) return true;
+    if (TOPIC_CLUSTERS.camera.test(t) && !isCameraProduct && !/camera|imaging|optical/.test(lowered)) return true;
+    if (TOPIC_CLUSTERS.microphone.test(t) && !hasMicContext) return true;
+    if (TOPIC_CLUSTERS.child.test(t) && !hasChildContext) return true;
+    if (TOPIC_CLUSTERS.food.test(t) && !hasFoodContext) return true;
+    return false;
+  }
+
+  /** Returns true if the item's topic is already answered by the description. */
+  function isAlreadyStated(item) {
+    const suppressor = GUIDANCE_SUPPRESSORS[item.key];
+    if (suppressor && lowered && suppressor.test(lowered)) return true;
+    const itemText = `${item.title || ""} ${item.reason || ""} ${item.description || ""} ${item.message || ""}`.toLowerCase();
+    if (TOPIC_CLUSTERS.wireless.test(itemText) && /wifi|wi.?fi|bluetooth|ble\b|nfc\b|no.?wireless|no.?radio|no wireless/.test(lowered)) return true;
+    if (TOPIC_CLUSTERS.power.test(itemText) && /mains|230v|240v|rechargeable|lithium|battery|ac.?power/.test(lowered)) return true;
+    if (TOPIC_CLUSTERS.user_group.test(itemText) && /consumer|professional|industrial|household/.test(lowered)) return true;
+    if (TOPIC_CLUSTERS.cloud_arch.test(itemText) && /cloud|ota|local.?only|no.?cloud|app.?control/.test(lowered)) return true;
+    return false;
+  }
+
+  // Process backend guidance items with filtering
   const items = (guidanceItems || [])
+    .filter((item) => !isAlreadyStated(item))
     .filter((item) => {
-      // Suppress guidance items whose topic is already stated in the description
-      const suppressor = GUIDANCE_SUPPRESSORS[item.key];
-      return !(suppressor && lowered && suppressor.test(lowered));
+      const combinedText = `${item.title || ""} ${item.reason || ""} ${item.description || ""} ${item.message || ""} ${item.key || ""}`;
+      return !isTopicIrrelevantForProduct(combinedText);
     })
     .map((item) => {
       const key = item.key || item.title || "missing-input";
@@ -578,19 +643,49 @@ function normalizeMissingInputs(guidanceItems, descriptionText) {
       };
     });
 
-  MISSING_INPUT_HINTS.forEach((hint) => {
-    if (!lowered || hint.match.test(lowered)) return;
-    if (items.some((item) => item.key === hint.key)) return;
-    items.push({
-      key: hint.key,
-      title: hint.title,
-      severity: hint.severity,
-      reason: hint.reason,
-      examples: [],
-    });
+  // Semantic deduplication: keep only the first item per topic cluster
+  const seenClusters = new Set();
+  const seenKeys = new Set();
+  const deduped = items.filter((item) => {
+    if (seenKeys.has(item.key)) return false;
+    seenKeys.add(item.key);
+    const itemText = `${item.title} ${item.reason}`.toLowerCase();
+    for (const [cluster, re] of Object.entries(TOPIC_CLUSTERS)) {
+      if (re.test(itemText)) {
+        if (seenClusters.has(cluster)) return false;
+        seenClusters.add(cluster);
+        break;
+      }
+    }
+    return true;
   });
 
-  return items.sort((a, b) => {
+  // Add frontend-generated hints only where relevant and not already present
+  MISSING_INPUT_HINTS.forEach((hint) => {
+    if (!lowered || hint.match.test(lowered)) return;
+    if (deduped.some((item) => item.key === hint.key)) return;
+    const hintText = `${hint.title} ${hint.reason}`;
+    if (isTopicIrrelevantForProduct(hintText)) return;
+
+    if (hint.key === "wireless_connectivity") {
+      const connectivityContext = /cloud|app\b|connected|ota|remote.?control|sync/.test(lowered);
+      const radioInRoute = routeKeys.has("RED") || routeKeys.has("RED_CYBER");
+      const smartProductType = /smart|iot|connected/.test(allContext);
+      if (!connectivityContext && !radioInRoute && !smartProductType && !isWearable && !isCameraProduct) return;
+    }
+    if (hint.key === "consumer_professional") {
+      const consumerImplied = isAppliance || /household|domestic|home.?use/.test(allContext);
+      const professionalImplied = isIndustrial;
+      if (consumerImplied || professionalImplied) return;
+    }
+
+    let severity = hint.severity;
+    if (hint.key === "wireless_connectivity" && isIndustrial) severity = "route-affecting";
+
+    deduped.push({ key: hint.key, title: hint.title, severity, reason: hint.reason, examples: [] });
+  });
+
+  return deduped.sort((a, b) => {
     const rank = { blocker: 0, "route-affecting": 1, helpful: 2 };
     return rank[a.severity] - rank[b.severity];
   });
@@ -801,7 +896,7 @@ export function buildAnalysisViewModel(result, descriptionText = "") {
   const baseSafetyRoute = inferBaseSafetyRoute(result, routeSections);
   const decoratedRouteSections = decorateRouteSections(routeSections, baseSafetyRoute);
   const decoratedLegislationGroups = decorateLegislationGroups(legislationGroups);
-  const missingInputs = normalizeMissingInputs(guidanceItems, descriptionText);
+  const missingInputs = normalizeMissingInputs(guidanceItems, descriptionText, result, routeSections);
   const assumptions = inferAssumptions(result, decoratedRouteSections, descriptionText);
   const resultMaturity = inferMaturity(result, assumptions, missingInputs);
   const classificationConfidence = inferConfidence(result, missingInputs);

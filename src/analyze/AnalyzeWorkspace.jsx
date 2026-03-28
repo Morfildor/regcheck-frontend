@@ -225,31 +225,37 @@ function buildComparisonSummary(previousResult, previousDescription, nextResult,
   return changes.length ? changes : null;
 }
 
-// extractKnownFacts retained for potential future use
-// eslint-disable-next-line no-unused-vars
-function extractKnownFacts(description, result) {
-  const lowered = String(description || "").toLowerCase();
+/** Returns short "understood" fact labels extracted from the description — surfaced in Action Required. */
+function getUnderstoodFacts(description) {
+  const d = String(description || "").toLowerCase();
   const facts = [];
 
-  if (result?.product_type) facts.push(formatUiLabel(result.product_type));
-  if (/mains|230v|240v|plug|corded|ac\b/.test(lowered)) facts.push("Mains power stated");
-  if (/battery|rechargeable|lithium|li.?ion/.test(lowered)) facts.push("Battery stated");
-  if (/wifi|wi.?fi/.test(lowered)) facts.push("Wi-Fi stated");
-  if (/bluetooth|ble\b/.test(lowered)) facts.push("Bluetooth stated");
-  if (/nfc\b/.test(lowered)) facts.push("NFC stated");
-  if (/no wireless|no radio|local.?only/.test(lowered)) facts.push("No radio stated");
-  if (/cloud.?account|cloud.?required/.test(lowered)) facts.push("Cloud account stated");
-  if (/local.?only|local.?control|no.?cloud/.test(lowered)) facts.push("Local-only stated");
-  if (/ota|firmware.?update/.test(lowered)) facts.push("OTA updates stated");
-  if (/app.?control|app.?sync/.test(lowered)) facts.push("App control stated");
-  if (/consumer|household|home\b/.test(lowered)) facts.push("Consumer use stated");
-  if (/professional|industrial|commercial/.test(lowered)) facts.push("Professional use stated");
-  if (/outdoor|weather|ip\d/.test(lowered)) facts.push("Outdoor / installation stated");
-  if (/indoor\b/.test(lowered)) facts.push("Indoor use stated");
-  if (/wearable|on.?body|body.?contact|worn\b/.test(lowered)) facts.push("Body-contact / wearable stated");
-  if (/charger|adapter|power supply/.test(lowered)) facts.push("Accessory power hardware stated");
+  if (/mains|230v|240v|corded/.test(d)) facts.push("Mains power");
+  else if (/rechargeable|lithium|li.?ion/.test(d)) facts.push("Battery powered");
+  else if (/usb.?powered|usb.?c\s*power/.test(d)) facts.push("USB powered");
+  else if (/ac.?adapt|external.*power/.test(d)) facts.push("External adapter");
 
-  return [...new Set(facts)].slice(0, 8);
+  if (/no.?wireless|no.?radio|no wireless/.test(d)) facts.push("No radio");
+  else {
+    if (/wi.?fi/.test(d)) facts.push("Wi-Fi");
+    if (/bluetooth|ble\b/.test(d)) facts.push("Bluetooth");
+    if (/nfc\b/.test(d)) facts.push("NFC");
+  }
+
+  if (/local.?only|no.?cloud/.test(d)) facts.push("Local only");
+  else if (/cloud.?account|cloud.?required/.test(d)) facts.push("Cloud required");
+  else if (/ota|firmware.?update/.test(d)) facts.push("OTA updates");
+
+  if (/\bconsumer|household/.test(d)) facts.push("Consumer");
+  else if (/professional|industrial|commercial/.test(d)) facts.push("Professional");
+
+  if (/indoor\b/.test(d)) facts.push("Indoor");
+  else if (/outdoor|weather|ip\d/.test(d)) facts.push("Outdoor");
+
+  if (/wearable|on.?body|worn\b/.test(d)) facts.push("Wearable");
+  if (/food.?contact|food.?touch/.test(d)) facts.push("Food contact");
+
+  return [...new Set(facts)].slice(0, 6);
 }
 
 const SCOPE_GAPS = [
@@ -870,6 +876,7 @@ function ActionRequiredPanel({
   const helpful = viewModel.missingInputs.filter((i) => i.severity === "helpful");
   const [showAllRoute, setShowAllRoute] = useState(false);
   const [showOptional, setShowOptional] = useState(false);
+  const understoodFacts = useMemo(() => getUnderstoodFacts(description), [description]);
 
   const hasAny = blocking.length || routeAffecting.length || helpful.length;
   if (!hasAny && !dirty) return null;
@@ -941,6 +948,16 @@ function ActionRequiredPanel({
         </div>
       </div>
 
+      {/* Understood facts — compact confidence strip */}
+      {understoodFacts.length > 0 ? (
+        <div className={styles.understoodStrip}>
+          <span className={styles.understoodLabel}>Understood:</span>
+          {understoodFacts.map((fact) => (
+            <span key={fact} className={styles.understoodFact}>{fact}</span>
+          ))}
+        </div>
+      ) : null}
+
       {/* Critical blockers — always fully visible */}
       {blocking.length ? (
         <div className={styles.actionItemList}>
@@ -1002,7 +1019,6 @@ function PageSectionNav({ viewModel }) {
     (viewModel.peripheralLegislationGroups?.length || 0) > 0;
   const hasEvidence = viewModel.evidenceNeeds.length > 0;
   const blockerCount = viewModel.decisionSignals.blockerCount;
-  const hasLVD = viewModel.routeSections.some((s) => (s.key || "").toUpperCase() === "LVD");
 
   const navItems = [
     { id: "section-summary", label: "Summary" },
@@ -1020,18 +1036,6 @@ function PageSectionNav({ viewModel }) {
     const header = document.querySelector("header");
     const headerH = header ? header.getBoundingClientRect().height : 0;
     const top = el.getBoundingClientRect().top + window.scrollY - headerH - 16;
-    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-  }
-
-  function scrollToLVD() {
-    const target = document.getElementById("route-section-lvd");
-    if (!target) {
-      scrollTo("section-standards");
-      return;
-    }
-    const header = document.querySelector("header");
-    const headerH = header ? header.getBoundingClientRect().height : 0;
-    const top = target.getBoundingClientRect().top + window.scrollY - headerH - 16;
     window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }
 
@@ -1056,15 +1060,30 @@ function PageSectionNav({ viewModel }) {
           ) : null}
         </button>
       ))}
-      {hasLVD ? (
-        <button
-          type="button"
-          className={cx(styles.pageSectionNavItem, styles.pageSectionNavLVD)}
-          onClick={scrollToLVD}
-          title="Jump directly to LVD standards"
-        >
-          → LVD
-        </button>
+      {viewModel.routeSections.length > 0 ? (
+        <div className={styles.pageSectionNavDirectives}>
+          {viewModel.routeSections.map((section) => {
+            const isLVD = (section.key || "").toUpperCase() === "LVD";
+            const dirId = `route-section-${slugify(section.key || section.title)}`;
+            return (
+              <button
+                key={`dir-${section.key || section.title}`}
+                type="button"
+                className={cx(
+                  styles.pageSectionNavDirectiveItem,
+                  isLVD ? styles.pageSectionNavDirectiveLVD : ""
+                )}
+                onClick={() => scrollTo(dirId)}
+                title={`Jump to ${routeTitle(section)}`}
+              >
+                {directiveShort(section.key || "OTHER")}
+                <span className={styles.pageSectionNavDirectiveCount}>
+                  {(section.items || []).length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       ) : null}
     </nav>
   );
