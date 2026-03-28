@@ -2,6 +2,7 @@ import styles from "./Surface.module.css";
 
 export default function Surface({
   as: Tag = "section",
+  id,
   eyebrow,
   title,
   text,
@@ -11,7 +12,7 @@ export default function Surface({
   children,
 }) {
   return (
-    <Tag className={[styles.surface, className].filter(Boolean).join(" ")}>
+    <Tag id={id} className={[styles.surface, className].filter(Boolean).join(" ")}>
       {(eyebrow || title || text || actions) && (
         <header className={styles.header}>
           <div className={styles.copy}>

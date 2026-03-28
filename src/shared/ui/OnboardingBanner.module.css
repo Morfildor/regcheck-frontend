@@ -1,8 +1,13 @@
 .banner {
-  background: var(--accent-08);
-  border: 1px solid var(--accent-16);
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-sm);
   border-radius: var(--radius-lg);
-  padding: 20px 24px;
+  padding: 14px 18px;
+}
+
+[data-theme="light"] .banner {
+  background: rgba(14,38,88,0.03);
+  border-color: rgba(14,38,88,0.09);
 }
 
 .header {
@@ -14,13 +19,13 @@
 .iconWrap {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  background: var(--accent-16);
-  border-radius: var(--radius-md);
-  color: var(--accent);
+  width: 28px;
+  height: 28px;
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--radius-sm);
+  color: var(--text-soft);
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .headerText {
@@ -29,16 +34,16 @@
 }
 
 .title {
-  font-family: "Fraunces", Georgia, serif;
-  font-size: 1rem;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 0.84rem;
   font-weight: 600;
-  color: var(--text-strong);
-  margin: 0 0 4px;
+  color: var(--text-muted);
+  margin: 0 0 2px;
 }
 
 .subtitle {
-  font-size: var(--font-xs);
-  color: var(--text-muted);
+  font-size: 0.8rem;
+  color: var(--text-soft);
   margin: 0;
   line-height: 1.5;
 }

@@ -39,9 +39,7 @@ import {
   buildClipboardSummary,
   directiveShort,
   directiveTone,
-  formatStageLabel,
   formatUiLabel,
-  getStandardScope,
   inferStandardCategory,
   joinText,
   routeTitle,
@@ -144,10 +142,6 @@ const PILL_TONE_CLASS = {
   strong: styles.pillStrong,
 };
 
-const METRIC_TONE_CLASS = {
-  positive: styles.metricCardPositive,
-  warning: styles.metricCardWarning,
-};
 
 const ROUTE_SECTION_CLASS = {
   core: styles.routeCardCore,
@@ -228,6 +222,8 @@ function buildComparisonSummary(previousResult, previousDescription, nextResult,
   return changes.length ? changes : null;
 }
 
+// extractKnownFacts retained for potential future use
+// eslint-disable-next-line no-unused-vars
 function extractKnownFacts(description, result) {
   const lowered = String(description || "").toLowerCase();
   const facts = [];
@@ -566,7 +562,7 @@ function ComposerSurface({
   hasResult,
 }) {
   const [touched, setTouched] = useState(false);
-  const analyzeLabel = hasResult ? "Re-run analysis" : "Analyze product";
+  const analyzeLabel = hasResult ? "Re-analyze" : "Analyze";
   const isEmpty = !description.trim();
   const showValidation = touched && isEmpty;
 
@@ -585,12 +581,8 @@ function ComposerSurface({
   return (
     <Surface
       eyebrow={hasResult ? "Refine" : "Analyze"}
-      title={hasResult ? "Refine the current scope" : "Describe the product"}
-      text={
-        hasResult
-          ? "Keep the current result visible while you refine the description, then re-run."
-          : "Include power source, wireless connectivity, battery type, intended use, and environment."
-      }
+      title={hasResult ? "Refine" : "Describe the product"}
+      text={hasResult ? "Edit the description and re-run to update the route." : null}
       bodyClassName={styles.composerBody}
     >
       <textarea
@@ -602,7 +594,7 @@ function ComposerSurface({
         aria-label="Describe your product"
         aria-invalid={showValidation ? "true" : undefined}
         aria-describedby={showValidation ? "desc-validation-msg" : undefined}
-        placeholder="Example: Connected espresso machine with mains power, Wi-Fi app control, OTA updates, cloud account, grinder, pressure, water tank, and food-contact brew path."
+        placeholder="Describe the product — include power source, wireless connectivity, intended users, and environment."
       />
 
       {showValidation ? (
@@ -631,19 +623,17 @@ function ComposerSurface({
           {busy ? <LoaderCircle size={15} className={styles.spin} /> : <Sparkles size={15} />}
           {analyzeLabel}
         </button>
-        <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onReset}>
-          <RefreshCcw size={14} />
+        <button type="button" className={cx(styles.actionButton, styles.actionButtonGhost)} onClick={onReset}>
           Reset
         </button>
         {previousSnapshot ? (
-          <button type="button" className={cx(styles.actionButton, styles.actionButtonSecondary)} onClick={onRestorePrevious}>
-            <RotateCcw size={14} />
+          <button type="button" className={cx(styles.actionButton, styles.actionButtonGhost)} onClick={onRestorePrevious}>
+            <RotateCcw size={13} />
             Previous
           </button>
         ) : null}
       </div>
 
-      {/* Grouped scope gap chips */}
       {scopeGapGroups.length > 0 ? (
         <div className={styles.scopeGapsSection}>
           <span className={styles.scopeGapsLabel}>Fill in to complete the scope</span>
@@ -722,64 +712,54 @@ function EmptyStateGuidance({ hasError }) {
 
 function OverviewPanel({ result, viewModel }) {
   const openIssueCount = viewModel.decisionSignals.blockerCount + viewModel.decisionSignals.routeAffectingCount;
-  const riskTone = result?.overall_risk === "high" ? "warning" : result?.overall_risk === "low" ? "positive" : null;
-  const issuesTone = openIssueCount === 0 ? "positive" : openIssueCount > 2 ? "warning" : null;
-  const metrics = [
-    { label: "Match stage", value: formatStageLabel(viewModel.productIdentity.stage || "unknown") },
-    { label: "Scope", value: viewModel.resultMaturity.label },
-    { label: "Risk", value: formatUiLabel(result?.overall_risk || "medium"), tone: riskTone },
-    { label: "Standards", value: String(viewModel.totalStandards) },
-    { label: "Open issues", value: String(openIssueCount), tone: issuesTone },
-  ];
+  const riskLevel = (result?.overall_risk || "medium").toLowerCase();
+  const riskTone = riskLevel === "high" || riskLevel === "critical" ? "warning" : riskLevel === "low" ? "positive" : null;
 
   return (
-    <Surface eyebrow="Product identification" bodyClassName={styles.overviewBody}>
+    <Surface id="section-summary" eyebrow="Product identification" bodyClassName={styles.overviewBody}>
       <div className={styles.identityCard}>
         <div className={styles.identityCardTop}>
           <span className={styles.identityLabel}>Matched product type</span>
-          <div className={styles.identityConfidenceBadge}>
-            <TonePill tone={viewModel.classificationConfidence.tone} tip={CONFIDENCE_GLOSSARY[viewModel.classificationConfidence.label.toLowerCase()]}>
-              {viewModel.classificationConfidence.label} confidence
-            </TonePill>
-          </div>
+          <TonePill
+            tone={viewModel.classificationConfidence.tone}
+            tip={CONFIDENCE_GLOSSARY[viewModel.classificationConfidence.label.toLowerCase()]}
+          >
+            {viewModel.classificationConfidence.label}
+          </TonePill>
         </div>
         <h2 className={styles.identityType}>
           {formatUiLabel(viewModel.productIdentity.type || "Product route")}
         </h2>
+        {viewModel.triggeredDirectives.length ? (
+          <div className={styles.identityDirectives}>
+            {viewModel.triggeredDirectives.map((dk) => (
+              <DirectivePill key={dk} directiveKey={dk} />
+            ))}
+          </div>
+        ) : null}
         {result?.summary ? (
           <p className={styles.identitySummary}>{result.summary}</p>
         ) : null}
       </div>
 
-      <div className={styles.metricGrid}>
-        {metrics.map((metric) => (
-          <div key={metric.label} className={cx(styles.metricCard, metric.tone && METRIC_TONE_CLASS[metric.tone])}>
-            <span className={styles.metricLabel}>{metric.label}</span>
-            <strong className={styles.metricValue}>{metric.value}</strong>
-          </div>
-        ))}
-      </div>
-
-      <div className={styles.signalCard}>
-        <span className={styles.signalLabel}>Primary route</span>
-        <div className={styles.signalRow}>
-          <TonePill tone="strong">{titleCaseMinor(viewModel.decisionSignals.primaryRouteLabel || "Route not locked")}</TonePill>
-          {viewModel.triggeredDirectives.slice(0, 5).map((directiveKey) => (
-            <DirectivePill key={directiveKey} directiveKey={directiveKey} />
-          ))}
+      <div className={styles.identityStatRow}>
+        <div className={cx(styles.identityStat, riskTone === "warning" ? styles.identityStatWarning : riskTone === "positive" ? styles.identityStatPositive : "")}>
+          <span className={styles.identityStatLabel}>Risk</span>
+          <strong className={styles.identityStatValue}>{formatUiLabel(result?.overall_risk || "medium")}</strong>
+        </div>
+        <div className={styles.identityStat}>
+          <span className={styles.identityStatLabel}>Standards</span>
+          <strong className={styles.identityStatValue}>{viewModel.totalStandards}</strong>
+        </div>
+        <div className={cx(styles.identityStat, openIssueCount > 2 ? styles.identityStatWarning : openIssueCount === 0 ? styles.identityStatPositive : styles.identityStatActive)}>
+          <span className={styles.identityStatLabel}>Open issues</span>
+          <strong className={styles.identityStatValue}>{openIssueCount || "None"}</strong>
+        </div>
+        <div className={styles.identityStat}>
+          <span className={styles.identityStatLabel}>Scope</span>
+          <strong className={styles.identityStatValue}>{viewModel.resultMaturity.label}</strong>
         </div>
       </div>
-
-      {viewModel.riskDrivers?.length ? (
-        <div className={styles.riskDriverRow}>
-          <span className={styles.sectionLabel}>Risk driven by</span>
-          <div className={styles.chipList}>
-            {viewModel.riskDrivers.map((driver) => (
-              <span key={driver} className={styles.listChip}>{driver}</span>
-            ))}
-          </div>
-        </div>
-      ) : null}
     </Surface>
   );
 }
@@ -850,13 +830,30 @@ function missingSeverityLabel(severity) {
   return "Helpful";
 }
 
-function clarificationItemClass(severity) {
-  if (severity === "blocker") return styles.clarificationItemBlocker;
-  if (severity === "route-affecting") return styles.clarificationItemRouteAffecting;
-  return "";
+function ActionRequiredItem({ item, onApplyMissingInput }) {
+  const severityClass =
+    item.severity === "blocker" ? styles.actionItemBlocker
+    : item.severity === "route-affecting" ? styles.actionItemRoute
+    : styles.actionItemHelpful;
+
+  return (
+    <div className={cx(styles.actionItem, severityClass)}>
+      <div className={styles.actionItemHeader}>
+        <strong className={styles.actionItemTitle}>{item.title}</strong>
+        <TonePill
+          tone={missingSeverityTone(item.severity)}
+          tip={SEVERITY_GLOSSARY[item.severity]}
+        >
+          {missingSeverityLabel(item.severity)}
+        </TonePill>
+      </div>
+      {item.reason ? <p className={styles.actionItemReason}>{item.reason}</p> : null}
+      <MissingInputExamples item={item} onApplyMissingInput={onApplyMissingInput} />
+    </div>
+  );
 }
 
-function ClarificationStrip({
+function ActionRequiredPanel({
   description,
   result,
   viewModel,
@@ -865,142 +862,85 @@ function ClarificationStrip({
   onReanalyze,
   onApplyMissingInput,
 }) {
-  const blocking = viewModel.missingInputs.filter((item) => item.severity === "blocker");
-  const routeAffecting = viewModel.missingInputs.filter((item) => item.severity === "route-affecting");
-  const [open, setOpen] = useState(false);
-  const knownFacts = extractKnownFacts(description, result);
-  const helpful = viewModel.missingInputs.filter((item) => item.severity === "helpful");
-  const allMissing = [...blocking, ...routeAffecting, ...helpful];
-  const previewItems = allMissing.slice(0, 3);
+  const blocking = viewModel.missingInputs.filter((i) => i.severity === "blocker");
+  const routeAffecting = viewModel.missingInputs.filter((i) => i.severity === "route-affecting");
+  const helpful = viewModel.missingInputs.filter((i) => i.severity === "helpful");
+  const [showOptional, setShowOptional] = useState(false);
 
-  if (!allMissing.length && !dirty) return null;
+  const hasAny = blocking.length || routeAffecting.length || helpful.length;
+  if (!hasAny && !dirty) return null;
 
-  let headline = allMissing.length ? "Clarifications are available" : "Description updated";
-  if (blocking.length || routeAffecting.length) {
-    headline = `${blocking.length} blocker${blocking.length === 1 ? "" : "s"} and ${routeAffecting.length} route-affecting item${
-      routeAffecting.length === 1 ? "" : "s"
-    } are open`;
-  } else if (allMissing.length) {
-    headline = `${allMissing.length} optional clarification${allMissing.length === 1 ? "" : "s"} can tighten this route`;
-  }
-
-  const summaryText = dirty
-    ? "Description changed. Re-run when you want the route refreshed."
-    : blocking.length
-      ? "These inputs can move the route materially."
-      : routeAffecting.length
-        ? "These inputs can still shift scope or evidence needs."
-        : "Everything left is optional detail.";
+  const totalCritical = blocking.length + routeAffecting.length;
 
   return (
-    <section className={cx(styles.clarificationStrip, open ? styles.clarificationStripOpen : "", blocking.length ? styles.clarificationStripBlocking : "")}>
-      <div className={styles.clarificationSummary}>
-        <button
-          type="button"
-          className={styles.clarificationToggle}
-          onClick={() => setOpen((current) => !current)}
-          aria-expanded={open}
-          aria-controls="analysis-clarification-body"
-        >
-          <div className={styles.clarificationHeading}>
-            <span className={styles.clarificationEyebrow}>Clarifications</span>
-            <strong className={styles.clarificationTitle}>{headline}</strong>
-            <span className={styles.clarificationText}>{summaryText}</span>
+    <section
+      id="section-action"
+      className={cx(
+        styles.actionRequiredSection,
+        blocking.length ? styles.actionRequiredCritical : ""
+      )}
+    >
+      <div className={styles.actionRequiredHeader}>
+        <div className={styles.actionRequiredMeta}>
+          <span className={styles.actionRequiredLabel}>Action required</span>
+          <div className={styles.actionRequiredPills}>
+            {blocking.length ? (
+              <TonePill tone="warning" tip={SEVERITY_GLOSSARY["blocker"]}>
+                {blocking.length} blocker{blocking.length === 1 ? "" : "s"}
+              </TonePill>
+            ) : null}
+            {routeAffecting.length ? (
+              <TonePill tone="strong" tip={SEVERITY_GLOSSARY["route-affecting"]}>
+                {routeAffecting.length} route-affecting
+              </TonePill>
+            ) : null}
+            {!totalCritical && helpful.length ? (
+              <TonePill tone="muted">{helpful.length} optional</TonePill>
+            ) : null}
+            {!hasAny && dirty ? (
+              <TonePill tone="muted">Description updated</TonePill>
+            ) : null}
           </div>
-
-          <div className={styles.clarificationSummaryRight}>
-            <div className={styles.clarificationPreview}>
-              {blocking.length ? (
-                <TonePill tone="warning" tip={SEVERITY_GLOSSARY["blocker"]}>{blocking.length} blocker{blocking.length === 1 ? "" : "s"}</TonePill>
-              ) : null}
-              {routeAffecting.length ? (
-                <TonePill tone="strong" tip={SEVERITY_GLOSSARY["route-affecting"]}>
-                  {routeAffecting.length} route-affecting
-                </TonePill>
-              ) : null}
-              {!blocking.length && !routeAffecting.length && allMissing.length ? (
-                <TonePill tone="muted" tip="No blockers or route-affecting items remain. All clarifications are optional refinements.">Optional only</TonePill>
-              ) : null}
-              {previewItems.map((item) => (
-                <span key={item.key} className={styles.clarificationPreviewChip}>
-                  {item.title}
-                </span>
-              ))}
-              {allMissing.length > previewItems.length ? (
-                <span className={styles.clarificationOverflow}>+{allMissing.length - previewItems.length}</span>
-              ) : null}
-            </div>
-
-            {open ? (
-              <ChevronUp size={15} className={styles.clarificationChevron} />
-            ) : (
-              <ChevronDown size={15} className={styles.clarificationChevron} />
-            )}
-          </div>
-        </button>
-
+        </div>
         {dirty ? (
           <button
             type="button"
-            className={cx(styles.actionButton, styles.actionButtonPrimary, styles.clarificationRunButton)}
+            className={cx(styles.actionButton, styles.actionButtonPrimary, styles.actionRequiredRunBtn)}
             onClick={onReanalyze}
+            disabled={busy}
           >
-            {busy ? <LoaderCircle size={14} className={styles.spin} /> : <RefreshCcw size={14} />}
-            {busy ? "Starting new run" : "Re-run"}
+            {busy ? <LoaderCircle size={13} className={styles.spin} /> : <RefreshCcw size={13} />}
+            Re-run
           </button>
         ) : null}
       </div>
 
-      {open ? (
-        <div id="analysis-clarification-body" className={styles.clarificationBody}>
-          {knownFacts.length ? (
-            <div className={styles.clarificationMetaRow}>
-              <span className={styles.sectionLabel}>Known</span>
-              <div className={styles.chipList}>
-                {knownFacts.map((fact) => (
-                  <span key={fact} className={styles.knownChip}>
-                    {fact}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
+      {(blocking.length || routeAffecting.length) ? (
+        <div className={styles.actionItemList}>
+          {blocking.map((item) => (
+            <ActionRequiredItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
+          ))}
+          {routeAffecting.map((item) => (
+            <ActionRequiredItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
+          ))}
+        </div>
+      ) : null}
 
-          {viewModel.assumptions.length ? (
-            <div className={styles.clarificationMetaRow}>
-              <span className={styles.sectionLabel}>Assumed</span>
-              <div className={styles.chipList}>
-                {viewModel.assumptions.map((assumption) => (
-                  <span key={assumption} className={styles.assumedChip}>
-                    {titleCaseMinor(assumption)}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {allMissing.length ? (
-            <div className={styles.clarificationList}>
-              <div className={styles.clarificationSectionHeader}>
-                <span className={styles.sectionLabel}>Missing</span>
-                {blocking.length ? (
-                  <TonePill tone="warning" tip={SEVERITY_GLOSSARY["blocker"]}>{blocking.length} blocker{blocking.length === 1 ? "" : "s"}</TonePill>
-                ) : null}
-                {routeAffecting.length ? (
-                  <TonePill tone="strong" tip={SEVERITY_GLOSSARY["route-affecting"]}>{routeAffecting.length} route-affecting</TonePill>
-                ) : null}
-              </div>
-              {allMissing.map((item) => (
-                <div key={item.key} className={cx(styles.clarificationItem, clarificationItemClass(item.severity))}>
-                  <div className={styles.clarificationItemHeader}>
-                    <span className={styles.clarificationItemTitle}>{item.title}</span>
-                    <TonePill tone={missingSeverityTone(item.severity)} tip={SEVERITY_GLOSSARY[item.severity]}>
-                      {missingSeverityLabel(item.severity)}
-                    </TonePill>
-                  </div>
-                  <p className={styles.clarificationItemText}>{item.reason}</p>
-                  <MissingInputExamples item={item} onApplyMissingInput={onApplyMissingInput} />
-                </div>
+      {helpful.length ? (
+        <div className={styles.actionOptional}>
+          <button
+            type="button"
+            className={styles.actionOptionalToggle}
+            onClick={() => setShowOptional((v) => !v)}
+            aria-expanded={showOptional}
+          >
+            {showOptional ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {helpful.length} optional refinement{helpful.length === 1 ? "" : "s"}
+          </button>
+          {showOptional ? (
+            <div className={styles.actionItemList}>
+              {helpful.map((item) => (
+                <ActionRequiredItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
               ))}
             </div>
           ) : null}
@@ -1010,73 +950,52 @@ function ClarificationStrip({
   );
 }
 
-/**
- * OpenIssuesPanel — summarises blockers and route-affecting gaps with
- * concrete, actionable suggestions derived from the missingInputs list.
- * Only rendered when there is at least one blocker or route-affecting item.
- */
-function OpenIssuesPanel({ viewModel }) {
-  const blockers = viewModel.missingInputs.filter((i) => i.severity === "blocker");
-  const routeAffecting = viewModel.missingInputs.filter((i) => i.severity === "route-affecting");
+function PageSectionNav({ viewModel }) {
+  const hasIssues = viewModel.missingInputs.length > 0;
+  const hasStandards = viewModel.routeSections.length > 0;
+  const hasParallel =
+    (viewModel.conditionalLegislationGroups?.length || 0) +
+    (viewModel.peripheralLegislationGroups?.length || 0) > 0;
+  const hasEvidence = viewModel.evidenceNeeds.length > 0;
+  const blockerCount = viewModel.decisionSignals.blockerCount;
 
-  if (!blockers.length && !routeAffecting.length) return null;
+  const navItems = [
+    { id: "section-summary", label: "Summary" },
+    hasIssues ? { id: "section-action", label: "Action required", count: blockerCount > 0 ? blockerCount : null, warning: blockerCount > 0 } : null,
+    hasStandards ? { id: "section-standards", label: "Standards", count: viewModel.totalStandards } : null,
+    hasParallel ? { id: "section-parallel", label: "Parallel obligations" } : null,
+    hasEvidence ? { id: "section-evidence", label: "Evidence gaps" } : null,
+  ].filter(Boolean);
+
+  if (navItems.length < 3) return null;
+
+  function scrollTo(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const header = document.querySelector("header");
+    const headerH = header ? header.getBoundingClientRect().height : 0;
+    const top = el.getBoundingClientRect().top + window.scrollY - headerH - 16;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  }
 
   return (
-    <Surface
-      eyebrow="Action required"
-      title="Open issues"
-      text="Resolve these before relying on this scope for evidence planning or certification."
-      bodyClassName={styles.openIssuesBody}
-    >
-      {blockers.length ? (
-        <div className={styles.openIssueGroup}>
-          <div className={styles.openIssueGroupHeader}>
-            <TonePill tone="warning">{blockers.length} blocker{blockers.length === 1 ? "" : "s"}</TonePill>
-            <span className={styles.openIssueGroupDesc}>
-              Missing inputs that can materially change the compliance route.
+    <nav className={styles.pageSectionNav} aria-label="Jump to results section">
+      {navItems.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className={cx(styles.pageSectionNavItem, item.warning ? styles.pageSectionNavWarning : "")}
+          onClick={() => scrollTo(item.id)}
+        >
+          {item.label}
+          {item.count != null ? (
+            <span className={cx(styles.pageSectionNavCount, item.warning ? styles.pageSectionNavCountWarning : "")}>
+              {item.count}
             </span>
-          </div>
-          {blockers.map((item) => (
-            <div key={item.key} className={styles.openIssueItem}>
-              <AlertTriangle size={13} className={styles.openIssueIcon} aria-hidden="true" />
-              <div className={styles.openIssueContent}>
-                <strong className={styles.openIssueTitle}>{item.title}</strong>
-                {item.reason ? (
-                  <p className={styles.openIssueReason}>{item.reason}</p>
-                ) : null}
-                {item.examples?.length ? (
-                  <p className={styles.openIssueSuggest}>
-                    Suggestion: add "{item.examples[0]}" to the description and re-run.
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {routeAffecting.length ? (
-        <div className={styles.openIssueGroup}>
-          <div className={styles.openIssueGroupHeader}>
-            <TonePill tone="strong">{routeAffecting.length} route-affecting</TonePill>
-            <span className={styles.openIssueGroupDesc}>
-              May shift specific obligations or evidence scope once confirmed.
-            </span>
-          </div>
-          {routeAffecting.map((item) => (
-            <div key={item.key} className={styles.openIssueItem}>
-              <AlertCircle size={13} className={styles.openIssueIconRoute} aria-hidden="true" />
-              <div className={styles.openIssueContent}>
-                <strong className={styles.openIssueTitle}>{item.title}</strong>
-                {item.reason ? (
-                  <p className={styles.openIssueReason}>{item.reason}</p>
-                ) : null}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </Surface>
+          ) : null}
+        </button>
+      ))}
+    </nav>
   );
 }
 
@@ -1104,51 +1023,33 @@ function ComparisonPanel({ changes }) {
 function StandardCard({ item }) {
   const hasVersionInfo = item.version || item.dated_version || item.harmonized_reference;
   const categoryTag = inferStandardCategory(item);
-  const scope = getStandardScope(item.code);
   return (
     <article className={styles.standardCard}>
-      {/* Row 1: code badge + category pill */}
       <div className={styles.standardCardTop}>
         <span className={styles.standardCode}>{item.code || "Standard"}</span>
         {categoryTag ? <TonePill tone="muted">{categoryTag}</TonePill> : null}
       </div>
-      {scope ? (
-        <div className={styles.standardScopeRow}>
-          <span className={styles.standardScopeLabel}>Covers</span>
-          <div className={styles.standardScopeChips}>
-            {scope.productTypes.map((pt) => (
-              <span key={pt} className={styles.standardScopeChip}>{pt}</span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {/* Row 2: title + rationale */}
       <div className={styles.standardCardBody}>
         <h4 className={styles.standardTitle}>{titleCaseMinor(item.title || "Untitled standard")}</h4>
-        {item.shortRationale
-          ? <p className={styles.microRationale}>{item.shortRationale}</p>
-          : null}
+        {item.shortRationale ? <p className={styles.microRationale}>{item.shortRationale}</p> : null}
       </div>
-
-      {/* Row 3: version data with renamed labels */}
       {hasVersionInfo ? (
         <div className={styles.standardVersionRow}>
           {item.dated_version ? (
             <div className={styles.standardVersionItem}>
-              <span className={styles.versionLabel}>Harmonized standard</span>
+              <span className={styles.versionLabel}>Harmonized</span>
               <span className={styles.versionValue}>{item.dated_version}</span>
             </div>
           ) : null}
           {item.version ? (
             <div className={styles.standardVersionItem}>
-              <span className={styles.versionLabel}>EU latest standard</span>
+              <span className={styles.versionLabel}>Latest EU</span>
               <span className={styles.versionValue}>{item.version}</span>
             </div>
           ) : null}
           {item.harmonized_reference ? (
             <div className={styles.standardVersionItem}>
-              <span className={styles.versionLabel}>OJ reference</span>
+              <span className={styles.versionLabel}>OJ ref</span>
               <span className={styles.versionValue}>{item.harmonized_reference}</span>
             </div>
           ) : null}
@@ -1884,8 +1785,9 @@ export default function AnalyzeWorkspace() {
             <div className={cx(layoutStyles.resultsMain, styles.resultsEnter)} ref={resultsRef}>
               <OverviewPanel result={result} viewModel={viewModel} />
               <TrustLayerPanel viewModel={viewModel} />
-              <ClarificationStrip
-                key={`clarifications-${resultRevision}`}
+              <PageSectionNav viewModel={viewModel} />
+              <ActionRequiredPanel
+                key={`action-${resultRevision}`}
                 description={analyzedDescription || description}
                 result={result}
                 viewModel={viewModel}
@@ -1896,11 +1798,16 @@ export default function AnalyzeWorkspace() {
                   setDescription((current) => joinText(current, text));
                 }}
               />
-              <OpenIssuesPanel viewModel={viewModel} />
               <ComparisonPanel changes={comparisonChanges} />
-              <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
-              <ParallelObligationsPanel key={`parallel-${resultRevision}`} viewModel={viewModel} />
-              <EvidencePanel viewModel={viewModel} />
+              <div id="section-standards">
+                <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
+              </div>
+              <div id="section-parallel">
+                <ParallelObligationsPanel key={`parallel-${resultRevision}`} viewModel={viewModel} />
+              </div>
+              <div id="section-evidence">
+                <EvidencePanel viewModel={viewModel} />
+              </div>
               <SupportingContextPanel
                 result={result}
                 viewModel={viewModel}
