@@ -1062,27 +1062,60 @@ function PageSectionNav({ viewModel }) {
       ))}
       {viewModel.routeSections.length > 0 ? (
         <div className={styles.pageSectionNavDirectives}>
-          {viewModel.routeSections.map((section) => {
-            const isLVD = (section.key || "").toUpperCase() === "LVD";
-            const dirId = `route-section-${slugify(section.key || section.title)}`;
-            return (
+          {viewModel.isRadioProduct && viewModel.redGroup ? (
+            <>
               <button
-                key={`dir-${section.key || section.title}`}
+                key="dir-RED"
                 type="button"
-                className={cx(
-                  styles.pageSectionNavItem,
-                  isLVD ? styles.pageSectionNavLVD : ""
-                )}
-                onClick={() => scrollTo(dirId)}
-                title={`Jump to ${routeTitle(section)}`}
+                className={styles.pageSectionNavItem}
+                onClick={() => scrollTo("route-section-red")}
+                title="Jump to RED route"
               >
-                {directiveShort(section.key || "OTHER")}
+                RED
                 <span className={styles.pageSectionNavCount}>
-                  {(section.items || []).length}
+                  {viewModel.redGroup.totalItems}
                 </span>
               </button>
-            );
-          })}
+              {(viewModel.displayRouteSections || [])
+                .filter((s) => s.key !== "RED" && s.key !== "LVD" && s.key !== "EMC")
+                .map((section) => (
+                  <button
+                    key={`dir-${section.key || section.title}`}
+                    type="button"
+                    className={styles.pageSectionNavItem}
+                    onClick={() => scrollTo(`route-section-${slugify(section.key || section.title)}`)}
+                    title={`Jump to ${routeTitle(section)}`}
+                  >
+                    {directiveShort(section.key || "OTHER")}
+                    <span className={styles.pageSectionNavCount}>
+                      {(section.items || []).length}
+                    </span>
+                  </button>
+                ))}
+            </>
+          ) : (
+            viewModel.routeSections.map((section) => {
+              const isLVD = (section.key || "").toUpperCase() === "LVD";
+              const dirId = `route-section-${slugify(section.key || section.title)}`;
+              return (
+                <button
+                  key={`dir-${section.key || section.title}`}
+                  type="button"
+                  className={cx(
+                    styles.pageSectionNavItem,
+                    isLVD ? styles.pageSectionNavLVD : ""
+                  )}
+                  onClick={() => scrollTo(dirId)}
+                  title={`Jump to ${routeTitle(section)}`}
+                >
+                  {directiveShort(section.key || "OTHER")}
+                  <span className={styles.pageSectionNavCount}>
+                    {(section.items || []).length}
+                  </span>
+                </button>
+              );
+            })
+          )}
         </div>
       ) : null}
     </nav>
@@ -1149,19 +1182,150 @@ function StandardCard({ item }) {
   );
 }
 
-function RouteQuickNav({ sections, openKeys }) {
+// ── RED article-branch components ─────────────────────────────────────────
+
+function RedArticleBranch({ branch, open, onToggle, isLast }) {
+  const branchId = `red-branch-${slugify(branch.key)}`;
+  return (
+    <div className={cx(styles.redArticleBranch, isLast ? styles.redArticleBranchLast : "")}>
+      <button
+        type="button"
+        className={styles.redArticleToggle}
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`${branchId}-body`}
+      >
+        <div className={styles.redArticleToggleContent}>
+          <span className={styles.redArticleLabel}>{branch.label}</span>
+          <span className={styles.redArticleCount}>
+            {branch.items.length} standard{branch.items.length === 1 ? "" : "s"}
+          </span>
+        </div>
+        {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+      </button>
+      {open ? (
+        <div id={`${branchId}-body`} className={styles.redArticleBody}>
+          {branch.items.length ? (
+            branch.items.map((item) => (
+              <StandardCard
+                key={`${branch.key}-${item.code || item.title}-${item.version || ""}`}
+                item={item}
+              />
+            ))
+          ) : (
+            <p className={styles.emptyCopy}>No standards returned for this article.</p>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function RedGroupCard({ redGroup, openBranchKeys, onToggleBranch }) {
+  return (
+    <section
+      className={cx(styles.accordionCard, styles.routeCardCore, styles.redGroupCard)}
+      id="route-section-red"
+    >
+      <div className={styles.redGroupHeader}>
+        <div className={styles.accordionCopy}>
+          <div className={styles.accordionTitleRow}>
+            <h3 className={styles.accordionTitle}>RED wireless route</h3>
+            {redGroup.shortRationale ? (
+              <p className={styles.microRationale}>{redGroup.shortRationale}</p>
+            ) : null}
+            <p className={styles.accordionText}>
+              {redGroup.totalItems} standard{redGroup.totalItems === 1 ? "" : "s"} across {redGroup.branches.length} article branch{redGroup.branches.length === 1 ? "" : "es"}
+            </p>
+          </div>
+          <div className={styles.accordionTitleMeta}>
+            <DirectivePill directiveKey="RED" linkToPage />
+            <TonePill tone="strong" tip={APPLICABILITY_GLOSSARY["core applicable"]}>
+              Mandatory
+            </TonePill>
+          </div>
+        </div>
+      </div>
+      <div className={styles.redGroupBranchList}>
+        {redGroup.branches.map((branch, index) => (
+          <RedArticleBranch
+            key={branch.key}
+            branch={branch}
+            open={openBranchKeys.has(branch.key)}
+            onToggle={() => onToggleBranch(branch.key)}
+            isLast={index === redGroup.branches.length - 1}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RouteQuickNav({ sections, openKeys, isRadioProduct, redGroup }) {
   const orderedSections = (sections || []).filter(Boolean);
 
-  if (!orderedSections.length) return null;
-
-  const scrollToSection = (keyOrTitle) => {
-    const target = document.getElementById(`route-section-${slugify(keyOrTitle)}`);
+  const scrollToId = (id) => {
+    const target = document.getElementById(id);
     if (!target) return;
     const header = document.querySelector("header");
     const headerH = header ? header.getBoundingClientRect().height : 0;
     const top = target.getBoundingClientRect().top + window.scrollY - headerH - 16;
     window.scrollTo({ top, behavior: "smooth" });
   };
+
+  const scrollToSection = (keyOrTitle) =>
+    scrollToId(`route-section-${slugify(keyOrTitle)}`);
+
+  if (!orderedSections.length && !isRadioProduct) return null;
+
+  // For radio products: single RED chip + any non-LVD/EMC/RED chips
+  if (isRadioProduct && redGroup) {
+    const nonRadioSections = orderedSections.filter(
+      (s) => s.key !== "RED" && s.key !== "LVD" && s.key !== "EMC"
+    );
+    const redBranchOpen =
+      openKeys?.has("3.1a") || openKeys?.has("3.1b") ||
+      openKeys?.has("3.2")  || openKeys?.has("3.3");
+    return (
+      <div className={styles.routeNavWrap}>
+        <div className={styles.routeNav}>
+          <button
+            type="button"
+            className={cx(styles.routeNavChip, styles.routeCardCore, redBranchOpen ? styles.routeNavChipActive : "")}
+            onClick={() => scrollToId("route-section-red")}
+            aria-label="Jump to RED route"
+            aria-pressed={!!redBranchOpen}
+          >
+            <span className={styles.routeNavLabel}>RED</span>
+            <span className={styles.routeNavMeta}>
+              {redGroup.totalItems} standard{redGroup.totalItems === 1 ? "" : "s"}
+            </span>
+          </button>
+          {nonRadioSections.map((section) => (
+            <button
+              key={`jump-${section.key || section.title}`}
+              type="button"
+              className={cx(
+                styles.routeNavChip,
+                ROUTE_SECTION_CLASS[section.sectionKind],
+                openKeys?.has(section.key || section.title) ? styles.routeNavChipActive : ""
+              )}
+              onClick={() => scrollToSection(section.key || section.title)}
+              aria-label={`Jump to ${routeTitle(section)}`}
+              aria-pressed={openKeys?.has(section.key || section.title) || false}
+            >
+              <span className={styles.routeNavLabel}>{directiveShort(section.key || "OTHER")}</span>
+              <span className={styles.routeNavMeta}>
+                {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!orderedSections.length) return null;
 
   return (
     <div className={styles.routeNavWrap}>
@@ -1257,7 +1421,15 @@ function RouteSectionCard({ section, open, onToggle }) {
 }
 
 function StandardsRoutePanel({ viewModel }) {
+  const isRadioProduct = viewModel.isRadioProduct;
+  const redGroup = viewModel.redGroup;
+  const displayRouteSections = viewModel.displayRouteSections || viewModel.routeSections;
+
   const [openKeys, setOpenKeys] = useState(() => {
+    if (isRadioProduct) {
+      // Default: open Article 3.2 (Radio/Spectrum) for easy scanning
+      return new Set(["3.2"]);
+    }
     const coreKeys = viewModel.routeSections
       .filter((s) => s.sectionKind === "core")
       .map((s) => s.key);
@@ -1276,10 +1448,15 @@ function StandardsRoutePanel({ viewModel }) {
     });
   }, []);
 
-  const filteredSections = useMemo(() => {
+  // Non-RED standalone sections (radio products hide LVD/EMC; non-radio use all)
+  const nonRedSections = isRadioProduct
+    ? displayRouteSections.filter((s) => s.key !== "RED")
+    : displayRouteSections;
+
+  const filteredNonRedSections = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return viewModel.routeSections;
-    return viewModel.routeSections.filter(
+    if (!q) return nonRedSections;
+    return nonRedSections.filter(
       (s) =>
         (s.key || "").toLowerCase().includes(q) ||
         (s.title || "").toLowerCase().includes(q) ||
@@ -1289,17 +1466,47 @@ function StandardsRoutePanel({ viewModel }) {
             (i.title || "").toLowerCase().includes(q)
         )
     );
-  }, [viewModel.routeSections, searchQuery]);
+  }, [nonRedSections, searchQuery]);
+
+  // Whether the RED group card should be visible given the current search
+  const redGroupVisible = useMemo(() => {
+    if (!isRadioProduct || !redGroup) return false;
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      "red".includes(q) ||
+      redGroup.branches.some(
+        (branch) =>
+          branch.label.toLowerCase().includes(q) ||
+          branch.items.some(
+            (i) =>
+              (i.code || "").toLowerCase().includes(q) ||
+              (i.title || "").toLowerCase().includes(q)
+          )
+      )
+    );
+  }, [isRadioProduct, redGroup, searchQuery]);
+
+  const hasAnyContent = redGroupVisible || filteredNonRedSections.length > 0;
+
+  const summaryText = isRadioProduct
+    ? `${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"} — RED is the primary route, covering safety (Art. 3.1(a)), EMC (Art. 3.1(b)), and radio spectrum (Art. 3.2).`
+    : `${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"} across ${viewModel.routeSections.length} directive group${viewModel.routeSections.length === 1 ? "" : "s"} — LVD and EMC first, then RED, followed by further applicable routes.`;
 
   return (
     <Surface
       id="section-standards"
       eyebrow="Compliance route"
       title="Standards"
-      text={`${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"} across ${viewModel.routeSections.length} directive group${viewModel.routeSections.length === 1 ? "" : "s"} — LVD and EMC first, then RED, followed by further applicable routes.`}
+      text={summaryText}
       bodyClassName={styles.sectionStack}
     >
-      <RouteQuickNav sections={viewModel.routeSections} openKeys={openKeys} />
+      <RouteQuickNav
+        sections={displayRouteSections}
+        openKeys={openKeys}
+        isRadioProduct={isRadioProduct}
+        redGroup={redGroup}
+      />
 
       {viewModel.routeSections.length > 2 ? (
         <div className={styles.standardsSearch}>
@@ -1325,9 +1532,16 @@ function StandardsRoutePanel({ viewModel }) {
         </div>
       ) : null}
 
-      {filteredSections.length ? (
+      {hasAnyContent ? (
         <div className={styles.sectionStack}>
-          {filteredSections.map((section) => (
+          {redGroupVisible ? (
+            <RedGroupCard
+              redGroup={redGroup}
+              openBranchKeys={openKeys}
+              onToggleBranch={toggleSection}
+            />
+          ) : null}
+          {filteredNonRedSections.map((section) => (
             <RouteSectionCard
               key={section.key || section.title}
               section={section}

@@ -1001,6 +1001,67 @@
   --route-chip-surface-strong: rgba(125,185,255,0.12);
 }
 
+/* ── RED group card (parent container for article branches) ─────────────── */
+
+.redGroupCard { overflow: visible; }
+
+.redGroupHeader {
+  padding: 15px 16px 14px;
+  border-bottom: 1px solid rgba(125,185,255,0.13);
+}
+
+.redGroupBranchList { display: grid; }
+
+/* Individual article branch inside the RED group card */
+.redArticleBranch {
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.redArticleBranchLast { border-bottom: 0; }
+
+.redArticleToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 16px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.redArticleToggle:hover { background: rgba(125,185,255,0.04); }
+
+.redArticleToggleContent {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.redArticleLabel {
+  color: var(--text-strong);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.redArticleCount {
+  color: var(--text-muted);
+  font-size: 0.77rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.redArticleBody {
+  display: grid;
+  gap: 10px;
+  padding: 0 14px 12px;
+}
+
 .routeCardConditional {
   --route-accent: rgba(240,192,103,0.94);
   --route-border-subtle: rgba(240,192,103,0.17);
@@ -2214,6 +2275,15 @@
 }
 [data-theme="light"] .accordionToggle:hover {
   background: rgba(14,38,88,0.03);
+}
+[data-theme="light"] .redGroupHeader {
+  border-bottom-color: rgba(21,83,182,0.13);
+}
+[data-theme="light"] .redArticleBranch {
+  border-bottom-color: rgba(14,38,88,0.08);
+}
+[data-theme="light"] .redArticleToggle:hover {
+  background: rgba(21,83,182,0.04);
 }
 [data-theme="light"] .routeCardCore {
   --route-accent: rgba(21,83,182,0.95);

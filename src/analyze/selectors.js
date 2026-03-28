@@ -762,6 +762,64 @@ function rationaleForRouteSection(section, baseSafetyRoute) {
 const CORE_DIRECTIVE_KEYS = new Set(["LVD", "EMC"]);
 const CONDITIONAL_DIRECTIVE_KEYS = new Set(["RED", "RED_CYBER"]);
 
+// ── RED article grouping ───────────────────────────────────────────────────
+
+const RED_ARTICLE_DEFINITIONS = [
+  { key: "3.1a", label: "Article 3.1(a) — Safety / Health" },
+  { key: "3.1b", label: "Article 3.1(b) — EMC" },
+  { key: "3.2",  label: "Article 3.2 — Radio / Spectrum" },
+  { key: "3.3",  label: "Article 3.3 — Additional requirements" },
+];
+
+// Maps old-style section keys to RED article keys (fallback for pre-article payloads)
+const SECTION_KEY_TO_RED_ARTICLE = { LVD: "3.1a", EMC: "3.1b", RED: "3.2" };
+
+/**
+ * Builds the grouped RED structure for radio products.
+ * Handles both new payloads (item.article_key) and old payloads (section key mapping).
+ * Returns null if RED is not present in the sections.
+ */
+function buildRedGroup(decoratedRouteSections) {
+  const hasRed = (decoratedRouteSections || []).some((s) => s.key === "RED");
+  if (!hasRed) return null;
+
+  const branchItems = { "3.1a": [], "3.1b": [], "3.2": [], "3.3": [] };
+
+  (decoratedRouteSections || [])
+    .filter((s) => SECTION_KEY_TO_RED_ARTICLE[s.key] !== undefined)
+    .forEach((section) => {
+      (section.items || []).forEach((item) => {
+        // New payload: item.article_key takes priority over section-key mapping
+        const rawArticleKey = item.article_key
+          ? String(item.article_key).toLowerCase()
+          : SECTION_KEY_TO_RED_ARTICLE[section.key] || "3.2";
+        if (branchItems[rawArticleKey] !== undefined) {
+          branchItems[rawArticleKey].push(item);
+        }
+      });
+    });
+
+  const redSection = (decoratedRouteSections || []).find((s) => s.key === "RED");
+
+  const branches = RED_ARTICLE_DEFINITIONS
+    .map(({ key, label }) => ({ key, label, items: branchItems[key] || [] }))
+    .filter((branch) => {
+      if (branch.key !== "3.3") return true; // Always include 3.1(a), 3.1(b), 3.2
+      return branch.items.length > 0;         // Only include 3.3 if backend provided data
+    });
+
+  const totalItems = branches.reduce((sum, b) => sum + b.items.length, 0);
+
+  return {
+    key: "RED",
+    sectionKind: "core",
+    applicabilityBucket: "Core applicable",
+    shortRationale: redSection?.shortRationale || "Includes intentional radio transmission.",
+    totalItems,
+    branches,
+  };
+}
+
 function decorateRouteSections(sections, baseSafetyRoute) {
   const hasCoreDirective = (sections || []).some((s) => CORE_DIRECTIVE_KEYS.has(s.key));
 
@@ -895,6 +953,12 @@ export function buildAnalysisViewModel(result, descriptionText = "") {
   const directiveBreakdown = buildDirectiveBreakdown(routeSections);
   const baseSafetyRoute = inferBaseSafetyRoute(result, routeSections);
   const decoratedRouteSections = decorateRouteSections(routeSections, baseSafetyRoute);
+  const isRadioProduct = decoratedRouteSections.some((s) => s.key === "RED");
+  const redGroup = isRadioProduct ? buildRedGroup(decoratedRouteSections) : null;
+  // For radio products, LVD and EMC are folded into the RED group — exclude them from standalone display
+  const displayRouteSections = isRadioProduct
+    ? decoratedRouteSections.filter((s) => s.key !== "LVD" && s.key !== "EMC")
+    : decoratedRouteSections;
   const decoratedLegislationGroups = decorateLegislationGroups(legislationGroups);
   const missingInputs = normalizeMissingInputs(guidanceItems, descriptionText, result, routeSections);
   const assumptions = inferAssumptions(result, decoratedRouteSections, descriptionText);
@@ -986,5 +1050,8 @@ export function buildAnalysisViewModel(result, descriptionText = "") {
     clarificationState,
     decisionSignals,
     riskDrivers,
+    isRadioProduct,
+    redGroup,
+    displayRouteSections,
   };
 }
