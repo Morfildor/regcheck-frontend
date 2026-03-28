@@ -3108,3 +3108,24 @@
 /* ─── Visual consistency: slightly reduce section stack gap ── */
 
 .sectionStack { gap: 10px; }
+
+/* ─── Standards hero section — visual separation before primary content ─── */
+
+.standardsHeroSection {
+  position: relative;
+  padding-top: 8px;
+}
+
+.standardsHeroSection::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(125,185,255,0.28) 0%, transparent 72%);
+}
+
+[data-theme="light"] .standardsHeroSection::before {
+  background: linear-gradient(90deg, rgba(21,83,182,0.22) 0%, transparent 72%);
+}

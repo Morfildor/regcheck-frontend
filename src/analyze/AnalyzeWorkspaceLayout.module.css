@@ -37,12 +37,19 @@
 }
 
 /* Make the Refine surface in the aside visually prominent */
-.resultsAside > section:first-child {
+.resultsAside > section {
   border-color: rgba(125, 185, 255, 0.38);
   box-shadow:
     0 0 28px rgba(125, 185, 255, 0.07),
     0 8px 32px rgba(0, 0, 0, 0.28);
   background: linear-gradient(180deg, rgba(125, 185, 255, 0.06) 0px, rgba(15, 26, 46, 0.92) 48px) rgba(15, 26, 46, 0.92);
+}
+
+/* Reduce aside visual prominence once results are loaded */
+.resultsAsideHasResult > section {
+  border-color: rgba(125, 185, 255, 0.20);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+  background: rgba(15, 26, 46, 0.88);
 }
 
 /* ─── Light theme overrides ───────────────────────── */
@@ -51,12 +58,18 @@
   scrollbar-color: rgba(14,38,88,0.12) transparent;
 }
 
-[data-theme="light"] .resultsAside > section:first-child {
+[data-theme="light"] .resultsAside > section {
   border-color: rgba(21,83,182,0.26);
   box-shadow:
     0 0 24px rgba(21,83,182,0.07),
     0 6px 24px rgba(14,38,88,0.09);
   background: linear-gradient(180deg, rgba(21,83,182,0.06) 0px, rgba(255,255,255,0.98) 48px) rgba(255,255,255,0.98);
+}
+
+[data-theme="light"] .resultsAsideHasResult > section {
+  border-color: rgba(21,83,182,0.14);
+  box-shadow: 0 2px 8px rgba(14,38,88,0.05);
+  background: rgba(255,255,255,0.95);
 }
 
 /* Removed zone header styles — the zone title section was removed from JSX

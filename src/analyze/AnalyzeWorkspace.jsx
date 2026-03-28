@@ -886,15 +886,6 @@ function ActionRequiredPanel({
   const visibleRouteAffecting = showAllRoute ? routeAffecting : routeAffecting.slice(0, ROUTE_INITIAL_LIMIT);
   const hiddenRouteCount = routeAffecting.length - ROUTE_INITIAL_LIMIT;
 
-  function scrollToStandards() {
-    const el = document.getElementById("section-standards");
-    if (!el) return;
-    const header = document.querySelector("header");
-    const headerH = header ? header.getBoundingClientRect().height : 0;
-    const top = el.getBoundingClientRect().top + window.scrollY - headerH - 16;
-    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-  }
-
   return (
     <section
       id="section-action"
@@ -905,7 +896,7 @@ function ActionRequiredPanel({
     >
       <div className={styles.actionRequiredHeader}>
         <div className={styles.actionRequiredMeta}>
-          <span className={styles.actionRequiredLabel}>Action required</span>
+          <span className={styles.actionRequiredLabel}>Open scope questions</span>
           <div className={styles.actionRequiredPills}>
             {blocking.length ? (
               <TonePill tone="warning" tip={SEVERITY_GLOSSARY["blocker"]}>
@@ -925,16 +916,8 @@ function ActionRequiredPanel({
             ) : null}
           </div>
         </div>
-        <div className={styles.actionRequiredHeaderRight}>
-          <button
-            type="button"
-            className={styles.jumpToStandardsBtn}
-            onClick={scrollToStandards}
-            title="Jump to standards route"
-          >
-            Standards <ArrowRight size={11} />
-          </button>
-          {dirty ? (
+        {dirty ? (
+          <div className={styles.actionRequiredHeaderRight}>
             <button
               type="button"
               className={cx(styles.actionButton, styles.actionButtonPrimary, styles.actionRequiredRunBtn)}
@@ -944,8 +927,8 @@ function ActionRequiredPanel({
               {busy ? <LoaderCircle size={13} className={styles.spin} /> : <RefreshCcw size={13} />}
               Re-run
             </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Understood facts — compact confidence strip */}
@@ -1022,8 +1005,8 @@ function PageSectionNav({ viewModel }) {
 
   const navItems = [
     { id: "section-summary", label: "Summary" },
-    hasIssues ? { id: "section-action", label: "Action required", count: blockerCount > 0 ? blockerCount : null, warning: blockerCount > 0 } : null,
     hasStandards ? { id: "section-standards", label: "Standards", count: viewModel.totalStandards, accent: true } : null,
+    hasIssues ? { id: "section-action", label: "Open questions", count: blockerCount > 0 ? blockerCount : null, warning: blockerCount > 0 } : null,
     hasParallel ? { id: "section-parallel", label: "Obligations" } : null,
     hasEvidence ? { id: "section-evidence", label: "Evidence" } : null,
   ].filter(Boolean);
@@ -2150,8 +2133,10 @@ export default function AnalyzeWorkspace() {
                 </div>
               ) : null}
               <OverviewPanel result={result} viewModel={viewModel} />
-              <TrustLayerPanel viewModel={viewModel} />
               <PageSectionNav viewModel={viewModel} />
+              <div className={styles.standardsHeroSection}>
+                <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
+              </div>
               <ActionRequiredPanel
                 key={`action-${resultRevision}`}
                 description={analyzedDescription || description}
@@ -2164,14 +2149,14 @@ export default function AnalyzeWorkspace() {
                   setDescription((current) => joinText(current, text));
                 }}
               />
-              <ComparisonPanel changes={comparisonChanges} />
-              <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
               <div id="section-parallel">
                 <ParallelObligationsPanel key={`parallel-${resultRevision}`} viewModel={viewModel} />
               </div>
               <div id="section-evidence">
                 <EvidencePanel viewModel={viewModel} />
               </div>
+              <ComparisonPanel changes={comparisonChanges} />
+              <TrustLayerPanel viewModel={viewModel} />
               <SupportingContextPanel
                 result={result}
                 viewModel={viewModel}
@@ -2182,7 +2167,7 @@ export default function AnalyzeWorkspace() {
               <DisclaimerBanner compact />
             </div>
 
-            <div className={cx(layoutStyles.resultsAside, asideCollapsed ? layoutStyles.resultsAsideHidden : "")}>
+            <div className={cx(layoutStyles.resultsAside, layoutStyles.resultsAsideHasResult, asideCollapsed ? layoutStyles.resultsAsideHidden : "")}>
               <div className={styles.asideCollapseRow}>
                 <button
                   type="button"
