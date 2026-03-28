@@ -1070,14 +1070,14 @@ function PageSectionNav({ viewModel }) {
                 key={`dir-${section.key || section.title}`}
                 type="button"
                 className={cx(
-                  styles.pageSectionNavDirectiveItem,
-                  isLVD ? styles.pageSectionNavDirectiveLVD : ""
+                  styles.pageSectionNavItem,
+                  isLVD ? styles.pageSectionNavLVD : ""
                 )}
                 onClick={() => scrollTo(dirId)}
                 title={`Jump to ${routeTitle(section)}`}
               >
                 {directiveShort(section.key || "OTHER")}
-                <span className={styles.pageSectionNavDirectiveCount}>
+                <span className={styles.pageSectionNavCount}>
                   {(section.items || []).length}
                 </span>
               </button>

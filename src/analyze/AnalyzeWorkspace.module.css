@@ -2516,6 +2516,10 @@
   padding: 2px 0;
 }
 
+.pageSectionNavDirectives {
+  display: contents;
+}
+
 .pageSectionNavItem {
   display: inline-flex;
   align-items: center;
