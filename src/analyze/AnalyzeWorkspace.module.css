@@ -2063,3 +2063,360 @@
   font-style: italic;
   margin: 0;
 }
+
+/* ═══════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES
+   ═══════════════════════════════════════════════════ */
+
+/* ─── Pills ─────────────────────────────────────── */
+[data-theme="light"] .pillPositive {
+  background: rgba(22,101,52,0.08);
+  border-color: rgba(22,101,52,0.22);
+  color: #166534;
+}
+[data-theme="light"] .pillWarning {
+  background: rgba(133,77,14,0.09);
+  border-color: rgba(133,77,14,0.24);
+  color: #7c4a0d;
+}
+[data-theme="light"] .pillMuted {
+  background: rgba(74,100,128,0.07);
+  border-color: rgba(74,100,128,0.18);
+  color: #3d5874;
+}
+[data-theme="light"] .pillStrong {
+  background: rgba(21,83,182,0.08);
+  border-color: rgba(21,83,182,0.22);
+  color: #1553b6;
+}
+
+/* ─── Action buttons ─────────────────────────────── */
+[data-theme="light"] .actionButtonPrimary {
+  background: linear-gradient(160deg, rgba(21,83,182,0.13), rgba(21,83,182,0.07));
+  border-color: rgba(21,83,182,0.28);
+}
+[data-theme="light"] .actionButtonPrimary:hover {
+  background: linear-gradient(160deg, rgba(21,83,182,0.20), rgba(21,83,182,0.12));
+  border-color: rgba(21,83,182,0.44);
+  box-shadow: 0 2px 12px rgba(21,83,182,0.10);
+}
+[data-theme="light"] .actionButtonSecondary {
+  background: rgba(255,255,255,0.70);
+  border-color: rgba(14,38,88,0.14);
+}
+[data-theme="light"] .actionButtonSecondary:hover {
+  background: rgba(255,255,255,0.92);
+  border-color: rgba(14,38,88,0.22);
+}
+
+/* ─── Composer ─────────────────────────────────── */
+[data-theme="light"] .textarea {
+  border-color: rgba(21,83,182,0.18);
+  background: rgba(246,249,255,0.90);
+}
+[data-theme="light"] .textarea:focus {
+  border-color: rgba(21,83,182,0.38);
+  box-shadow: 0 0 0 3px rgba(21,83,182,0.07);
+  background: #ffffff;
+}
+[data-theme="light"] .composerStatus {
+  border-top-color: rgba(14,38,88,0.08);
+}
+[data-theme="light"] .scopeGapsSection {
+  border-top-color: rgba(14,38,88,0.08);
+}
+
+/* ─── Template chips ─────────────────────────────── */
+[data-theme="light"] .templateChip {
+  border-color: rgba(14,38,88,0.14);
+  background: rgba(255,255,255,0.65);
+}
+[data-theme="light"] .templateChip:hover {
+  border-color: rgba(21,83,182,0.28);
+  background: rgba(21,83,182,0.07);
+}
+
+/* ─── Analyze progress card ─────────────────────── */
+[data-theme="light"] .analyzeCard {
+  border-color: rgba(14,122,106,0.20);
+  background: linear-gradient(135deg, rgba(14,122,106,0.06) 0%, rgba(21,83,182,0.04) 100%);
+}
+[data-theme="light"] .analyzeCardHeader {
+  color: rgba(14,122,106,0.85);
+}
+[data-theme="light"] .analyzeProgressTrack {
+  background: rgba(14,38,88,0.07);
+}
+
+/* ─── Guidance / empty state cards ──────────────── */
+[data-theme="light"] .guidanceCard {
+  background: rgba(255,255,255,0.80);
+}
+[data-theme="light"] .listChip {
+  border-color: rgba(14,38,88,0.14);
+  background: rgba(255,255,255,0.70);
+}
+
+/* ─── Metric cards ───────────────────────────────── */
+[data-theme="light"] .metricCard {
+  background: rgba(255,255,255,0.70);
+}
+[data-theme="light"] .metricCardPositive {
+  border-color: rgba(22,101,52,0.22);
+  background: rgba(22,101,52,0.07);
+}
+[data-theme="light"] .metricCardPositive .metricValue { color: #166534; }
+[data-theme="light"] .metricCardWarning {
+  border-color: rgba(133,77,14,0.22);
+  background: rgba(133,77,14,0.07);
+}
+[data-theme="light"] .metricCardWarning .metricValue { color: #7c4a0d; }
+
+/* ─── Signal card ─────────────────────────────── */
+[data-theme="light"] .signalCard {
+  border-color: rgba(21,83,182,0.20);
+  background: rgba(21,83,182,0.07);
+}
+
+/* ─── Trust bar ───────────────────────────────── */
+[data-theme="light"] .trustBar {
+  background: rgba(255,255,255,0.80);
+}
+[data-theme="light"] .trustBarSummary:hover {
+  background: rgba(14,38,88,0.04);
+}
+[data-theme="light"] .obligationGroupCount {
+  background: rgba(14,38,88,0.06);
+  border-color: rgba(14,38,88,0.12);
+}
+
+/* ─── Accordion cards ─────────────────────────── */
+[data-theme="light"] .accordionCard {
+  --route-border-subtle: rgba(14,38,88,0.10);
+  --route-border-strong: rgba(14,38,88,0.18);
+  --route-surface-subtle: rgba(255,255,255,0.75);
+  --route-surface-strong: rgba(248,251,255,0.95);
+  box-shadow: 0 1px 6px rgba(14,38,88,0.06);
+}
+[data-theme="light"] .accordionCard:hover {
+  box-shadow: 0 2px 10px rgba(14,38,88,0.09);
+}
+[data-theme="light"] .accordionToggle:hover {
+  background: rgba(14,38,88,0.03);
+}
+[data-theme="light"] .routeCardCore {
+  --route-accent: rgba(21,83,182,0.95);
+  --route-border-subtle: rgba(21,83,182,0.16);
+  --route-border-strong: rgba(21,83,182,0.28);
+  --route-surface-subtle: rgba(21,83,182,0.05);
+  --route-surface-strong: rgba(248,251,255,0.97);
+  --route-chip-surface-subtle: rgba(21,83,182,0.05);
+  --route-chip-surface-strong: rgba(21,83,182,0.10);
+}
+[data-theme="light"] .routeCardConditional {
+  --route-accent: rgba(133,77,14,0.90);
+  --route-border-subtle: rgba(133,77,14,0.15);
+  --route-border-strong: rgba(133,77,14,0.26);
+  --route-surface-subtle: rgba(133,77,14,0.04);
+  --route-surface-strong: rgba(248,251,255,0.97);
+  --route-chip-surface-subtle: rgba(133,77,14,0.04);
+  --route-chip-surface-strong: rgba(133,77,14,0.10);
+}
+[data-theme="light"] .routeCardSecondary {
+  --route-accent: rgba(74,100,128,0.90);
+  --route-border-subtle: rgba(74,100,128,0.13);
+  --route-border-strong: rgba(74,100,128,0.22);
+  --route-surface-subtle: rgba(74,100,128,0.04);
+  --route-surface-strong: rgba(248,251,255,0.97);
+  --route-chip-surface-subtle: rgba(74,100,128,0.04);
+  --route-chip-surface-strong: rgba(74,100,128,0.09);
+}
+
+/* ─── Standard card ───────────────────────────── */
+[data-theme="light"] .standardCard {
+  background: rgba(255,255,255,0.90);
+  border-color: rgba(14,38,88,0.12);
+  box-shadow: none;
+}
+[data-theme="light"] .standardCard:hover {
+  border-color: rgba(14,38,88,0.20);
+  background: rgba(255,255,255,0.98);
+}
+[data-theme="light"] .standardVersionRow {
+  border-top-color: rgba(14,38,88,0.08);
+}
+[data-theme="light"] .standardVersionItem {
+  border-color: rgba(14,38,88,0.10);
+  background: rgba(246,249,255,0.70);
+}
+[data-theme="light"] .standardCode {
+  background: rgba(14,38,88,0.07);
+  border-color: rgba(14,38,88,0.14);
+}
+[data-theme="light"] .standardScopeChip {
+  background: rgba(21,83,182,0.07);
+  border-color: rgba(21,83,182,0.18);
+  color: #1553b6;
+}
+
+/* ─── Clarification strip ─────────────────────── */
+[data-theme="light"] .clarificationStrip {
+  border-color: rgba(14,38,88,0.12);
+  background: rgba(255,255,255,0.85);
+}
+[data-theme="light"] .clarificationStripOpen {
+  border-color: rgba(21,83,182,0.18);
+}
+[data-theme="light"] .clarificationStripBlocking {
+  border-color: rgba(133,77,14,0.20);
+  background: rgba(133,77,14,0.04);
+}
+[data-theme="light"] .clarificationStripBlocking.clarificationStripOpen {
+  border-color: rgba(133,77,14,0.30);
+}
+[data-theme="light"] .clarificationItem {
+  background: rgba(246,249,255,0.80);
+}
+[data-theme="light"] .clarificationPreviewChip {
+  border-color: rgba(14,38,88,0.10);
+  background: rgba(255,255,255,0.60);
+}
+
+/* ─── Obligation card ─────────────────────────── */
+[data-theme="light"] .obligationCard {
+  border-color: rgba(14,122,106,0.16);
+  background: rgba(255,255,255,0.85);
+}
+[data-theme="light"] .obligationCard:hover {
+  border-color: rgba(14,122,106,0.28);
+}
+[data-theme="light"] .obligationCardToggle:hover {
+  background: rgba(14,38,88,0.03);
+}
+[data-theme="light"] .obligationDetail {
+  border-top-color: rgba(14,122,106,0.12);
+  background: rgba(14,122,106,0.03);
+}
+
+/* ─── Legislation card ────────────────────────── */
+[data-theme="light"] .legislationCard {
+  background: rgba(255,255,255,0.80);
+}
+
+/* ─── Evidence card ──────────────────────────── */
+[data-theme="light"] .evidenceCard {
+  background: rgba(255,255,255,0.75);
+}
+[data-theme="light"] .evidenceSectionBlockers {
+  border-color: rgba(133,77,14,0.16);
+  background: rgba(133,77,14,0.04);
+}
+[data-theme="light"] .metaLabelBlockers { color: #7c4a0d; }
+
+/* ─── Evidence section icons ─────────────────── */
+[data-theme="light"] .evidenceSectionIconCheck  { color: #166534; }
+[data-theme="light"] .evidenceSectionIconMissing { color: #7c4a0d; }
+[data-theme="light"] .evidenceSectionIconBlocker { color: #b91c1c; }
+[data-theme="light"] .evidenceSectionIconNext    { color: #1553b6; }
+
+/* ─── Context panel ──────────────────────────── */
+[data-theme="light"] .contextPanel {
+  background: rgba(255,255,255,0.90);
+}
+[data-theme="light"] .contextSummary:hover {
+  background: rgba(14,38,88,0.03);
+}
+[data-theme="light"] .infoCard {
+  background: rgba(246,249,255,0.70);
+}
+
+/* ─── Identity card ──────────────────────────── */
+[data-theme="light"] .identityCard {
+  border-color: rgba(21,83,182,0.20);
+  background: linear-gradient(145deg, rgba(21,83,182,0.07), rgba(21,83,182,0.03));
+}
+[data-theme="light"] .identityConfidenceBadge {
+  border-color: rgba(21,83,182,0.16);
+  background: rgba(21,83,182,0.06);
+}
+[data-theme="light"] .identitySummary {
+  border-top-color: rgba(21,83,182,0.10);
+}
+
+/* ─── Known / Assumed chips ───────────────────── */
+[data-theme="light"] .knownChip {
+  border-color: rgba(14,122,106,0.22);
+  background: rgba(14,122,106,0.07);
+  color: #0e7a6a;
+}
+[data-theme="light"] .assumedChip {
+  border-color: rgba(21,83,182,0.18);
+  background: rgba(21,83,182,0.06);
+  color: #1553b6;
+}
+
+/* ─── Compare items ───────────────────────────── */
+[data-theme="light"] .compareItem {
+  border-color: rgba(21,83,182,0.18);
+  background: rgba(21,83,182,0.06);
+}
+
+/* ─── Timing badge ────────────────────────────── */
+[data-theme="light"] .timingBadge {
+  border-color: rgba(21,83,182,0.20);
+  background: rgba(21,83,182,0.07);
+  color: #1553b6;
+}
+
+/* ─── Suggestion chips ────────────────────────── */
+[data-theme="light"] .suggestionChip {
+  border-color: rgba(14,122,106,0.20);
+  background: rgba(14,122,106,0.05);
+}
+[data-theme="light"] .suggestionChip:hover {
+  border-color: rgba(14,122,106,0.38);
+  background: rgba(14,122,106,0.10);
+}
+
+/* ─── Open issues ────────────────────────────── */
+[data-theme="light"] .openIssueIcon { color: #7c4a0d; }
+[data-theme="light"] .openIssueIconRoute { color: #1553b6; }
+
+/* ─── API unavailable ────────────────────────── */
+[data-theme="light"] .apiUnavailableCard {
+  border-color: rgba(14,38,88,0.12);
+  background: rgba(255,255,255,0.65);
+}
+
+/* ─── Glossary tooltip ───────────────────────── */
+[data-theme="light"] .glossaryTipFloat {
+  background: rgba(255,255,255,0.98);
+  border-color: rgba(21,83,182,0.20);
+  color: var(--text);
+  box-shadow: 0 4px 20px rgba(14,38,88,0.16);
+}
+
+/* ─── Scroll-to-top button ───────────────────── */
+[data-theme="light"] .scrollTop {
+  border-color: rgba(21,83,182,0.20);
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(16px);
+}
+[data-theme="light"] .scrollTop:hover {
+  border-color: rgba(21,83,182,0.38);
+}
+
+/* ─── Mobile action bar ──────────────────────── */
+@media (max-width: 960px) {
+  [data-theme="light"] .actionBar {
+    border-color: rgba(14,38,88,0.12);
+    background: rgba(255,255,255,0.92);
+  }
+}
+@media (max-width: 768px) {
+  [data-theme="light"] .actionBar {
+    border-color: rgba(14,38,88,0.12);
+    background: rgba(255,255,255,0.94);
+    box-shadow: 0 4px 24px rgba(14,38,88,0.12);
+  }
+}

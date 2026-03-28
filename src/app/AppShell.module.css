@@ -163,6 +163,22 @@
   }
 }
 
+/* ─── Light theme overrides ───────────────────────── */
+
+[data-theme="light"] .header {
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom-color: rgba(14, 38, 88, 0.10);
+}
+
+[data-theme="light"] .brandMark {
+  background: linear-gradient(145deg, rgba(21, 83, 182, 0.12), rgba(14, 122, 106, 0.08));
+  border-color: rgba(21, 83, 182, 0.18);
+}
+
+[data-theme="light"] .navLink:hover {
+  background: rgba(14, 38, 88, 0.05);
+}
+
 @media (max-width: 920px) {
   .headerInner {
     padding: 0 0;

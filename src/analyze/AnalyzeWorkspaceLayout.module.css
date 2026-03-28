@@ -45,6 +45,20 @@
   background: linear-gradient(180deg, rgba(125, 185, 255, 0.06) 0px, rgba(15, 26, 46, 0.92) 48px) rgba(15, 26, 46, 0.92);
 }
 
+/* ─── Light theme overrides ───────────────────────── */
+
+[data-theme="light"] .resultsAside {
+  scrollbar-color: rgba(14,38,88,0.12) transparent;
+}
+
+[data-theme="light"] .resultsAside > section:first-child {
+  border-color: rgba(21,83,182,0.26);
+  box-shadow:
+    0 0 24px rgba(21,83,182,0.07),
+    0 6px 24px rgba(14,38,88,0.09);
+  background: linear-gradient(180deg, rgba(21,83,182,0.06) 0px, rgba(255,255,255,0.98) 48px) rgba(255,255,255,0.98);
+}
+
 /* Removed zone header styles — the zone title section was removed from JSX
    as it was a redundant heading above the Composer Surface's own header */
 
