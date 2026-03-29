@@ -794,8 +794,31 @@ const RED_ARTICLE_DEFINITIONS = [
 const SECTION_KEY_TO_RED_ARTICLE = { LVD: "3.1a", EMC: "3.1b", RED: "3.2" };
 
 /**
+ * Infers the RED article key from a standard's code when article_key is absent
+ * and the item is in a generic RED section.
+ * Safety → 3.1a, EMC → 3.1b, everything else → 3.2
+ */
+function inferRedArticleFromCode(code) {
+  const c = String(code || "").toUpperCase();
+  // Safety standards → Article 3.1(a)
+  if (/62368|60335|60950|60065|61010-1/.test(c)) return "3.1a";
+  if (/60825|62471/.test(c)) return "3.1a";
+  if (/62133|62619|62281/.test(c)) return "3.1a";
+  if (/62479|50663|62311|50566|50364|62233/.test(c)) return "3.1a";
+  if (/60335-2-\d+|60745|60598|61558|60730|61347|60204/.test(c)) return "3.1a";
+  if (/13849|62061|12100/.test(c)) return "3.1a";
+  // EMC standards → Article 3.1(b)
+  if (/301\s*489/.test(c)) return "3.1b";
+  if (/55014|55032|55022|55013|55011|55015|55035|55024|55020/.test(c)) return "3.1b";
+  if (/61000-3|61000-4|61000-6/.test(c)) return "3.1b";
+  // Radio/spectrum standards → Article 3.2
+  return "3.2";
+}
+
+/**
  * Builds the grouped RED structure for radio products.
- * Handles both new payloads (item.article_key) and old payloads (section key mapping).
+ * Handles new payloads (item.article_key), old payloads (section key mapping),
+ * and bare RED sections (code-based inference fallback).
  * Returns null if RED is not present in the sections.
  */
 function buildRedGroup(decoratedRouteSections) {
@@ -808,10 +831,17 @@ function buildRedGroup(decoratedRouteSections) {
     .filter((s) => SECTION_KEY_TO_RED_ARTICLE[s.key] !== undefined)
     .forEach((section) => {
       (section.items || []).forEach((item) => {
-        // New payload: item.article_key takes priority over section-key mapping
-        const rawArticleKey = item.article_key
-          ? String(item.article_key).toLowerCase()
-          : SECTION_KEY_TO_RED_ARTICLE[section.key] || "3.2";
+        // Priority 1: explicit article_key from backend
+        // Priority 2: section-key mapping (LVD → 3.1a, EMC → 3.1b)
+        // Priority 3: code-based inference for bare RED section items
+        let rawArticleKey;
+        if (item.article_key) {
+          rawArticleKey = String(item.article_key).toLowerCase();
+        } else if (section.key !== "RED") {
+          rawArticleKey = SECTION_KEY_TO_RED_ARTICLE[section.key];
+        } else {
+          rawArticleKey = inferRedArticleFromCode(item.code);
+        }
         if (branchItems[rawArticleKey] !== undefined) {
           branchItems[rawArticleKey].push(item);
         }
