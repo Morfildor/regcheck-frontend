@@ -75,6 +75,39 @@
 /* Removed zone header styles — the zone title section was removed from JSX
    as it was a redundant heading above the Composer Surface's own header */
 
+/* ─── Sidebar + content nested layout ───────────────── */
+
+.resultsWithSidebar {
+  display: grid;
+  grid-template-columns: 175px minmax(0, 1fr);
+  gap: 0 22px;
+  align-items: start;
+}
+
+.resultsSidebarSticky {
+  position: sticky;
+  top: 76px; /* matches aside sticky top */
+  max-height: calc(100dvh - 92px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-top: 4px;
+}
+
+.resultsContentStack {
+  display: grid;
+  gap: 16px;
+}
+
+/* Hide sidebar on smaller screens — show mobile chip row instead */
+@media (max-width: 1024px) {
+  .resultsWithSidebar {
+    grid-template-columns: 1fr;
+  }
+  .resultsSidebarSticky {
+    display: none;
+  }
+}
+
 /* Collapsed aside — full width main column */
 .resultsGridFull {
   grid-template-columns: 1fr;
@@ -115,6 +148,10 @@
   .resultsGrid,
   .resultsMain,
   .resultsAside {
+    gap: 12px;
+  }
+
+  .resultsContentStack {
     gap: 12px;
   }
 }
