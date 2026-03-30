@@ -61,9 +61,6 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
     return { id, label: template.label, text: template.text, x };
   }, []); // intentionally stable — deps accessed via refs
 
-  const createPillRef = useRef(createPill);
-  createPillRef.current = createPill;
-
   // ── Initialise rows (once on mount) ─────────────────────────
   useEffect(() => {
     if (!containerRef.current) return;
@@ -83,7 +80,7 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
           cfg.direction === -1
             ? i * spacing
             : w - (i + 1) * spacing;
-        pills.push(createPillRef.current(rowIndex, x));
+        pills.push(createPill(rowIndex, x));
       }
       return pills;
     });
@@ -106,6 +103,17 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
 
   // ── RAF animation loop (starts once, never restarts) ─────────
   useEffect(() => {
+    // Pause animation while the tab is not visible to avoid wasted CPU.
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      } else {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     const tick = () => {
       const w = containerWidthRef.current;
       if (!w) {
@@ -174,7 +182,7 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
         // Spawn one replacement per exited pill from the opposite edge.
         // Recompute the leading edge on each iteration so batched spawns
         // stack correctly rather than overlapping.
-        for (const _ of exiting) { // eslint-disable-line no-unused-vars
+        for (let i = 0; i < exiting.length; i++) {
           let spawnX;
           if (direction === -1) {
             // RTL: spawn beyond the rightmost surviving pill (uses actual widths)
@@ -190,16 +198,16 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
             // LTR: spawn before the leftmost surviving pill.
             // Use the leftmost pill's actual width as a proxy for the incoming
             // pill to get a tighter estimate than the static PILL_ESTIMATE_W.
-            let minLeft = survivors.length > 0 ? survivors[0].x : 0;
-            let minPill = survivors[0];
+            let minLeft = 0;
+            let minPill = null;
             for (const p of survivors) {
-              if (p.x < minLeft) { minLeft = p.x; minPill = p; }
+              if (minPill === null || p.x < minLeft) { minLeft = p.x; minPill = p; }
             }
             const proxyEl = minPill ? pillElsRef.current.get(minPill.id) : null;
             const proxyW = proxyEl ? proxyEl.offsetWidth : PILL_ESTIMATE_W;
             spawnX = minLeft - GAP - proxyW;
           }
-          survivors.push(createPillRef.current(rowIndex, spawnX));
+          survivors.push(createPill(rowIndex, spawnX));
         }
 
         // Purge stale DOM refs for pills that just exited
@@ -217,6 +225,7 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []); // intentionally empty — loop must never restart
