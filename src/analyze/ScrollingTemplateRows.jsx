@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./ScrollingTemplateRows.module.css";
-import { DEFAULT_TEMPLATES } from "./helpers";
+import { DEFAULT_TEMPLATES } from "./templateData";
 
 // ─── Row configuration ────────────────────────────────────────────
 const ROW_CONFIGS = [
@@ -91,7 +91,7 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
   // ── Track container width on resize ─────────────────────────
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         containerWidthRef.current = entry.contentRect.width;
@@ -228,7 +228,7 @@ export default function ScrollingTemplateRows({ templates, onSelect }) {
       document.removeEventListener("visibilitychange", onVisibilityChange);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, []); // intentionally empty — loop must never restart
+  }, [createPill]); // createPill is stable (useCallback with [] deps) — loop never restarts
 
   // ── Render ──────────────────────────────────────────────────
   return (
