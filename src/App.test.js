@@ -210,7 +210,7 @@ test("renders trust-first analyzer hierarchy and copies the analysis summary", a
   expect(screen.getAllByText(/^Initial scope$/i).length).toBeGreaterThan(0);
   expect(screen.getAllByText(/^Preliminary only$/i).length).toBeGreaterThan(0);
   expect(screen.getByText(/mains-powered electrical equipment within voltage scope/i)).toBeInTheDocument();
-  expect(screen.getByText(/^Clarifications$/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/^Clarifications$/i).length).toBeGreaterThan(0);
   expect(screen.getByRole("heading", { name: /^Standards$/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^Parallel obligations$/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /evidence and common gaps/i })).toBeInTheDocument();
@@ -337,14 +337,14 @@ test("clarification apply marks the result stale, rerun replaces it cleanly, and
     expect(screen.queryByText(/household and similar electrical appliances/i)).not.toBeInTheDocument();
   });
 
-  await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+  await userEvent.click(screen.getByRole("button", { name: /clarifications/i, expanded: false }));
   await userEvent.click(screen.getByRole("button", { name: /\+ wi-fi connectivity/i }));
 
   expect(screen.getByRole("textbox", { name: /describe your product/i }).value).toMatch(
     /wi-fi connectivity/i
   );
   expect(
-    screen.getByText(/description changed\. re-run when you want the route refreshed/i, { exact: false })
+    screen.getByText(/description updated/i, { exact: false })
   ).toBeInTheDocument();
   expect(screen.getByText(/first result summary/i)).toBeInTheDocument();
 
@@ -356,7 +356,7 @@ test("clarification apply marks the result stale, rerun replaces it cleanly, and
     expect(screen.getByRole("heading", { name: /^Standards$/i })).toBeInTheDocument();
   });
   expect(screen.getByText(/compared with previous analysis/i)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /clarifications/i })).toHaveAttribute("aria-expanded", "false");
+  expect(screen.getByRole("button", { name: /clarifications/i, expanded: false })).toBeInTheDocument();
 });
 
 test("starting a new analyze aborts the prior in-flight request", async () => {
@@ -519,7 +519,7 @@ test("keyboard interaction works for accordions and clarification actions", asyn
     expect(screen.queryByText(/household and similar electrical appliances/i)).not.toBeInTheDocument();
   });
 
-  await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+  await userEvent.click(screen.getByRole("button", { name: /clarifications/i, expanded: false }));
   const clarificationButton = screen.getByRole("button", { name: /\+ wi-fi connectivity/i });
   clarificationButton.focus();
   await userEvent.keyboard("{Enter}");

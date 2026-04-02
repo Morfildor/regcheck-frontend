@@ -90,8 +90,10 @@ const EXPECTED_COMPONENTS = [
   "EmptyStateGuidance",
   "OverviewPanel",
   "TrustLayerPanel",
-  "ActionRequiredPanel",
+  "ClarificationsPanel",   // renamed from ActionRequiredPanel (pass 4)
+  "ActionRequiredPanel",   // thin re-export wrapper — kept for clean import path
   "StandardsRoute",
+  "StandardItemCard",      // extracted from StandardsRoute (pass 4)
   "ParallelObligationsPanel",
   "EvidencePanel",
   "ResultsSidebarNav",
@@ -119,6 +121,7 @@ const EXPECTED_TEST_FILES = [
   "sourceIntegrity.test.js",
   "ScrollingTemplateRows.test.jsx",
   "components.test.jsx",
+  "analyzerBehavior.test.jsx",
 ];
 
 describe("focused test files all exist", () => {

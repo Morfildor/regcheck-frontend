@@ -31,7 +31,7 @@ import ComposerSurface         from "./components/ComposerSurface";
 import EmptyStateGuidance      from "./components/EmptyStateGuidance";
 import OverviewPanel           from "./components/OverviewPanel";
 import TrustLayerPanel         from "./components/TrustLayerPanel";
-import ActionRequiredPanel     from "./components/ActionRequiredPanel";
+import ClarificationsPanel     from "./components/ClarificationsPanel";
 import StandardsRoutePanel     from "./components/StandardsRoute";
 import ParallelObligationsPanel from "./components/ParallelObligationsPanel";
 import EvidencePanel           from "./components/EvidencePanel";
@@ -390,7 +390,7 @@ export default function AnalyzeWorkspace() {
                 <div className={styles.standardsHeroSection}>
                   <StandardsRoutePanel key={`standards-${resultRevision}`} viewModel={viewModel} />
                 </div>
-                <ActionRequiredPanel
+                <ClarificationsPanel
                   key={`action-${resultRevision}`}
                   description={analyzedDescription || description}
                   viewModel={viewModel}

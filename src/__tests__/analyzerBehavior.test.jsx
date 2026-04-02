@@ -1,0 +1,268 @@
+/**
+ * Focused behavior tests for analyze/results components.
+ *
+ * These target specific interactive behaviors — collapse/expand, search/filter,
+ * summary rendering — without duplicating the integration flows in App.test.js.
+ *
+ * @testing-library/user-event v13: import and call directly (no .setup()).
+ */
+
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import ClarificationsPanel from "../analyze/components/ClarificationsPanel";
+import StandardsRoutePanel from "../analyze/components/StandardsRoute";
+import OverviewPanel from "../analyze/components/OverviewPanel";
+
+// ── ClarificationsPanel collapse/expand ──────────────────────────────────────
+
+const ROUTE_AFFECTING_ITEMS = Array.from({ length: 6 }, (_, i) => ({
+  key: `ra_${i}`,
+  title: i === 0 ? "Confirm wireless connectivity" : `Route-affecting item ${i + 1}`,
+  severity: "route-affecting",
+  reason: "Can change the applicable directive route.",
+  examples: i === 0 ? ["Wi-Fi connectivity"] : [],
+}));
+
+const BLOCKER_VIEWMODEL = {
+  missingInputs: [
+    {
+      key: "power",
+      title: "Power architecture unclear",
+      severity: "blocker",
+      reason: "Safety route depends on this.",
+      examples: ["mains-powered", "battery-powered"],
+    },
+  ],
+};
+
+function renderClarifications(viewModelOverrides = {}, extraProps = {}) {
+  return render(
+    <ClarificationsPanel
+      description="Test product"
+      viewModel={{ missingInputs: [], ...viewModelOverrides }}
+      dirty={false}
+      busy={false}
+      onReanalyze={jest.fn()}
+      onApplyMissingInput={jest.fn()}
+      {...extraProps}
+    />
+  );
+}
+
+describe("ClarificationsPanel collapse/expand", () => {
+  test("starts collapsed with aria-expanded false", () => {
+    renderClarifications({ missingInputs: ROUTE_AFFECTING_ITEMS });
+    expect(
+      screen.getByRole("button", { name: /clarifications/i })
+    ).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("expands on click and shows first route-affecting item", async () => {
+    renderClarifications({ missingInputs: ROUTE_AFFECTING_ITEMS });
+    await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+    expect(screen.getByText("Confirm wireless connectivity")).toBeInTheDocument();
+  });
+
+  test("collapses again on second click", async () => {
+    renderClarifications({ missingInputs: ROUTE_AFFECTING_ITEMS });
+    const toggle = screen.getByRole("button", { name: /clarifications/i });
+    await userEvent.click(toggle);
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Confirm wireless connectivity")).not.toBeInTheDocument();
+  });
+
+  test("shows 'more route-affecting items' button when count exceeds initial limit of 3", async () => {
+    renderClarifications({ missingInputs: ROUTE_AFFECTING_ITEMS });
+    await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+    expect(
+      screen.getByRole("button", { name: /3 more route-affecting/i })
+    ).toBeInTheDocument();
+  });
+
+  test("reveals remaining items when show-more is clicked", async () => {
+    renderClarifications({ missingInputs: ROUTE_AFFECTING_ITEMS });
+    await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+    await userEvent.click(screen.getByRole("button", { name: /3 more route-affecting/i }));
+    expect(screen.getByText("Route-affecting item 4")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /more route-affecting/i })).not.toBeInTheDocument();
+  });
+
+  test("shows blocker count pill when blockers are present", () => {
+    renderClarifications(BLOCKER_VIEWMODEL);
+    expect(screen.getByText(/1 blocker/i)).toBeInTheDocument();
+  });
+
+  test("blocker suggestion chips call onApplyMissingInput", async () => {
+    const onApply = jest.fn();
+    render(
+      <ClarificationsPanel
+        description="Test product"
+        viewModel={BLOCKER_VIEWMODEL}
+        dirty={false}
+        busy={false}
+        onReanalyze={jest.fn()}
+        onApplyMissingInput={onApply}
+      />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+    await userEvent.click(screen.getByRole("button", { name: /\+ mains-powered/i }));
+    expect(onApply).toHaveBeenCalledWith("mains-powered");
+  });
+
+  test("optional refinements section is collapsed by default when expanded", async () => {
+    renderClarifications({
+      missingInputs: [
+        { key: "h1", title: "Optional hint", severity: "helpful", reason: "Extra context", examples: [] },
+      ],
+    });
+    await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+    // The optional refinement toggle should be visible
+    expect(
+      screen.getByRole("button", { name: /1 optional refinement/i })
+    ).toBeInTheDocument();
+    // But the item body is not yet shown
+    expect(screen.queryByText("Optional hint")).not.toBeInTheDocument();
+  });
+
+  test("optional refinements expand when toggle is clicked", async () => {
+    renderClarifications({
+      missingInputs: [
+        { key: "h1", title: "Optional hint", severity: "helpful", reason: "Extra context", examples: [] },
+      ],
+    });
+    await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+    await userEvent.click(screen.getByRole("button", { name: /1 optional refinement/i }));
+    expect(screen.getByText("Optional hint")).toBeInTheDocument();
+  });
+});
+
+// ── Standards search/filter ───────────────────────────────────────────────────
+
+const THREE_SECTIONS = [
+  {
+    key: "LVD",
+    title: "LVD safety route",
+    items: [{ code: "EN 60335-1", title: "Household appliances safety" }],
+    sectionKind: "core",
+    applicabilityBucket: "core applicable",
+  },
+  {
+    key: "EMC",
+    title: "EMC compatibility route",
+    items: [{ code: "EN 55014-1", title: "Electromagnetic compatibility" }],
+    sectionKind: "core",
+    applicabilityBucket: "core applicable",
+  },
+  {
+    key: "REACH",
+    title: "REACH material route",
+    items: [{ code: "REACH review", title: "Material composition review" }],
+    sectionKind: "secondary",
+    applicabilityBucket: "route review",
+  },
+];
+
+const THREE_SECTION_VM = {
+  routeSections: THREE_SECTIONS,
+  displayRouteSections: THREE_SECTIONS,
+  isRadioProduct: false,
+  redGroup: null,
+  totalStandards: 3,
+};
+
+describe("StandardsRoutePanel search/filter", () => {
+  test("filter input appears when route sections exceed two", () => {
+    render(<StandardsRoutePanel viewModel={THREE_SECTION_VM} />);
+    expect(screen.getByRole("searchbox", { name: /filter standards/i })).toBeInTheDocument();
+  });
+
+  test("filter hides sections that do not match the query", async () => {
+    render(<StandardsRoutePanel viewModel={THREE_SECTION_VM} />);
+    await userEvent.type(
+      screen.getByRole("searchbox", { name: /filter standards/i }),
+      "EMC"
+    );
+    // EMC accordion toggle remains (aria-expanded targets accordion, not nav chip)
+    expect(screen.getByRole("button", { name: /emc compatibility route/i, expanded: true })).toBeInTheDocument();
+    // LVD accordion is removed from the DOM by the filter
+    expect(screen.queryByRole("button", { name: /lvd safety route/i, expanded: true })).not.toBeInTheDocument();
+  });
+
+  test("shows no-match message when query matches nothing", async () => {
+    render(<StandardsRoutePanel viewModel={THREE_SECTION_VM} />);
+    await userEvent.type(
+      screen.getByRole("searchbox", { name: /filter standards/i }),
+      "ZZZNOTFOUND"
+    );
+    expect(screen.getByText(/no sections match/i)).toBeInTheDocument();
+  });
+
+  test("clear button resets the filter and restores all sections", async () => {
+    render(<StandardsRoutePanel viewModel={THREE_SECTION_VM} />);
+    await userEvent.type(
+      screen.getByRole("searchbox", { name: /filter standards/i }),
+      "EMC"
+    );
+    await userEvent.click(screen.getByRole("button", { name: /clear filter/i }));
+    // LVD accordion is back (core, starts expanded)
+    expect(screen.getByRole("button", { name: /lvd safety route/i, expanded: true })).toBeInTheDocument();
+    // REACH accordion is back (secondary, starts collapsed) — routeTitle uses key-based lookup
+    expect(screen.getByRole("button", { name: /reach/i, expanded: false })).toBeInTheDocument();
+  });
+
+  test("filter does not appear when only two sections exist", () => {
+    const twoSectionVm = {
+      ...THREE_SECTION_VM,
+      routeSections: THREE_SECTIONS.slice(0, 2),
+      displayRouteSections: THREE_SECTIONS.slice(0, 2),
+      totalStandards: 2,
+    };
+    render(<StandardsRoutePanel viewModel={twoSectionVm} />);
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+});
+
+// ── OverviewPanel executive summary ──────────────────────────────────────────
+
+const OVERVIEW_VM = {
+  productIdentity: { type: "coffee_machine" },
+  classificationConfidence: { label: "Medium", tone: null },
+  triggeredDirectives: ["LVD", "EMC"],
+  resultMaturity: { label: "Initial scope" },
+  totalStandards: 4,
+  decisionSignals: { blockerCount: 0, routeAffectingCount: 2 },
+};
+
+const OVERVIEW_RESULT = {
+  overall_risk: "medium",
+  summary: "A mains-powered appliance with a food-contact brew path.",
+};
+
+describe("OverviewPanel executive summary", () => {
+  test("renders product type as primary heading", () => {
+    render(<OverviewPanel result={OVERVIEW_RESULT} viewModel={OVERVIEW_VM} />);
+    expect(screen.getByRole("heading", { name: /coffee machine/i })).toBeInTheDocument();
+  });
+
+  test("renders summary text from result", () => {
+    render(<OverviewPanel result={OVERVIEW_RESULT} viewModel={OVERVIEW_VM} />);
+    expect(screen.getByText(/mains-powered appliance/i)).toBeInTheDocument();
+  });
+
+  test("renders standards count in stat row", () => {
+    render(<OverviewPanel result={OVERVIEW_RESULT} viewModel={OVERVIEW_VM} />);
+    expect(screen.getByText("4")).toBeInTheDocument();
+  });
+
+  test("renders maturity label in stat row", () => {
+    render(<OverviewPanel result={OVERVIEW_RESULT} viewModel={OVERVIEW_VM} />);
+    expect(screen.getByText("Initial scope")).toBeInTheDocument();
+  });
+
+  test("renders open issues count in stat row", () => {
+    render(<OverviewPanel result={OVERVIEW_RESULT} viewModel={OVERVIEW_VM} />);
+    // blockerCount(0) + routeAffectingCount(2) = 2
+    expect(screen.getByText("2")).toBeInTheDocument();
+  });
+});

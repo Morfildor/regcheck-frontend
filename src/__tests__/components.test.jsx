@@ -13,7 +13,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import EvidencePanel from "../analyze/components/EvidencePanel";
 import StandardsRoutePanel from "../analyze/components/StandardsRoute";
-import ActionRequiredPanel from "../analyze/components/ActionRequiredPanel";
+import ClarificationsPanel from "../analyze/components/ClarificationsPanel";
 
 // ── EvidencePanel ────────────────────────────────────────────────────────────
 
@@ -188,7 +188,7 @@ const CLARIFICATIONS_VIEWMODEL = {
 
 function renderPanel(viewModelOverrides = {}, extraProps = {}) {
   return render(
-    <ActionRequiredPanel
+    <ClarificationsPanel
       description="Coffee machine"
       viewModel={{ ...CLARIFICATIONS_VIEWMODEL, ...viewModelOverrides }}
       dirty={false}
@@ -200,7 +200,7 @@ function renderPanel(viewModelOverrides = {}, extraProps = {}) {
   );
 }
 
-describe("ActionRequiredPanel (clarifications)", () => {
+describe("ClarificationsPanel", () => {
   test("renders Clarifications toggle button", () => {
     renderPanel();
     expect(screen.getByRole("button", { name: /clarifications/i })).toBeInTheDocument();
@@ -221,7 +221,7 @@ describe("ActionRequiredPanel (clarifications)", () => {
   test("example chips call onApplyMissingInput with the example text", async () => {
     const onApply = jest.fn();
     render(
-      <ActionRequiredPanel
+      <ClarificationsPanel
         description="Coffee machine"
         viewModel={CLARIFICATIONS_VIEWMODEL}
         dirty={false}
@@ -237,7 +237,7 @@ describe("ActionRequiredPanel (clarifications)", () => {
 
   test("returns nothing when there are no missing inputs and not dirty", () => {
     const { container } = render(
-      <ActionRequiredPanel
+      <ClarificationsPanel
         description="Coffee machine"
         viewModel={{ missingInputs: [] }}
         dirty={false}
@@ -266,7 +266,7 @@ describe("ActionRequiredPanel (clarifications)", () => {
 
   test("shows stale notice inside expanded body when dirty", async () => {
     render(
-      <ActionRequiredPanel
+      <ClarificationsPanel
         description="Coffee machine with Wi-Fi"
         viewModel={CLARIFICATIONS_VIEWMODEL}
         dirty={true}
@@ -276,8 +276,8 @@ describe("ActionRequiredPanel (clarifications)", () => {
       />
     );
     // Stale notice only visible once expanded
-    expect(screen.queryByText(/description changed/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/description updated/i)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
-    expect(screen.getByText(/description changed/i)).toBeInTheDocument();
+    expect(screen.getByText(/description updated/i)).toBeInTheDocument();
   });
 });

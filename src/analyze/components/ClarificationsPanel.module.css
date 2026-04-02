@@ -1,0 +1,342 @@
+/* ─── Clarifications section ──────────────────────── */
+
+.clarificationsSection {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(12,20,34,0.72);
+  overflow: hidden;
+}
+
+.clarificationsCritical {
+  border-color: rgba(240,192,103,0.22);
+}
+
+/* ─── Collapsible toggle ──────────────────────────── */
+
+.clarificationsToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--border-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.clarificationsToggle:hover { background: rgba(255,255,255,0.018); }
+.clarificationsToggle[aria-expanded="false"] { border-bottom: 0; }
+
+.clarificationsBody { /* wrapper for collapsible content */ }
+
+.clarificationsMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.clarificationsLabel {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.clarificationsPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.staleNotice {
+  margin: 0;
+  padding: 8px 14px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--border-sm);
+  background: rgba(125,185,255,0.03);
+}
+
+.clarificationsHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-sm);
+}
+
+.clarificationsRunBtn {
+  flex-shrink: 0;
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 0.8rem;
+}
+
+/* ─── Re-run button ───────────────────────────────── */
+
+.rerunButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-strong);
+  background: transparent;
+  transition: background 0.14s, border-color 0.14s, transform 0.12s;
+  white-space: nowrap;
+}
+.rerunButton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.rerunButtonPrimary {
+  background: linear-gradient(155deg, rgba(125,185,255,0.26) 0%, rgba(125,185,255,0.14) 100%);
+  border-color: rgba(125,185,255,0.38);
+  color: #d6eaff;
+  font-weight: 600;
+}
+.rerunButtonPrimary:hover:not(:disabled) {
+  background: linear-gradient(155deg, rgba(125,185,255,0.34) 0%, rgba(125,185,255,0.22) 100%);
+  border-color: rgba(125,185,255,0.54);
+}
+
+/* ─── Understood strip ───────────────────────────── */
+
+.understoodStrip {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-sm);
+  background: rgba(120,213,193,0.03);
+}
+
+.understoodLabel {
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.understoodChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.understoodFact {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(120,213,193,0.18);
+  background: rgba(120,213,193,0.06);
+  color: #9ce8d4;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* ─── Item list ──────────────────────────────────── */
+
+.itemList { display: grid; gap: 0; }
+
+.itemListSeparated {
+  border-top: 1px solid var(--border-sm);
+}
+
+.clarificationItem {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px 12px 17px;
+  border-bottom: 1px solid var(--border-sm);
+  position: relative;
+  overflow: hidden;
+}
+.clarificationItem:last-child { border-bottom: none; }
+.clarificationItem::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: rgba(154,176,199,0.38);
+}
+
+.itemBlocker::before  { background: rgba(240,192,103,0.72); }
+.itemRoute::before    { background: rgba(125,185,255,0.60); }
+.itemHelpful          { opacity: 0.82; }
+.itemHelpful::before  { background: rgba(154,176,199,0.28); }
+
+.itemHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.itemTitle {
+  color: var(--text-strong);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.itemReason {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* ─── Suggestion chips ───────────────────────────── */
+
+.inlineActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-top: 2px;
+}
+
+.suggestionChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(120,213,193,0.22);
+  background: rgba(120,213,193,0.05);
+  color: var(--text);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
+}
+.suggestionChip:hover {
+  border-color: rgba(120,213,193,0.42);
+  background: rgba(120,213,193,0.11);
+  color: var(--text-strong);
+}
+
+/* ─── Show more ──────────────────────────────────── */
+
+.showMoreBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px 17px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border-sm);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.showMoreBtn:hover {
+  background: rgba(255,255,255,0.02);
+  color: var(--text-muted);
+}
+
+/* ─── Optional toggle ────────────────────────────── */
+
+.optionalSection {
+  border-top: 1px solid var(--border-sm);
+}
+
+.optionalToggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 9px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.77rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.optionalToggle:hover {
+  background: rgba(255,255,255,0.02);
+  color: var(--text-muted);
+}
+
+/* ─── Spin ────────────────────────────────────────── */
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ─── Light theme ─────────────────────────────────── */
+
+[data-theme="light"] .clarificationsSection {
+  border-color: rgba(14,38,88,0.12);
+  background: rgba(255,255,255,0.85);
+}
+[data-theme="light"] .clarificationsCritical {
+  border-color: rgba(133,77,14,0.18);
+  background: rgba(133,77,14,0.03);
+}
+[data-theme="light"] .clarificationsToggle:hover { background: rgba(14,38,88,0.025); }
+[data-theme="light"] .staleNotice { background: rgba(21,83,182,0.03); }
+[data-theme="light"] .clarificationItem {
+  border-bottom-color: rgba(14,38,88,0.07);
+}
+[data-theme="light"] .itemListSeparated {
+  border-top-color: rgba(14,38,88,0.07);
+}
+[data-theme="light"] .optionalSection {
+  border-top-color: rgba(14,38,88,0.07);
+}
+[data-theme="light"] .optionalToggle:hover {
+  background: rgba(14,38,88,0.025);
+}
+[data-theme="light"] .showMoreBtn {
+  border-top-color: rgba(14,38,88,0.07);
+}
+[data-theme="light"] .showMoreBtn:hover {
+  background: rgba(14,38,88,0.025);
+}
+[data-theme="light"] .understoodFact {
+  border-color: rgba(14,122,106,0.18);
+  background: rgba(14,122,106,0.06);
+  color: #0e7a6a;
+}
+[data-theme="light"] .understoodStrip {
+  background: rgba(14,122,106,0.025);
+}
+[data-theme="light"] .suggestionChip {
+  border-color: rgba(14,122,106,0.20);
+  background: rgba(14,122,106,0.05);
+}
+[data-theme="light"] .suggestionChip:hover {
+  border-color: rgba(14,122,106,0.38);
+  background: rgba(14,122,106,0.10);
+}
+[data-theme="light"] .rerunButtonPrimary {
+  background: linear-gradient(155deg, rgba(21,83,182,0.14) 0%, rgba(21,83,182,0.08) 100%);
+  border-color: rgba(21,83,182,0.34);
+  color: #1553b6;
+}
+
+@media (max-width: 768px) {
+  .suggestionChip { padding: 7px 12px; min-height: 38px; }
+}

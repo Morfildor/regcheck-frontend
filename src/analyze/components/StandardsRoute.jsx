@@ -1,9 +1,10 @@
 import { useState, useCallback, useMemo } from "react";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import Surface from "../../shared/ui/Surface";
-import { routeTitle, directiveShort, inferStandardCategory, titleCaseMinor, slugify } from "../helpers";
+import { routeTitle, directiveShort, slugify } from "../helpers";
 import { APPLICABILITY_BADGE, APPLICABILITY_GLOSSARY } from "../workspaceGlossary";
 import { TonePill, DirectivePill, cx } from "./Pills";
+import StandardItemCard from "./StandardItemCard";
 import styles from "./StandardsRoute.module.css";
 
 const ROUTE_SECTION_CLASS = {
@@ -11,53 +12,6 @@ const ROUTE_SECTION_CLASS = {
   conditional: styles.routeCardConditional,
   secondary:   styles.routeCardSecondary,
 };
-
-// ── Standard card ──────────────────────────────────────────────────────────
-
-function StandardCard({ item }) {
-  const hasVersionInfo = item.version || item.dated_version || item.harmonized_reference;
-  const isHarmonized = Boolean(item.dated_version || item.harmonized_reference);
-  const categoryTag = inferStandardCategory(item);
-  return (
-    <article className={cx(styles.standardCard, isHarmonized ? styles.standardCardHarmonized : "")}>
-      <div className={styles.standardCardTop}>
-        <span className={styles.standardCode}>{item.code || "Standard"}</span>
-        {isHarmonized ? (
-          <span className={styles.harmonizedBadge}>Harmonized</span>
-        ) : categoryTag ? (
-          <TonePill tone="muted">{categoryTag}</TonePill>
-        ) : null}
-        {isHarmonized && categoryTag ? <TonePill tone="muted">{categoryTag}</TonePill> : null}
-      </div>
-      <div className={styles.standardCardBody}>
-        <h4 className={styles.standardTitle}>{titleCaseMinor(item.title || "Untitled standard")}</h4>
-        {item.shortRationale ? <p className={styles.microRationale}>{item.shortRationale}</p> : null}
-      </div>
-      {hasVersionInfo ? (
-        <div className={styles.standardVersionRow}>
-          {item.dated_version ? (
-            <div className={styles.standardVersionItem}>
-              <span className={styles.versionLabel}>Harmonized ref</span>
-              <span className={styles.versionValue}>{item.dated_version}</span>
-            </div>
-          ) : null}
-          {item.version ? (
-            <div className={styles.standardVersionItem}>
-              <span className={styles.versionLabel}>Latest EU</span>
-              <span className={styles.versionValue}>{item.version}</span>
-            </div>
-          ) : null}
-          {item.harmonized_reference ? (
-            <div className={styles.standardVersionItem}>
-              <span className={styles.versionLabel}>OJ ref</span>
-              <span className={styles.versionValue}>{item.harmonized_reference}</span>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </article>
-  );
-}
 
 // ── RED article branch ─────────────────────────────────────────────────────
 
@@ -84,7 +38,7 @@ function RedArticleBranch({ branch, open, onToggle, isLast }) {
         <div id={`${branchId}-body`} className={styles.redArticleBody}>
           {branch.items.length ? (
             branch.items.map((item) => (
-              <StandardCard
+              <StandardItemCard
                 key={`${branch.key}-${item.code || item.title}-${item.version || ""}`}
                 item={item}
               />
@@ -287,13 +241,13 @@ function RouteSectionCard({ section, open, onToggle }) {
         <div id={`${sectionId}-body`} className={styles.accordionBody}>
           {(section.items || []).length ? (
             section.items.map((item) => (
-              <StandardCard
+              <StandardItemCard
                 key={`${section.key}-${item.code || item.title}-${item.version || ""}`}
                 item={item}
               />
             ))
           ) : (
-            <p className={styles.emptyCopy}>No standards were returned for this route group.</p>
+            <p className={styles.emptyCopy}>No standards returned for this directive group.</p>
           )}
         </div>
       ) : null}

@@ -32,7 +32,7 @@ export default function ResultsSidebarNav({ viewModel, children }) {
           ? { id: "section-standards", label: "Standards", count: viewModel.totalStandards, accent: true }
           : null,
         hasIssues
-          ? { id: "section-action", label: "Open questions", count: blockerCount > 0 ? blockerCount : null, warning: blockerCount > 0 }
+          ? { id: "section-action", label: "Clarifications", count: blockerCount > 0 ? blockerCount : null, warning: blockerCount > 0 }
           : null,
         hasParallel ? { id: "section-parallel", label: "Obligations" } : null,
         hasEvidence ? { id: "section-evidence", label: "Evidence"    } : null,
