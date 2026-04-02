@@ -1,6 +1,6 @@
 // Clipboard / export summary builder.
 
-import { routeTitle, directiveShort } from "./directives";
+import { routeTitle } from "./directives";
 import { formatUiLabel } from "./format";
 import { sortStandardItems } from "./standards";
 
