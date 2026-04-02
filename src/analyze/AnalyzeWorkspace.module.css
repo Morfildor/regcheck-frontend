@@ -15,9 +15,7 @@
 .standardsHeroSection::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 1px;
   background: linear-gradient(90deg, rgba(125,185,255,0.28) 0%, transparent 72%);
 }
@@ -25,147 +23,7 @@
   background: linear-gradient(90deg, rgba(21,83,182,0.22) 0%, transparent 72%);
 }
 
-/* ─── Error banner ────────────────────────────────── */
-
-.errorBanner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 13px;
-  border-radius: 10px;
-  border: 1px solid rgba(244,142,120,0.28);
-  background: rgba(244,142,120,0.12);
-  font-size: 0.86rem;
-}
-
-.errorBody { display: grid; gap: 2px; flex: 1; }
-.errorTitle { color: var(--text-strong); font-weight: 600; font-size: 0.88rem; }
-.errorText  { color: var(--text-muted); font-size: 0.84rem; }
-
-.errorRetry {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-  margin-left: auto;
-  padding: 5px 11px;
-  border-radius: 999px;
-  border: 1px solid rgba(244,142,120,0.36);
-  background: rgba(244,142,120,0.10);
-  color: #f8c4b4;
-  font-size: 0.82rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.14s, border-color 0.14s;
-}
-.errorRetry:hover {
-  background: rgba(244,142,120,0.18);
-  border-color: rgba(244,142,120,0.52);
-}
-
-@media (max-width: 768px) {
-  .errorBanner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 10px 12px;
-  }
-}
-
-/* ─── Comparison panel ────────────────────────────── */
-
-.compareList {
-  display: grid;
-  gap: 8px;
-}
-
-.compareItem {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
-  align-items: start;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(125,185,255,0.22);
-  background: rgba(125,185,255,0.08);
-  color: var(--text);
-  font-size: 0.84rem;
-  line-height: 1.5;
-}
-
-.compareMarker {
-  width: 6px;
-  height: 6px;
-  margin-top: 0.45rem;
-  border-radius: 999px;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-
-[data-theme="light"] .compareItem {
-  border-color: rgba(21,83,182,0.18);
-  background: rgba(21,83,182,0.06);
-}
-
-/* ─── Scroll-to-top button ────────────────────────── */
-
-.scrollTop {
-  position: fixed;
-  right: 16px; bottom: 16px; z-index: 50;
-  width: 34px; height: 34px;
-  display: grid; place-items: center;
-  border-radius: 999px;
-  border: 1px solid rgba(125,185,255,0.2);
-  background: rgba(7,12,22,0.92);
-  color: var(--text-strong);
-  cursor: pointer;
-  backdrop-filter: blur(16px);
-  transition: border-color 0.14s, transform 0.14s;
-}
-.scrollTop:hover { border-color: rgba(125,185,255,0.38); transform: translateY(-2px); }
-
-[data-theme="light"] .scrollTop {
-  border-color: rgba(21,83,182,0.20);
-  background: rgba(255,255,255,0.92);
-}
-[data-theme="light"] .scrollTop:hover { border-color: rgba(21,83,182,0.38); }
-
-@media (max-width: 768px) {
-  .scrollTop { bottom: 80px; width: 40px; height: 40px; right: 14px; }
-}
-
-/* ─── Aside collapse / show controls ─────────────── */
-
-.asideCollapseRow {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0 2px 4px;
-}
-
-.asideCollapseBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.09);
-  background: transparent;
-  color: var(--text-soft);
-  cursor: pointer;
-  transition: border-color 0.14s, background 0.14s, color 0.14s;
-}
-.asideCollapseBtn:hover {
-  border-color: rgba(255,255,255,0.16);
-  background: rgba(255,255,255,0.05);
-  color: var(--text-muted);
-}
-
-[data-theme="light"] .asideCollapseBtn { border-color: rgba(14,38,88,0.10); }
-[data-theme="light"] .asideCollapseBtn:hover {
-  border-color: rgba(14,38,88,0.18);
-  background: rgba(14,38,88,0.04);
-}
+/* ─── Aside show controls (collapsed state) ──────── */
 
 .asideShowBar { display: flex; justify-content: flex-end; }
 

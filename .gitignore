@@ -23,3 +23,10 @@ yarn-debug.log*
 yarn-error.log*
 testlog.txt
 test-*.txt
+
+# Python virtualenv (local backend dev, not part of frontend source)
+/venv
+
+# Local export artifacts
+/export-source
+/regcheck-frontend-source.tar.gz

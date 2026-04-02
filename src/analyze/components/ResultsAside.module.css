@@ -1,0 +1,30 @@
+.collapseRow {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 2px 4px;
+}
+
+.collapseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.09);
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
+}
+.collapseBtn:hover {
+  border-color: rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .collapseBtn { border-color: rgba(14,38,88,0.10); }
+[data-theme="light"] .collapseBtn:hover {
+  border-color: rgba(14,38,88,0.18);
+  background: rgba(14,38,88,0.04);
+}

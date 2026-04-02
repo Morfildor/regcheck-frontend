@@ -7,10 +7,9 @@ import {
   useState,
 } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { AlertTriangle, ArrowUp, ChevronLeft, ChevronRight, RefreshCcw } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import AppShell from "../app/AppShell";
 import PageMeta from "../shared/ui/PageMeta";
-import Surface from "../shared/ui/Surface";
 import OnboardingBanner from "../shared/ui/OnboardingBanner";
 import DisclaimerBanner from "../shared/ui/DisclaimerBanner";
 import layoutStyles from "./AnalyzeWorkspaceLayout.module.css";
@@ -26,20 +25,24 @@ import {
 import { useScopeGapGroups } from "./scopeGaps";
 
 // ── Extracted components ─────────────────────────────────────────────────────
-import HeaderActions      from "./components/HeaderActions";
-import AnalyzeStatus      from "./components/AnalyzeStatus";
-import ComposerSurface    from "./components/ComposerSurface";
-import EmptyStateGuidance from "./components/EmptyStateGuidance";
-import OverviewPanel      from "./components/OverviewPanel";
-import TrustLayerPanel    from "./components/TrustLayerPanel";
-import ActionRequiredPanel from "./components/ActionRequiredPanel";
-import StandardsRoutePanel from "./components/StandardsRoute";
+import HeaderActions           from "./components/HeaderActions";
+import AnalyzeStatus           from "./components/AnalyzeStatus";
+import ComposerSurface         from "./components/ComposerSurface";
+import EmptyStateGuidance      from "./components/EmptyStateGuidance";
+import OverviewPanel           from "./components/OverviewPanel";
+import TrustLayerPanel         from "./components/TrustLayerPanel";
+import ActionRequiredPanel     from "./components/ActionRequiredPanel";
+import StandardsRoutePanel     from "./components/StandardsRoute";
 import ParallelObligationsPanel from "./components/ParallelObligationsPanel";
-import EvidencePanel      from "./components/EvidencePanel";
-import ResultsSidebarNav  from "./components/ResultsSidebarNav";
-import SupportingContext  from "./components/SupportingContext";
+import EvidencePanel           from "./components/EvidencePanel";
+import ResultsSidebarNav       from "./components/ResultsSidebarNav";
+import SupportingContext       from "./components/SupportingContext";
+import ErrorBanner             from "./components/ErrorBanner";
+import ScrollTopButton         from "./components/ScrollTopButton";
+import ComparisonPanel         from "./components/ComparisonPanel";
+import ResultsAside            from "./components/ResultsAside";
 
-// ── Inline utilities kept here (used only by root component) ─────────────────
+// ── Root-only utilities ───────────────────────────────────────────────────────
 
 function cx(...values) {
   return values.filter(Boolean).join(" ");
@@ -47,7 +50,7 @@ function cx(...values) {
 
 function listDiff(previousItems, nextItems) {
   const previous = new Set(previousItems);
-  const next = new Set(nextItems);
+  const next     = new Set(nextItems);
   return {
     added:   [...next].filter((item) => !previous.has(item)),
     removed: [...previous].filter((item) => !next.has(item)),
@@ -57,7 +60,7 @@ function listDiff(previousItems, nextItems) {
 function summarizeItems(items, limit = 3) {
   if (!items.length) return "";
   const visible = items.slice(0, limit);
-  const suffix = items.length > limit ? ` +${items.length - limit} more` : "";
+  const suffix  = items.length > limit ? ` +${items.length - limit} more` : "";
   return `${visible.join(", ")}${suffix}`;
 }
 
@@ -99,89 +102,30 @@ function buildComparisonSummary(previousResult, previousDescription, nextResult,
   return changes.length ? changes : null;
 }
 
-// ── Inline small presentational components (too small to extract) ─────────────
-
-function ComparisonPanel({ changes }) {
-  if (!changes?.length) return null;
-  return (
-    <Surface
-      eyebrow="Session compare"
-      title="Compared with previous analysis"
-      text="Session-local changes only. No results are persisted."
-      bodyClassName={styles.compareList}
-    >
-      {changes.map((change) => (
-        <div key={change} className={styles.compareItem}>
-          <span className={styles.compareMarker} />
-          <span>{change}</span>
-        </div>
-      ))}
-    </Surface>
-  );
-}
-
-function ErrorBanner({ message, onRetry }) {
-  if (!message) return null;
-  const isNetwork = /network|fetch|failed to fetch|load failed|unavailable|timeout|abort/i.test(message);
-  return (
-    <div className={styles.errorBanner} role="alert">
-      <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-      <div className={styles.errorBody}>
-        <div className={styles.errorTitle}>{isNetwork ? "API unreachable" : "Analysis error"}</div>
-        <div className={styles.errorText}>
-          {isNetwork
-            ? "The analyzer could not reach the API. The service may be starting up — try again in a moment."
-            : message}
-        </div>
-      </div>
-      {onRetry ? (
-        <button type="button" className={styles.errorRetry} onClick={onRetry}>
-          <RefreshCcw size={13} />
-          Try again
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function ScrollTopButton({ visible }) {
-  if (!visible) return null;
-  return (
-    <button
-      type="button"
-      className={styles.scrollTop}
-      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="Back to top"
-    >
-      <ArrowUp size={15} />
-    </button>
-  );
-}
-
 // ── Main exported component ───────────────────────────────────────────────────
 
 export default function AnalyzeWorkspace() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [description, setDescription]           = useState(() => searchParams.get("q") || "");
+  const [description, setDescription]               = useState(() => searchParams.get("q") || "");
   const [analyzedDescription, setAnalyzedDescription] = useState("");
-  const [metadata, setMetadata]                 = useState(EMPTY_METADATA);
-  const [result, setResult]                     = useState(null);
-  const [resultRevision, setResultRevision]     = useState(0);
-  const [busy, setBusy]                         = useState(false);
-  const [error, setError]                       = useState("");
-  const [comparisonChanges, setComparisonChanges] = useState(null);
-  const [analysisCopied, setAnalysisCopied]     = useState(false);
-  const [previousSnapshot, setPreviousSnapshot] = useState(null);
-  const [scrolled, setScrolled]                 = useState(false);
-  const [asideCollapsed, setAsideCollapsed]     = useState(false);
-  const [templateOrder]                         = useState(() => Array.from({ length: 120 }, () => Math.random()));
+  const [metadata, setMetadata]                     = useState(EMPTY_METADATA);
+  const [result, setResult]                         = useState(null);
+  const [resultRevision, setResultRevision]         = useState(0);
+  const [busy, setBusy]                             = useState(false);
+  const [error, setError]                           = useState("");
+  const [comparisonChanges, setComparisonChanges]   = useState(null);
+  const [analysisCopied, setAnalysisCopied]         = useState(false);
+  const [previousSnapshot, setPreviousSnapshot]     = useState(null);
+  const [scrolled, setScrolled]                     = useState(false);
+  const [asideCollapsed, setAsideCollapsed]         = useState(false);
+  const [templateOrder]                             = useState(() => Array.from({ length: 120 }, () => Math.random()));
 
-  const analysisAbortRef  = useRef(null);
-  const copyResetTimerRef = useRef(null);
+  const analysisAbortRef   = useRef(null);
+  const copyResetTimerRef  = useRef(null);
   const requestSequenceRef = useRef(0);
-  const resultsRef        = useRef(null);
-  const shouldAutorun     = useRef(searchParams.get("autorun") === "1");
+  const resultsRef         = useRef(null);
+  const shouldAutorun      = useRef(searchParams.get("autorun") === "1");
 
   const viewModel = useMemo(
     () => buildAnalysisViewModel(result, analyzedDescription || description),
@@ -224,7 +168,7 @@ export default function AnalyzeWorkspace() {
   }, [location.search]);
 
   useEffect(() => {
-    const next = new URLSearchParams(searchParams);
+    const next    = new URLSearchParams(searchParams);
     const trimmed = String(description || "").trim();
     const current = searchParams.get("q") || "";
     if (trimmed) {
@@ -239,9 +183,9 @@ export default function AnalyzeWorkspace() {
     const timer = window.setTimeout(() => {
       const el = resultsRef.current;
       if (!el) return;
-      const header = document.querySelector("header");
+      const header       = document.querySelector("header");
       const headerHeight = header ? header.getBoundingClientRect().height : 0;
-      const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
+      const top          = el.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
       window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     }, 80);
     return () => window.clearTimeout(timer);
@@ -266,18 +210,18 @@ export default function AnalyzeWorkspace() {
     if (!result) return;
     const text = buildClipboardSummary({
       result,
-      description: analyzedDescription || description,
-      routeSections: viewModel.routeSections,
+      description:       analyzedDescription || description,
+      routeSections:     viewModel.routeSections,
       legislationGroups: viewModel.legislationGroups,
-      missingInputs: viewModel.missingInputs,
-      evidenceNeeds: viewModel.evidenceNeeds,
+      missingInputs:     viewModel.missingInputs,
+      evidenceNeeds:     viewModel.evidenceNeeds,
     });
     const fallbackCopy = (value) => {
       const ta = document.createElement("textarea");
       ta.value = value;
       ta.setAttribute("readonly", "");
       ta.style.position = "fixed";
-      ta.style.opacity = "0";
+      ta.style.opacity  = "0";
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
@@ -312,9 +256,9 @@ export default function AnalyzeWorkspace() {
     setError("");
 
     const controller = new AbortController();
-    const requestId = requestSequenceRef.current + 1;
-    requestSequenceRef.current = requestId;
-    analysisAbortRef.current = controller;
+    const requestId  = requestSequenceRef.current + 1;
+    requestSequenceRef.current  = requestId;
+    analysisAbortRef.current    = controller;
 
     try {
       const data = await requestAnalysis(payload, { signal: controller.signal });
@@ -483,19 +427,13 @@ export default function AnalyzeWorkspace() {
               layoutStyles.resultsAsideHasResult,
               asideCollapsed ? layoutStyles.resultsAsideHidden : ""
             )}>
-              <div className={styles.asideCollapseRow}>
-                <button
-                  type="button"
-                  className={styles.asideCollapseBtn}
-                  onClick={() => setAsideCollapsed(true)}
-                  title="Collapse refine panel"
-                >
-                  <ChevronLeft size={13} />
-                </button>
-              </div>
-              <ComposerSurface {...composerProps} hasResult={true} />
-              <AnalyzeStatus busy={busy} />
-              <ErrorBanner message={error} onRetry={error ? runAnalysis : null} />
+              <ResultsAside
+                onCollapse={() => setAsideCollapsed(true)}
+                composerProps={composerProps}
+                busy={busy}
+                error={error}
+                onRetry={error ? runAnalysis : null}
+              />
             </div>
           </div>
         )}
