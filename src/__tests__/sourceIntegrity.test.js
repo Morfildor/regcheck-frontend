@@ -110,3 +110,19 @@ describe("expected components all exist", () => {
     expect(asJsx || asJs).toBe(true);
   });
 });
+
+// ── focused test files ────────────────────────────────────────────────────────
+
+const TESTS = join(__dirname);
+
+const EXPECTED_TEST_FILES = [
+  "sourceIntegrity.test.js",
+  "ScrollingTemplateRows.test.jsx",
+  "components.test.jsx",
+];
+
+describe("focused test files all exist", () => {
+  test.each(EXPECTED_TEST_FILES)("%s", (file) => {
+    expect(existsSync(join(TESTS, file))).toBe(true);
+  });
+});
