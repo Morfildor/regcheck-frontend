@@ -1,0 +1,134 @@
+/* ─── Trust bar ───────────────────────────────────── */
+
+.trustBar {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(12,20,34,0.65);
+  overflow: hidden;
+}
+
+.trustBarSummary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 13px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.14s;
+}
+.trustBarSummary::-webkit-details-marker { display: none; }
+.trustBarSummary::marker { display: none; }
+.trustBarSummary:hover { background: rgba(255,255,255,0.025); }
+
+.trustBarLabel {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.trustBarPills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.trustBarMeta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  padding: 0 2px;
+}
+
+.trustBarChevron {
+  color: var(--text-soft);
+  flex-shrink: 0;
+  transition: transform 0.18s;
+}
+.trustBar[open] .trustBarChevron { transform: rotate(180deg); }
+
+.trustBarBody {
+  display: grid;
+  gap: 10px;
+  padding: 12px 13px 14px;
+  border-top: 1px solid var(--border-sm);
+}
+
+/* ─── Trust sections (known / assumed / missing) ──── */
+
+.trustSection {
+  display: grid;
+  gap: 7px;
+}
+
+.trustSectionLabel {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.trustChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ─── Chip styles ─────────────────────────────────── */
+
+.assumedChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(125,185,255,0.18);
+  background: rgba(125,185,255,0.07);
+  color: #93c5ff;
+  font-size: 0.79rem;
+}
+
+.emptyCopy {
+  color: var(--text-muted);
+  font-size: 0.83rem;
+}
+
+/* ─── Disclaimer ──────────────────────────────────── */
+
+.trustBarDisclaimer {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-sm);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+/* ─── Light theme ─────────────────────────────────── */
+
+[data-theme="light"] .trustBar {
+  background: rgba(255,255,255,0.80);
+}
+[data-theme="light"] .trustBarSummary:hover {
+  background: rgba(14,38,88,0.04);
+}
+[data-theme="light"] .assumedChip {
+  border-color: rgba(21,83,182,0.18);
+  background: rgba(21,83,182,0.06);
+  color: #1553b6;
+}
+
+@media (max-width: 768px) {
+  .trustBarSummary {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .trustBarMeta {
+    width: 100%;
+  }
+}

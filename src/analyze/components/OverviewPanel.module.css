@@ -1,0 +1,140 @@
+/* ─── Overview panel ──────────────────────────────── */
+
+.overviewBody {
+  display: grid;
+  gap: 14px;
+}
+
+.identityCard {
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(125, 185, 255, 0.20);
+  background: linear-gradient(150deg, rgba(125, 185, 255, 0.08) 0%, rgba(125, 185, 255, 0.03) 60%, rgba(10,18,32,0) 100%);
+  display: grid;
+  gap: 8px;
+  box-shadow: inset 0 1px 0 rgba(125,185,255,0.06);
+}
+
+.identityCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.identityLabel {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.identityType {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(1.22rem, 3vw, 1.65rem);
+  line-height: 1.15;
+  color: var(--text-strong);
+  letter-spacing: -0.02em;
+}
+
+.identityDirectives {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 4px 0 2px;
+}
+
+.identitySummary {
+  margin: 4px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(125, 185, 255, 0.12);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.58;
+}
+
+/* ─── Stat row ────────────────────────────────────── */
+
+.identityStatRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.identityStat {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-sm);
+  background: rgba(255,255,255,0.038);
+  display: grid;
+  gap: 4px;
+  transition: border-color 0.14s, background 0.14s;
+}
+
+.identityStatLabel {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.identityStatValue {
+  color: var(--text-strong);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.identityStatWarning {
+  border-color: rgba(240,192,103,0.20);
+  background: rgba(240,192,103,0.055);
+}
+.identityStatWarning .identityStatValue { color: #f5cc81; }
+
+.identityStatPositive {
+  border-color: rgba(128,214,168,0.18);
+  background: rgba(128,214,168,0.055);
+}
+.identityStatPositive .identityStatValue { color: #9ce0bc; }
+
+.identityStatActive {
+  border-color: rgba(125,185,255,0.18);
+  background: rgba(125,185,255,0.055);
+}
+
+/* ─── Light theme ─────────────────────────────────── */
+
+[data-theme="light"] .identityCard {
+  border-color: rgba(21,83,182,0.20);
+  background: linear-gradient(145deg, rgba(21,83,182,0.07), rgba(21,83,182,0.03));
+}
+[data-theme="light"] .identitySummary {
+  border-top-color: rgba(21,83,182,0.10);
+}
+[data-theme="light"] .identityStat {
+  background: rgba(255,255,255,0.65);
+}
+[data-theme="light"] .identityStatWarning {
+  border-color: rgba(133,77,14,0.20);
+  background: rgba(133,77,14,0.055);
+}
+[data-theme="light"] .identityStatWarning .identityStatValue { color: #7c4a0d; }
+[data-theme="light"] .identityStatPositive {
+  border-color: rgba(22,101,52,0.20);
+  background: rgba(22,101,52,0.055);
+}
+[data-theme="light"] .identityStatPositive .identityStatValue { color: #166534; }
+[data-theme="light"] .identityStatActive {
+  border-color: rgba(21,83,182,0.16);
+  background: rgba(21,83,182,0.05);
+}
+
+@media (max-width: 768px) {
+  .identityStatRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

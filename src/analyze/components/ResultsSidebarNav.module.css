@@ -1,0 +1,299 @@
+/* ─── Desktop sidebar ─────────────────────────────── */
+
+.resultsSidebarNav { /* sizing handled by layout grid */ }
+
+.sidebarNavList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/* Vertical connector line */
+.sidebarNavList::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 14px;
+  bottom: 14px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(125, 185, 255, 0.16) 10%,
+    rgba(125, 185, 255, 0.16) 90%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.sidebarNavEntry,
+.sidebarNavSubEntry { position: relative; }
+
+/* ── Main section buttons ── */
+
+.sidebarNavBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 5px 6px 5px 24px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: var(--text-soft);
+  font-size: 0.775rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.3;
+  transition: background 0.12s, color 0.12s;
+}
+.sidebarNavBtn:hover {
+  background: rgba(125, 185, 255, 0.05);
+  color: var(--text-muted);
+}
+.sidebarNavBtnActive {
+  background: rgba(125, 185, 255, 0.08);
+  color: var(--text);
+}
+.sidebarNavBtnWarning { color: rgba(240, 192, 103, 0.80); }
+.sidebarNavBtnWarning:hover {
+  color: rgba(240, 192, 103, 0.95);
+  background: rgba(240, 192, 103, 0.05);
+}
+.sidebarNavBtnActive.sidebarNavBtnWarning {
+  color: #f0c067;
+  background: rgba(240, 192, 103, 0.07);
+}
+
+/* Connector dot */
+.sidebarNavNode {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(125, 185, 255, 0.18);
+  pointer-events: none;
+  transition: background 0.14s, border-color 0.14s;
+}
+.sidebarNavBtnActive .sidebarNavNode {
+  background: rgba(125, 185, 255, 0.20);
+  border-color: rgba(125, 185, 255, 0.55);
+}
+.sidebarNavBtnWarning .sidebarNavNode { border-color: rgba(240, 192, 103, 0.30); }
+.sidebarNavBtnActive.sidebarNavBtnWarning .sidebarNavNode {
+  background: rgba(240, 192, 103, 0.15);
+  border-color: rgba(240, 192, 103, 0.55);
+}
+
+.sidebarNavLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebarNavBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  min-width: 18px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--text-soft);
+  font-size: 0.64rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.sidebarNavBadgeWarning {
+  background: rgba(240, 192, 103, 0.10);
+  border-color: rgba(240, 192, 103, 0.22);
+  color: #f5cc81;
+}
+
+/* ── Directive sub-items ── */
+
+.sidebarNavSubBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 3px 6px 3px 27px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-soft);
+  font-size: 0.73rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.3;
+  opacity: 0.72;
+  transition: background 0.12s, color 0.12s, opacity 0.12s;
+}
+.sidebarNavSubBtn:hover {
+  background: rgba(125, 185, 255, 0.04);
+  color: var(--text-muted);
+  opacity: 1;
+}
+.sidebarNavSubBtnActive {
+  background: rgba(125, 185, 255, 0.06);
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.sidebarNavSubNode {
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(125, 185, 255, 0.09);
+  pointer-events: none;
+  transition: background 0.14s;
+}
+.sidebarNavSubBtnActive .sidebarNavSubNode {
+  background: rgba(125, 185, 255, 0.38);
+}
+
+/* ─── Mobile chip row ─────────────────────────────── */
+
+.sidebarNavMobileRow {
+  display: none;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 2px 0;
+}
+
+.pageSectionNavItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--border-sm);
+  background: rgba(255,255,255,0.038);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.pageSectionNavItem:hover {
+  border-color: rgba(125,185,255,0.22);
+  background: rgba(125,185,255,0.07);
+  color: var(--text);
+}
+.pageSectionNavItemActive {
+  border-color: rgba(125, 185, 255, 0.28) !important;
+  background: rgba(125, 185, 255, 0.07) !important;
+  color: var(--text-muted) !important;
+}
+
+.pageSectionNavWarning { border-color: rgba(240,192,103,0.18); }
+.pageSectionNavWarning:hover {
+  border-color: rgba(240,192,103,0.36);
+  background: rgba(240,192,103,0.05);
+}
+.pageSectionNavAccent {
+  border-color: rgba(125,185,255,0.22);
+  color: var(--text-muted);
+}
+.pageSectionNavAccent:hover {
+  border-color: rgba(125,185,255,0.38);
+  background: rgba(125,185,255,0.09);
+  color: var(--text-strong);
+}
+
+.pageSectionNavCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  min-width: 18px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: var(--text-soft);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+.pageSectionNavCountWarning {
+  background: rgba(240,192,103,0.12);
+  border-color: rgba(240,192,103,0.24);
+  color: #f5cc81;
+}
+.pageSectionNavCountAccent {
+  background: rgba(125,185,255,0.12);
+  border-color: rgba(125,185,255,0.22);
+  color: #93c5ff;
+}
+
+/* Show mobile row on screens ≤1024px */
+@media (max-width: 1024px) {
+  .sidebarNavMobileRow { display: flex; }
+}
+
+/* ─── Light theme ─────────────────────────────────── */
+
+[data-theme="light"] .sidebarNavList::before {
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(21, 83, 182, 0.14) 10%,
+    rgba(21, 83, 182, 0.14) 90%,
+    transparent
+  );
+}
+[data-theme="light"] .sidebarNavNode {
+  background: rgba(14, 38, 88, 0.04);
+  border-color: rgba(21, 83, 182, 0.18);
+}
+[data-theme="light"] .sidebarNavBtnActive {
+  background: rgba(21, 83, 182, 0.06);
+  color: var(--text);
+}
+[data-theme="light"] .sidebarNavBtnActive .sidebarNavNode {
+  background: rgba(21, 83, 182, 0.14);
+  border-color: rgba(21, 83, 182, 0.48);
+}
+[data-theme="light"] .sidebarNavSubBtnActive { background: rgba(21, 83, 182, 0.05); }
+[data-theme="light"] .sidebarNavSubNode { background: rgba(21, 83, 182, 0.08); }
+[data-theme="light"] .sidebarNavSubBtnActive .sidebarNavSubNode { background: rgba(21, 83, 182, 0.35); }
+[data-theme="light"] .sidebarNavBadge {
+  background: rgba(14, 38, 88, 0.05);
+  border-color: rgba(14, 38, 88, 0.10);
+}
+[data-theme="light"] .pageSectionNavItem {
+  background: rgba(255,255,255,0.70);
+  border-color: rgba(14,38,88,0.11);
+}
+[data-theme="light"] .pageSectionNavItem:hover {
+  border-color: rgba(21,83,182,0.22);
+  background: rgba(21,83,182,0.06);
+  color: var(--text);
+}
+[data-theme="light"] .pageSectionNavItemActive {
+  border-color: rgba(21, 83, 182, 0.24) !important;
+  background: rgba(21, 83, 182, 0.06) !important;
+  color: var(--text-muted) !important;
+}
+[data-theme="light"] .pageSectionNavCount {
+  background: rgba(14,38,88,0.06);
+  border-color: rgba(14,38,88,0.12);
+}

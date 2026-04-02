@@ -1,0 +1,141 @@
+/* ─── Supporting context panel ────────────────────── */
+
+.contextPanel {
+  position: static;
+  align-self: start;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(9,14,24,0.6);
+  overflow: hidden;
+}
+
+.contextSummary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.contextSummary:hover { background: rgba(255,255,255,0.025); }
+.contextSummary::-webkit-details-marker { display: none; }
+
+.contextEyebrow {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.contextTitle {
+  color: var(--text-strong);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 2px 0 0;
+}
+
+.contextSummaryRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.clarificationOverflow {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.contextBody {
+  display: grid;
+  gap: 10px;
+  padding: 10px 15px 15px;
+  border-top: 1px solid var(--border-sm);
+}
+
+.sectionLabel {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.infoCard {
+  display: grid;
+  gap: 7px;
+  padding: 11px 13px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: rgba(7,12,22,0.35);
+}
+
+.contextText {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.emptyCopy { color: var(--text-muted); font-size: 0.84rem; }
+
+/* ─── Action button ───────────────────────────────── */
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-strong);
+  background: transparent;
+  transition: background 0.14s, border-color 0.14s, transform 0.12s;
+  white-space: nowrap;
+}
+.actionButton:hover { transform: translateY(-1px); }
+
+.actionButtonSecondary {
+  background: rgba(255,255,255,0.055);
+  border-color: rgba(255,255,255,0.11);
+}
+.actionButtonSecondary:hover {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.18);
+}
+
+.fullWidthButton { width: 100%; }
+
+/* ─── Light theme ─────────────────────────────────── */
+
+[data-theme="light"] .contextPanel { background: rgba(255,255,255,0.90); }
+[data-theme="light"] .contextSummary:hover { background: rgba(14,38,88,0.03); }
+[data-theme="light"] .infoCard { background: rgba(246,249,255,0.70); }
+[data-theme="light"] .actionButtonSecondary {
+  background: rgba(255,255,255,0.70);
+  border-color: rgba(14,38,88,0.14);
+}
+[data-theme="light"] .actionButtonSecondary:hover {
+  background: rgba(255,255,255,0.92);
+  border-color: rgba(14,38,88,0.22);
+}
+
+@media (max-width: 720px) {
+  .contextSummary { padding: 12px 13px; }
+  .contextBody { padding: 10px 13px 13px; }
+}

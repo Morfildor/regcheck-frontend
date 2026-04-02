@@ -1,0 +1,188 @@
+/* ─── Parallel obligations ────────────────────────── */
+
+.sectionStack { display: grid; gap: 8px; }
+
+.obligationGroup { display: grid; gap: 10px; }
+
+.obligationGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-sm);
+}
+
+.obligationGroupTitle {
+  flex: 1;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.obligationGroupCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: var(--text-soft);
+  font-size: 0.67rem;
+  font-weight: 600;
+}
+
+.obligationGroupDesc {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* ─── Obligation card ─────────────────────────────── */
+
+.obligationCard {
+  border-radius: 12px;
+  border: 1px solid rgba(120,213,193,0.15);
+  background: rgba(12,20,34,0.72);
+  overflow: hidden;
+  transition: border-color 0.14s;
+}
+.obligationCard:hover { border-color: rgba(120,213,193,0.28); }
+
+.obligationCardToggle {
+  width: 100%;
+  text-align: left;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.obligationCardToggle:hover { background: rgba(255,255,255,0.018); }
+
+.obligationCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 13px 8px;
+}
+
+.obligationCardPills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.obligationCardChevron {
+  color: var(--text-soft);
+  flex-shrink: 0;
+  transition: transform 0.18s;
+}
+.obligationCardChevronOpen { transform: rotate(180deg); }
+
+.obligationCardBody {
+  padding: 0 13px 13px;
+  display: grid;
+  gap: 4px;
+}
+
+.obligationTitle {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.38;
+}
+
+.obligationPreview {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  line-height: 1.52;
+}
+
+.obligationDetail {
+  display: grid;
+  gap: 10px;
+  padding: 12px 13px 14px;
+  border-top: 1px solid rgba(120,213,193,0.10);
+  background: rgba(120,213,193,0.03);
+}
+.obligationDetailItem { display: grid; gap: 3px; }
+.obligationDetailLabel {
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.obligationDetailValue {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  line-height: 1.52;
+}
+
+/* ─── Shared ──────────────────────────────────────── */
+
+.standardCode {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.timingBadge {
+  display: inline-flex;
+  align-items: center;
+  margin: 3px 0 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(125,185,255,0.2);
+  background: rgba(125,185,255,0.07);
+  color: #93c5ff;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.emptyCopy { color: var(--text-muted); font-size: 0.84rem; }
+
+/* ─── Light theme ─────────────────────────────────── */
+
+[data-theme="light"] .obligationGroupCount {
+  background: rgba(14,38,88,0.06);
+  border-color: rgba(14,38,88,0.12);
+}
+[data-theme="light"] .obligationCard {
+  border-color: rgba(14,122,106,0.16);
+  background: rgba(255,255,255,0.85);
+}
+[data-theme="light"] .obligationCard:hover { border-color: rgba(14,122,106,0.28); }
+[data-theme="light"] .obligationCardToggle:hover { background: rgba(14,38,88,0.03); }
+[data-theme="light"] .obligationDetail {
+  border-top-color: rgba(14,122,106,0.12);
+  background: rgba(14,122,106,0.03);
+}
+[data-theme="light"] .timingBadge {
+  border-color: rgba(21,83,182,0.20);
+  background: rgba(21,83,182,0.07);
+  color: #1553b6;
+}
+[data-theme="light"] .standardCode {
+  background: rgba(14,38,88,0.07);
+  border-color: rgba(14,38,88,0.14);
+}

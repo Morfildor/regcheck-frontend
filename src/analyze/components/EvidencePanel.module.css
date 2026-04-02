@@ -1,0 +1,106 @@
+/* ─── Evidence grid ───────────────────────────────── */
+
+.evidenceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.evidenceCard {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(7,12,22,0.35);
+}
+
+.evidenceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.groupTitle {
+  color: var(--text-strong);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.evidenceSection { display: grid; gap: 7px; }
+
+.evidenceSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.metaLabel {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ─── Section icons ───────────────────────────────── */
+
+.iconCheck   { color: #9ce0bc; flex-shrink: 0; }
+.iconMissing { color: #f5cc81; flex-shrink: 0; }
+.iconBlocker { color: #f4947a; flex-shrink: 0; }
+.iconNext    { color: #7db9ff; flex-shrink: 0; }
+
+/* ─── Blockers subsection ─────────────────────────── */
+
+.evidenceSectionBlockers {
+  padding: 9px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(240,192,103,0.15);
+  background: rgba(240,192,103,0.04);
+}
+.metaLabelBlockers { color: #f5cc81; }
+
+/* ─── Detail list ─────────────────────────────────── */
+
+.detailList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.detailListItem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 9px;
+  align-items: start;
+  color: var(--text);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.detailBullet {
+  width: 5px;
+  height: 5px;
+  margin-top: 0.5rem;
+  border-radius: 999px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.emptyCopy { color: var(--text-muted); font-size: 0.84rem; }
+
+/* ─── Light theme ─────────────────────────────────── */
+
+[data-theme="light"] .evidenceCard { background: rgba(255,255,255,0.75); }
+[data-theme="light"] .evidenceSectionBlockers {
+  border-color: rgba(133,77,14,0.16);
+  background: rgba(133,77,14,0.04);
+}
+[data-theme="light"] .metaLabelBlockers { color: #7c4a0d; }
+[data-theme="light"] .iconCheck   { color: #166534; }
+[data-theme="light"] .iconMissing { color: #7c4a0d; }
+[data-theme="light"] .iconBlocker { color: #b91c1c; }
+[data-theme="light"] .iconNext    { color: #1553b6; }
