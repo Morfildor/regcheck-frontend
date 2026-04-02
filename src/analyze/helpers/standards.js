@@ -124,8 +124,8 @@ function lvdPrimaryRank(item) {
   const label = standardCodeLabel(item);
   const code  = standardCodeNumber(item);
 
-  if (/(?:^|\b)(?:EN|IEC)\s*60335\s*-\s*1(?:\b|$)/i.test(label))  return [0, 0, 0];
-  if (/(?:^|\b)(?:EN|IEC)\s*62368\s*-\s*1(?:\b|$)/i.test(label))  return [0, 1, 0];
+  if (/(?:^|\b)(?:EN|IEC)\s*62368\s*-\s*1(?:\b|$)/i.test(label))  return [0, 0, 0];
+  if (/(?:^|\b)(?:EN|IEC)\s*60335\s*-\s*1(?:\b|$)/i.test(label))  return [0, 1, 0];
 
   const part2Match = code.match(/(?:EN|IEC)\s*60335\s*-\s*2\s*-\s*(\d+)/i);
   if (part2Match) return [1, Number(part2Match[1] || 0), 0];
