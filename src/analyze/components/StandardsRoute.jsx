@@ -16,12 +16,18 @@ const ROUTE_SECTION_CLASS = {
 
 function StandardCard({ item }) {
   const hasVersionInfo = item.version || item.dated_version || item.harmonized_reference;
+  const isHarmonized = Boolean(item.dated_version || item.harmonized_reference);
   const categoryTag = inferStandardCategory(item);
   return (
-    <article className={styles.standardCard}>
+    <article className={cx(styles.standardCard, isHarmonized ? styles.standardCardHarmonized : "")}>
       <div className={styles.standardCardTop}>
         <span className={styles.standardCode}>{item.code || "Standard"}</span>
-        {categoryTag ? <TonePill tone="muted">{categoryTag}</TonePill> : null}
+        {isHarmonized ? (
+          <span className={styles.harmonizedBadge}>Harmonized</span>
+        ) : categoryTag ? (
+          <TonePill tone="muted">{categoryTag}</TonePill>
+        ) : null}
+        {isHarmonized && categoryTag ? <TonePill tone="muted">{categoryTag}</TonePill> : null}
       </div>
       <div className={styles.standardCardBody}>
         <h4 className={styles.standardTitle}>{titleCaseMinor(item.title || "Untitled standard")}</h4>
@@ -31,7 +37,7 @@ function StandardCard({ item }) {
         <div className={styles.standardVersionRow}>
           {item.dated_version ? (
             <div className={styles.standardVersionItem}>
-              <span className={styles.versionLabel}>Harmonized</span>
+              <span className={styles.versionLabel}>Harmonized ref</span>
               <span className={styles.versionValue}>{item.dated_version}</span>
             </div>
           ) : null}

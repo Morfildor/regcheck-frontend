@@ -97,8 +97,8 @@ export default function ComposerSurface({
           type="button"
           className={cx(styles.actionButton, styles.actionButtonPrimary)}
           onClick={handleAnalyze}
-          disabled={busy}
           aria-disabled={isEmpty ? "true" : undefined}
+          aria-label="Run analysis"
         >
           {busy ? <LoaderCircle size={15} className={styles.spin} /> : <Sparkles size={15} />}
           {analyzeLabel}

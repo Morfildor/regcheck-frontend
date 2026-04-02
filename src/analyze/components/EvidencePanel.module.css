@@ -8,11 +8,11 @@
 
 .evidenceCard {
   display: grid;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 0;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: rgba(7,12,22,0.35);
+  overflow: hidden;
 }
 
 .evidenceHeader {
@@ -20,6 +20,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding: 13px 14px 11px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .groupTitle {
@@ -28,7 +30,17 @@
   font-weight: 600;
 }
 
-.evidenceSection { display: grid; gap: 7px; }
+/* ─── Sections wrapper ────────────────────────────── */
+
+.evidenceSections { display: grid; }
+
+.evidenceSection {
+  display: grid;
+  gap: 7px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.evidenceSection:last-child { border-bottom: 0; }
 
 .evidenceSectionHeader {
   display: flex;
@@ -38,7 +50,7 @@
 
 .metaLabel {
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: 0.71rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   font-weight: 600;
@@ -51,15 +63,26 @@
 .iconBlocker { color: #f4947a; flex-shrink: 0; }
 .iconNext    { color: #7db9ff; flex-shrink: 0; }
 
-/* ─── Blockers subsection ─────────────────────────── */
+/* ─── Section variants ────────────────────────────── */
+
+.evidenceSectionGap {
+  background: rgba(240,192,103,0.03);
+}
 
 .evidenceSectionBlockers {
-  padding: 9px 10px;
-  border-radius: 9px;
-  border: 1px solid rgba(240,192,103,0.15);
-  background: rgba(240,192,103,0.04);
+  background: rgba(244,148,122,0.04);
+  border-top: 1px solid rgba(244,148,122,0.12);
+  border-bottom: 1px solid rgba(244,148,122,0.12) !important;
 }
-.metaLabelBlockers { color: #f5cc81; }
+
+.evidenceSectionNext {
+  background: rgba(125,185,255,0.03);
+  border-top: 1px solid rgba(125,185,255,0.08);
+}
+
+/* Per-section label colours */
+.metaLabel--blockers { color: #f4947a; }
+.metaLabel--nextActions { color: #7db9ff; }
 
 /* ─── Detail list ─────────────────────────────────── */
 
@@ -70,6 +93,8 @@
   display: grid;
   gap: 7px;
 }
+
+.detailListCompact { gap: 5px; }
 
 .detailListItem {
   display: grid;
@@ -95,11 +120,20 @@
 /* ─── Light theme ─────────────────────────────────── */
 
 [data-theme="light"] .evidenceCard { background: rgba(255,255,255,0.75); }
+[data-theme="light"] .evidenceHeader { border-bottom-color: rgba(14,38,88,0.07); }
+[data-theme="light"] .evidenceSection { border-bottom-color: rgba(14,38,88,0.05); }
+[data-theme="light"] .evidenceSectionGap { background: rgba(133,77,14,0.03); }
 [data-theme="light"] .evidenceSectionBlockers {
-  border-color: rgba(133,77,14,0.16);
-  background: rgba(133,77,14,0.04);
+  background: rgba(185,28,28,0.03);
+  border-top-color: rgba(185,28,28,0.12);
+  border-bottom-color: rgba(185,28,28,0.12) !important;
 }
-[data-theme="light"] .metaLabelBlockers { color: #7c4a0d; }
+[data-theme="light"] .evidenceSectionNext {
+  background: rgba(21,83,182,0.03);
+  border-top-color: rgba(21,83,182,0.08);
+}
+[data-theme="light"] .metaLabel--blockers { color: #b91c1c; }
+[data-theme="light"] .metaLabel--nextActions { color: #1553b6; }
 [data-theme="light"] .iconCheck   { color: #166534; }
 [data-theme="light"] .iconMissing { color: #7c4a0d; }
 [data-theme="light"] .iconBlocker { color: #b91c1c; }

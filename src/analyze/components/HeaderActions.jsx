@@ -25,6 +25,7 @@ export default function HeaderActions({ result, totalStandards, onReset, onCopy,
         className={cx(styles.actionButton, styles.actionButtonSecondary, styles.actionButtonSm)}
         onClick={onCopy}
         aria-live="polite"
+        aria-label="Copy"
         title="Copy analysis summary to clipboard"
       >
         {copied ? <Check size={13} /> : <Download size={13} />}

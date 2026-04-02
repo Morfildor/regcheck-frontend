@@ -11,14 +11,27 @@
   border-color: rgba(240,192,103,0.22);
 }
 
-.actionRequiredHeader {
+/* ─── Collapsible toggle (replaces old header) ─────── */
+
+.actionRequiredToggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
   padding: 11px 14px;
+  border: 0;
   border-bottom: 1px solid var(--border-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
 }
+.actionRequiredToggle:hover { background: rgba(255,255,255,0.018); }
+.actionRequiredToggle[aria-expanded="false"] { border-bottom: 0; }
+
+.actionRequiredBody { /* wrapper for collapsible content */ }
 
 .actionRequiredMeta {
   display: flex;
@@ -44,11 +57,22 @@
   align-items: center;
 }
 
+.staleNotice {
+  margin: 0;
+  padding: 8px 14px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--border-sm);
+  background: rgba(125,185,255,0.03);
+}
+
 .actionRequiredHeaderRight {
   display: flex;
   align-items: center;
   gap: 7px;
-  flex-shrink: 0;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-sm);
 }
 
 .actionRequiredRunBtn {
@@ -271,6 +295,8 @@
   border-color: rgba(133,77,14,0.18);
   background: rgba(133,77,14,0.03);
 }
+[data-theme="light"] .actionRequiredToggle:hover { background: rgba(14,38,88,0.025); }
+[data-theme="light"] .staleNotice { background: rgba(21,83,182,0.03); }
 [data-theme="light"] .actionItem {
   border-bottom-color: rgba(14,38,88,0.07);
 }

@@ -69,6 +69,7 @@ export default function ActionRequiredPanel({
   const blocking = viewModel.missingInputs.filter((i) => i.severity === "blocker");
   const routeAffecting = viewModel.missingInputs.filter((i) => i.severity === "route-affecting");
   const helpful = viewModel.missingInputs.filter((i) => i.severity === "helpful");
+  const [open, setOpen] = useState(false);
   const [showAllRoute, setShowAllRoute] = useState(false);
   const [showOptional, setShowOptional] = useState(false);
   const understoodFacts = useMemo(() => getUnderstoodFacts(description), [description]);
@@ -86,12 +87,19 @@ export default function ActionRequiredPanel({
       id="section-action"
       className={cx(
         styles.actionRequiredSection,
+        "clarificationStrip",
         blocking.length ? styles.actionRequiredCritical : ""
       )}
     >
-      <div className={styles.actionRequiredHeader}>
+      <button
+        type="button"
+        className={styles.actionRequiredToggle}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="clarifications-body"
+      >
         <div className={styles.actionRequiredMeta}>
-          <span className={styles.actionRequiredLabel}>Open scope questions</span>
+          <span className={styles.actionRequiredLabel}>Clarifications</span>
           <div className={styles.actionRequiredPills}>
             {blocking.length ? (
               <TonePill tone="warning" tip={SEVERITY_GLOSSARY["blocker"]}>
@@ -111,78 +119,90 @@ export default function ActionRequiredPanel({
             ) : null}
           </div>
         </div>
-        {dirty ? (
-          <div className={styles.actionRequiredHeaderRight}>
-            <button
-              type="button"
-              className={cx(styles.actionButton, styles.actionButtonPrimary, styles.actionRequiredRunBtn)}
-              onClick={onReanalyze}
-              disabled={busy}
-            >
-              {busy ? <LoaderCircle size={13} className={styles.spin} /> : <RefreshCcw size={13} />}
-              Re-run
-            </button>
-          </div>
-        ) : null}
-      </div>
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </button>
 
-      {/* Understood facts strip */}
-      {understoodFacts.length > 0 ? (
-        <div className={styles.understoodStrip}>
-          <span className={styles.understoodLabel}>Understood:</span>
-          <div className={styles.understoodChips}>
-            {understoodFacts.map((fact) => (
-              <span key={fact} className={styles.understoodFact}>{fact}</span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {/* Blockers — always fully visible */}
-      {blocking.length ? (
-        <div className={styles.actionItemList}>
-          {blocking.map((item) => (
-            <ActionItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
-          ))}
-        </div>
-      ) : null}
-
-      {/* Route-affecting — show first few, expand on demand */}
-      {routeAffecting.length ? (
-        <div className={cx(styles.actionItemList, blocking.length ? styles.actionItemListSeparated : "")}>
-          {visibleRouteAffecting.map((item) => (
-            <ActionItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
-          ))}
-          {hiddenRouteCount > 0 && !showAllRoute ? (
-            <button
-              type="button"
-              className={styles.actionShowMore}
-              onClick={() => setShowAllRoute(true)}
-            >
-              <ChevronDown size={12} />
-              {hiddenRouteCount} more route-affecting item{hiddenRouteCount === 1 ? "" : "s"}
-            </button>
+      {open ? (
+        <div id="clarifications-body" className={styles.actionRequiredBody}>
+          {dirty ? (
+            <p className={styles.staleNotice}>
+              Description changed. Re-run when you want the route refreshed.
+            </p>
           ) : null}
-        </div>
-      ) : null}
 
-      {/* Optional refinements — collapsed by default */}
-      {helpful.length ? (
-        <div className={styles.actionOptional}>
-          <button
-            type="button"
-            className={styles.actionOptionalToggle}
-            onClick={() => setShowOptional((v) => !v)}
-            aria-expanded={showOptional}
-          >
-            {showOptional ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            {helpful.length} optional refinement{helpful.length === 1 ? "" : "s"}
-          </button>
-          {showOptional ? (
+          {dirty ? (
+            <div className={styles.actionRequiredHeaderRight}>
+              <button
+                type="button"
+                className={cx(styles.actionButton, styles.actionButtonPrimary, styles.actionRequiredRunBtn)}
+                onClick={onReanalyze}
+                disabled={busy}
+              >
+                {busy ? <LoaderCircle size={13} className={styles.spin} /> : <RefreshCcw size={13} />}
+                Re-run
+              </button>
+            </div>
+          ) : null}
+
+          {/* Understood facts strip */}
+          {understoodFacts.length > 0 ? (
+            <div className={styles.understoodStrip}>
+              <span className={styles.understoodLabel}>Understood:</span>
+              <div className={styles.understoodChips}>
+                {understoodFacts.map((fact) => (
+                  <span key={fact} className={styles.understoodFact}>{fact}</span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Blockers — always fully visible */}
+          {blocking.length ? (
             <div className={styles.actionItemList}>
-              {helpful.map((item) => (
+              {blocking.map((item) => (
                 <ActionItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
               ))}
+            </div>
+          ) : null}
+
+          {/* Route-affecting — show first few, expand on demand */}
+          {routeAffecting.length ? (
+            <div className={cx(styles.actionItemList, blocking.length ? styles.actionItemListSeparated : "")}>
+              {visibleRouteAffecting.map((item) => (
+                <ActionItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
+              ))}
+              {hiddenRouteCount > 0 && !showAllRoute ? (
+                <button
+                  type="button"
+                  className={styles.actionShowMore}
+                  onClick={() => setShowAllRoute(true)}
+                >
+                  <ChevronDown size={12} />
+                  {hiddenRouteCount} more route-affecting item{hiddenRouteCount === 1 ? "" : "s"}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Optional refinements — collapsed by default */}
+          {helpful.length ? (
+            <div className={styles.actionOptional}>
+              <button
+                type="button"
+                className={styles.actionOptionalToggle}
+                onClick={() => setShowOptional((v) => !v)}
+                aria-expanded={showOptional}
+              >
+                {showOptional ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                {helpful.length} optional refinement{helpful.length === 1 ? "" : "s"}
+              </button>
+              {showOptional ? (
+                <div className={styles.actionItemList}>
+                  {helpful.map((item) => (
+                    <ActionItem key={item.key} item={item} onApplyMissingInput={onApplyMissingInput} />
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>

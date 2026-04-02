@@ -38,9 +38,12 @@ function ParallelObligationCard({ item }) {
         style={hasDetails ? undefined : { cursor: "default", pointerEvents: "none" }}
       >
         <div className={styles.obligationCardTop}>
-          <div className={styles.obligationCardPills}>
+          <div className={styles.obligationCardMeta}>
             <DirectivePill directiveKey={item.directive_key || "OTHER"} />
             {item.code ? <span className={styles.standardCode}>{item.code}</span> : null}
+            {getTimingLabel(item.directive_key) ? (
+              <span className={styles.timingBadge}>{getTimingLabel(item.directive_key)}</span>
+            ) : null}
           </div>
           {hasDetails ? (
             <ChevronDown
@@ -51,9 +54,6 @@ function ParallelObligationCard({ item }) {
         </div>
         <div className={styles.obligationCardBody}>
           <h4 className={styles.obligationTitle}>{titleCaseMinor(item.title || "Untitled obligation")}</h4>
-          {getTimingLabel(item.directive_key) ? (
-            <span className={styles.timingBadge}>{getTimingLabel(item.directive_key)}</span>
-          ) : null}
           {normalizedPreview ? <p className={styles.obligationPreview}>{normalizedPreview}</p> : null}
         </div>
       </button>
@@ -91,22 +91,28 @@ export default function ParallelObligationsPanel({ viewModel }) {
     {
       key: "conditional",
       title: "Check applicability",
-      text: "These frameworks often turn on when the product includes specific features or market facts.",
+      text: "These frameworks apply when the product includes specific features or market facts.",
       items: conditionalItems,
     },
     {
       key: "peripheral",
-      title: "Additional frameworks",
-      text: "Keep these in reserve for expanded product claims, environments, or technologies.",
+      title: "Reserve frameworks",
+      text: "Keep in scope for expanded claims, environments, or technologies.",
       items: peripheralItems,
     },
   ];
+
+  const totalItems = conditionalItems.length + peripheralItems.length;
 
   return (
     <Surface
       eyebrow="Adjacent frameworks"
       title="Parallel obligations"
-      text="Frameworks outside the primary standards route that may still matter depending on product features or market claims."
+      text={
+        totalItems
+          ? `${totalItems} framework${totalItems === 1 ? "" : "s"} outside the primary route — check applicability before sign-off.`
+          : "No parallel obligations beyond the primary standards route."
+      }
       bodyClassName={styles.sectionStack}
     >
       {groups.some((group) => group.items.length) ? (
@@ -117,7 +123,9 @@ export default function ParallelObligationsPanel({ viewModel }) {
                 <span className={styles.obligationGroupTitle}>{group.title}</span>
                 <span className={styles.obligationGroupCount}>{group.items.length}</span>
               </div>
-              <p className={styles.obligationGroupDesc}>{group.text}</p>
+              {group.key === "conditional" ? (
+                <p className={styles.obligationGroupDesc}>{group.text}</p>
+              ) : null}
               <div className={styles.sectionStack}>
                 {group.items.map((item) => (
                   <ParallelObligationCard
