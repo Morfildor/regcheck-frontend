@@ -163,7 +163,21 @@ export default function AnalyzeWorkspace() {
 
   useEffect(() => {
     const q = searchParams.get("q") || "";
-    if (q !== description) setDescription(q);
+    if (q === description) return;
+    setDescription(q);
+    if (!q) {
+      // URL was cleared (e.g. clicking the nav tab) — reset results too
+      analysisAbortRef.current?.abort();
+      analysisAbortRef.current = null;
+      setResult(null);
+      setAnalyzedDescription("");
+      setBusy(false);
+      setError("");
+      setComparisonChanges(null);
+      setPreviousSnapshot(null);
+      setResultRevision((n) => n + 1);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
