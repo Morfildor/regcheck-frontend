@@ -1,65 +1,56 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import layoutStyles from "../AnalyzeWorkspaceLayout.module.css";
 import { directiveShort, slugify } from "../helpers";
+import { useResultsActiveSection, scrollToResultsSection } from "../hooks/useResultsActiveSection";
 import { cx } from "./Pills";
 import styles from "./ResultsSidebarNav.module.css";
 
-function scrollToSection(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const header = document.querySelector("header");
-  const headerH = header ? header.getBoundingClientRect().height : 0;
-  const top = el.getBoundingClientRect().top + window.scrollY - headerH - 16;
-  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+function buildMainItems(viewModel) {
+  const hasStandards = viewModel.routeSections.length > 0;
+  const hasIssues    = viewModel.missingInputs.length > 0;
+  const hasParallel  =
+    (viewModel.conditionalLegislationGroups?.length || 0) +
+    (viewModel.peripheralLegislationGroups?.length || 0) > 0;
+  const hasEvidence  = viewModel.evidenceNeeds.length > 0;
+  const blockerCount = viewModel.decisionSignals.blockerCount;
+
+  return [
+    { id: "section-summary",        label: "Summary" },
+    hasStandards
+      ? { id: "section-standards",  label: "Standards",      count: viewModel.totalStandards, accent: true }
+      : null,
+    hasIssues
+      ? { id: "section-clarifications", label: "Clarifications", count: blockerCount > 0 ? blockerCount : null, warning: blockerCount > 0 }
+      : null,
+    hasParallel ? { id: "section-parallel", label: "Obligations" } : null,
+    hasEvidence ? { id: "section-evidence",  label: "Evidence"    } : null,
+  ].filter(Boolean);
+}
+
+function buildDirectiveItems(viewModel) {
+  if (!viewModel.routeSections.length) return [];
+  if (viewModel.isRadioProduct && viewModel.redGroup) {
+    return [
+      { id: "route-section-red", label: "RED", count: viewModel.redGroup.totalItems },
+      ...(viewModel.displayRouteSections || [])
+        .filter((s) => s.key !== "RED" && s.key !== "LVD" && s.key !== "EMC")
+        .map((s) => ({
+          id: `route-section-${slugify(s.key || s.title)}`,
+          label: directiveShort(s.key || "OTHER"),
+          count: (s.items || []).length,
+        })),
+    ];
+  }
+  return viewModel.routeSections.map((s) => ({
+    id: `route-section-${slugify(s.key || s.title)}`,
+    label: directiveShort(s.key || "OTHER"),
+    count: (s.items || []).length,
+  }));
 }
 
 export default function ResultsSidebarNav({ viewModel, children }) {
-  const [activeId, setActiveId] = useState(null);
-
-  const hasIssues   = viewModel.missingInputs.length > 0;
-  const hasStandards = viewModel.routeSections.length > 0;
-  const hasParallel =
-    (viewModel.conditionalLegislationGroups?.length || 0) +
-    (viewModel.peripheralLegislationGroups?.length || 0) > 0;
-  const hasEvidence = viewModel.evidenceNeeds.length > 0;
-  const blockerCount = viewModel.decisionSignals.blockerCount;
-
-  const mainItems = useMemo(
-    () =>
-      [
-        { id: "section-summary",   label: "Summary" },
-        hasStandards
-          ? { id: "section-standards", label: "Standards", count: viewModel.totalStandards, accent: true }
-          : null,
-        hasIssues
-          ? { id: "section-action", label: "Clarifications", count: blockerCount > 0 ? blockerCount : null, warning: blockerCount > 0 }
-          : null,
-        hasParallel ? { id: "section-parallel", label: "Obligations" } : null,
-        hasEvidence ? { id: "section-evidence", label: "Evidence"    } : null,
-      ].filter(Boolean),
-    [hasStandards, hasIssues, hasParallel, hasEvidence, viewModel.totalStandards, blockerCount]
-  );
-
-  const directiveItems = useMemo(() => {
-    if (!hasStandards) return [];
-    if (viewModel.isRadioProduct && viewModel.redGroup) {
-      return [
-        { id: "route-section-red", label: "RED", count: viewModel.redGroup.totalItems },
-        ...(viewModel.displayRouteSections || [])
-          .filter((s) => s.key !== "RED" && s.key !== "LVD" && s.key !== "EMC")
-          .map((s) => ({
-            id: `route-section-${slugify(s.key || s.title)}`,
-            label: directiveShort(s.key || "OTHER"),
-            count: (s.items || []).length,
-          })),
-      ];
-    }
-    return viewModel.routeSections.map((s) => ({
-      id: `route-section-${slugify(s.key || s.title)}`,
-      label: directiveShort(s.key || "OTHER"),
-      count: (s.items || []).length,
-    }));
-  }, [hasStandards, viewModel.isRadioProduct, viewModel.redGroup, viewModel.displayRouteSections, viewModel.routeSections]);
+  const mainItems      = useMemo(() => buildMainItems(viewModel),      [viewModel]);
+  const directiveItems = useMemo(() => buildDirectiveItems(viewModel), [viewModel]);
 
   const allSectionIds = useMemo(() => {
     const ids = [];
@@ -83,25 +74,8 @@ export default function ResultsSidebarNav({ viewModel, children }) {
     return result;
   }, [mainItems, directiveItems]);
 
-  useEffect(() => {
-    if (!allSectionIds.length) return;
-    const handleScroll = () => {
-      const header = document.querySelector("header");
-      const offset = (header ? header.getBoundingClientRect().height : 60) + 24;
-      let found = null;
-      for (const id of allSectionIds) {
-        const el = document.getElementById(id);
-        if (!el) continue;
-        if (el.getBoundingClientRect().top <= offset) found = id;
-      }
-      setActiveId(found || allSectionIds[0] || null);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [allSectionIds]);
+  const activeId = useResultsActiveSection(allSectionIds);
 
-  // Not enough sections to warrant navigation
   if (mainItems.length < 2) {
     return <div className={layoutStyles.resultsContentStack}>{children}</div>;
   }
@@ -113,7 +87,7 @@ export default function ResultsSidebarNav({ viewModel, children }) {
         <nav className={styles.resultsSidebarNav} aria-label="Results sections">
           <ol className={styles.sidebarNavList}>
             {flatSidebarItems.map((item) => {
-              const isSub = item.level === "sub";
+              const isSub    = item.level === "sub";
               const isActive = activeId === item.id;
               return (
                 <li key={item.id} className={isSub ? styles.sidebarNavSubEntry : styles.sidebarNavEntry}>
@@ -124,7 +98,7 @@ export default function ResultsSidebarNav({ viewModel, children }) {
                       isActive ? (isSub ? styles.sidebarNavSubBtnActive : styles.sidebarNavBtnActive) : "",
                       !isSub && item.warning ? styles.sidebarNavBtnWarning : ""
                     )}
-                    onClick={() => scrollToSection(item.id)}
+                    onClick={() => scrollToResultsSection(item.id)}
                   >
                     <span className={isSub ? styles.sidebarNavSubNode : styles.sidebarNavNode} />
                     <span className={styles.sidebarNavLabel}>{item.label}</span>
@@ -157,7 +131,7 @@ export default function ResultsSidebarNav({ viewModel, children }) {
                 item.accent  ? styles.pageSectionNavAccent  : "",
                 activeId === item.id ? styles.pageSectionNavItemActive : ""
               )}
-              onClick={() => scrollToSection(item.id)}
+              onClick={() => scrollToResultsSection(item.id)}
             >
               {item.label}
               {item.count != null ? (
@@ -179,7 +153,7 @@ export default function ResultsSidebarNav({ viewModel, children }) {
                 styles.pageSectionNavItem,
                 activeId === dir.id ? styles.pageSectionNavItemActive : ""
               )}
-              onClick={() => scrollToSection(dir.id)}
+              onClick={() => scrollToResultsSection(dir.id)}
             >
               {dir.label}
               <span className={styles.pageSectionNavCount}>{dir.count}</span>

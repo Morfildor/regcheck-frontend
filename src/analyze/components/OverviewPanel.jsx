@@ -16,10 +16,10 @@ export default function OverviewPanel({ result, viewModel }) {
       : null;
 
   return (
-    <Surface id="section-summary" eyebrow="Product identification" bodyClassName={styles.overviewBody}>
+    <Surface id="section-summary" eyebrow="Regulatory scope result" bodyClassName={styles.overviewBody}>
       <div className={styles.identityCard}>
         <div className={styles.identityCardTop}>
-          <span className={styles.identityLabel}>Matched product type</span>
+          <span className={styles.identityLabel}>Identified as</span>
           <TonePill
             tone={viewModel.classificationConfidence.tone}
             tip={CONFIDENCE_GLOSSARY[viewModel.classificationConfidence.label.toLowerCase()]}

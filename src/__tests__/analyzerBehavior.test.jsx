@@ -12,6 +12,7 @@ import userEvent from "@testing-library/user-event";
 import ClarificationsPanel from "../analyze/components/ClarificationsPanel";
 import StandardsRoutePanel from "../analyze/components/StandardsRoute";
 import OverviewPanel from "../analyze/components/OverviewPanel";
+import { buildClipboardSummary } from "../analyze/helpers/clipboard";
 
 // ── ClarificationsPanel collapse/expand ──────────────────────────────────────
 
@@ -264,5 +265,158 @@ describe("OverviewPanel executive summary", () => {
     render(<OverviewPanel result={OVERVIEW_RESULT} viewModel={OVERVIEW_VM} />);
     // blockerCount(0) + routeAffectingCount(2) = 2
     expect(screen.getByText("2")).toBeInTheDocument();
+  });
+});
+
+// ── ClarificationsPanel priority order ───────────────────────────────────────
+
+describe("ClarificationsPanel item priority order", () => {
+  function renderClarificationsLocal(vm) {
+    return render(
+      <ClarificationsPanel
+        description="Test product"
+        viewModel={vm}
+        dirty={false}
+        busy={false}
+        onReanalyze={jest.fn()}
+        onApplyMissingInput={jest.fn()}
+      />
+    );
+  }
+
+  test("blockers appear before route-affecting items in the expanded body", async () => {
+    const vm = {
+      missingInputs: [
+        { key: "ra1", title: "Route-affecting first", severity: "route-affecting", reason: "", examples: [] },
+        { key: "b1",  title: "Blocker item",          severity: "blocker",         reason: "", examples: [] },
+      ],
+    };
+    renderClarificationsLocal(vm);
+    await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+    const blockerEl = screen.getByText("Blocker item");
+    const routeEl   = screen.getByText("Route-affecting first");
+    expect(
+      blockerEl.compareDocumentPosition(routeEl) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  test("shows intro text when expanded", async () => {
+    const vm = {
+      missingInputs: [
+        { key: "b1", title: "Power unclear", severity: "blocker", reason: "", examples: [] },
+      ],
+    };
+    renderClarificationsLocal(vm);
+    await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+    expect(screen.getByText(/missing or unclear facts/i)).toBeInTheDocument();
+  });
+});
+
+// ── buildClipboardSummary structure ──────────────────────────────────────────
+
+const CLIP_BASE = {
+  result: {
+    product_type: "coffee_machine",
+    product_match_confidence: "medium",
+    summary: "A mains-powered appliance.",
+  },
+  description: "Coffee machine with mains power",
+  routeSections: [
+    {
+      key: "LVD",
+      title: "LVD safety route",
+      sectionKind: "core",
+      applicabilityBucket: "core applicable",
+      shortRationale: "Mains-powered electrical equipment.",
+      items: [
+        { code: "EN 60335-1", title: "Household and similar electrical appliances" },
+        { code: "EN 62233",   title: "Measurement methods for electromagnetic fields" },
+      ],
+    },
+    {
+      key: "EMC",
+      title: "EMC compatibility route",
+      sectionKind: "core",
+      applicabilityBucket: "core applicable",
+      shortRationale: null,
+      items: [{ code: "EN 55014-1", title: "Electromagnetic compatibility" }],
+    },
+  ],
+  legislationGroups: [],
+  missingInputs: [],
+  evidenceNeeds: [],
+};
+
+describe("buildClipboardSummary structure", () => {
+  test("starts with RuleGrid header", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    expect(out).toMatch(/^RuleGrid/);
+  });
+
+  test("includes product type", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    expect(out).toMatch(/Coffee machine/i);
+  });
+
+  test("includes route and standard count", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    expect(out).toMatch(/LVD/);
+    expect(out).toMatch(/3 standards/);
+  });
+
+  test("includes applicabilityBucket next to directive count", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    expect(out).toMatch(/core applicable/i);
+  });
+
+  test("lists blockers before route-affecting items", () => {
+    const out = buildClipboardSummary({
+      ...CLIP_BASE,
+      missingInputs: [
+        { severity: "route-affecting", title: "Route question", reason: "" },
+        { severity: "blocker",         title: "Critical blocker", reason: "" },
+      ],
+    });
+    expect(out.indexOf("Critical blocker")).toBeLessThan(out.indexOf("Route question"));
+  });
+
+  test("includes next actions when evidenceNeeds are present", () => {
+    const out = buildClipboardSummary({
+      ...CLIP_BASE,
+      evidenceNeeds: [
+        { label: "LVD", nextActions: ["Schedule LVD safety test session"] },
+      ],
+    });
+    expect(out).toMatch(/Schedule LVD safety test session/);
+    expect(out).toMatch(/Next actions/i);
+  });
+
+  test("ends with disclaimer line", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    const lines = out.split("\n");
+    expect(lines[lines.length - 1]).toMatch(/RuleGrid/);
+    expect(lines[lines.length - 1]).toMatch(/legal advice/i);
+  });
+
+  test("includes summary text when present", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    expect(out).toMatch(/mains-powered appliance/i);
+  });
+
+  test("omits clarifications section when there are no open items", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    expect(out).not.toMatch(/Clarifications needed/i);
+  });
+
+  test("shows clarifications section when blockers are present", () => {
+    const out = buildClipboardSummary({
+      ...CLIP_BASE,
+      missingInputs: [
+        { severity: "blocker", title: "Power unclear", reason: "Affects safety route." },
+      ],
+    });
+    expect(out).toMatch(/Clarifications needed/i);
+    expect(out).toMatch(/▲ Blocker: Power unclear/);
+    expect(out).toMatch(/Affects safety route/);
   });
 });

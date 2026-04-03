@@ -14,7 +14,7 @@ function missingSeverityTone(severity) {
 function missingSeverityLabel(severity) {
   if (severity === "blocker") return "Blocker";
   if (severity === "route-affecting") return "Route-affecting";
-  return "Helpful";
+  return "Optional";
 }
 
 function SuggestionChips({ item, onApplyMissingInput }) {
@@ -84,7 +84,7 @@ export default function ClarificationsPanel({
 
   return (
     <section
-      id="section-action"
+      id="section-clarifications"
       className={cx(
         styles.clarificationsSection,
         "clarificationStrip",
@@ -124,17 +124,20 @@ export default function ClarificationsPanel({
 
       {open ? (
         <div id="clarifications-body" className={styles.clarificationsBody}>
-          {dirty ? (
-            <p className={styles.staleNotice}>
-              Description updated. Re-run to refresh the route.
-            </p>
-          ) : null}
+          {/* Intro line */}
+          <p className={styles.sectionIntro}>
+            Missing or unclear facts that may affect the route outcome.
+          </p>
 
+          {/* Stale notice + re-run in one row */}
           {dirty ? (
-            <div className={styles.clarificationsHeaderRight}>
+            <div className={styles.staleRow}>
+              <p className={styles.staleNotice}>
+                Description updated. Re-run to refresh the route.
+              </p>
               <button
                 type="button"
-                className={cx(styles.rerunButton, styles.rerunButtonPrimary, styles.clarificationsRunBtn)}
+                className={cx(styles.rerunButton, styles.rerunButtonPrimary)}
                 onClick={onReanalyze}
                 disabled={busy}
               >
@@ -144,19 +147,7 @@ export default function ClarificationsPanel({
             </div>
           ) : null}
 
-          {/* Understood facts strip */}
-          {understoodFacts.length > 0 ? (
-            <div className={styles.understoodStrip}>
-              <span className={styles.understoodLabel}>Understood:</span>
-              <div className={styles.understoodChips}>
-                {understoodFacts.map((fact) => (
-                  <span key={fact} className={styles.understoodFact}>{fact}</span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {/* Blockers — always fully visible */}
+          {/* Blockers — always fully visible, highest priority */}
           {blocking.length ? (
             <div className={styles.itemList}>
               {blocking.map((item) => (
@@ -181,6 +172,18 @@ export default function ClarificationsPanel({
                   {hiddenRouteCount} more route-affecting item{hiddenRouteCount === 1 ? "" : "s"}
                 </button>
               ) : null}
+            </div>
+          ) : null}
+
+          {/* Understood facts strip — shown after critical items */}
+          {understoodFacts.length > 0 ? (
+            <div className={styles.understoodStrip}>
+              <span className={styles.understoodLabel}>Understood:</span>
+              <div className={styles.understoodChips}>
+                {understoodFacts.map((fact) => (
+                  <span key={fact} className={styles.understoodFact}>{fact}</span>
+                ))}
+              </div>
             </div>
           ) : null}
 

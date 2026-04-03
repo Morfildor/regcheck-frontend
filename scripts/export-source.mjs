@@ -27,6 +27,9 @@ const SKIP_DIRS = new Set([
   "build",
   "venv",
   "export-source",
+  // AI assistant / IDE local state — not needed by the recipient
+  ".claude",
+  ".cursor",
 ]);
 
 // Root-level files that must not be in the handoff (machine-local or secret).

@@ -165,7 +165,7 @@ describe("StandardsRoutePanel", () => {
   });
 });
 
-// ── ActionRequiredPanel (clarifications) ────────────────────────────────────
+// ── ClarificationsPanel ──────────────────────────────────────────────────────
 
 const CLARIFICATIONS_VIEWMODEL = {
   missingInputs: [

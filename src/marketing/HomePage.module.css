@@ -482,9 +482,7 @@
   .outputItem:not(:first-child) {
     padding-left: 0;
   }
-}
 
-@media (max-width: 1080px) {
   [data-theme="light"] .outputItem:not(:last-child) {
     border-bottom-color: rgba(14, 38, 88, 0.07);
   }

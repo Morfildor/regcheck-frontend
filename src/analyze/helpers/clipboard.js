@@ -4,6 +4,11 @@ import { routeTitle, directiveShort } from "./directives";
 import { formatUiLabel } from "./format";
 import { sortStandardItems } from "./standards";
 
+function sectionHead(label, width = 48) {
+  const pad = Math.max(0, width - label.length - 5);
+  return `─── ${label} ${"─".repeat(pad)}`;
+}
+
 export function buildClipboardSummary({
   result,
   description,
@@ -17,74 +22,79 @@ export function buildClipboardSummary({
   const isPreliminary   = String(confidence).toLowerCase() !== "high";
   const productType     = formatUiLabel(result?.product_type || "unclear");
 
-  const blockers       = missingInputs.filter((item) => item.severity === "blocker");
-  const routeAffecting = missingInputs.filter((item) => item.severity === "route-affecting");
-  const hasWarnings    = blockers.length > 0 || routeAffecting.length > 0;
+  const blockers       = missingInputs.filter((i) => i.severity === "blocker");
+  const routeAffecting = missingInputs.filter((i) => i.severity === "route-affecting");
 
   const totalStandards = routeSections.reduce((sum, s) => sum + (s.items || []).length, 0);
+  const coreSections   = routeSections.filter((s) => s.sectionKind === "core");
 
-  const primaryDirectives = routeSections
-    .filter((s) => s.sectionKind === "core")
-    .slice(0, 3)
+  // Primary route: core directives first
+  const routeDirectives = (coreSections.length ? coreSections : routeSections)
+    .slice(0, 4)
     .map((s) => directiveShort(s.key || "OTHER"));
-  const routeLine = primaryDirectives.length
-    ? primaryDirectives.join(" / ")
-    : routeSections.slice(0, 3).map((s) => directiveShort(s.key || "OTHER")).join(" / ") || "—";
+  const routeLine = routeDirectives.length ? routeDirectives.join(" / ") : "—";
 
   const parallelItems = legislationGroups
-    .filter((group) => group.key === "non_ce" || group.groupKey === "non_ce")
-    .flatMap((group) => group.items || []);
+    .filter((g) => g.key === "non_ce" || g.groupKey === "non_ce")
+    .flatMap((g) => g.items || []);
 
   const nextActionLines = evidenceNeeds.flatMap((need) =>
     (need.nextActions || []).map((action) => `  [${need.label}] ${action}`)
   );
 
-  const divider     = "─────────────────────────────────────────────────";
-  const dividerMid  = divider.slice(0, 40);
+  const div = "─".repeat(49);
+  const hasBlockers       = blockers.length > 0;
+  const hasRouteAffecting = routeAffecting.length > 0;
 
   return [
     "RuleGrid — Regulatory scoping summary",
-    divider,
+    div,
     "",
     `Product:     ${productType}`,
-    `Confidence:  ${confidenceLabel}${isPreliminary ? "  (preliminary — re-run with more detail to improve)" : ""}`,
+    `Confidence:  ${confidenceLabel}${isPreliminary ? "  ⚠ preliminary" : ""}`,
     `Route:       ${routeLine}  ·  ${totalStandards} standard${totalStandards === 1 ? "" : "s"}`,
-    result?.summary ? `Summary:     ${result.summary}` : null,
+    result?.summary ? `\n${result.summary}` : null,
     "",
-    hasWarnings ? "OPEN QUESTIONS" : null,
-    hasWarnings ? dividerMid : null,
-    ...blockers.map((item) =>
-      `  ▲ Blocker         — ${item.title}${item.reason ? `: ${item.reason}` : ""}`
+
+    // Clarifications needed
+    hasBlockers || hasRouteAffecting ? sectionHead("Clarifications needed") : null,
+    ...blockers.map((i) =>
+      `  ▲ Blocker: ${i.title}${i.reason ? `\n     ${i.reason}` : ""}`
     ),
-    ...routeAffecting.map((item) =>
-      `  · Route-affecting — ${item.title}${item.reason ? `: ${item.reason}` : ""}`
+    hasBlockers && hasRouteAffecting ? "" : null,
+    ...routeAffecting.map((i) =>
+      `  · Route-affecting: ${i.title}${i.reason ? `\n     ${i.reason}` : ""}`
     ),
-    hasWarnings ? "" : null,
-    "STANDARDS ROUTE",
-    dividerMid,
-    ...routeSections.flatMap((section) => [
-      `${routeTitle(section)}  (${(section.items || []).length})`,
-      ...sortStandardItems(section.items || []).map((item) =>
-        `  • ${item.code}${item.title ? `  —  ${item.title}` : ""}`
-      ),
-      "",
-    ]),
-    "PARALLEL OBLIGATIONS",
-    dividerMid,
-    ...(parallelItems.length
-      ? parallelItems.map((item) =>
-          `  • ${item.code || item.title}${item.title && item.code ? `  —  ${item.title}` : ""}`
-        )
-      : ["  None beyond the primary directive route."]),
-    "",
-    ...(nextActionLines.length
-      ? ["NEXT ACTIONS", dividerMid, ...nextActionLines, ""]
-      : []),
-    "DESCRIPTION USED",
-    dividerMid,
-    description || "(none)",
-    "",
-    divider,
+    hasBlockers || hasRouteAffecting ? "" : null,
+
+    // Standards by directive
+    sectionHead("Standards route"),
+    ...routeSections.flatMap((section) => {
+      const count = (section.items || []).length;
+      const bucket = section.applicabilityBucket ? `  ·  ${section.applicabilityBucket}` : "";
+      return [
+        `${routeTitle(section)}  (${count} standard${count === 1 ? "" : "s"}${bucket})`,
+        section.shortRationale ? `  ${section.shortRationale}` : null,
+        ...sortStandardItems(section.items || []).map((item) =>
+          `  • ${item.code}${item.title ? `  —  ${item.title}` : ""}`
+        ),
+        "",
+      ];
+    }),
+
+    // Next actions
+    nextActionLines.length ? sectionHead("Next actions") : null,
+    ...nextActionLines,
+    nextActionLines.length ? "" : null,
+
+    // Parallel obligations
+    parallelItems.length ? sectionHead("Parallel obligations") : null,
+    ...parallelItems.map((i) =>
+      `  • ${i.code || i.title}${i.title && i.code ? `  —  ${i.title}` : ""}`
+    ),
+    parallelItems.length ? "" : null,
+
+    div,
     "RuleGrid · First-pass scoping only · Not a conformity decision or legal advice",
   ]
     .flat()

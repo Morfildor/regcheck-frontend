@@ -136,8 +136,8 @@ export default function HomePage() {
           <span className={styles.eyebrow}>EU product scoping</span>
           <h1 className={styles.heroTitle}>Start with what you know about the product.</h1>
           <p className={styles.heroText}>
-            Paste a rough description. RuleGrid carries it into the analyzer so the team can review
-            likely directives, standards, and missing details from a real starting point.
+            Paste a rough description. RuleGrid identifies likely directives, standards, and missing
+            details so the team has a real starting point before formal review begins.
           </p>
 
           <div className={styles.heroSignals}>

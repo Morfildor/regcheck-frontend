@@ -1,4 +1,4 @@
-/* ─── Clarifications section ──────────────────────── */
+/* ─── Section shell ──────────────────────────────── */
 
 .clarificationsSection {
   border-radius: 14px;
@@ -31,8 +31,6 @@
 .clarificationsToggle:hover { background: rgba(255,255,255,0.018); }
 .clarificationsToggle[aria-expanded="false"] { border-bottom: 0; }
 
-.clarificationsBody { /* wrapper for collapsible content */ }
-
 .clarificationsMeta {
   display: flex;
   align-items: center;
@@ -57,29 +55,39 @@
   align-items: center;
 }
 
+/* ─── Body ────────────────────────────────────────── */
+
+.clarificationsBody { /* wrapper for collapsible content */ }
+
+.sectionIntro {
+  margin: 0;
+  padding: 8px 14px 6px;
+  color: var(--text-soft);
+  font-size: 0.79rem;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--border-sm);
+}
+
+/* ─── Stale / re-run row ─────────────────────────── */
+
+.staleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-sm);
+  background: rgba(125,185,255,0.03);
+  flex-wrap: wrap;
+}
+
 .staleNotice {
   margin: 0;
-  padding: 8px 14px;
   color: var(--text-soft);
   font-size: 0.8rem;
   line-height: 1.5;
-  border-bottom: 1px solid var(--border-sm);
-  background: rgba(125,185,255,0.03);
-}
-
-.clarificationsHeaderRight {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--border-sm);
-}
-
-.clarificationsRunBtn {
-  flex-shrink: 0;
-  min-height: 30px;
-  padding: 0 10px;
-  font-size: 0.8rem;
+  flex: 1;
+  min-width: 0;
 }
 
 /* ─── Re-run button ───────────────────────────────── */
@@ -89,17 +97,18 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
-  padding: 0 14px;
+  min-height: 30px;
+  padding: 0 10px;
   border-radius: 10px;
   border: 1px solid transparent;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   color: var(--text-strong);
   background: transparent;
-  transition: background 0.14s, border-color 0.14s, transform 0.12s;
+  transition: background 0.14s, border-color 0.14s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .rerunButton:disabled { opacity: 0.55; cursor: not-allowed; }
 
@@ -164,7 +173,7 @@
 .clarificationItem {
   display: grid;
   gap: 6px;
-  padding: 12px 14px 12px 17px;
+  padding: 11px 14px 11px 17px;
   border-bottom: 1px solid var(--border-sm);
   position: relative;
   overflow: hidden;
@@ -296,7 +305,7 @@
   background: rgba(133,77,14,0.03);
 }
 [data-theme="light"] .clarificationsToggle:hover { background: rgba(14,38,88,0.025); }
-[data-theme="light"] .staleNotice { background: rgba(21,83,182,0.03); }
+[data-theme="light"] .staleRow { background: rgba(21,83,182,0.03); }
 [data-theme="light"] .clarificationItem {
   border-bottom-color: rgba(14,38,88,0.07);
 }
@@ -339,4 +348,5 @@
 
 @media (max-width: 768px) {
   .suggestionChip { padding: 7px 12px; min-height: 38px; }
+  .staleRow { flex-direction: column; align-items: flex-start; gap: 8px; }
 }

@@ -55,8 +55,10 @@
   color: var(--text-muted);
 }
 .sidebarNavBtnActive {
-  background: rgba(125, 185, 255, 0.08);
+  background: rgba(125, 185, 255, 0.10);
   color: var(--text);
+  border-left: 2px solid rgba(125, 185, 255, 0.50);
+  padding-left: 22px;
 }
 .sidebarNavBtnWarning { color: rgba(240, 192, 103, 0.80); }
 .sidebarNavBtnWarning:hover {
@@ -139,7 +141,7 @@
   cursor: pointer;
   text-align: left;
   line-height: 1.3;
-  opacity: 0.72;
+  opacity: 0.78;
   transition: background 0.12s, color 0.12s, opacity 0.12s;
 }
 .sidebarNavSubBtn:hover {
@@ -148,7 +150,7 @@
   opacity: 1;
 }
 .sidebarNavSubBtnActive {
-  background: rgba(125, 185, 255, 0.06);
+  background: rgba(125, 185, 255, 0.07);
   color: var(--text-muted);
   opacity: 1;
 }
@@ -265,14 +267,15 @@
   border-color: rgba(21, 83, 182, 0.18);
 }
 [data-theme="light"] .sidebarNavBtnActive {
-  background: rgba(21, 83, 182, 0.06);
+  background: rgba(21, 83, 182, 0.07);
   color: var(--text);
+  border-left-color: rgba(21, 83, 182, 0.48);
 }
 [data-theme="light"] .sidebarNavBtnActive .sidebarNavNode {
   background: rgba(21, 83, 182, 0.14);
   border-color: rgba(21, 83, 182, 0.48);
 }
-[data-theme="light"] .sidebarNavSubBtnActive { background: rgba(21, 83, 182, 0.05); }
+[data-theme="light"] .sidebarNavSubBtnActive { background: rgba(21, 83, 182, 0.06); }
 [data-theme="light"] .sidebarNavSubNode { background: rgba(21, 83, 182, 0.08); }
 [data-theme="light"] .sidebarNavSubBtnActive .sidebarNavSubNode { background: rgba(21, 83, 182, 0.35); }
 [data-theme="light"] .sidebarNavBadge {

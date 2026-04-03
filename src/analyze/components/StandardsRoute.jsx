@@ -216,7 +216,7 @@ function RouteSectionCard({ section, open, onToggle }) {
             <h3 className={styles.accordionTitle}>{routeTitle(section)}</h3>
             {section.shortRationale ? <p className={styles.microRationale}>{section.shortRationale}</p> : null}
             <p className={styles.accordionText}>
-              {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"} in this route
+              {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"}
             </p>
           </div>
           <div className={styles.accordionTitleMeta}>
@@ -322,8 +322,8 @@ export default function StandardsRoutePanel({ viewModel }) {
   const hasAnyContent = redGroupVisible || filteredNonRedSections.length > 0;
 
   const summaryText = isRadioProduct
-    ? `${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"} — RED is the primary route, covering safety (Art. 3.1(a)), EMC (Art. 3.1(b)), and radio spectrum (Art. 3.2).`
-    : `${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"} across ${viewModel.routeSections.length} directive group${viewModel.routeSections.length === 1 ? "" : "s"} — LVD and EMC first, then RED, followed by further applicable routes.`;
+    ? `${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"} — RED is the primary route (safety, EMC, radio spectrum).`
+    : `${viewModel.totalStandards} standard${viewModel.totalStandards === 1 ? "" : "s"} across ${viewModel.routeSections.length} directive group${viewModel.routeSections.length === 1 ? "" : "s"}.`;
 
   return (
     <Surface

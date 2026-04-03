@@ -90,8 +90,7 @@ const EXPECTED_COMPONENTS = [
   "EmptyStateGuidance",
   "OverviewPanel",
   "TrustLayerPanel",
-  "ClarificationsPanel",   // renamed from ActionRequiredPanel (pass 4)
-  "ActionRequiredPanel",   // thin re-export wrapper — kept for clean import path
+  "ClarificationsPanel",
   "StandardsRoute",
   "StandardItemCard",      // extracted from StandardsRoute (pass 4)
   "ParallelObligationsPanel",
