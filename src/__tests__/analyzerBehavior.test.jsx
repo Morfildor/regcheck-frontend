@@ -506,4 +506,28 @@ describe("buildClipboardSummary structure", () => {
     expect(out).toMatch(/▲ Blocker: Power unclear/);
     expect(out).toMatch(/Affects safety route/);
   });
+
+  test("disclaimer says 'Not a conformity decision'", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    expect(out).toMatch(/Not a conformity decision/);
+  });
+
+  test("uses 'Standards route' as the standards section header", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    expect(out).toMatch(/─── Standards route/);
+  });
+});
+
+// ── StandardsRoutePanel summary text ─────────────────────────────────────────
+
+describe("StandardsRoutePanel summary text", () => {
+  test("shows standard count in the panel summary", () => {
+    render(<StandardsRoutePanel viewModel={THREE_SECTION_VM} />);
+    expect(screen.getByText(/3 standards/i)).toBeInTheDocument();
+  });
+
+  test("shows directive group count in the panel summary for non-radio product", () => {
+    render(<StandardsRoutePanel viewModel={THREE_SECTION_VM} />);
+    expect(screen.getByText(/3 directive group/i)).toBeInTheDocument();
+  });
 });

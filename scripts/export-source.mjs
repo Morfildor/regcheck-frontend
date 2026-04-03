@@ -62,6 +62,14 @@ const SKIP_ROOT_PATTERNS = [
   /^npm-debug\.log/i,
 ];
 
+// Filenames excluded at any depth in the tree (OS / editor junk).
+const SKIP_ANY_FILE_NAMES = new Set([
+  ".DS_Store",
+  "Thumbs.db",
+  "Desktop.ini",
+  ".gitkeep",
+]);
+
 function shouldInclude(src) {
   // src is always an absolute native path.
   const rel   = src.slice(ROOT.length);
@@ -77,6 +85,10 @@ function shouldInclude(src) {
     if (SKIP_ROOT_FILES.has(parts[0])) return false;
     if (SKIP_ROOT_PATTERNS.some((re) => re.test(parts[0]))) return false;
   }
+
+  // Filenames excluded at any depth (OS / editor junk).
+  const fileName = parts[parts.length - 1];
+  if (SKIP_ANY_FILE_NAMES.has(fileName)) return false;
 
   return true;
 }
@@ -138,3 +150,4 @@ console.log("\nTo verify a clean install:");
 console.log("  cd export-source");
 console.log("  npm install");
 console.log("  npm run build");
+console.log("  npm run test:ci");

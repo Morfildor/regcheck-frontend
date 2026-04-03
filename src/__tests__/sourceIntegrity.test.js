@@ -83,7 +83,6 @@ describe("selectors/ sub-modules all exist", () => {
 // ── extracted components ──────────────────────────────────────────────────────
 
 const EXPECTED_COMPONENTS = [
-  // Pass 1 / 2 extractions
   "HeaderActions",
   "AnalyzeStatus",
   "ComposerSurface",
@@ -92,12 +91,11 @@ const EXPECTED_COMPONENTS = [
   "TrustLayerPanel",
   "ClarificationsPanel",
   "StandardsRoute",
-  "StandardItemCard",      // extracted from StandardsRoute (pass 4)
+  "StandardItemCard",
   "ParallelObligationsPanel",
   "EvidencePanel",
   "ResultsSidebarNav",
   "SupportingContext",
-  // Pass 3 extractions
   "ErrorBanner",
   "ScrollTopButton",
   "ComparisonPanel",

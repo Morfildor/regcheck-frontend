@@ -12,7 +12,7 @@ const OUTPUT_ITEMS = [
     text: "See which EU frameworks apply based on the description.",
   },
   {
-    label: "Standards path",
+    label: "Standards route",
     text: "Get a first view of the specific standards to review next.",
   },
   {

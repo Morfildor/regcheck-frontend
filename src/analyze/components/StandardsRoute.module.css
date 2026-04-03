@@ -1,6 +1,6 @@
 /* ─── Section stack ───────────────────────────────── */
 
-.sectionStack { display: grid; gap: 14px; }
+.sectionStack { display: grid; gap: 16px; }
 
 /* ─── Route quick nav ─────────────────────────────── */
 
@@ -140,21 +140,21 @@
   display: grid;
   gap: 10px;
 }
-.accordionTitleRow { display: grid; gap: 5px; }
+.accordionTitleRow { display: grid; gap: 6px; }
 
 /* ─── Section kind label ──────────────────────────── */
 
 .sectionKindLabel {
   display: inline-flex;
   width: fit-content;
-  font-size: 0.64rem;
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.10em;
   text-transform: uppercase;
   color: var(--route-accent);
-  opacity: 0.82;
+  opacity: 0.88;
   line-height: 1;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .accordionTitle {
@@ -178,7 +178,7 @@
 .accordionBody {
   display: grid;
   gap: 9px;
-  padding: 0 14px 14px;
+  padding: 2px 14px 15px;
 }
 
 /* ─── RED group card ──────────────────────────────── */
@@ -234,9 +234,9 @@
 
 .microRationale {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 0.81rem;
-  line-height: 1.55;
+  color: var(--text-soft);
+  font-size: 0.80rem;
+  line-height: 1.52;
 }
 
 /* ─── Standards search ────────────────────────────── */
@@ -354,5 +354,6 @@
 
 @media (max-width: 720px) {
   .accordionToggle { padding: 12px 13px; }
-  .accordionBody { padding: 0 11px 11px; }
+  .accordionBody { padding: 2px 11px 12px; }
+  .sectionStack { gap: 12px; }
 }

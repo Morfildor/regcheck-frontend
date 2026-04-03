@@ -1,4 +1,4 @@
-/* ─── Desktop sidebar ─────────────────────────────── */
+/* ─── Desktop sidebar shell ────────────────────────── */
 
 .resultsSidebarNav { /* sizing handled by layout grid */ }
 
@@ -30,7 +30,7 @@
 .sidebarNavEntry,
 .sidebarNavSubEntry { position: relative; }
 
-/* ── Main section buttons ── */
+/* ─── Primary section buttons ──────────────────────── */
 
 .sidebarNavBtn {
   position: relative;
@@ -54,11 +54,15 @@
   background: rgba(125, 185, 255, 0.05);
   color: var(--text-muted);
 }
+
+/* Active state */
 .sidebarNavBtnActive {
   background: rgba(125, 185, 255, 0.09);
   color: var(--text);
   box-shadow: inset 2px 0 0 rgba(125, 185, 255, 0.52);
 }
+
+/* Warning/clarification accent */
 .sidebarNavBtnWarning { color: rgba(240, 192, 103, 0.80); }
 .sidebarNavBtnWarning:hover {
   color: rgba(240, 192, 103, 0.95);
@@ -101,6 +105,7 @@
   white-space: nowrap;
 }
 
+/* Count badge */
 .sidebarNavBadge {
   display: inline-flex;
   align-items: center;
@@ -122,7 +127,7 @@
   color: #f5cc81;
 }
 
-/* ── Directive sub-items ── */
+/* ─── Directive sub-items ──────────────────────────── */
 
 .sidebarNavSubBtn {
   position: relative;
@@ -170,7 +175,7 @@
   background: rgba(125, 185, 255, 0.38);
 }
 
-/* ─── Mobile chip row ─────────────────────────────── */
+/* ─── Mobile jump row (≤1024px) ───────────────────── */
 
 .sidebarNavMobileRow {
   display: none;
@@ -179,6 +184,11 @@
   padding: 2px 0;
 }
 
+@media (max-width: 1024px) {
+  .sidebarNavMobileRow { display: flex; }
+}
+
+/* Primary chips */
 .pageSectionNavItem {
   display: inline-flex;
   align-items: center;
@@ -205,6 +215,7 @@
   color: var(--text-muted) !important;
 }
 
+/* Warning and accent variants */
 .pageSectionNavWarning { border-color: rgba(240,192,103,0.18); }
 .pageSectionNavWarning:hover {
   border-color: rgba(240,192,103,0.36);
@@ -220,6 +231,7 @@
   color: var(--text-strong);
 }
 
+/* Count chip inside mobile nav */
 .pageSectionNavCount {
   display: inline-flex;
   align-items: center;
@@ -245,13 +257,7 @@
   color: #93c5ff;
 }
 
-/* Show mobile row on screens ≤1024px */
-@media (max-width: 1024px) {
-  .sidebarNavMobileRow { display: flex; }
-}
-
-/* ─── Mobile sub-item (directive chips) ─────────────── */
-
+/* Directive sub-chips (smaller, slightly dimmed) */
 .pageSectionNavSubItem {
   font-size: 0.75rem;
   opacity: 0.88;
@@ -259,7 +265,7 @@
 .pageSectionNavSubItem:hover { opacity: 1; }
 .pageSectionNavSubItem.pageSectionNavItemActive { opacity: 1; }
 
-/* ─── Light theme ─────────────────────────────────── */
+/* ─── Light theme ──────────────────────────────────── */
 
 [data-theme="light"] .sidebarNavList::before {
   background: linear-gradient(
