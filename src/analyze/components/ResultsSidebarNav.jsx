@@ -151,6 +151,7 @@ export default function ResultsSidebarNav({ viewModel, children }) {
               type="button"
               className={cx(
                 styles.pageSectionNavItem,
+                styles.pageSectionNavSubItem,
                 activeId === dir.id ? styles.pageSectionNavItemActive : ""
               )}
               onClick={() => scrollToResultsSection(dir.id)}

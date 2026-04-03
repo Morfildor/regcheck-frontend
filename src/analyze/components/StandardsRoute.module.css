@@ -1,6 +1,6 @@
 /* ─── Section stack ───────────────────────────────── */
 
-.sectionStack { display: grid; gap: 10px; }
+.sectionStack { display: grid; gap: 14px; }
 
 /* ─── Route quick nav ─────────────────────────────── */
 
@@ -140,7 +140,23 @@
   display: grid;
   gap: 10px;
 }
-.accordionTitleRow { display: grid; gap: 6px; }
+.accordionTitleRow { display: grid; gap: 5px; }
+
+/* ─── Section kind label ──────────────────────────── */
+
+.sectionKindLabel {
+  display: inline-flex;
+  width: fit-content;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--route-accent);
+  opacity: 0.82;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
 .accordionTitle {
   margin: 0;
   color: var(--text-strong);
@@ -161,7 +177,7 @@
 }
 .accordionBody {
   display: grid;
-  gap: 10px;
+  gap: 9px;
   padding: 0 14px 14px;
 }
 

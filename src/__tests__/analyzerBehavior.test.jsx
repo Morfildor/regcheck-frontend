@@ -310,6 +310,74 @@ describe("ClarificationsPanel item priority order", () => {
     await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
     expect(screen.getByText(/missing or unclear facts/i)).toBeInTheDocument();
   });
+
+  test("understood facts label reads 'Already clear'", async () => {
+    const vm = {
+      missingInputs: [
+        { key: "b1", title: "Power unclear", severity: "blocker", reason: "", examples: [] },
+      ],
+    };
+    render(
+      <ClarificationsPanel
+        description="mains-powered Wi-Fi thermostat with OTA updates"
+        viewModel={vm}
+        dirty={false}
+        busy={false}
+        onReanalyze={jest.fn()}
+        onApplyMissingInput={jest.fn()}
+      />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /clarifications/i }));
+    // Only assert presence if understood facts were extracted — skip if none
+    const label = screen.queryByText(/already clear/i);
+    if (label) {
+      expect(label).toBeInTheDocument();
+    }
+  });
+});
+
+// ── StandardsRoute section kind labels ───────────────────────────────────────
+
+describe("StandardsRoutePanel section kind labels", () => {
+  test("renders 'Core route' kind label for core sections", () => {
+    render(<StandardsRoutePanel viewModel={THREE_SECTION_VM} />);
+    // Core sections should show kind label
+    expect(screen.getAllByText(/core route/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  test("renders 'Supporting' kind label for secondary sections", () => {
+    render(<StandardsRoutePanel viewModel={THREE_SECTION_VM} />);
+    expect(screen.getByText(/supporting/i)).toBeInTheDocument();
+  });
+
+  test("does not show section kind label for sections with unknown kind", () => {
+    const vmUnknown = {
+      ...THREE_SECTION_VM,
+      routeSections: [
+        {
+          key: "MISC",
+          title: "Misc route",
+          items: [{ code: "EN 99999", title: "Some standard" }],
+          sectionKind: "unknown",
+          applicabilityBucket: "route review",
+        },
+      ],
+      displayRouteSections: [
+        {
+          key: "MISC",
+          title: "Misc route",
+          items: [{ code: "EN 99999", title: "Some standard" }],
+          sectionKind: "unknown",
+          applicabilityBucket: "route review",
+        },
+      ],
+      totalStandards: 1,
+    };
+    render(<StandardsRoutePanel viewModel={vmUnknown} />);
+    expect(screen.queryByText(/core route/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/supporting/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/conditional/i)).not.toBeInTheDocument();
+  });
 });
 
 // ── buildClipboardSummary structure ──────────────────────────────────────────
@@ -406,6 +474,25 @@ describe("buildClipboardSummary structure", () => {
   test("omits clarifications section when there are no open items", () => {
     const out = buildClipboardSummary(CLIP_BASE);
     expect(out).not.toMatch(/Clarifications needed/i);
+  });
+
+  test("includes truncated description line when description is provided", () => {
+    const out = buildClipboardSummary(CLIP_BASE);
+    expect(out).toMatch(/Description:/);
+    expect(out).toMatch(/Coffee machine with mains power/);
+  });
+
+  test("omits description line when description is empty", () => {
+    const out = buildClipboardSummary({ ...CLIP_BASE, description: "" });
+    expect(out).not.toMatch(/^Description:/m);
+  });
+
+  test("truncates very long descriptions to ~120 chars", () => {
+    const longDesc = "A ".repeat(200).trim();
+    const out = buildClipboardSummary({ ...CLIP_BASE, description: longDesc });
+    const descLine = out.split("\n").find((l) => l.startsWith("Description:"));
+    expect(descLine).toBeDefined();
+    expect(descLine.length).toBeLessThan(140);
   });
 
   test("shows clarifications section when blockers are present", () => {

@@ -55,10 +55,9 @@
   color: var(--text-muted);
 }
 .sidebarNavBtnActive {
-  background: rgba(125, 185, 255, 0.10);
+  background: rgba(125, 185, 255, 0.09);
   color: var(--text);
-  border-left: 2px solid rgba(125, 185, 255, 0.50);
-  padding-left: 22px;
+  box-shadow: inset 2px 0 0 rgba(125, 185, 255, 0.52);
 }
 .sidebarNavBtnWarning { color: rgba(240, 192, 103, 0.80); }
 .sidebarNavBtnWarning:hover {
@@ -251,6 +250,15 @@
   .sidebarNavMobileRow { display: flex; }
 }
 
+/* ─── Mobile sub-item (directive chips) ─────────────── */
+
+.pageSectionNavSubItem {
+  font-size: 0.75rem;
+  opacity: 0.88;
+}
+.pageSectionNavSubItem:hover { opacity: 1; }
+.pageSectionNavSubItem.pageSectionNavItemActive { opacity: 1; }
+
 /* ─── Light theme ─────────────────────────────────── */
 
 [data-theme="light"] .sidebarNavList::before {
@@ -269,7 +277,7 @@
 [data-theme="light"] .sidebarNavBtnActive {
   background: rgba(21, 83, 182, 0.07);
   color: var(--text);
-  border-left-color: rgba(21, 83, 182, 0.48);
+  box-shadow: inset 2px 0 0 rgba(21, 83, 182, 0.50);
 }
 [data-theme="light"] .sidebarNavBtnActive .sidebarNavNode {
   background: rgba(21, 83, 182, 0.14);

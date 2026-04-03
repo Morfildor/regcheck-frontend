@@ -126,7 +126,7 @@ export default function ClarificationsPanel({
         <div id="clarifications-body" className={styles.clarificationsBody}>
           {/* Intro line */}
           <p className={styles.sectionIntro}>
-            Missing or unclear facts that may affect the route outcome.
+            Missing or unclear facts — ordered by route impact.
           </p>
 
           {/* Stale notice + re-run in one row */}
@@ -178,7 +178,7 @@ export default function ClarificationsPanel({
           {/* Understood facts strip — shown after critical items */}
           {understoodFacts.length > 0 ? (
             <div className={styles.understoodStrip}>
-              <span className={styles.understoodLabel}>Understood:</span>
+              <span className={styles.understoodLabel}>Already clear</span>
               <div className={styles.understoodChips}>
                 {understoodFacts.map((fact) => (
                   <span key={fact} className={styles.understoodFact}>{fact}</span>

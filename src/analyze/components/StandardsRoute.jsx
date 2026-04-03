@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import Surface from "../../shared/ui/Surface";
-import { routeTitle, directiveShort, slugify } from "../helpers";
+import { routeTitle, directiveShort, slugify, sortStandardItems } from "../helpers";
 import { APPLICABILITY_BADGE, APPLICABILITY_GLOSSARY } from "../workspaceGlossary";
 import { TonePill, DirectivePill, cx } from "./Pills";
 import StandardItemCard from "./StandardItemCard";
@@ -37,7 +37,7 @@ function RedArticleBranch({ branch, open, onToggle, isLast }) {
       {open ? (
         <div id={`${branchId}-body`} className={styles.redArticleBody}>
           {branch.items.length ? (
-            branch.items.map((item) => (
+            sortStandardItems(branch.items).map((item) => (
               <StandardItemCard
                 key={`${branch.key}-${item.code || item.title}-${item.version || ""}`}
                 item={item}
@@ -195,12 +195,20 @@ function RouteQuickNav({ sections, openKeys, isRadioProduct, redGroup }) {
 
 // ── Route section accordion ────────────────────────────────────────────────
 
+const SECTION_KIND_LABEL = {
+  core:        "Core route",
+  conditional: "Conditional",
+  secondary:   "Supporting",
+};
+
 function RouteSectionCard({ section, open, onToggle }) {
   const sectionId = `route-section-${slugify(section.key || section.title)}`;
   const applicabilityTone =
     section.sectionKind === "core" ? "strong"
     : section.sectionKind === "conditional" ? "warning"
     : "muted";
+  const count = (section.items || []).length;
+  const kindLabel = SECTION_KIND_LABEL[section.sectionKind] || null;
 
   return (
     <section className={cx(styles.accordionCard, ROUTE_SECTION_CLASS[section.sectionKind])} id={sectionId}>
@@ -213,10 +221,15 @@ function RouteSectionCard({ section, open, onToggle }) {
       >
         <div className={styles.accordionCopy}>
           <div className={styles.accordionTitleRow}>
+            {kindLabel ? (
+              <span className={cx(styles.sectionKindLabel, ROUTE_SECTION_CLASS[section.sectionKind])}>
+                {kindLabel}
+              </span>
+            ) : null}
             <h3 className={styles.accordionTitle}>{routeTitle(section)}</h3>
             {section.shortRationale ? <p className={styles.microRationale}>{section.shortRationale}</p> : null}
             <p className={styles.accordionText}>
-              {(section.items || []).length} standard{(section.items || []).length === 1 ? "" : "s"}
+              {count} standard{count === 1 ? "" : "s"}
             </p>
           </div>
           <div className={styles.accordionTitleMeta}>
@@ -239,8 +252,8 @@ function RouteSectionCard({ section, open, onToggle }) {
 
       {open ? (
         <div id={`${sectionId}-body`} className={styles.accordionBody}>
-          {(section.items || []).length ? (
-            section.items.map((item) => (
+          {count ? (
+            sortStandardItems(section.items, section.key).map((item) => (
               <StandardItemCard
                 key={`${section.key}-${item.code || item.title}-${item.version || ""}`}
                 item={item}

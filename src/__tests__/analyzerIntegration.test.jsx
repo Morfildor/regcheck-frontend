@@ -145,9 +145,9 @@ test("home page renders hero heading, key CTAs, and output strip", async () => {
   expect(screen.getByRole("button", { name: /analyze product/i })).toBeInTheDocument();
   // Secondary action
   expect(screen.getByRole("link", { name: /open empty analyzer/i })).toBeInTheDocument();
-  // Output strip items
-  expect(screen.getByText(/directive families/i)).toBeInTheDocument();
-  expect(screen.getByText(/standards route/i)).toBeInTheDocument();
+  // Output strip items (label text)
+  expect(screen.getAllByText(/directive route/i).length).toBeGreaterThanOrEqual(1);
+  expect(screen.getByText("Standards path")).toBeInTheDocument();
 });
 
 test("home page quick-start carries draft into the analyzer", async () => {

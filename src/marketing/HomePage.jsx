@@ -8,20 +8,20 @@ import styles from "./HomePage.module.css";
 
 const OUTPUT_ITEMS = [
   {
-    label: "Directive families",
-    text: "See the likely EU frameworks triggered by the description.",
+    label: "Directive route",
+    text: "See which EU frameworks apply based on the description.",
   },
   {
-    label: "Standards route",
-    text: "Get a first view of the standards path to review next.",
+    label: "Standards path",
+    text: "Get a first view of the specific standards to review next.",
   },
   {
     label: "Parallel obligations",
-    text: "Catch related obligations that may sit outside the core route.",
+    text: "Surface related obligations outside the core directive route.",
   },
   {
     label: "Missing details",
-    text: "Find the facts most likely to change the result before review.",
+    text: "Identify the facts most likely to change the result.",
   },
 ];
 
@@ -136,14 +136,14 @@ export default function HomePage() {
           <span className={styles.eyebrow}>EU product scoping</span>
           <h1 className={styles.heroTitle}>Start with what you know about the product.</h1>
           <p className={styles.heroText}>
-            Paste a rough description. RuleGrid identifies likely directives, standards, and missing
-            details so the team has a real starting point before formal review begins.
+            Paste a rough description. RuleGrid maps the likely directives, standards route, and
+            missing details so the team has a real starting point before formal review begins.
           </p>
 
           <div className={styles.heroSignals}>
-            <span className={styles.signal}>Built for early routing</span>
-            <span className={styles.signal}>Works with incomplete detail</span>
-            <span className={styles.signal}>Not a certification decision</span>
+            <span className={styles.signal}>Works with rough descriptions</span>
+            <span className={styles.signal}>Highlights what's still unclear</span>
+            <span className={styles.signal}>Not a conformity decision</span>
           </div>
 
           <div className={styles.heroCTARow}>
@@ -199,7 +199,7 @@ export default function HomePage() {
           </div>
 
           <p className={styles.panelNote}>
-            Analysis runs immediately when you land on the analyzer.
+            Results appear as soon as you open the analyzer.
           </p>
         </form>
       </section>
@@ -217,7 +217,7 @@ export default function HomePage() {
       <section className={styles.lowerGrid}>
         <section className={styles.sectionBlock}>
           <span className={styles.sectionEyebrow}>What to include</span>
-          <h2 className={styles.sectionTitle}>A better first pass comes from a few concrete facts.</h2>
+          <h2 className={styles.sectionTitle}>A few concrete facts make a big difference.</h2>
           <ul className={styles.list}>
             {INPUT_HINTS.map((item) => (
               <li key={item} className={styles.listItem}>
@@ -230,7 +230,7 @@ export default function HomePage() {
 
         <section className={styles.sectionBlock}>
           <span className={styles.sectionEyebrow}>Where it fits</span>
-          <h2 className={styles.sectionTitle}>Useful for first-pass routing, not final sign-off.</h2>
+          <h2 className={styles.sectionTitle}>Good for early routing, not final sign-off.</h2>
 
           <div className={styles.listGrid}>
             <div className={styles.listGroup}>

@@ -9,6 +9,12 @@ function sectionHead(label, width = 48) {
   return `─── ${label} ${"─".repeat(pad)}`;
 }
 
+function truncateDescription(desc, max = 120) {
+  const trimmed = String(desc || "").trim().replace(/\s+/g, " ");
+  if (trimmed.length <= max) return trimmed;
+  return trimmed.slice(0, max).replace(/\s+\S*$/, "") + "…";
+}
+
 export function buildClipboardSummary({
   result,
   description,
@@ -45,6 +51,7 @@ export function buildClipboardSummary({
   const div = "─".repeat(49);
   const hasBlockers       = blockers.length > 0;
   const hasRouteAffecting = routeAffecting.length > 0;
+  const shortDesc         = description ? truncateDescription(description) : null;
 
   return [
     "RuleGrid — Regulatory scoping summary",
@@ -53,6 +60,7 @@ export function buildClipboardSummary({
     `Product:     ${productType}`,
     `Confidence:  ${confidenceLabel}${isPreliminary ? "  ⚠ preliminary" : ""}`,
     `Route:       ${routeLine}  ·  ${totalStandards} standard${totalStandards === 1 ? "" : "s"}`,
+    shortDesc ? `Description: ${shortDesc}` : null,
     result?.summary ? `\n${result.summary}` : null,
     "",
 
